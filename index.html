@@ -370,6 +370,54 @@
           </button>
         </div>
       </form>
+
+      <!-- Share the Movement -->
+      <section class="mt-12 pt-8 border-t border-gray-200 text-center">
+        <h3 class="text-2xl font-bold mb-2 flex items-center justify-center gap-3">
+          <span>⚽️</span> Spread the Movement <span>🙏</span>
+        </h3>
+        <p class="text-gray-600 mb-8 max-w-md mx-auto">Share this volunteer sign-up page with your church, friends, and family!</p>
+
+        <!-- Main Web Share Button -->
+        <button id="mainShareBtn"
+          class="bg-linkedin hover:bg-linkedin-dark text-white font-semibold py-4 px-12 rounded-2xl text-xl shadow-lg hover:shadow-xl transition focus:outline-none focus:ring-4 focus:ring-linkedin/40 active:scale-95 mb-10">
+          Share This Page
+        </button>
+
+        <!-- Fallback buttons grid -->
+        <div id="fallbackShareBtns" class="grid grid-cols-3 sm:grid-cols-6 gap-4 max-w-2xl mx-auto hidden">
+          <!-- SMS -->
+          <a id="smsBtn" href="#" class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-2xl hover:shadow-md transition-all">
+            <span class="text-4xl mb-2">📱</span>
+            <span class="text-sm font-medium text-gray-700">Text</span>
+          </a>
+          <!-- Email -->
+          <a id="emailBtn" href="#" class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-2xl hover:shadow-md transition-all">
+            <span class="text-4xl mb-2">✉️</span>
+            <span class="text-sm font-medium text-gray-700">Email</span>
+          </a>
+          <!-- Facebook -->
+          <a id="fbBtn" href="#" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-2xl hover:shadow-md transition-all">
+            <span class="text-4xl mb-2">f</span>
+            <span class="text-sm font-medium text-gray-700">Facebook</span>
+          </a>
+          <!-- X / Twitter -->
+          <a id="xBtn" href="#" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-2xl hover:shadow-md transition-all">
+            <span class="text-4xl mb-2">𝕏</span>
+            <span class="text-sm font-medium text-gray-700">X</span>
+          </a>
+          <!-- Instagram -->
+          <a id="igBtn" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-2xl hover:shadow-md transition-all">
+            <span class="text-4xl mb-2">📸</span>
+            <span class="text-sm font-medium text-gray-700">Instagram</span>
+          </a>
+          <!-- TikTok -->
+          <a id="tiktokBtn" href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-2xl hover:shadow-md transition-all">
+            <span class="text-4xl mb-2">🎵</span>
+            <span class="text-sm font-medium text-gray-700">TikTok</span>
+          </a>
+        </div>
+      </section>
     </main>
 
     <!-- Footer -->
@@ -557,6 +605,42 @@
           });
       });
     })();
+  </script>
+
+  <script>
+    // Share functionality
+    var shareTitle = "Houston World Cup Prayer City Movement – Volunteer Sign-Up";
+    var shareText = "Join us in prayer, service, and Gospel outreach during the 2026 World Cup in Houston! Sign up to volunteer as Counselor, Logistics, Photography, Prayer Partner, or Social Media & Virtual Support ⚽️🙏";
+    var shareUrl = window.location.href;
+
+    var mainShareBtn = document.getElementById('mainShareBtn');
+    var fallbackDiv = document.getElementById('fallbackShareBtns');
+
+    function setFallbackHrefs() {
+      var encUrl = encodeURIComponent(shareUrl);
+      var encTitle = encodeURIComponent(shareTitle);
+      var encBody = encodeURIComponent(shareText + '\n\n' + shareUrl);
+      if (document.getElementById('smsBtn')) document.getElementById('smsBtn').href = 'sms:?body=' + encBody;
+      if (document.getElementById('emailBtn')) document.getElementById('emailBtn').href = 'mailto:?subject=' + encTitle + '&body=' + encBody;
+      if (document.getElementById('fbBtn')) document.getElementById('fbBtn').href = 'https://www.facebook.com/sharer/sharer.php?u=' + encUrl;
+      if (document.getElementById('xBtn')) document.getElementById('xBtn').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText) + '&url=' + encUrl;
+    }
+
+    if (mainShareBtn) {
+      mainShareBtn.addEventListener('click', function () {
+        if (navigator.share) {
+          navigator.share({ title: shareTitle, text: shareText, url: shareUrl })
+            .then(function () { })
+            .catch(function () {
+              setFallbackHrefs();
+              if (fallbackDiv) fallbackDiv.classList.remove('hidden');
+            });
+        } else {
+          setFallbackHrefs();
+          if (fallbackDiv) fallbackDiv.classList.remove('hidden');
+        }
+      });
+    }
   </script>
 </body>
 </html>
