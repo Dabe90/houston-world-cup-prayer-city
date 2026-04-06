@@ -63,11 +63,12 @@
 </head>
 <body class="min-h-screen bg-gray-100 text-gray-800 antialiased">
   <div class="min-h-screen flex flex-col">
-    <!-- Header -->
+    <!-- Hero -->
+    <!-- Logo file: place logo.png in the same folder as index.html. -->
     <header class="bg-linkedin text-white py-10 px-4 sm:py-14 shadow-lg relative overflow-hidden">
       <div class="max-w-3xl mx-auto text-center relative z-10">
         <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-4">
-          <img src="logo.png" alt="Houston World Cup Prayer City Movement Logo" class="h-12 sm:h-14 md:h-16 w-auto object-contain rounded-lg shadow-md" />
+          <img src="logo.png" alt="Houston World Cup Prayer City Movement Logo - Dear Daughter Bible Study Group" class="h-12 sm:h-14 md:h-16 w-auto object-contain rounded-lg shadow-md" />
           <p class="text-base sm:text-lg font-medium text-blue-100 uppercase tracking-wider">Dear Daughter Bible Study Group</p>
           <span class="text-3xl sm:text-4xl md:text-5xl leading-none" aria-hidden="true">⚽️</span>
         </div>
@@ -75,19 +76,24 @@
           Houston World Cup Prayer City Movement
         </h1>
         <p class="mt-3 text-blue-100 text-sm sm:text-base max-w-xl mx-auto">
-          Sign up for shifts to serve as Counselor, Logistics & Welfare, Photography & Video, Social Media and Virtual Support or Prayer Partner in Houston during the World Cup.
+          Sign up for shifts to serve as Counselor, Logistics & Welfare, Photography & Video, Social Media and Virtual Support or Prayer Partner in Houston during the World Cup. Social Media and Virtual Support can serve from anywhere around the world.
         </p>
-        <a href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement" target="_blank" rel="noopener noreferrer"
-           class="inline-flex items-center gap-2 mt-6 px-6 py-3 rounded-2xl bg-white text-linkedin font-semibold text-sm sm:text-base shadow-lg hover:bg-blue-50 transition">
+        <a href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 mt-6 px-6 py-3 rounded-2xl bg-white text-linkedin font-semibold text-sm sm:text-base shadow-lg hover:bg-blue-50 transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-linkedin">
           <i class="fas fa-heart text-linkedin"></i>
           <span>Give to the Houston World Cup Prayer City Movement</span>
         </a>
+      </div>
+      <!-- Houston skyline silhouette -->
+      <div class="absolute bottom-0 left-0 right-0 h-20 sm:h-24 md:h-28 text-white/25" aria-hidden="true">
+        <svg viewBox="0 0 1200 100" fill="currentColor" class="w-full h-full object-cover object-bottom" preserveAspectRatio="none">
+          <path d="M0,100 L0,68 L60,68 L60,88 L110,88 L110,58 L170,58 L170,78 L230,78 L230,48 L290,48 L290,92 L350,92 L350,62 L410,62 L410,82 L470,82 L470,52 L530,52 L530,98 L590,98 L590,38 L650,38 L650,18 L710,18 L710,100 L750,100 L750,58 L810,58 L810,78 L870,78 L870,48 L930,48 L930,72 L990,72 L990,42 L1050,42 L1050,88 L1110,88 L1110,55 L1170,55 L1170,75 L1200,75 L1200,100 Z"/>
+        </svg>
       </div>
     </header>
 
     <main class="flex-1 max-w-3xl mx-auto w-full px-4 py-8 sm:py-12">
       <form id="volunteer-form" method="POST" action="https://formsubmit.co/ddbs.htx@gmail.com" class="space-y-8">
-        <!-- Honeypot -->
+        <!-- Honeypot (hidden from users) -->
         <div class="absolute -left-[9999px]" aria-hidden="true">
           <label for="website">Website</label>
           <input type="text" name="_honey" id="website" tabindex="-1" autocomplete="off" />
@@ -370,19 +376,12 @@
           </div>
         </section>
 
-        <!-- Two buttons -->
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <button type="submit" id="submit-btn"
-            class="w-full sm:w-auto px-10 py-4 bg-linkedin hover:bg-linkedin-dark text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition focus:outline-none focus:ring-4 focus:ring-linkedin/40 flex items-center justify-center gap-2">
+        <!-- Submit -->
+        <div class="flex justify-center">
+          <button type="submit" id="submit-btn" class="w-full sm:w-auto px-10 py-4 bg-linkedin hover:bg-linkedin-dark text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition focus:outline-none focus:ring-4 focus:ring-linkedin/40 flex items-center justify-center gap-2">
             <i class="fas fa-paper-plane"></i> Submit Sign-Up
           </button>
-
-          <button type="button" id="clerk-btn"
-            class="w-full sm:w-auto px-10 py-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition focus:outline-none focus:ring-4 focus:ring-green-400 flex items-center justify-center gap-2">
-            <i class="fas fa-envelope"></i> Get Dashboard Login Link
-          </button>
         </div>
-        <div id="clerk-captcha" class="mt-2 flex justify-center empty:hidden"></div>
       </form>
 
       <!-- Share the Movement -->
@@ -684,93 +683,5 @@
     }
   </script>
 
-  <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@6/dist/clerk.browser.js" crossorigin="anonymous"></script>
-  <script>
-    (function () {
-      var CLERK_PUBLISHABLE_KEY = 'pk_test_dXB3YXJkLWthdHlkaWQtNTQuY2xlcmsuYWNjb3VudHMuZGV2JA';
-      var CLERK_REDIRECT_URL = 'https://houston-world-cup-prayer-city.vercel.app/dashboard.html';
-
-      async function initClerk() {
-        await Clerk.load({
-          publishableKey: CLERK_PUBLISHABLE_KEY,
-        });
-      }
-
-      function clerkErrMessage(err) {
-        if (!err) return 'Something went wrong.';
-        if (err.message) return err.message;
-        if (err.errors && err.errors[0] && err.errors[0].message) return err.errors[0].message;
-        return String(err);
-      }
-
-      async function sendClerkEmailLink() {
-        var emailInput = document.getElementById('email');
-        if (!emailInput) return;
-        var email = emailInput.value.trim();
-        if (!email) {
-          alert('Please enter your email address first.');
-          return;
-        }
-
-        var btn = document.getElementById('clerk-btn');
-        var originalHtml = btn ? btn.innerHTML : '';
-        if (btn) {
-          btn.disabled = true;
-          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-        }
-
-        try {
-          if (!window.Clerk || !Clerk.client) {
-            throw new Error('Clerk is still loading. Please wait a moment and try again.');
-          }
-
-          var sent = false;
-          try {
-            var signInAttempt = await Clerk.client.signIn.create({ identifier: email });
-            var factor = signInAttempt.supportedFirstFactors &&
-              signInAttempt.supportedFirstFactors.find(function (f) {
-                return f.strategy === 'email_link';
-              });
-            if (factor && factor.emailAddressId) {
-              await signInAttempt.prepareFirstFactor({
-                strategy: 'email_link',
-                emailAddressId: factor.emailAddressId,
-                redirectUrl: CLERK_REDIRECT_URL,
-              });
-              sent = true;
-            }
-          } catch (signInErr) {
-            console.warn(signInErr);
-          }
-
-          if (!sent) {
-            var signUpAttempt = await Clerk.client.signUp.create({ emailAddress: email });
-            await signUpAttempt.prepareEmailAddressVerification({
-              strategy: 'email_link',
-              redirectUrl: CLERK_REDIRECT_URL,
-            });
-          }
-
-          alert('Login link sent to ' + email + '.\n\nCheck your inbox and spam folder.');
-        } catch (err) {
-          console.error(err);
-          alert('Could not send the login link: ' + clerkErrMessage(err));
-        } finally {
-          if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = originalHtml;
-          }
-        }
-      }
-
-      document.addEventListener('DOMContentLoaded', function () {
-        initClerk().catch(function (e) {
-          console.error(e);
-        });
-        var clerkBtn = document.getElementById('clerk-btn');
-        if (clerkBtn) clerkBtn.addEventListener('click', sendClerkEmailLink);
-      });
-    })();
-  </script>
 </body>
 </html>

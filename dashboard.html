@@ -4,13 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Your Volunteer Dashboard - Houston World Cup Prayer City</title>
-  
-  <!-- Clerk Script -->
-  <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" crossorigin="anonymous"></script>
-  
+
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            linkedin: '#0A66C2',
+            'linkedin-dark': '#004182',
+          },
+        },
+      },
+    };
+  </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  
+
   <style>
     body { font-family: system-ui, sans-serif; }
   </style>
@@ -21,7 +30,8 @@
     <!-- Welcome Header -->
     <div class="bg-white rounded-3xl shadow-lg p-10 text-center mb-10">
       <h1 class="text-4xl font-bold text-gray-900 mb-4">Welcome to Your Volunteer Dashboard</h1>
-      <p id="user-email" class="text-xl text-gray-600">Loading your information...</p>
+      <p class="text-xl text-gray-600">Thank you for serving with the Houston World Cup Prayer City Movement.</p>
+      <p class="text-gray-500 text-sm mt-3">Your shift selections are confirmed by email after you submit the volunteer form.</p>
     </div>
 
     <!-- Your Selected Shifts -->
@@ -30,7 +40,7 @@
         📅 Your Selected Shifts
       </h2>
       <div id="shifts-container" class="space-y-4 text-gray-700">
-        <p class="text-gray-500 text-center py-12">Your selected shifts will appear here after you submit the form.</p>
+        <p class="text-gray-500 text-center py-12">Your selected shifts will appear in the confirmation we send after you submit the sign-up form on the main page.</p>
       </div>
     </div>
 
@@ -59,41 +69,13 @@
       </ul>
     </div>
 
-    <!-- Logout -->
-    <div class="text-center mt-12">
-      <button onclick="logout()" 
-        class="px-8 py-3 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-medium transition">
-        Log Out
-      </button>
+    <div class="text-center mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center">
+      <a href="https://houston-world-cup-prayer-city.vercel.app/"
+         class="inline-flex items-center justify-center px-8 py-3 bg-linkedin hover:bg-linkedin-dark text-white rounded-2xl font-medium transition">
+        <i class="fas fa-arrow-left mr-2"></i> Back to volunteer sign-up
+      </a>
     </div>
   </div>
 
-  <script>
-    const CLERK_PUBLISHABLE_KEY = "pk_test_dXB3YXJkLWthdHlkaWQtNTQuY2xlcmsuYWNjb3VudHMuZGV2JA";
-
-    async function initDashboard() {
-      await Clerk.load({ publishableKey: CLERK_PUBLISHABLE_KEY });
-
-      const user = await Clerk.user.get();
-
-      if (!user) {
-        document.getElementById("user-email").innerHTML = 
-          `<span class="text-red-600">Not logged in. Please use the magic link from your email.</span>`;
-        return;
-      }
-
-      // Show logged-in user
-      document.getElementById("user-email").innerHTML = 
-        `Logged in as: <strong>${user.primaryEmailAddress.emailAddress}</strong>`;
-    }
-
-    function logout() {
-      Clerk.signOut();
-      window.location.href = "/";
-    }
-
-    // Run when page loads
-    document.addEventListener('DOMContentLoaded', initDashboard);
-  </script>
 </body>
 </html>
