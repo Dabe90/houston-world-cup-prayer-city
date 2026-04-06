@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Houston World Cup Prayer City Movement — Volunteer Sign-Up</title>
+  <link rel="canonical" href="https://houston-world-cup-prayer-city.vercel.app/">
   <!-- Open Graph and Twitter Card meta tags for rich link previews on social media -->
   <meta property="og:title" content="Houston World Cup Prayer City Movement – Volunteer Sign-Up">
   <meta property="og:description" content="Join us in prayer, service, and Gospel outreach during the 2026 FIFA World Cup in Houston! Sign up to volunteer or support the movement. 100% tax-deductible. ⚽🙏">
@@ -376,12 +377,16 @@
           </div>
         </section>
 
-        <!-- Submit -->
-        <div class="flex justify-center">
-          <button type="submit" id="submit-btn" class="w-full sm:w-auto px-10 py-4 bg-linkedin hover:bg-linkedin-dark text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition focus:outline-none focus:ring-4 focus:ring-linkedin/40 flex items-center justify-center gap-2">
-            <i class="fas fa-paper-plane"></i> Submit Sign-Up
-          </button>
-        </div>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button type="submit" id="submit-btn"
+                    class="w-full sm:w-auto px-10 py-4 bg-linkedin hover:bg-linkedin-dark text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition focus:outline-none focus:ring-4 focus:ring-linkedin/40 flex items-center justify-center gap-2">
+                    <i class="fas fa-paper-plane"></i> Submit Sign-Up
+                  </button>
+                  <button type="button" id="clerk-btn"
+                    class="w-full sm:w-auto px-10 py-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition focus:outline-none focus:ring-4 focus:ring-green-400 flex items-center justify-center gap-2">
+                    <i class="fas fa-envelope"></i> Get Dashboard Login Link
+                  </button>
+                </div>
       </form>
 
       <!-- Share the Movement -->
@@ -472,16 +477,87 @@
       <div id="confetti-container" class="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl"></div>
       <p class="text-5xl mb-4 animate-bounce-ball" style="animation: bounce-ball 0.6s ease-in-out 3;">⚽️</p>
       <h2 id="modal-title" class="text-xl font-bold text-gray-800 mb-2">Thank you!</h2>
-      <p class="text-gray-600 mb-6">Your signup has been received. We'll contact you soon!</p>
+      <p class="text-gray-600 mb-6">Your signup has been received. If you are signing in to the volunteer dashboard, check your email (and spam) for a magic link. We'll contact you soon!</p>
       <button type="button" id="modal-reset-btn" class="w-full py-3 px-6 bg-linkedin hover:bg-linkedin-dark text-white font-semibold rounded-xl transition focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-offset-2">
         Reset form
       </button>
     </div>
   </div>
 
+  <!-- Clerk: load UI + clerk-js from your Frontend API host (matches publishable key). -->
+  <script
+    defer
+    crossorigin="anonymous"
+    src="https://upward-katydid-54.clerk.accounts.dev/npm/@clerk/ui@1/dist/ui.browser.js"
+    type="text/javascript"
+  ></script>
+  <script
+    defer
+    crossorigin="anonymous"
+    data-clerk-publishable-key="pk_test_dXB3YXJkLWthdHlkaWQtNTQuY2xlcmsuYWNjb3VudHMuZGV2JA"
+    src="https://upward-katydid-54.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js"
+    type="text/javascript"
+  ></script>
+
   <script>
     (function () {
       const FORM_SUBMIT_URL = 'https://formsubmit.co/ddbs.htx@gmail.com';
+      /** Production site (Clerk magic links must use a fixed HTTPS URL). */
+      const SITE_BASE_URL = 'https://houston-world-cup-prayer-city.vercel.app';
+      /** Full URL users land on after clicking the email sign-in link (must complete Clerk email-link verification there). */
+      const CLERK_EMAIL_LINK_VERIFICATION_URL = SITE_BASE_URL + '/dashboard.html';
+      const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx_eHY8aIslNIm4HqUj5yuK6lLIvfIobuvRjdWR4Gf1_AK-k3TtduHuHl6Z4NeV6icSkw/exec';
+
+      var clerkReadyPromise = null;
+      function ensureClerkLoaded() {
+        if (clerkReadyPromise) return clerkReadyPromise;
+        clerkReadyPromise = new Promise(function (resolve, reject) {
+          function init() {
+            if (typeof window.Clerk === 'undefined' || typeof window.Clerk.load !== 'function') {
+              reject(new Error('Clerk script not loaded'));
+              return;
+            }
+            var opts = {};
+            if (typeof window.__internal_ClerkUICtor !== 'undefined') {
+              opts.ui = { ClerkUI: window.__internal_ClerkUICtor };
+            }
+            window.Clerk.load(opts).then(resolve).catch(reject);
+          }
+          if (document.readyState === 'complete') init();
+          else window.addEventListener('load', init, { once: true });
+        });
+        return clerkReadyPromise;
+      }
+
+      function getClerkClient() {
+        var c = window.Clerk.client;
+        if (c && typeof c.then === 'function') return c;
+        return Promise.resolve(c);
+      }
+
+      /** Sends Clerk email-link to dashboard (same API as after full form submit). */
+      function sendClerkEmailLink(email) {
+        return ensureClerkLoaded()
+          .then(function () {
+            return getClerkClient();
+          })
+          .then(function (client) {
+            var signIn = client && (client.signIn || client.signInAttempt);
+            if (!signIn || !signIn.emailLink || typeof signIn.emailLink.sendLink !== 'function') {
+              throw new Error('clerk_no_signin');
+            }
+            return signIn.emailLink.sendLink({
+              emailAddress: email,
+              verificationUrl: CLERK_EMAIL_LINK_VERIFICATION_URL,
+            });
+          })
+          .then(function (clerkResult) {
+            if (clerkResult && clerkResult.error) {
+              console.error(clerkResult.error);
+              throw new Error('clerk_sendlink_failed');
+            }
+          });
+      }
 
       // Slot name -> display string (date + time)
       const SLOT_META = {
@@ -526,6 +602,7 @@
       const summaryPlaceholder = document.getElementById('summary-placeholder');
       const summaryList = document.getElementById('summary-list');
       const submitBtn = document.getElementById('submit-btn');
+      const clerkBtn = document.getElementById('clerk-btn');
       const successModal = document.getElementById('success-modal');
       const modalResetBtn = document.getElementById('modal-reset-btn');
       const confettiContainer = document.getElementById('confetti-container');
@@ -612,6 +689,7 @@
         var phone = document.getElementById('phone').value.trim();
         var notes = document.getElementById('notes').value.trim();
         var shifts = getSelectedShifts();
+        var signupSaved = false;
 
         var body = new URLSearchParams();
         body.append('_subject', 'New World Cup Volunteer Signup');
@@ -633,17 +711,58 @@
           body: body.toString(),
         })
           .then(function (res) {
-            if (!res.ok) throw new Error('Submission failed');
+            if (!res.ok) throw new Error('formsubmit');
+            signupSaved = true;
+            if (GOOGLE_APPS_SCRIPT_URL.indexOf('YOUR_GOOGLE_SCRIPT_ID') === -1) {
+              fetch(GOOGLE_APPS_SCRIPT_URL, { method: 'POST', body: new FormData(form) }).catch(function (err) {
+                console.error('Google Sheet error:', err);
+              });
+            }
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending login link...';
+            return sendClerkEmailLink(email);
+          })
+          .then(function () {
             showSuccessModal();
           })
-          .catch(function () {
-            alert('Something went wrong. Please check your connection and try again.');
+          .catch(function (err) {
+            if (!signupSaved) {
+              alert('Something went wrong. Please check your connection and try again.');
+              return;
+            }
+            console.error(err);
+            alert('Your volunteer sign-up was received. We could not send the dashboard login link—please check your inbox or contact us for access.');
+            showSuccessModal();
           })
           .finally(function () {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Sign-Up';
           });
       });
+
+      if (clerkBtn) {
+        clerkBtn.addEventListener('click', function () {
+          var email = document.getElementById('email').value.trim();
+          if (!email) {
+            alert('Please enter your email address first.');
+            return;
+          }
+          var orig = clerkBtn.innerHTML;
+          clerkBtn.disabled = true;
+          clerkBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+          sendClerkEmailLink(email)
+            .then(function () {
+              alert('Login link sent to ' + email + '. Please check your inbox and spam folder.');
+            })
+            .catch(function (err) {
+              console.error(err);
+              alert('Could not send the login link. Please try again.');
+            })
+            .finally(function () {
+              clerkBtn.disabled = false;
+              clerkBtn.innerHTML = orig;
+            });
+        });
+      }
     })();
   </script>
 
@@ -651,7 +770,7 @@
     // Share functionality
     var shareTitle = "Houston World Cup Prayer City Movement – Volunteer Sign-Up";
     var shareText = "Join us in prayer, service, and Gospel outreach during the 2026 World Cup in Houston! Sign up to volunteer as Counselor, Logistics, Photography, Prayer Partner, or Social Media & Virtual Support ⚽️🙏";
-    var shareUrl = window.location.href;
+    var shareUrl = "https://houston-world-cup-prayer-city.vercel.app/";
 
     var mainShareBtn = document.getElementById('mainShareBtn');
     var fallbackDiv = document.getElementById('fallbackShareBtns');

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Volunteer Dashboard - Houston World Cup Prayer City</title>
+  
+  <!-- Clerk Script -->
+  <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" crossorigin="anonymous"></script>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; }
+  </style>
+</head>
+<body class="min-h-screen bg-gray-50">
+
+  <div class="max-w-4xl mx-auto px-6 py-12">
+    <!-- Header -->
+    <div class="bg-white rounded-3xl shadow-lg p-8 mb-10 text-center">
+      <h1 class="text-4xl font-bold text-gray-900 mb-2">Welcome to Your Volunteer Dashboard</h1>
+      <p id="user-email" class="text-lg text-gray-600">Loading...</p>
+    </div>
+
+    <!-- Selected Shifts -->
+    <div class="bg-white rounded-3xl shadow-lg p-8 mb-10">
+      <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+        <i class="fas fa-calendar-alt text-blue-600"></i> Your Selected Shifts
+      </h2>
+      <div id="shifts-container" class="space-y-4">
+        <!-- Shifts will be loaded here dynamically -->
+        <p class="text-gray-500 text-center py-8">Your selected shifts will appear here after you submit the form.</p>
+      </div>
+    </div>
+
+    <!-- Bible Study & Prayer -->
+    <div class="bg-white rounded-3xl shadow-lg p-8 mb-10">
+      <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+        <i class="fas fa-book-open text-blue-600"></i> Bible Study & Prayer Resources
+      </h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="p-6 border border-gray-200 rounded-2xl hover:border-blue-300 transition">
+          <h3 class="font-semibold mb-2">Dear Daughter Bible Study</h3>
+          <p class="text-gray-600">Weekly study materials and discussion guides for volunteers.</p>
+        </div>
+        <div class="p-6 border border-gray-200 rounded-2xl hover:border-blue-300 transition">
+          <h3 class="font-semibold mb-2">Daily Prayer Guide</h3>
+          <p class="text-gray-600">Prayer points for the World Cup outreach in Houston.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Events -->
+    <div class="bg-white rounded-3xl shadow-lg p-8 mb-10">
+      <h2 class="text-2xl font-semibold mb-6">🎯 Upcoming Events</h2>
+      <ul class="space-y-4 text-gray-700">
+        <li class="flex gap-4"><span class="font-medium w-40">June 14, 2026</span> <span>Sunday Shifts (10 AM – 3 PM)</span></li>
+        <li class="flex gap-4"><span class="font-medium w-40">June 26, 2026</span> <span>Friday Evening Coverage (4 PM – 9 PM)</span></li>
+        <li class="flex gap-4"><span class="font-medium w-40">July 4, 2026</span> <span>Saturday Shifts</span></li>
+      </ul>
+    </div>
+
+    <!-- Logout -->
+    <div class="text-center">
+      <button onclick="logout()" 
+        class="px-8 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition">
+        Log Out
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const CLERK_PUBLISHABLE_KEY = "pk_test_dXB3YXJkLWthdHlkaWQtNTQuY2xlcmsuYWNjb3VudHMuZGV2JA";
+    const SITE_BASE_URL = "https://houston-world-cup-prayer-city.vercel.app";
+
+    async function initDashboard() {
+      await Clerk.load({ publishableKey: CLERK_PUBLISHABLE_KEY });
+
+      const user = await Clerk.user.get();
+
+      if (!user) {
+        alert("Please use the magic link from your email to log in.");
+        window.location.href = SITE_BASE_URL + "/";
+        return;
+      }
+
+      // Show user email
+      document.getElementById("user-email").innerHTML = 
+        `Logged in as: <strong>${user.primaryEmailAddress.emailAddress}</strong>`;
+
+      // TODO: Later we can load your shifts here if we save them to Clerk metadata or a backend
+    }
+
+    async function logout() {
+      await Clerk.signOut();
+      window.location.href = SITE_BASE_URL + "/";
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', initDashboard);
+  </script>
+</body>
+</html>
