@@ -502,10 +502,8 @@
   <script>
     (function () {
       const FORM_SUBMIT_URL = 'https://formsubmit.co/ddbs.htx@gmail.com';
-      /** Production site (Clerk magic links must use a fixed HTTPS URL). */
-      const SITE_BASE_URL = 'https://houston-world-cup-prayer-city.vercel.app';
-      /** Full URL users land on after clicking the email sign-in link (must complete Clerk email-link verification there). */
-      const CLERK_EMAIL_LINK_VERIFICATION_URL = SITE_BASE_URL + '/dashboard.html';
+      /** Full URL users land on after clicking the email sign-in link (Clerk `verificationUrl` / email link redirect). */
+      const CLERK_EMAIL_LINK_VERIFICATION_URL = 'https://houston-world-cup-prayer-city.vercel.app/dashboard.html';
       const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx_eHY8aIslNIm4HqUj5yuK6lLIvfIobuvRjdWR4Gf1_AK-k3TtduHuHl6Z4NeV6icSkw/exec';
 
       var clerkReadyPromise = null;

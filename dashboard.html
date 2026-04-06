@@ -4,102 +4,145 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Your Volunteer Dashboard - Houston World Cup Prayer City</title>
-  
-  <!-- Clerk Script -->
-  <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" crossorigin="anonymous"></script>
-  
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; }
   </style>
 </head>
-<body class="min-h-screen bg-gray-50">
+<body class="min-h-screen bg-gray-50 py-12 px-6">
 
-  <div class="max-w-4xl mx-auto px-6 py-12">
-    <!-- Header -->
-    <div class="bg-white rounded-3xl shadow-lg p-8 mb-10 text-center">
-      <h1 class="text-4xl font-bold text-gray-900 mb-2">Welcome to Your Volunteer Dashboard</h1>
-      <p id="user-email" class="text-lg text-gray-600">Loading...</p>
+  <div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-3xl shadow-lg p-10 text-center mb-10">
+      <h1 class="text-4xl font-bold text-gray-900 mb-4">Welcome to Your Volunteer Dashboard</h1>
+      <p id="user-email" class="text-xl text-gray-600">Loading your information...</p>
     </div>
 
-    <!-- Selected Shifts -->
     <div class="bg-white rounded-3xl shadow-lg p-8 mb-10">
       <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
-        <i class="fas fa-calendar-alt text-blue-600"></i> Your Selected Shifts
+        📅 Your Selected Shifts
       </h2>
-      <div id="shifts-container" class="space-y-4">
-        <!-- Shifts will be loaded here dynamically -->
-        <p class="text-gray-500 text-center py-8">Your selected shifts will appear here after you submit the form.</p>
+      <div id="shifts-container" class="space-y-4 text-gray-700">
+        <p class="text-gray-500 text-center py-12">Your selected shifts will appear here after you submit the form.</p>
       </div>
     </div>
 
-    <!-- Bible Study & Prayer -->
     <div class="bg-white rounded-3xl shadow-lg p-8 mb-10">
-      <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
-        <i class="fas fa-book-open text-blue-600"></i> Bible Study & Prayer Resources
-      </h2>
+      <h2 class="text-2xl font-semibold mb-6">📖 Bible Study & Prayer Resources</h2>
       <div class="grid md:grid-cols-2 gap-6">
-        <div class="p-6 border border-gray-200 rounded-2xl hover:border-blue-300 transition">
-          <h3 class="font-semibold mb-2">Dear Daughter Bible Study</h3>
-          <p class="text-gray-600">Weekly study materials and discussion guides for volunteers.</p>
+        <div class="p-6 border border-gray-200 rounded-2xl">
+          <h3 class="font-semibold mb-3">Dear Daughter Bible Study</h3>
+          <p class="text-gray-600">Weekly materials and discussion guides tailored for volunteers.</p>
         </div>
-        <div class="p-6 border border-gray-200 rounded-2xl hover:border-blue-300 transition">
-          <h3 class="font-semibold mb-2">Daily Prayer Guide</h3>
-          <p class="text-gray-600">Prayer points for the World Cup outreach in Houston.</p>
+        <div class="p-6 border border-gray-200 rounded-2xl">
+          <h3 class="font-semibold mb-3">Daily Prayer Guide</h3>
+          <p class="text-gray-600">Prayer points for the Houston World Cup outreach.</p>
         </div>
       </div>
     </div>
 
-    <!-- Upcoming Events -->
     <div class="bg-white rounded-3xl shadow-lg p-8 mb-10">
       <h2 class="text-2xl font-semibold mb-6">🎯 Upcoming Events</h2>
       <ul class="space-y-4 text-gray-700">
-        <li class="flex gap-4"><span class="font-medium w-40">June 14, 2026</span> <span>Sunday Shifts (10 AM – 3 PM)</span></li>
-        <li class="flex gap-4"><span class="font-medium w-40">June 26, 2026</span> <span>Friday Evening Coverage (4 PM – 9 PM)</span></li>
-        <li class="flex gap-4"><span class="font-medium w-40">July 4, 2026</span> <span>Saturday Shifts</span></li>
+        <li class="flex gap-4"><span class="font-medium w-40">June 14</span><span>Sunday Shifts (10 AM – 3 PM)</span></li>
+        <li class="flex gap-4"><span class="font-medium w-40">June 26</span><span>Friday Evening Coverage (4 PM – 9 PM)</span></li>
+        <li class="flex gap-4"><span class="font-medium w-40">July 4</span><span>Saturday Shifts</span></li>
       </ul>
     </div>
 
-    <!-- Logout -->
     <div class="text-center">
-      <button onclick="logout()" 
-        class="px-8 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition">
+      <button type="button" onclick="logout()"
+        class="px-8 py-3 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-medium transition">
         Log Out
       </button>
     </div>
   </div>
 
+  <script
+    defer
+    crossorigin="anonymous"
+    src="https://upward-katydid-54.clerk.accounts.dev/npm/@clerk/ui@1/dist/ui.browser.js"
+    type="text/javascript"
+  ></script>
+  <script
+    defer
+    crossorigin="anonymous"
+    data-clerk-publishable-key="pk_test_dXB3YXJkLWthdHlkaWQtNTQuY2xlcmsuYWNjb3VudHMuZGV2JA"
+    src="https://upward-katydid-54.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js"
+    type="text/javascript"
+  ></script>
+
   <script>
-    const CLERK_PUBLISHABLE_KEY = "pk_test_dXB3YXJkLWthdHlkaWQtNTQuY2xlcmsuYWNjb3VudHMuZGV2JA";
-    const SITE_BASE_URL = "https://houston-world-cup-prayer-city.vercel.app";
+    var SITE_BASE_URL = 'https://houston-world-cup-prayer-city.vercel.app';
+    var DASHBOARD_URL = 'https://houston-world-cup-prayer-city.vercel.app/dashboard.html';
+
+    function ensureDocumentLoaded() {
+      if (document.readyState === 'complete') return Promise.resolve();
+      return new Promise(function (resolve) {
+        window.addEventListener('load', resolve, { once: true });
+      });
+    }
+
+    function loadClerk() {
+      if (typeof window.Clerk === 'undefined' || typeof window.Clerk.load !== 'function') {
+        return Promise.reject(new Error('Clerk failed to load'));
+      }
+      var opts = {};
+      if (typeof window.__internal_ClerkUICtor !== 'undefined') {
+        opts.ui = { ClerkUI: window.__internal_ClerkUICtor };
+      }
+      return window.Clerk.load(opts);
+    }
 
     async function initDashboard() {
-      await Clerk.load({ publishableKey: CLERK_PUBLISHABLE_KEY });
-
-      const user = await Clerk.user.get();
-
-      if (!user) {
-        alert("Please use the magic link from your email to log in.");
-        window.location.href = SITE_BASE_URL + "/";
+      await ensureDocumentLoaded();
+      try {
+        await loadClerk();
+      } catch (e) {
+        console.error(e);
+        document.getElementById('user-email').innerHTML =
+          '<span class="text-red-600">Could not load sign-in. Refresh the page or try again later.</span>';
         return;
       }
 
-      // Show user email
-      document.getElementById("user-email").innerHTML = 
-        `Logged in as: <strong>${user.primaryEmailAddress.emailAddress}</strong>`;
+      var qs = window.location.search || '';
+      if (qs.indexOf('__clerk_status') !== -1) {
+        try {
+          await Clerk.handleEmailLinkVerification({
+            redirectUrlComplete: DASHBOARD_URL,
+          });
+        } catch (err) {
+          console.error(err);
+          document.getElementById('user-email').innerHTML =
+            '<span class="text-red-600">This sign-in link is invalid or expired. Request a new link from the volunteer page.</span>';
+          return;
+        }
+      }
 
-      // TODO: Later we can load your shifts here if we save them to Clerk metadata or a backend
+      var user = Clerk.user;
+      if (!user) {
+        document.getElementById('user-email').innerHTML =
+          '<span class="text-red-600">Not logged in. Use the magic link from your email, or <strong>Get Dashboard Login Link</strong> on the volunteer page.</span>';
+        return;
+      }
+
+      var email = user.primaryEmailAddress && user.primaryEmailAddress.emailAddress
+        ? user.primaryEmailAddress.emailAddress
+        : (user.emailAddresses && user.emailAddresses[0] ? user.emailAddresses[0].emailAddress : 'Volunteer');
+      document.getElementById('user-email').innerHTML =
+        'Logged in as: <strong>' + email + '</strong>';
     }
 
     async function logout() {
-      await Clerk.signOut();
-      window.location.href = SITE_BASE_URL + "/";
+      try {
+        await Clerk.signOut();
+      } catch (e) {
+        console.error(e);
+      }
+      window.location.href = SITE_BASE_URL + '/';
     }
 
-    // Initialize when page loads
-    document.addEventListener('DOMContentLoaded', initDashboard);
+    window.addEventListener('load', initDashboard);
   </script>
 </body>
 </html>
