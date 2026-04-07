@@ -138,6 +138,10 @@
       var EMAIL_LINK_CONTINUE_URL =
         'https://houston-world-cup-prayer-city.vercel.app/dashboard.html';
 
+      /** Delivers sign-in link via Apps Script + Gmail (same path as sheet invites). Deploy volunteerSelfServeSignInMail + secrets first. */
+      var SELF_SERVE_SIGNIN_URL =
+        'https://us-central1-bible-study-dashboard-99f2d.cloudfunctions.net/volunteerSelfServeSignInMail';
+
       var cfg = window.__FIREBASE_CONFIG__ || {};
       var invalid = !cfg.apiKey || cfg.apiKey === 'REPLACE_ME';
 
@@ -281,24 +285,80 @@
           });
       });
 
+      function sendSignInLinkViaFirebaseClient(email) {
+        var settings = {
+          url: EMAIL_LINK_CONTINUE_URL,
+          handleCodeInApp: true,
+        };
+        return auth.sendSignInLinkToEmail(email, settings).then(function () {
+          window.localStorage.setItem('emailForSignIn', email);
+          setGateStatus(
+            'If mail does not arrive in ~2 minutes, check spam for sender from Firebase or "noreply".'
+          );
+        });
+      }
+
       els.btnEmailLink.addEventListener('click', function () {
         var email = (els.gateEmail.value || '').trim();
         if (!email) {
           setGateStatus('Enter your email first.', true);
           return;
         }
-        var settings = {
-          url: EMAIL_LINK_CONTINUE_URL,
-          handleCodeInApp: true,
-        };
         setGateStatus('Sending link…');
-        auth
-          .sendSignInLinkToEmail(email, settings)
-          .then(function () {
-            window.localStorage.setItem('emailForSignIn', email);
-            setGateStatus(
-              'If mail does not arrive in ~2 minutes, check spam for sender from Firebase or "noreply".'
-            );
+
+        if (!SELF_SERVE_SIGNIN_URL) {
+          sendSignInLinkViaFirebaseClient(email).catch(function (e) {
+            console.error('sendSignInLinkToEmail', e);
+            var detail =
+              (e && e.code ? e.code + ' — ' : '') +
+              (e && e.message ? e.message : 'Could not send link');
+            setGateStatus(detail, true);
+          });
+          return;
+        }
+
+        fetch(SELF_SERVE_SIGNIN_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email }),
+        })
+          .then(function (r) {
+            return r.text().then(function (t) {
+              var j = {};
+              try {
+                j = t ? JSON.parse(t) : {};
+              } catch (ignore) {}
+              return { status: r.status, body: j };
+            });
+          })
+          .then(function (result) {
+            if (result.status === 200 && result.body && result.body.ok) {
+              window.localStorage.setItem('emailForSignIn', email);
+              setGateStatus(
+                'Check your inbox for the sign-in link (sent from our Gmail). Allow 1–2 minutes; check spam if needed.'
+              );
+              return;
+            }
+            if (result.status === 404 && result.body && result.body.error === 'not_registered') {
+              setGateStatus(result.body.message || 'No record for this email.', true);
+              return;
+            }
+            if (result.status === 429) {
+              setGateStatus(result.body.message || 'Please wait a minute before trying again.', true);
+              return;
+            }
+            if (result.status === 503 || result.status === 502) {
+              return sendSignInLinkViaFirebaseClient(email);
+            }
+            var msg =
+              (result.body && result.body.message) ||
+              (result.body && result.body.detail) ||
+              (result.body && result.body.error) ||
+              'Could not send link.';
+            setGateStatus(msg, true);
+          })
+          .catch(function () {
+            return sendSignInLinkViaFirebaseClient(email);
           })
           .catch(function (e) {
             console.error('sendSignInLinkToEmail', e);
