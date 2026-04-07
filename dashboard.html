@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Your Volunteer Dashboard - Houston World Cup Prayer City</title>
+  <title>Volunteer Dashboard — Houston World Cup Prayer City</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -20,31 +20,84 @@
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+
   <style>
     body { font-family: system-ui, sans-serif; }
   </style>
 </head>
-<body class="min-h-screen bg-gray-50 py-12 px-6">
+<body class="min-h-screen bg-gray-50 py-12 px-6 text-gray-800">
 
-  <div class="max-w-4xl mx-auto">
-    <!-- Welcome Header -->
-    <div class="bg-white rounded-3xl shadow-lg p-10 text-center mb-10">
-      <h1 class="text-4xl font-bold text-gray-900 mb-4">Welcome to Your Volunteer Dashboard</h1>
-      <p class="text-xl text-gray-600">Thank you for serving with the Houston World Cup Prayer City Movement.</p>
-      <p class="text-gray-500 text-sm mt-3">Your shift selections are confirmed by email after you submit the volunteer form.</p>
-    </div>
+  <div id="setup-banner" class="hidden max-w-4xl mx-auto mb-8 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900">
+    <h2 class="font-bold text-lg mb-2">Firebase is not configured yet</h2>
+    <p class="text-sm mb-2">Edit <code class="bg-white px-1 rounded">js/firebase-config.js</code> with your Web app keys from the Firebase console, then deploy again.</p>
+    <p class="text-sm">See <code class="bg-white px-1 rounded">FIREBASE_SETUP.md</code> in this repository.</p>
+  </div>
 
-    <!-- Your Selected Shifts -->
-    <div class="bg-white rounded-3xl shadow-lg p-8 mb-10">
-      <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
-        📅 Your Selected Shifts
-      </h2>
-      <div id="shifts-container" class="space-y-4 text-gray-700">
-        <p class="text-gray-500 text-center py-12">Your selected shifts will appear in the confirmation we send after you submit the sign-up form on the main page.</p>
+  <div id="auth-gate" class="max-w-md mx-auto bg-white rounded-3xl shadow-lg p-8 mb-10">
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">Volunteer sign in</h1>
+    <p class="text-gray-600 text-sm mb-6">Use the email invite we sent, or sign in with your password if you already set one.</p>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <input type="email" id="gate-email" class="w-full rounded-xl border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none" placeholder="you@example.com" />
       </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Password <span class="text-gray-400 font-normal">(if set)</span></label>
+        <input type="password" id="gate-password" class="w-full rounded-xl border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none" placeholder="Optional" />
+      </div>
+      <button type="button" id="btn-password-signin" class="w-full py-3 rounded-xl bg-linkedin hover:bg-linkedin-dark text-white font-semibold transition">
+        Sign in with password
+      </button>
+      <button type="button" id="btn-email-link" class="w-full py-3 rounded-xl border-2 border-linkedin text-linkedin font-semibold hover:bg-blue-50 transition">
+        Email me a sign-in link
+      </button>
+    </div>
+    <p id="gate-status" class="mt-4 text-sm text-gray-600 min-h-[1.25rem]"></p>
+  </div>
+
+  <div id="dashboard-main" class="hidden max-w-4xl mx-auto">
+    <div class="bg-white rounded-3xl shadow-lg p-10 text-center mb-10">
+      <h1 class="text-4xl font-bold text-gray-900 mb-4">Your volunteer dashboard</h1>
+      <p id="welcome-line" class="text-xl text-gray-600"></p>
     </div>
 
-    <!-- Bible Study & Prayer -->
+    <div class="bg-white rounded-3xl shadow-lg p-8 mb-10">
+      <h2 class="text-2xl font-semibold mb-4 flex items-center gap-3">
+        <i class="fas fa-user text-linkedin"></i> Your information
+      </h2>
+      <dl class="grid sm:grid-cols-2 gap-4 text-left">
+        <div><dt class="text-sm text-gray-500">Email</dt><dd id="fv-email" class="font-medium"></dd></div>
+        <div><dt class="text-sm text-gray-500">Phone</dt><dd id="fv-phone" class="font-medium"></dd></div>
+        <div class="sm:col-span-2"><dt class="text-sm text-gray-500">Shifts</dt><dd id="fv-shifts" class="font-medium whitespace-pre-wrap"></dd></div>
+        <div class="sm:col-span-2"><dt class="text-sm text-gray-500">Notes</dt><dd id="fv-notes" class="font-medium whitespace-pre-wrap"></dd></div>
+      </dl>
+    </div>
+
+    <div id="password-card" class="bg-white rounded-3xl shadow-lg p-8 mb-10">
+      <h2 class="text-2xl font-semibold mb-2">Sign in later with a password</h2>
+      <p class="text-gray-600 text-sm mb-4">Optional: create a password so you can return to this page without a new email link.</p>
+      <div class="grid sm:grid-cols-2 gap-4 max-w-xl">
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">New password</label>
+          <input type="password" id="new-pass" class="w-full rounded-xl border border-gray-300 px-4 py-2.5 outline-none focus:ring-2 focus:ring-linkedin" minlength="6" autocomplete="new-password" />
+        </div>
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Confirm</label>
+          <input type="password" id="new-pass2" class="w-full rounded-xl border border-gray-300 px-4 py-2.5 outline-none focus:ring-2 focus:ring-linkedin" minlength="6" autocomplete="new-password" />
+        </div>
+      </div>
+      <button type="button" id="btn-link-password" class="mt-4 px-6 py-3 rounded-xl bg-linkedin hover:bg-linkedin-dark text-white font-semibold transition">
+        Save password
+      </button>
+      <p id="pass-status" class="mt-2 text-sm text-gray-600 min-h-[1.25rem]"></p>
+      <p id="has-password-note" class="hidden mt-4 text-sm text-green-700 font-medium">You already have a password linked to this account.</p>
+    </div>
+
     <div class="bg-white rounded-3xl shadow-lg p-8 mb-10">
       <h2 class="text-2xl font-semibold mb-6">📖 Bible Study & Prayer Resources</h2>
       <div class="grid md:grid-cols-2 gap-6">
@@ -59,7 +112,6 @@
       </div>
     </div>
 
-    <!-- Upcoming Events -->
     <div class="bg-white rounded-3xl shadow-lg p-8 mb-10">
       <h2 class="text-2xl font-semibold mb-6">🎯 Upcoming Events</h2>
       <ul class="space-y-4 text-gray-700">
@@ -69,13 +121,213 @@
       </ul>
     </div>
 
-    <div class="text-center mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center">
+    <div class="text-center flex flex-col sm:flex-row gap-4 justify-center items-center">
       <a href="https://houston-world-cup-prayer-city.vercel.app/"
-         class="inline-flex items-center justify-center px-8 py-3 bg-linkedin hover:bg-linkedin-dark text-white rounded-2xl font-medium transition">
-        <i class="fas fa-arrow-left mr-2"></i> Back to volunteer sign-up
+         class="inline-flex items-center justify-center px-8 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-2xl font-medium transition">
+        <i class="fas fa-arrow-left mr-2"></i> Back to sign-up
       </a>
+      <button type="button" id="btn-signout" class="inline-flex items-center justify-center px-8 py-3 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-medium transition">
+        Sign out
+      </button>
     </div>
   </div>
 
+  <script>
+    (function () {
+      var cfg = window.__FIREBASE_CONFIG__ || {};
+      var invalid = !cfg.apiKey || cfg.apiKey === 'REPLACE_ME';
+
+      if (invalid) {
+        document.getElementById('setup-banner').classList.remove('hidden');
+        document.getElementById('auth-gate').classList.add('hidden');
+        return;
+      }
+
+      firebase.initializeApp(cfg);
+      var auth = firebase.auth();
+      var db = firebase.firestore();
+      var functions = firebase.app().functions('us-central1');
+
+      var els = {
+        setupBanner: document.getElementById('setup-banner'),
+        authGate: document.getElementById('auth-gate'),
+        dashboardMain: document.getElementById('dashboard-main'),
+        gateEmail: document.getElementById('gate-email'),
+        gatePassword: document.getElementById('gate-password'),
+        gateStatus: document.getElementById('gate-status'),
+        btnPasswordSignin: document.getElementById('btn-password-signin'),
+        btnEmailLink: document.getElementById('btn-email-link'),
+        welcomeLine: document.getElementById('welcome-line'),
+        fvEmail: document.getElementById('fv-email'),
+        fvPhone: document.getElementById('fv-phone'),
+        fvShifts: document.getElementById('fv-shifts'),
+        fvNotes: document.getElementById('fv-notes'),
+        newPass: document.getElementById('new-pass'),
+        newPass2: document.getElementById('new-pass2'),
+        btnLinkPassword: document.getElementById('btn-link-password'),
+        passStatus: document.getElementById('pass-status'),
+        hasPasswordNote: document.getElementById('has-password-note'),
+        passwordCard: document.getElementById('password-card'),
+        btnSignout: document.getElementById('btn-signout'),
+      };
+
+      function showGate() {
+        els.authGate.classList.remove('hidden');
+        els.dashboardMain.classList.add('hidden');
+      }
+
+      function showDash() {
+        els.authGate.classList.add('hidden');
+        els.dashboardMain.classList.remove('hidden');
+      }
+
+      function setGateStatus(msg, isErr) {
+        els.gateStatus.textContent = msg || '';
+        els.gateStatus.className = 'mt-4 text-sm min-h-[1.25rem] ' + (isErr ? 'text-red-600' : 'text-gray-600');
+      }
+
+      function completeEmailLinkIfNeeded() {
+        if (!firebase.auth().isSignInWithEmailLink(window.location.href)) {
+          return Promise.resolve(false);
+        }
+        var email = window.localStorage.getItem('emailForSignIn');
+        if (!email) {
+          email = window.prompt('Enter the same email address we used for your invite:');
+        }
+        if (!email) {
+          setGateStatus('Email required to finish sign-in.', true);
+          return Promise.resolve(false);
+        }
+        return auth
+          .signInWithEmailLink(email, window.location.href)
+          .then(function () {
+            window.localStorage.removeItem('emailForSignIn');
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return true;
+          })
+          .catch(function (e) {
+            setGateStatus(e.message || 'Sign-in failed', true);
+            return false;
+          });
+      }
+
+      function mergeProfile() {
+        var mergeFn = functions.httpsCallable('mergeVolunteerProfile');
+        return mergeFn().catch(function (e) {
+          console.warn('mergeVolunteerProfile', e);
+        });
+      }
+
+      function loadVolunteerDoc(uid) {
+        return db
+          .collection('volunteers')
+          .doc(uid)
+          .get()
+          .then(function (snap) {
+            var d = snap.exists ? snap.data() : {};
+            els.fvEmail.textContent = d.email || auth.currentUser.email || '—';
+            els.fvPhone.textContent = d.phone || '—';
+            els.fvShifts.textContent = d.shifts || '—';
+            els.fvNotes.textContent = d.notes || '—';
+            var name = d.name || (auth.currentUser.email || '').split('@')[0];
+            els.welcomeLine.textContent = 'Hello, ' + name + '!';
+
+            var hasPwd = false;
+            (auth.currentUser.providerData || []).forEach(function (p) {
+              if (p.providerId === 'password') hasPwd = true;
+            });
+            if (hasPwd) {
+              els.hasPasswordNote.classList.remove('hidden');
+              els.passwordCard.querySelectorAll('#new-pass, #new-pass2, #btn-link-password').forEach(function (n) {
+                n.disabled = true;
+              });
+            }
+          });
+      }
+
+      function refreshUI(user) {
+        if (!user) {
+          showGate();
+          return;
+        }
+        showDash();
+        mergeProfile().then(function () {
+          return loadVolunteerDoc(user.uid);
+        });
+      }
+
+      auth.onAuthStateChanged(function (user) {
+        refreshUI(user);
+      });
+
+      completeEmailLinkIfNeeded().then(function () {});
+
+      els.btnPasswordSignin.addEventListener('click', function () {
+        var email = (els.gateEmail.value || '').trim();
+        var pw = els.gatePassword.value || '';
+        if (!email || !pw) {
+          setGateStatus('Enter email and password.', true);
+          return;
+        }
+        setGateStatus('Signing in…');
+        auth
+          .signInWithEmailAndPassword(email, pw)
+          .catch(function (e) {
+            setGateStatus(e.message || 'Sign-in failed', true);
+          });
+      });
+
+      els.btnEmailLink.addEventListener('click', function () {
+        var email = (els.gateEmail.value || '').trim();
+        if (!email) {
+          setGateStatus('Enter your email first.', true);
+          return;
+        }
+        var url = window.location.origin + window.location.pathname;
+        var settings = { url: url, handleCodeInApp: true };
+        setGateStatus('Sending link…');
+        auth
+          .sendSignInLinkToEmail(email, settings)
+          .then(function () {
+            window.localStorage.setItem('emailForSignIn', email);
+            setGateStatus('Check your inbox for the sign-in link.');
+          })
+          .catch(function (e) {
+            setGateStatus(e.message || 'Could not send link', true);
+          });
+      });
+
+      els.btnLinkPassword.addEventListener('click', function () {
+        var p1 = els.newPass.value;
+        var p2 = els.newPass2.value;
+        if (p1.length < 6) {
+          els.passStatus.textContent = 'Use at least 6 characters.';
+          return;
+        }
+        if (p1 !== p2) {
+          els.passStatus.textContent = 'Passwords do not match.';
+          return;
+        }
+        var user = auth.currentUser;
+        var email = user && user.email;
+        if (!user || !email) return;
+        els.passStatus.textContent = 'Saving…';
+        var cred = firebase.auth.EmailAuthProvider.credential(email, p1);
+        user
+          .linkWithCredential(cred)
+          .then(function () {
+            els.passStatus.textContent = 'Password saved. You can sign in with email and password next time.';
+            els.hasPasswordNote.classList.remove('hidden');
+          })
+          .catch(function (e) {
+            els.passStatus.textContent = e.message || 'Could not save password';
+          });
+      });
+
+      els.btnSignout.addEventListener('click', function () {
+        auth.signOut();
+      });
+    })();
+  </script>
 </body>
 </html>
