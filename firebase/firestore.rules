@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Populated by Cloud Functions only. Clients never read this directly.
+    match /volunteer_onboarding/{docId} {
+      allow read, write: if false;
+    }
+
+    // Volunteer profile (document ID = Firebase Auth uid).
+    match /volunteers/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
+  }
+}

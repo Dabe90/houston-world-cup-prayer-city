@@ -1,0 +1,17 @@
+{
+  "name": "prayer-city-functions",
+  "description": "Firebase Cloud Functions for Houston Prayer City volunteer invites",
+  "engines": {
+    "node": "24"
+  },
+  "main": "index.js",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^5.1.1"
+  }
+}

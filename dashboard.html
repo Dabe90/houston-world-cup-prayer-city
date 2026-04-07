@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Volunteer Dashboard — Houston World Cup Prayer City</title>
+  <title>Volunteer Hub — Houston World Cup Prayer City</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -11,8 +11,20 @@
       theme: {
         extend: {
           colors: {
-            linkedin: '#0A66C2',
-            'linkedin-dark': '#004182',
+            brand: {
+              DEFAULT: '#0f3d5c',
+              light: '#1a5f8a',
+              soft: '#e8f4fc',
+              accent: '#c9a227',
+            },
+          },
+          fontFamily: {
+            display: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
+            sans: ['system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+          boxShadow: {
+            card: '0 4px 24px rgba(15, 61, 92, 0.08), 0 1px 3px rgba(0,0,0,0.06)',
+            lift: '0 12px 40px rgba(15, 61, 92, 0.12)',
           },
         },
       },
@@ -23,122 +35,294 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
   <script src="js/firebase-config.js"></script>
 
   <style>
     body { font-family: system-ui, sans-serif; }
+    .hero-mesh {
+      background:
+        linear-gradient(135deg, rgba(15, 61, 92, 0.92) 0%, rgba(26, 95, 138, 0.85) 50%, rgba(15, 61, 92, 0.9) 100%),
+        url('https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1600&q=80') center/cover no-repeat;
+    }
+    .auth-visual-grid {
+      background-image:
+        linear-gradient(135deg, rgba(15, 61, 92, 0.75), rgba(26, 95, 138, 0.65)),
+        url('https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=1200&q=80');
+      background-size: cover;
+      background-position: center;
+    }
+    .program-card-img { transition: transform 0.5s ease; }
+    .program-card:hover .program-card-img { transform: scale(1.06); }
+    .verse-font { font-family: Georgia, Cambria, serif; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-up { animation: fadeUp 0.6s ease forwards; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="min-h-screen bg-gray-50 py-12 px-6 text-gray-800">
+<body class="min-h-screen bg-slate-100 text-slate-800">
 
-  <div id="setup-banner" class="hidden max-w-4xl mx-auto mb-8 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900">
+  <div id="setup-banner" class="hidden max-w-3xl mx-auto m-6 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900">
     <h2 class="font-bold text-lg mb-2">Firebase is not configured yet</h2>
     <p class="text-sm mb-2">Edit <code class="bg-white px-1 rounded">js/firebase-config.js</code> with your Web app keys from the Firebase console, then deploy again.</p>
-    <p class="text-sm">See <code class="bg-white px-1 rounded">FIREBASE_SETUP.md</code> in this repository.</p>
+    <p class="text-sm">Enable <strong>Storage</strong> in Firebase Console and run <code class="bg-white px-1 rounded">firebase deploy --only storage</code> for profile photos.</p>
   </div>
 
-  <div id="auth-gate" class="max-w-md mx-auto bg-white rounded-3xl shadow-lg p-8 mb-10">
-    <h1 class="text-2xl font-bold text-gray-900 mb-2">Volunteer sign in</h1>
-    <p class="text-gray-600 text-sm mb-6">Use the email invite we sent, or sign in with your password if you already set one.</p>
-    <div class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-        <input type="email" id="gate-email" class="w-full rounded-xl border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none" placeholder="you@example.com" />
+  <!-- Sign-in gate -->
+  <div id="auth-gate" class="min-h-screen flex flex-col lg:flex-row">
+    <div class="auth-visual-grid lg:w-1/2 min-h-[220px] lg:min-h-screen relative flex items-end p-10 text-white">
+      <div class="relative z-10 max-w-md">
+        <p class="text-brand-accent font-semibold tracking-wide uppercase text-sm mb-2">Daughter Team · Prayer City</p>
+        <h1 class="text-3xl lg:text-4xl font-display font-semibold leading-tight mb-4">
+          Welcome back, servant heart. Your shift in prayer matters.
+        </h1>
+        <p class="text-white/90 text-sm leading-relaxed verse-font italic">
+          “How can a young person stay on the path of purity? By living according to your word.” — Psalm 119:9 (NIV)
+        </p>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Password <span class="text-gray-400 font-normal">(if set)</span></label>
-        <input type="password" id="gate-password" class="w-full rounded-xl border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none" placeholder="Optional" />
-      </div>
-      <button type="button" id="btn-password-signin" class="w-full py-3 rounded-xl bg-linkedin hover:bg-linkedin-dark text-white font-semibold transition">
-        Sign in with password
-      </button>
-      <button type="button" id="btn-email-link" class="w-full py-3 rounded-xl border-2 border-linkedin text-linkedin font-semibold hover:bg-blue-50 transition">
-        Email me a sign-in link
-      </button>
     </div>
-    <p id="gate-status" class="mt-4 text-sm text-gray-600 min-h-[1.25rem]"></p>
+    <div class="flex-1 flex items-center justify-center p-8 bg-white">
+      <div class="w-full max-w-md">
+        <div class="mb-8">
+          <h2 class="text-2xl font-bold text-slate-900">Sign in to your hub</h2>
+          <p class="text-slate-600 text-sm mt-2">Use the email invite we sent, or your password if you already created one.</p>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <input type="email" id="gate-email" class="w-full rounded-xl border border-slate-200 px-4 py-3 focus:ring-2 focus:ring-brand-light focus:border-brand outline-none transition" placeholder="you@example.com" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Password <span class="text-slate-400 font-normal">(optional)</span></label>
+            <input type="password" id="gate-password" class="w-full rounded-xl border border-slate-200 px-4 py-3 focus:ring-2 focus:ring-brand-light outline-none transition" placeholder="If you set one" />
+          </div>
+          <button type="button" id="btn-password-signin" class="w-full py-3.5 rounded-xl bg-brand hover:bg-brand-light text-white font-semibold transition shadow-card">
+            Sign in with password
+          </button>
+          <button type="button" id="btn-email-link" class="w-full py-3.5 rounded-xl border-2 border-brand text-brand font-semibold hover:bg-brand-soft transition">
+            <i class="fas fa-envelope mr-2"></i>Email me a sign-in link
+          </button>
+        </div>
+        <p id="gate-status" class="mt-4 text-sm text-slate-600 min-h-[1.25rem]"></p>
+      </div>
+    </div>
   </div>
 
-  <div id="dashboard-main" class="hidden max-w-4xl mx-auto">
-    <div class="bg-white rounded-3xl shadow-lg p-10 text-center mb-10">
-      <h1 class="text-4xl font-bold text-gray-900 mb-4">Your volunteer dashboard</h1>
-      <p id="welcome-line" class="text-xl text-gray-600"></p>
-    </div>
-
-    <div class="bg-white rounded-3xl shadow-lg p-8 mb-10">
-      <h2 class="text-2xl font-semibold mb-4 flex items-center gap-3">
-        <i class="fas fa-user text-linkedin"></i> Your information
-      </h2>
-      <dl class="grid sm:grid-cols-2 gap-4 text-left">
-        <div><dt class="text-sm text-gray-500">Email</dt><dd id="fv-email" class="font-medium"></dd></div>
-        <div><dt class="text-sm text-gray-500">Phone</dt><dd id="fv-phone" class="font-medium"></dd></div>
-        <div class="sm:col-span-2"><dt class="text-sm text-gray-500">Shifts</dt><dd id="fv-shifts" class="font-medium whitespace-pre-wrap"></dd></div>
-        <div class="sm:col-span-2"><dt class="text-sm text-gray-500">Notes</dt><dd id="fv-notes" class="font-medium whitespace-pre-wrap"></dd></div>
-      </dl>
-    </div>
-
-    <div id="password-card" class="bg-white rounded-3xl shadow-lg p-8 mb-10">
-      <h2 class="text-2xl font-semibold mb-2">Sign in later with a password</h2>
-      <p class="text-gray-600 text-sm mb-4">Optional: create a password so you can return to this page without a new email link.</p>
-      <div class="grid sm:grid-cols-2 gap-4 max-w-xl">
-        <div class="sm:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 mb-1">New password</label>
-          <input type="password" id="new-pass" class="w-full rounded-xl border border-gray-300 px-4 py-2.5 outline-none focus:ring-2 focus:ring-linkedin" minlength="6" autocomplete="new-password" />
+  <!-- Main dashboard (signed in) -->
+  <div id="dashboard-main" class="hidden pb-16">
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white text-sm font-bold">PC</div>
+          <div>
+            <span class="font-semibold text-slate-900 text-sm">Prayer City</span>
+            <span class="hidden sm:inline text-slate-400 text-xs ml-2">Volunteer hub</span>
+          </div>
         </div>
-        <div class="sm:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Confirm</label>
-          <input type="password" id="new-pass2" class="w-full rounded-xl border border-gray-300 px-4 py-2.5 outline-none focus:ring-2 focus:ring-linkedin" minlength="6" autocomplete="new-password" />
+        <div class="flex items-center gap-3">
+          <span id="nav-welcome" class="hidden sm:inline text-sm text-slate-600 max-w-[200px] truncate"></span>
+          <button type="button" id="btn-signout" class="text-sm font-medium text-slate-600 hover:text-red-600 transition px-3 py-1.5 rounded-lg hover:bg-slate-50">
+            <i class="fas fa-sign-out-alt mr-1"></i> Sign out
+          </button>
         </div>
       </div>
-      <button type="button" id="btn-link-password" class="mt-4 px-6 py-3 rounded-xl bg-linkedin hover:bg-linkedin-dark text-white font-semibold transition">
-        Save password
-      </button>
-      <p id="pass-status" class="mt-2 text-sm text-gray-600 min-h-[1.25rem]"></p>
-      <p id="has-password-note" class="hidden mt-4 text-sm text-green-700 font-medium">You already have a password linked to this account.</p>
-    </div>
+    </nav>
 
-    <div class="bg-white rounded-3xl shadow-lg p-8 mb-10">
-      <h2 class="text-2xl font-semibold mb-6">📖 Bible Study & Prayer Resources</h2>
-      <div class="grid md:grid-cols-2 gap-6">
-        <div class="p-6 border border-gray-200 rounded-2xl">
-          <h3 class="font-semibold mb-3">Dear Daughter Bible Study</h3>
-          <p class="text-gray-600">Weekly materials and discussion guides tailored for volunteers.</p>
-        </div>
-        <div class="p-6 border border-gray-200 rounded-2xl">
-          <h3 class="font-semibold mb-3">Daily Prayer Guide</h3>
-          <p class="text-gray-600">Prayer points for the Houston World Cup outreach.</p>
+    <!-- Hero -->
+    <header class="hero-mesh text-white relative overflow-hidden">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-14 lg:py-20">
+        <div class="grid lg:grid-cols-2 gap-10 items-center">
+          <div class="animate-fade-up">
+            <p class="text-brand-accent font-semibold uppercase tracking-widest text-xs mb-4">Youth · Scripture · Houston 2026</p>
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-display font-bold leading-tight mb-6">
+              A space for young voices rooted in the Word.
+            </h1>
+            <p id="welcome-line" class="text-lg text-white/95 font-medium mb-6"></p>
+            <p class="verse-font text-white/85 italic text-lg leading-relaxed border-l-4 border-brand-accent pl-5">
+              “Your word is a lamp for my feet, a light on my path.” — Psalm 119:105
+            </p>
+          </div>
+          <div class="hidden lg:grid grid-cols-2 gap-3 animate-fade-up" style="animation-delay: 0.15s">
+            <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&q=80" alt="Young people reading together" class="rounded-2xl object-cover h-44 w-full shadow-lift border border-white/20" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=400&q=80" alt="Open Bible and study" class="rounded-2xl object-cover h-44 w-full shadow-lift border border-white/20 mt-8" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1529390079861-591de354faf5?w=400&q=80" alt="Youth in community" class="rounded-2xl object-cover h-44 w-full shadow-lift border border-white/20 -mt-4" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1491841550275-de78548fa1af?w=400&q=80" alt="Reading scripture" class="rounded-2xl object-cover h-44 w-full shadow-lift border border-white/20" loading="lazy" />
+          </div>
         </div>
       </div>
-    </div>
+    </header>
 
-    <div class="bg-white rounded-3xl shadow-lg p-8 mb-10">
-      <h2 class="text-2xl font-semibold mb-6">🎯 Upcoming Events</h2>
-      <ul class="space-y-4 text-gray-700">
-        <li class="flex gap-4"><span class="font-medium w-40">June 14, 2026</span><span>Sunday Shifts (10 AM – 3 PM)</span></li>
-        <li class="flex gap-4"><span class="font-medium w-40">June 26, 2026</span><span>Friday Evening Coverage (4 PM – 9 PM)</span></li>
-        <li class="flex gap-4"><span class="font-medium w-40">July 4, 2026</span><span>Saturday Shifts</span></li>
-      </ul>
-    </div>
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 relative z-10">
+      <div class="grid lg:grid-cols-12 gap-6">
 
-    <div class="text-center flex flex-col sm:flex-row gap-4 justify-center items-center">
-      <a href="https://houston-world-cup-prayer-city.vercel.app/"
-         class="inline-flex items-center justify-center px-8 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-2xl font-medium transition">
-        <i class="fas fa-arrow-left mr-2"></i> Back to sign-up
-      </a>
-      <button type="button" id="btn-signout" class="inline-flex items-center justify-center px-8 py-3 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-medium transition">
-        Sign out
-      </button>
+        <!-- Profile column -->
+        <aside class="lg:col-span-4 space-y-6">
+          <div class="bg-white rounded-2xl shadow-card overflow-hidden border border-slate-100">
+            <div class="h-28 bg-gradient-to-r from-brand via-brand-light to-sky-600 relative">
+              <div class="absolute inset-0 opacity-30 bg-[url('https://images.unsplash.com/photo-1473163928189-364b2c4e1135?w=600&q=80')] bg-cover bg-center"></div>
+            </div>
+            <div class="px-6 pb-6 relative">
+              <div class="flex flex-col items-center -mt-14">
+                <div class="relative group">
+                  <div id="profile-avatar-wrap" class="w-28 h-28 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-slate-200 flex items-center justify-center">
+                    <img id="profile-avatar-img" src="" alt="" class="w-full h-full object-cover hidden" />
+                    <span id="profile-avatar-initial" class="text-3xl font-bold text-brand"></span>
+                  </div>
+                  <label class="absolute bottom-0 right-0 w-9 h-9 rounded-xl bg-brand text-white flex items-center justify-center cursor-pointer shadow-lg hover:bg-brand-light transition ring-2 ring-white" title="Change photo">
+                    <i class="fas fa-camera text-sm"></i>
+                    <input type="file" id="profile-avatar-input" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" />
+                  </label>
+                </div>
+                <h2 id="profile-display-name" class="mt-4 text-xl font-bold text-slate-900 text-center"></h2>
+                <p class="text-sm text-brand font-medium">Volunteer · Daughter Team</p>
+                <p id="profile-upload-status" class="mt-2 text-xs text-slate-500 min-h-[1rem] text-center"></p>
+              </div>
+              <dl class="mt-6 space-y-3 text-sm border-t border-slate-100 pt-5">
+                <div class="flex justify-between gap-2">
+                  <dt class="text-slate-500">Email</dt>
+                  <dd id="fv-email" class="font-medium text-slate-800 text-right break-all"></dd>
+                </div>
+                <div class="flex justify-between gap-2">
+                  <dt class="text-slate-500">Phone</dt>
+                  <dd id="fv-phone" class="font-medium text-slate-800 text-right"></dd>
+                </div>
+              </dl>
+              <div class="mt-4">
+                <dt class="text-slate-500 text-xs uppercase tracking-wide mb-1">Shifts</dt>
+                <dd id="fv-shifts" class="text-sm font-medium text-slate-800 whitespace-pre-wrap"></dd>
+              </div>
+              <div class="mt-3">
+                <dt class="text-slate-500 text-xs uppercase tracking-wide mb-1">Notes</dt>
+                <dd id="fv-notes" class="text-sm text-slate-700 whitespace-pre-wrap"></dd>
+              </div>
+            </div>
+          </div>
+
+          <a href="https://houston-world-cup-prayer-city.vercel.app/"
+             class="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50 transition shadow-sm">
+            <i class="fas fa-arrow-left"></i> Back to sign-up
+          </a>
+        </aside>
+
+        <!-- Main feed -->
+        <main class="lg:col-span-8 space-y-8">
+
+          <section>
+            <div class="flex items-end justify-between mb-4">
+              <div>
+                <h2 class="text-2xl font-bold text-slate-900">Upcoming programs</h2>
+                <p class="text-sm text-slate-600 mt-1">Save these dates — your presence multiplies prayer.</p>
+              </div>
+            </div>
+            <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+              <article class="program-card group bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden cursor-pointer">
+                <div class="h-44 overflow-hidden relative">
+                  <img class="program-card-img w-full h-full object-cover" src="https://images.unsplash.com/photo-1511632765276-a27960c3a1e8?w=600&q=80" alt="Prayer and worship" loading="lazy" />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                  <span class="absolute bottom-3 left-3 text-white font-bold text-sm">June 14, 2026</span>
+                </div>
+                <div class="p-4">
+                  <h3 class="font-semibold text-slate-900">Sunday shifts</h3>
+                  <p class="text-sm text-slate-600 mt-1">10 AM – 3 PM · Stadium prayer coverage</p>
+                </div>
+              </article>
+              <article class="program-card group bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+                <div class="h-44 overflow-hidden relative">
+                  <img class="program-card-img w-full h-full object-cover" src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=600&q=80" alt="Gathered crowd" loading="lazy" />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                  <span class="absolute bottom-3 left-3 text-white font-bold text-sm">June 26, 2026</span>
+                </div>
+                <div class="p-4">
+                  <h3 class="font-semibold text-slate-900">Friday evening</h3>
+                  <p class="text-sm text-slate-600 mt-1">4 PM – 9 PM · Outreach &amp; intercession</p>
+                </div>
+              </article>
+              <article class="program-card group bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden sm:col-span-2 xl:col-span-1">
+                <div class="h-44 overflow-hidden relative">
+                  <img class="program-card-img w-full h-full object-cover" src="https://images.unsplash.com/photo-1529078155058-5d716f45d604?w=600&q=80" alt="Community hands together" loading="lazy" />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                  <span class="absolute bottom-3 left-3 text-white font-bold text-sm">July 4, 2026</span>
+                </div>
+                <div class="p-4">
+                  <h3 class="font-semibold text-slate-900">Saturday shifts</h3>
+                  <p class="text-sm text-slate-600 mt-1">Holiday weekend · All hands welcome</p>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
+            <h2 class="text-xl font-bold text-slate-900 mb-2">In the Word together</h2>
+            <p class="text-sm text-slate-600 mb-6">Young people carrying Scripture — the same Spirit that moved the early church moves us today.</p>
+            <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x">
+              <figure class="flex-shrink-0 w-64 snap-start rounded-xl overflow-hidden shadow-md border border-slate-100">
+                <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&q=80" alt="Students studying" class="h-40 w-full object-cover" loading="lazy" />
+                <figcaption class="p-3 bg-brand-soft text-xs text-brand font-medium verse-font italic">“I have hidden your word in my heart…” — Ps. 119:11</figcaption>
+              </figure>
+              <figure class="flex-shrink-0 w-64 snap-start rounded-xl overflow-hidden shadow-md border border-slate-100">
+                <img src="https://images.unsplash.com/photo-1491841550275-de78548fa1af?w=400&q=80" alt="Reading" class="h-40 w-full object-cover" loading="lazy" />
+                <figcaption class="p-3 bg-brand-soft text-xs text-brand font-medium verse-font italic">“Bind them on your fingers…” — Prov. 7:3</figcaption>
+              </figure>
+              <figure class="flex-shrink-0 w-64 snap-start rounded-xl overflow-hidden shadow-md border border-slate-100">
+                <img src="https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=400&q=80" alt="Books and learning" class="h-40 w-full object-cover" loading="lazy" />
+                <figcaption class="p-3 bg-brand-soft text-xs text-brand font-medium verse-font italic">“All Scripture is God-breathed…” — 2 Tim. 3:16</figcaption>
+              </figure>
+              <figure class="flex-shrink-0 w-64 snap-start rounded-xl overflow-hidden shadow-md border border-slate-100">
+                <img src="https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=400&q=80" alt="Faith community" class="h-40 w-full object-cover" loading="lazy" />
+                <figcaption class="p-3 bg-brand-soft text-xs text-brand font-medium verse-font italic">“Let the message of Christ dwell among you…” — Col. 3:16</figcaption>
+              </figure>
+            </div>
+            <p class="text-xs text-slate-400 mt-4">Photos via Unsplash — community &amp; study imagery.</p>
+          </section>
+
+          <section class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
+            <h2 class="text-xl font-bold text-slate-900 mb-4">Resources</h2>
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div class="p-5 rounded-xl bg-slate-50 border border-slate-100 hover:border-brand/20 transition">
+                <h3 class="font-semibold text-slate-900">Dear Daughter Bible study</h3>
+                <p class="text-sm text-slate-600 mt-2">Weekly materials and discussion guides for volunteers.</p>
+              </div>
+              <div class="p-5 rounded-xl bg-slate-50 border border-slate-100 hover:border-brand/20 transition">
+                <h3 class="font-semibold text-slate-900">Daily prayer guide</h3>
+                <p class="text-sm text-slate-600 mt-2">Prayer points for the Houston World Cup outreach.</p>
+              </div>
+            </div>
+          </section>
+
+          <section id="password-card" class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
+            <h2 class="text-xl font-bold text-slate-900 mb-2">Password for quick return</h2>
+            <p class="text-slate-600 text-sm mb-4">Optional — set a password so you can skip email links next time.</p>
+            <div class="grid sm:grid-cols-2 gap-4 max-w-xl">
+              <div class="sm:col-span-2">
+                <label class="block text-sm font-medium text-slate-700 mb-1">New password</label>
+                <input type="password" id="new-pass" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light" minlength="6" autocomplete="new-password" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Confirm</label>
+                <input type="password" id="new-pass2" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light" minlength="6" autocomplete="new-password" />
+              </div>
+            </div>
+            <button type="button" id="btn-link-password" class="mt-4 px-6 py-3 rounded-xl bg-brand hover:bg-brand-light text-white font-semibold transition">
+              Save password
+            </button>
+            <p id="pass-status" class="mt-2 text-sm text-slate-600 min-h-[1.25rem]"></p>
+            <p id="has-password-note" class="hidden mt-4 text-sm text-emerald-700 font-medium">You already have a password linked to this account.</p>
+          </section>
+        </main>
+      </div>
     </div>
   </div>
 
   <script>
     (function () {
-      /** Must match Firebase Auth → Settings → Authorized domains host and Cloud Function SIGNIN_CONTINUE_URL. */
       var EMAIL_LINK_CONTINUE_URL =
         'https://houston-world-cup-prayer-city.vercel.app/dashboard.html';
 
-      /** Delivers sign-in link via Apps Script + Gmail (same path as sheet invites). Deploy volunteerSelfServeSignInMail + secrets first. */
       var SELF_SERVE_SIGNIN_URL =
         'https://us-central1-bible-study-dashboard-99f2d.cloudfunctions.net/volunteerSelfServeSignInMail';
 
@@ -154,6 +338,7 @@
       firebase.initializeApp(cfg);
       var auth = firebase.auth();
       var db = firebase.firestore();
+      var storage = firebase.storage();
       var functions = firebase.app().functions('us-central1');
 
       var els = {
@@ -166,6 +351,12 @@
         btnPasswordSignin: document.getElementById('btn-password-signin'),
         btnEmailLink: document.getElementById('btn-email-link'),
         welcomeLine: document.getElementById('welcome-line'),
+        navWelcome: document.getElementById('nav-welcome'),
+        profileDisplayName: document.getElementById('profile-display-name'),
+        profileAvatarImg: document.getElementById('profile-avatar-img'),
+        profileAvatarInitial: document.getElementById('profile-avatar-initial'),
+        profileAvatarInput: document.getElementById('profile-avatar-input'),
+        profileUploadStatus: document.getElementById('profile-upload-status'),
         fvEmail: document.getElementById('fv-email'),
         fvPhone: document.getElementById('fv-phone'),
         fvShifts: document.getElementById('fv-shifts'),
@@ -191,7 +382,21 @@
 
       function setGateStatus(msg, isErr) {
         els.gateStatus.textContent = msg || '';
-        els.gateStatus.className = 'mt-4 text-sm min-h-[1.25rem] ' + (isErr ? 'text-red-600' : 'text-gray-600');
+        els.gateStatus.className = 'mt-4 text-sm min-h-[1.25rem] ' + (isErr ? 'text-red-600' : 'text-slate-600');
+      }
+
+      function setAvatarFromUser(displayName, photoURL) {
+        var initial = (displayName || 'V').trim().charAt(0).toUpperCase() || 'V';
+        if (photoURL) {
+          els.profileAvatarImg.src = photoURL;
+          els.profileAvatarImg.classList.remove('hidden');
+          els.profileAvatarInitial.classList.add('hidden');
+        } else {
+          els.profileAvatarImg.removeAttribute('src');
+          els.profileAvatarImg.classList.add('hidden');
+          els.profileAvatarInitial.textContent = initial;
+          els.profileAvatarInitial.classList.remove('hidden');
+        }
       }
 
       function completeEmailLinkIfNeeded() {
@@ -238,7 +443,13 @@
             els.fvShifts.textContent = d.shifts || '—';
             els.fvNotes.textContent = d.notes || '—';
             var name = d.name || (auth.currentUser.email || '').split('@')[0];
-            els.welcomeLine.textContent = 'Hello, ' + name + '!';
+            els.profileDisplayName.textContent = name;
+            els.welcomeLine.textContent =
+              "We're glad you're here, " + name + " — thank you for standing in the gap.";
+            els.navWelcome.textContent = 'Hi, ' + name.split(' ')[0];
+
+            var photoURL = d.photoURL || (auth.currentUser.photoURL || '');
+            setAvatarFromUser(name, photoURL);
 
             var hasPwd = false;
             (auth.currentUser.providerData || []).forEach(function (p) {
@@ -252,6 +463,44 @@
             }
           });
       }
+
+      els.profileAvatarInput.addEventListener('change', function (ev) {
+        var file = ev.target.files && ev.target.files[0];
+        ev.target.value = '';
+        if (!file || !file.type.match(/^image\//)) return;
+        if (file.size > 3 * 1024 * 1024) {
+          els.profileUploadStatus.textContent = 'Image must be under 3 MB.';
+          return;
+        }
+        var user = auth.currentUser;
+        if (!user) return;
+
+        els.profileUploadStatus.textContent = 'Uploading…';
+        var path = 'volunteer_photos/' + user.uid + '/avatar.jpg';
+        var ref = storage.ref(path);
+        var metadata = { contentType: file.type };
+
+        ref
+          .put(file, metadata)
+          .then(function () {
+            return ref.getDownloadURL();
+          })
+          .then(function (url) {
+            return db.collection('volunteers').doc(user.uid).set({ photoURL: url }, { merge: true });
+          })
+          .then(function () {
+            els.profileUploadStatus.textContent = 'Profile photo saved.';
+            return loadVolunteerDoc(user.uid);
+          })
+          .catch(function (e) {
+            console.error('upload', e);
+            var msg = (e && e.code) || e.message || 'Upload failed';
+            if (e.code === 'storage/unauthorized') {
+              msg = 'Storage permission denied. Deploy storage rules and enable Storage in Firebase.';
+            }
+            els.profileUploadStatus.textContent = msg;
+          });
+      });
 
       function refreshUI(user) {
         if (!user) {
@@ -278,11 +527,9 @@
           return;
         }
         setGateStatus('Signing in…');
-        auth
-          .signInWithEmailAndPassword(email, pw)
-          .catch(function (e) {
-            setGateStatus(e.message || 'Sign-in failed', true);
-          });
+        auth.signInWithEmailAndPassword(email, pw).catch(function (e) {
+          setGateStatus(e.message || 'Sign-in failed', true);
+        });
       });
 
       function sendSignInLinkViaFirebaseClient(email) {

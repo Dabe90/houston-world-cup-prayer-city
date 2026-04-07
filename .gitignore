@@ -1,0 +1,9 @@
+firebase/functions/node_modules
+.firebase
+firebase-debug.log
+*.local
+.env
+.env.*
+
+.vercel
+.env*.local
