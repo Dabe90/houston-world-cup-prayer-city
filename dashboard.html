@@ -134,6 +134,10 @@
 
   <script>
     (function () {
+      /** Must match Firebase Auth → Settings → Authorized domains host and Cloud Function SIGNIN_CONTINUE_URL. */
+      var EMAIL_LINK_CONTINUE_URL =
+        'https://houston-world-cup-prayer-city.vercel.app/dashboard.html';
+
       var cfg = window.__FIREBASE_CONFIG__ || {};
       var invalid = !cfg.apiKey || cfg.apiKey === 'REPLACE_ME';
 
@@ -283,17 +287,25 @@
           setGateStatus('Enter your email first.', true);
           return;
         }
-        var url = window.location.origin + window.location.pathname;
-        var settings = { url: url, handleCodeInApp: true };
+        var settings = {
+          url: EMAIL_LINK_CONTINUE_URL,
+          handleCodeInApp: true,
+        };
         setGateStatus('Sending link…');
         auth
           .sendSignInLinkToEmail(email, settings)
           .then(function () {
             window.localStorage.setItem('emailForSignIn', email);
-            setGateStatus('Check your inbox for the sign-in link.');
+            setGateStatus(
+              'If mail does not arrive in ~2 minutes, check spam for sender from Firebase or "noreply".'
+            );
           })
           .catch(function (e) {
-            setGateStatus(e.message || 'Could not send link', true);
+            console.error('sendSignInLinkToEmail', e);
+            var detail =
+              (e && e.code ? e.code + ' — ' : '') +
+              (e && e.message ? e.message : 'Could not send link');
+            setGateStatus(detail, true);
           });
       });
 
