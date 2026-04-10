@@ -278,3 +278,87 @@ exports.mergeVolunteerProfile = onCall(async (request) => {
 
   return { merged: true };
 });
+
+/**
+ * Callable: logistics volunteers — headline from public RSS + practical event tip.
+ * Requires auth. Falls back to static tip if RSS fetch fails.
+ */
+exports.getLogisticsNewsTip = onCall({ cors: true }, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Sign in required.');
+  }
+
+  const fallback = {
+    ok: true,
+    headline: null,
+    source: null,
+    tip: 'Large-event baseline: map exits and choke points before crowds arrive; rotate rest for outdoor teams; keep one clear radio or chat channel for leads.',
+    usedFallback: true,
+  };
+
+  function buildTipFromHeadline(headline) {
+    const h = String(headline || '').toLowerCase();
+    let extra =
+      'For mega-events: add buffer time to rotations, pre-position water, and brief volunteers on hand signals if radios fail.';
+    if (h.includes('crowd') || h.includes('fan')) {
+      extra =
+        'Crowd flow: watch pinch points at gates and merch; stagger queues if wait times spike.';
+    }
+    if (h.includes('security') || h.includes('police') || h.includes('arrest')) {
+      extra =
+        'Security news: align with venue lead before redirecting crowds; pause non-essential movement during incidents.';
+    }
+    if (h.includes('weather') || h.includes('heat') || h.includes('rain')) {
+      extra =
+        'Weather impact: adjust shade, footing, and crowd comfort — increase water checks for staff and guests.';
+    }
+    if (h.includes('stadium') || h.includes('world cup') || h.includes('match')) {
+      extra =
+        'Match-day surges: plan ingress/egress waves; keep accessibility routes clear at all times.';
+    }
+    const short = String(headline || '').slice(0, 140);
+    return `${extra} Context: “${short}${headline && headline.length > 140 ? '…' : ''}”`;
+  }
+
+  try {
+    const res = await fetch(
+      'https://feeds.bbci.co.uk/sport/football/rss.xml',
+      { headers: { 'User-Agent': 'PrayerCityDashboard/1.0' } }
+    );
+    if (!res.ok) return fallback;
+    const xml = await res.text();
+    const titles = [];
+    const re = /<item[\s\S]*?<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/gi;
+    let m;
+    while ((m = re.exec(xml)) !== null && titles.length < 12) {
+      const t = m[1].replace(/\s+/g, ' ').trim();
+      if (t) titles.push(t);
+    }
+    if (titles.length === 0) {
+      const parts = xml.split('<item').slice(1);
+      for (const part of parts) {
+        const tm = part.match(
+          /<title>(?:<!\[CDATA\[([\s\S]*?)\]\]>|([^<]*))<\/title>/
+        );
+        if (tm) {
+          const t = (tm[1] || tm[2] || '').replace(/\s+/g, ' ').trim();
+          if (t) titles.push(t);
+        }
+        if (titles.length >= 12) break;
+      }
+    }
+    if (titles.length === 0) return fallback;
+    const day = Math.floor(Date.now() / 86400000);
+    const headline = titles[day % titles.length];
+    return {
+      ok: true,
+      headline,
+      source: 'BBC Sport (RSS)',
+      tip: buildTipFromHeadline(headline),
+      usedFallback: false,
+    };
+  } catch (e) {
+    console.error('getLogisticsNewsTip', e);
+    return fallback;
+  }
+});

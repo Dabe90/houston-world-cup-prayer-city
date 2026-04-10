@@ -39,6 +39,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
   <script src="js/firebase-config.js"></script>
   <script src="js/volunteer-role-guides.js"></script>
+  <script src="js/volunteer-daily-content.js"></script>
 
   <style>
     body { font-family: system-ui, sans-serif; }
@@ -228,6 +229,47 @@
               </a>
             </div>
             <div id="role-summaries-container" class="space-y-4"></div>
+          </section>
+
+          <section id="daily-social-section" class="hidden bg-gradient-to-br from-indigo-50 via-white to-violet-50 rounded-2xl shadow-card border border-indigo-100/80 p-6 sm:p-8">
+            <h2 class="text-2xl font-bold text-slate-900">Today’s social posts</h2>
+            <p class="text-sm text-slate-600 mt-1 mb-6">
+              10 shareable posts for <span id="daily-social-date" class="font-semibold text-slate-800"></span> — prayer, encouragement, and an invite to Houston Prayer City. Use copy or share buttons (includes your site link).
+            </p>
+            <div id="daily-social-posts" class="grid gap-5 lg:grid-cols-2"></div>
+          </section>
+
+          <section id="daily-prayer-section" class="hidden bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
+            <h2 class="text-2xl font-bold text-slate-900">Today’s prayer points</h2>
+            <p class="text-sm text-slate-600 mt-1 mb-6">Five focuses — salvation, healing, deliverance, Houston, and the nations — with Scripture.</p>
+            <ul id="daily-prayer-list" class="space-y-4"></ul>
+          </section>
+
+          <section id="daily-counselor-section" class="hidden bg-white rounded-2xl shadow-card border border-amber-100 p-6 sm:p-8">
+            <h2 class="text-2xl font-bold text-slate-900">Daily outreach tips</h2>
+            <p class="text-sm text-slate-600 mt-1 mb-2">Gospel clarity, invitation, and encouragement — themes common to mass-evangelism outreach (not quotations from any book).</p>
+            <p id="daily-counselor-disclaimer" class="text-xs text-slate-500 mb-6 italic"></p>
+            <div id="daily-counselor-cards" class="grid gap-6 md:grid-cols-3"></div>
+          </section>
+
+          <section id="daily-photo-section" class="hidden bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
+            <h2 class="text-2xl font-bold text-slate-900">Upload photos &amp; video</h2>
+            <p class="text-sm text-slate-600 mt-1 mb-4">
+              Files save to your team’s <strong>Firebase Storage</strong> folder (secure, multiple files allowed). For Google Drive, coordinators can mirror from exports — uploads here are fastest for the dashboard.
+            </p>
+            <label class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-white font-semibold cursor-pointer hover:bg-brand-light transition shadow-md">
+              <i class="fas fa-cloud-arrow-up"></i> Choose files
+              <input type="file" id="volunteer-media-input" multiple accept="image/*,video/*" class="hidden" />
+            </label>
+            <p id="volunteer-media-status" class="text-sm text-slate-600 mt-3 min-h-[1.25rem]"></p>
+            <ul id="volunteer-media-results" class="mt-4 space-y-2 text-sm"></ul>
+          </section>
+
+          <section id="daily-logistics-section" class="hidden bg-white rounded-2xl shadow-card border border-teal-100 p-6 sm:p-8">
+            <h2 class="text-2xl font-bold text-slate-900">Logistics &amp; welfare — today</h2>
+            <p class="text-sm text-slate-600 mt-1 mb-4">Static rotation plus a live headline when available (sports/news RSS).</p>
+            <div id="daily-logistics-news" class="rounded-xl bg-teal-50 border border-teal-100 p-4 mb-6 text-sm text-slate-800 hidden"></div>
+            <ul id="daily-logistics-tips" class="list-disc list-inside space-y-2 text-slate-700"></ul>
           </section>
 
           <section>
@@ -517,6 +559,273 @@
         });
       }
 
+      function dailySectionIds() {
+        return [
+          'daily-social-section',
+          'daily-prayer-section',
+          'daily-counselor-section',
+          'daily-photo-section',
+          'daily-logistics-section',
+        ];
+      }
+
+      function hideAllDailySections() {
+        dailySectionIds().forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) el.classList.add('hidden');
+        });
+      }
+
+      function showDailySection(id, show) {
+        var el = document.getElementById(id);
+        if (el) el.classList.toggle('hidden', !show);
+      }
+
+      function siteUrlForShares() {
+        try {
+          var o = window.location.origin;
+          if (o && o.indexOf('http') === 0) return o.replace(/\/?$/, '/') + 'index.html';
+        } catch (e) {}
+        return (window.VolunteerDailyContent && window.VolunteerDailyContent.SITE_DEFAULT) || 'https://houston-world-cup-prayer-city.vercel.app/index.html';
+      }
+
+      function renderDailyModules(d) {
+        hideAllDailySections();
+        if (typeof window.findVolunteerRolesFromShifts !== 'function' || !window.VolunteerDailyContent) return;
+        var combined = [d.shifts || '', d.position || '', d.timeslot || '', d.tent || ''].join(' ');
+        var roles = window.findVolunteerRolesFromShifts(combined);
+        var ids = roles.map(function (r) {
+          return r.id;
+        });
+        var has = function (id) {
+          return ids.indexOf(id) !== -1;
+        };
+
+        if (has('social-media')) {
+          showDailySection('daily-social-section', true);
+          var site = siteUrlForShares();
+          var posts = window.VolunteerDailyContent.getSocialPosts(site);
+          document.getElementById('daily-social-date').textContent = window.VolunteerDailyContent.todayYmd();
+          var wrap = document.getElementById('daily-social-posts');
+          wrap.innerHTML = '';
+          posts.forEach(function (p) {
+            var links = window.VolunteerDailyContent.buildShareLinks(p.shareText, p.shareUrl);
+            var card = document.createElement('article');
+            card.className = 'rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm flex flex-col';
+            card.innerHTML =
+              '<img src="' +
+              escapeHtml(p.image) +
+              '" alt="" class="w-full h-40 object-cover" loading="lazy" />' +
+              '<div class="p-4 flex-1 flex flex-col">' +
+              '<p class="text-xs font-bold text-brand-accent uppercase tracking-wide">' +
+              escapeHtml(p.title) +
+              '</p>' +
+              '<p class="text-sm text-slate-700 mt-2 whitespace-pre-wrap line-clamp-4">' +
+              escapeHtml(p.body) +
+              '</p>' +
+              '<div class="flex flex-wrap gap-2 mt-4 text-xs">' +
+              '<button type="button" class="daily-copy-btn px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 font-medium text-slate-800">Copy text</button>' +
+              '<a class="px-3 py-2 rounded-lg bg-sky-500 text-white font-medium hover:bg-sky-600" href="' +
+              escapeHtml(links.twitter) +
+              '" target="_blank" rel="noopener">X</a>' +
+              '<a class="px-3 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700" href="' +
+              escapeHtml(links.facebook) +
+              '" target="_blank" rel="noopener">Facebook</a>' +
+              '<a class="px-3 py-2 rounded-lg bg-blue-800 text-white font-medium hover:bg-blue-900" href="' +
+              escapeHtml(links.linkedin) +
+              '" target="_blank" rel="noopener">LinkedIn</a>' +
+              '<a class="px-3 py-2 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700" href="' +
+              escapeHtml(links.whatsapp) +
+              '" target="_blank" rel="noopener">WhatsApp</a>' +
+              '<a class="px-3 py-2 rounded-lg bg-slate-600 text-white font-medium hover:bg-slate-700" href="' +
+              escapeHtml(links.email) +
+              '">Email</a>' +
+              '</div></div>';
+            card.querySelector('.daily-copy-btn').addEventListener('click', function () {
+              navigator.clipboard.writeText(links.copy).then(
+                function () {
+                  card.querySelector('.daily-copy-btn').textContent = 'Copied!';
+                  setTimeout(function () {
+                    card.querySelector('.daily-copy-btn').textContent = 'Copy text';
+                  }, 2000);
+                },
+                function () {
+                  window.prompt('Copy:', links.copy);
+                }
+              );
+            });
+            wrap.appendChild(card);
+          });
+        }
+
+        if (has('prayer-partners')) {
+          showDailySection('daily-prayer-section', true);
+          var pts = window.VolunteerDailyContent.getPrayerPoints();
+          var ul = document.getElementById('daily-prayer-list');
+          ul.innerHTML = '';
+          pts.forEach(function (pt) {
+            var li = document.createElement('li');
+            li.className = 'rounded-xl border border-slate-100 bg-slate-50/80 p-4';
+            li.innerHTML =
+              '<p class="text-xs font-bold text-brand uppercase">' +
+              escapeHtml(pt.theme) +
+              '</p>' +
+              '<p class="text-slate-800 font-medium mt-1">' +
+              escapeHtml(pt.point) +
+              '</p>' +
+              '<p class="text-sm text-slate-600 mt-2 verse-font italic">“' +
+              escapeHtml(pt.scripture) +
+              '” — ' +
+              escapeHtml(pt.ref) +
+              '</p>';
+            ul.appendChild(li);
+          });
+        }
+
+        if (has('counselors')) {
+          showDailySection('daily-counselor-section', true);
+          var pack = window.VolunteerDailyContent.getCounselorDaily();
+          document.getElementById('daily-counselor-disclaimer').textContent = pack.disclaimer;
+          var grid = document.getElementById('daily-counselor-cards');
+          grid.innerHTML = '';
+          pack.tips.forEach(function (t) {
+            var div = document.createElement('div');
+            div.className =
+              'rounded-xl overflow-hidden border border-amber-100 bg-white shadow-sm flex flex-col';
+            div.innerHTML =
+              '<img src="' +
+              escapeHtml(t.image) +
+              '" alt="" class="w-full h-36 object-cover" loading="lazy" />' +
+              '<div class="p-4 flex-1 flex flex-col">' +
+              '<h3 class="font-bold text-slate-900">' +
+              escapeHtml(t.title) +
+              '</h3>' +
+              '<p class="text-sm text-slate-600 mt-2 flex-1">' +
+              escapeHtml(t.tip) +
+              '</p>' +
+              '<p class="text-xs text-brand font-semibold mt-3">' +
+              escapeHtml(t.ref) +
+              '</p></div>';
+            grid.appendChild(div);
+          });
+        }
+
+        if (has('photography-video')) {
+          showDailySection('daily-photo-section', true);
+        }
+
+        if (has('logistics-welfare')) {
+          showDailySection('daily-logistics-section', true);
+          var staticTips = window.VolunteerDailyContent.getLogisticsStaticTips();
+          var ulTip = document.getElementById('daily-logistics-tips');
+          ulTip.innerHTML = '';
+          staticTips.forEach(function (line) {
+            var li = document.createElement('li');
+            li.textContent = line;
+            ulTip.appendChild(li);
+          });
+          var newsEl = document.getElementById('daily-logistics-news');
+          newsEl.textContent = 'Loading sports headline…';
+          newsEl.classList.remove('hidden');
+          var tipFn = functions.httpsCallable('getLogisticsNewsTip');
+          tipFn()
+            .then(function (res) {
+              var data = res && res.data;
+              if (!data || !data.tip) {
+                newsEl.classList.add('hidden');
+                return;
+              }
+              newsEl.classList.remove('hidden');
+              var headlinePart = data.headline
+                ? '<strong class="block text-teal-900 mb-1">' +
+                  escapeHtml(data.headline) +
+                  '</strong><span class="text-xs text-teal-700">' +
+                  escapeHtml(data.source || '') +
+                  (data.usedFallback ? ' · fallback' : '') +
+                  '</span>'
+                : '';
+              newsEl.innerHTML =
+                headlinePart +
+                '<p class="mt-2 text-slate-800">' +
+                escapeHtml(data.tip) +
+                '</p>';
+            })
+            .catch(function () {
+              newsEl.classList.add('hidden');
+            });
+        }
+      }
+
+      (function bindMediaUpload() {
+        var input = document.getElementById('volunteer-media-input');
+        if (!input || input.dataset.bound) return;
+        input.dataset.bound = '1';
+        var statusEl = document.getElementById('volunteer-media-status');
+        var listEl = document.getElementById('volunteer-media-results');
+        var maxBytes = 100 * 1024 * 1024;
+        input.addEventListener('change', function (ev) {
+          var fileList = ev.target.files;
+          ev.target.value = '';
+          if (!fileList || !fileList.length) return;
+          var user = auth.currentUser;
+          if (!user) return;
+          if (listEl) listEl.innerHTML = '';
+          if (statusEl) statusEl.textContent = 'Uploading…';
+          var files = Array.prototype.slice.call(fileList, 0);
+          var run = Promise.resolve();
+          files.forEach(function (file) {
+            run = run.then(function () {
+              if (file.size > maxBytes) {
+                var li = document.createElement('li');
+                li.className = 'text-red-600';
+                li.textContent = 'Skipped (over 100 MB): ' + file.name;
+                if (listEl) listEl.appendChild(li);
+                return;
+              }
+              if (!file.type.match(/^image\//) && !file.type.match(/^video\//)) {
+                var li2 = document.createElement('li');
+                li2.className = 'text-amber-700';
+                li2.textContent = 'Skipped (not image/video): ' + file.name;
+                if (listEl) listEl.appendChild(li2);
+                return;
+              }
+              var safe = String(file.name).replace(/[^a-zA-Z0-9._-]/g, '_');
+              var path = 'volunteer_media/' + user.uid + '/' + Date.now() + '_' + safe;
+              var ref = storage.ref(path);
+              return ref
+                .put(file, { contentType: file.type })
+                .then(function () {
+                  return ref.getDownloadURL();
+                })
+                .then(function (url) {
+                  var li = document.createElement('li');
+                  li.className =
+                    'flex flex-wrap items-center gap-2 border border-slate-100 rounded-lg px-3 py-2 bg-slate-50';
+                  li.innerHTML =
+                    '<span class="text-slate-700 truncate max-w-[200px]">' +
+                    escapeHtml(file.name) +
+                    '</span>' +
+                    '<a href="' +
+                    escapeHtml(url) +
+                    '" target="_blank" rel="noopener" class="text-brand font-semibold text-sm">Open link</a>';
+                  if (listEl) listEl.appendChild(li);
+                });
+            });
+          });
+          run
+            .then(function () {
+              if (statusEl) statusEl.textContent = 'Upload finished.';
+            })
+            .catch(function (e) {
+              console.error(e);
+              if (statusEl) {
+                statusEl.textContent =
+                  (e && e.code) || e.message || 'Upload failed. Deploy storage rules for volunteer_media.';
+              }
+            });
+        });
+      })();
+
       function loadVolunteerDoc(uid) {
         return db
           .collection('volunteers')
@@ -529,6 +838,7 @@
             els.fvShifts.textContent = d.shifts || '—';
             els.fvNotes.textContent = d.notes || '—';
             renderRoleSummaries(d);
+            renderDailyModules(d);
             var name = d.name || (auth.currentUser.email || '').split('@')[0];
             els.profileDisplayName.textContent = name;
             els.welcomeLine.textContent =
