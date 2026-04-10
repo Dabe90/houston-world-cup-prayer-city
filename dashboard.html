@@ -38,6 +38,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
   <script src="js/firebase-config.js"></script>
+  <script src="js/volunteer-role-guides.js"></script>
 
   <style>
     body { font-family: system-ui, sans-serif; }
@@ -144,7 +145,7 @@
           <div class="animate-fade-up">
             <p class="text-brand-accent font-semibold uppercase tracking-widest text-xs mb-4">Youth · Scripture · Houston 2026</p>
             <h1 class="text-3xl sm:text-4xl lg:text-5xl font-display font-bold leading-tight mb-6">
-              Over 5,000 people lifting Jesus Up during the World Cup in Houston
+              Over 5,000 people lifting Jesus up during the World Cup in Houston
             </h1>
             <p id="welcome-line" class="text-lg text-white/95 font-medium mb-6"></p>
             <p class="verse-font text-white/85 italic text-lg leading-relaxed border-l-4 border-brand-accent pl-5">
@@ -215,6 +216,19 @@
 
         <!-- Main feed -->
         <main class="lg:col-span-8 space-y-8">
+
+          <section id="role-training-section" class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+              <div>
+                <h2 class="text-2xl font-bold text-slate-900">Your role &amp; training</h2>
+                <p class="text-sm text-slate-600 mt-1">Tailored to what you signed up for. Open your guide before your first shift.</p>
+              </div>
+              <a href="training/index.html" class="shrink-0 inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-light border border-brand/20 rounded-xl px-4 py-2 hover:bg-brand-soft transition">
+                <i class="fas fa-layer-group"></i> All training guides
+              </a>
+            </div>
+            <div id="role-summaries-container" class="space-y-4"></div>
+          </section>
 
           <section>
             <div class="flex items-end justify-between mb-4">
@@ -457,6 +471,52 @@
           });
       }
 
+      function escapeHtml(s) {
+        var d = document.createElement('div');
+        d.textContent = s == null ? '' : String(s);
+        return d.innerHTML;
+      }
+
+      function renderRoleSummaries(d) {
+        var section = document.getElementById('role-training-section');
+        var container = document.getElementById('role-summaries-container');
+        if (!section || !container || typeof window.findVolunteerRolesFromShifts !== 'function') return;
+        var combined = [d.shifts || '', d.position || '', d.timeslot || '', d.tent || ''].join(' ');
+        var roles = window.findVolunteerRolesFromShifts(combined);
+        container.innerHTML = '';
+        if (roles.length === 0) {
+          container.innerHTML =
+            '<p class="text-sm text-slate-600 leading-relaxed">' +
+            'We couldn’t match a volunteer role from your signup yet. When your shifts are saved, your personalized summary will show here. ' +
+            'You can still explore every role below.</p>' +
+            '<a href="training/index.html" class="inline-flex items-center gap-2 mt-4 text-brand font-semibold hover:underline">' +
+            'Browse all training guides <i class="fas fa-arrow-right text-xs"></i></a>';
+          return;
+        }
+        roles.forEach(function (g) {
+          var card = document.createElement('article');
+          card.className =
+            'rounded-xl border border-slate-100 bg-gradient-to-br from-white to-slate-50/80 p-5 sm:p-6 shadow-sm';
+          card.innerHTML =
+            '<div class="flex gap-4">' +
+            '<div class="w-12 h-12 rounded-xl bg-brand text-white flex items-center justify-center shrink-0 shadow-md">' +
+            '<i class="fas ' + escapeHtml(g.icon) + ' text-lg"></i></div>' +
+            '<div class="min-w-0 flex-1">' +
+            '<h3 class="font-bold text-slate-900 text-lg">' +
+            escapeHtml(g.label) +
+            '</h3>' +
+            '<p class="text-sm text-slate-600 mt-2 leading-relaxed">' +
+            escapeHtml(g.short) +
+            '</p>' +
+            '<a href="' +
+            escapeHtml(g.page) +
+            '" class="inline-flex items-center gap-2 mt-4 text-brand font-semibold text-sm hover:underline">' +
+            'Learn more — open training guide <i class="fas fa-arrow-right text-xs"></i></a>' +
+            '</div></div>';
+          container.appendChild(card);
+        });
+      }
+
       function loadVolunteerDoc(uid) {
         return db
           .collection('volunteers')
@@ -468,6 +528,7 @@
             els.fvPhone.textContent = d.phone || '—';
             els.fvShifts.textContent = d.shifts || '—';
             els.fvNotes.textContent = d.notes || '—';
+            renderRoleSummaries(d);
             var name = d.name || (auth.currentUser.email || '').split('@')[0];
             els.profileDisplayName.textContent = name;
             els.welcomeLine.textContent =

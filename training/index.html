@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Volunteer training — Houston Prayer City</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: '#0f3d5c', light: '#1a5f8a', soft: '#e8f4fc', accent: '#c9a227' },
+          },
+          fontFamily: {
+            display: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
+            sans: ['system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+          boxShadow: { card: '0 4px 24px rgba(15, 61, 92, 0.08), 0 1px 3px rgba(0,0,0,0.06)' },
+        },
+      },
+    };
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-800">
+  <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+    <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+      <a href="../index.html" class="font-semibold text-slate-900 hover:text-brand">Prayer City</a>
+      <div class="flex items-center gap-3 text-sm">
+        <a href="../dashboard.html" class="text-brand font-medium hover:underline">My dashboard</a>
+        <a href="../volunteer-hub.html" class="text-slate-600 hover:text-brand">Volunteer hub</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="relative overflow-hidden bg-gradient-to-br from-brand via-brand-light to-sky-800 text-white">
+    <div class="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1529078155058-5d716f45d604?w=1600&q=80')] bg-cover bg-center"></div>
+    <div class="relative max-w-5xl mx-auto px-4 py-16 sm:py-20">
+      <p class="text-brand-accent font-semibold uppercase tracking-widest text-xs mb-3">Training library</p>
+      <h1 class="text-3xl sm:text-4xl font-display font-bold">Pick your volunteer track</h1>
+      <p class="mt-4 text-lg text-white/90 max-w-2xl">Each guide is short, visual, and practical—so you can show up confident and calm.</p>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-12">
+    <div class="grid sm:grid-cols-2 gap-6">
+      <a href="prayer-partners.html" class="group bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden hover:shadow-lg hover:border-brand/20 transition flex flex-col">
+        <div class="h-40 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1504052464689-1586d9d4d0c9?w=800&q=80" alt="Prayer" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+        </div>
+        <div class="p-6 flex-1 flex flex-col">
+          <h2 class="text-xl font-bold text-slate-900">Prayer Partners</h2>
+          <p class="text-sm text-slate-600 mt-2 flex-1">Welcome guests, listen, and pray with them in the tent.</p>
+          <span class="mt-4 text-brand font-semibold text-sm inline-flex items-center gap-2">Open guide <i class="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i></span>
+        </div>
+      </a>
+      <a href="counselors.html" class="group bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden hover:shadow-lg hover:border-brand/20 transition flex flex-col">
+        <div class="h-40 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&q=80" alt="Listening" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+        </div>
+        <div class="p-6 flex-1 flex flex-col">
+          <h2 class="text-xl font-bold text-slate-900">Counselors</h2>
+          <p class="text-sm text-slate-600 mt-2 flex-1">Offer a calm, caring conversation—not clinical therapy.</p>
+          <span class="mt-4 text-brand font-semibold text-sm inline-flex items-center gap-2">Open guide <i class="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i></span>
+        </div>
+      </a>
+      <a href="logistics-welfare.html" class="group bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden hover:shadow-lg hover:border-brand/20 transition flex flex-col">
+        <div class="h-40 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&q=80" alt="Logistics" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+        </div>
+        <div class="p-6 flex-1 flex flex-col">
+          <h2 class="text-xl font-bold text-slate-900">Logistics &amp; Welfare</h2>
+          <p class="text-sm text-slate-600 mt-2 flex-1">Supplies, safety, snacks, and making sure people are looked after.</p>
+          <span class="mt-4 text-brand font-semibold text-sm inline-flex items-center gap-2">Open guide <i class="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i></span>
+        </div>
+      </a>
+      <a href="photography-video.html" class="group bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden hover:shadow-lg hover:border-brand/20 transition flex flex-col">
+        <div class="h-40 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&q=80" alt="Camera" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+        </div>
+        <div class="p-6 flex-1 flex flex-col">
+          <h2 class="text-xl font-bold text-slate-900">Photography &amp; Video</h2>
+          <p class="text-sm text-slate-600 mt-2 flex-1">Tell the story respectfully—with consent and heart.</p>
+          <span class="mt-4 text-brand font-semibold text-sm inline-flex items-center gap-2">Open guide <i class="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i></span>
+        </div>
+      </a>
+      <a href="social-media.html" class="group bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden hover:shadow-lg hover:border-brand/20 transition sm:col-span-2 flex flex-col sm:flex-row">
+        <div class="h-40 sm:h-auto sm:w-2/5 overflow-hidden shrink-0">
+          <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&q=80" alt="Social" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+        </div>
+        <div class="p-6 flex-1 flex flex-col justify-center">
+          <h2 class="text-xl font-bold text-slate-900">Social Media &amp; Virtual Support</h2>
+          <p class="text-sm text-slate-600 mt-2 flex-1">Posts, replies, and online prayer with clarity and kindness.</p>
+          <span class="mt-4 text-brand font-semibold text-sm inline-flex items-center gap-2">Open guide <i class="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i></span>
+        </div>
+      </a>
+    </div>
+  </main>
+
+  <footer class="border-t border-slate-200 bg-white py-8 text-center text-sm text-slate-500">
+    <a href="../dashboard.html" class="text-brand font-medium hover:underline">Back to dashboard</a>
+  </footer>
+</body>
+</html>
