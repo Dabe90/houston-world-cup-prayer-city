@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Team roster — Prayer City Volunteers</title>
+  <title>Volunteer hub — Prayer City</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -24,66 +24,53 @@
   <script src="js/firebase-config.js"></script>
   <style>
     body { font-family: system-ui, sans-serif; }
-    .auth-bg {
-      background: linear-gradient(135deg, rgba(15,61,92,0.9), rgba(26,95,138,0.85)),
-        url('https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1400&q=80') center/cover;
-    }
   </style>
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800">
 
   <div id="setup-banner" class="hidden max-w-3xl mx-auto m-6 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900">
-    <p class="font-semibold">Configure <code class="bg-white px-1 rounded">js/firebase-config.js</code> and deploy Firestore rules for <code class="bg-white px-1">volunteer_directory</code>.</p>
+    <p class="font-semibold">Configure <code class="bg-white px-1 rounded">js/firebase-config.js</code> and deploy Firestore rules (public read for <code class="bg-white px-1">volunteer_directory</code>).</p>
   </div>
 
-  <div id="auth-gate" class="min-h-screen flex flex-col lg:flex-row">
-    <div class="auth-bg lg:w-1/2 min-h-[200px] lg:min-h-screen p-10 flex items-end text-white">
-      <div class="max-w-md">
-        <p class="text-brand-accent text-sm font-semibold uppercase tracking-wide mb-2">Volunteer team</p>
-        <h1 class="text-3xl font-bold mb-3">Find your crew by tent &amp; shift.</h1>
-        <p class="text-white/90 text-sm">Sign in with the same email as your dashboard. If you use an email link, open it from your invite first (Home), then come here.</p>
-      </div>
-    </div>
-    <div class="flex-1 flex items-center justify-center p-8 bg-white">
-      <div class="w-full max-w-md space-y-4">
-        <h2 class="text-2xl font-bold text-slate-900">Sign in</h2>
-        <input type="email" id="gate-email" class="w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="Email" />
-        <input type="password" id="gate-password" class="w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="Password (optional)" />
-        <button type="button" id="btn-password-signin" class="w-full py-3 rounded-xl bg-brand text-white font-semibold">Sign in</button>
-        <button type="button" id="btn-email-link" class="w-full py-3 rounded-xl border-2 border-brand text-brand font-semibold">Email me a sign-in link</button>
-        <p id="gate-status" class="text-sm text-slate-600 min-h-[1.25rem]"></p>
-      </div>
-    </div>
-  </div>
-
-  <div id="hub-main" class="hidden pb-20">
+  <div id="hub-main">
     <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
       <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between flex-wrap gap-2">
-        <div class="flex items-center gap-3">
-          <span class="w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light text-white text-xs font-bold flex items-center justify-center">PC</span>
-          <span class="font-semibold text-slate-900">Team roster</span>
+        <div class="flex items-center gap-2 sm:gap-3">
+          <a href="index.html" class="w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light text-white text-xs font-bold flex items-center justify-center shrink-0 hover:opacity-90 transition" title="Home">PC</a>
+          <div class="flex items-center gap-1 sm:gap-2 flex-wrap">
+            <a href="index.html" class="font-semibold text-slate-900 text-sm hover:text-brand transition">Prayer City</a>
+            <span class="text-slate-300 hidden sm:inline">|</span>
+            <span class="text-sm font-semibold text-brand px-2 py-1 rounded-lg bg-brand-soft">Volunteer hub</span>
+          </div>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-          <a href="dashboard.html" class="text-sm font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50">Home</a>
-          <span class="text-sm font-semibold text-brand px-2 py-1 rounded-lg bg-brand-soft">Team roster</span>
-          <span id="nav-me" class="hidden sm:inline text-sm text-slate-500 max-w-[140px] truncate"></span>
-          <button type="button" id="btn-signout" class="text-sm text-slate-600 hover:text-red-600 px-2">Sign out</button>
+          <a href="dashboard.html" class="text-sm font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition">My dashboard</a>
+          <span id="nav-auth" class="hidden flex items-center gap-2">
+            <span id="nav-me" class="hidden sm:inline text-sm text-slate-500 max-w-[140px] truncate"></span>
+            <button type="button" id="btn-signout" class="text-sm text-slate-600 hover:text-red-600 px-2">Sign out</button>
+          </span>
         </div>
       </div>
     </nav>
 
     <div class="max-w-6xl mx-auto px-4 py-8 space-y-8">
       <header class="text-center sm:text-left">
-        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Serve together — know who’s beside you.</h1>
-        <p class="text-slate-600 mt-2 max-w-2xl">Filter by tent or time, send a wave, share encouragement, and keep your assignment up to date.</p>
+        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Volunteer hub</h1>
+        <p class="text-slate-600 mt-2 max-w-2xl">
+          Browse who’s serving where — no account needed. Sign in to post in shift chats, wave, or edit your tent.
+        </p>
       </header>
 
+      <div id="signin-banner" class="rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-sm text-amber-950">
+        <strong class="font-semibold">Want to chat or interact?</strong> Scroll to <strong>Sign in</strong> below, or open <a href="dashboard.html" class="text-brand underline font-medium">My dashboard</a> first.
+      </div>
+
       <div class="grid lg:grid-cols-3 gap-6">
-        <section class="lg:col-span-1 space-y-4">
+        <section id="member-sidebar" class="lg:col-span-1 space-y-4 hidden">
           <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
             <h2 class="font-bold text-slate-900 mb-3 flex items-center gap-2"><i class="fas fa-id-card text-brand"></i> Your assignment</h2>
-            <p class="text-xs text-slate-500 mb-3">Tents are auto-assigned (1–7) from the sheet to balance teams. Shift and role come from your signup (column F).</p>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Tent (override if needed)</label>
+            <p class="text-xs text-slate-500 mb-3">Tent from the sheet; shift/role from signup (column F).</p>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Tent (override)</label>
             <input type="text" id="my-tent" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mb-3" placeholder="e.g. Tent 3" />
             <label class="block text-xs font-medium text-slate-500 mb-1">Shift &amp; role <span class="text-slate-400">(from signup)</span></label>
             <p id="my-shifts-display" class="text-sm text-slate-800 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 mb-3 whitespace-pre-wrap min-h-[2.5rem]">—</p>
@@ -95,8 +82,8 @@
         <section class="lg:col-span-2 space-y-4">
           <div class="flex flex-col sm:flex-row gap-3 flex-wrap items-stretch sm:items-end">
             <div class="flex-1 min-w-[140px]">
-              <label class="text-xs font-medium text-slate-500">Search name</label>
-              <input type="search" id="filter-search" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mt-1" placeholder="Type to filter…" />
+              <label class="text-xs font-medium text-slate-500">Search</label>
+              <input type="search" id="filter-search" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mt-1" placeholder="Name, tent, shift…" />
             </div>
             <div class="w-full sm:w-40">
               <label class="text-xs font-medium text-slate-500">Tent</label>
@@ -105,7 +92,7 @@
               </select>
             </div>
             <div class="w-full sm:w-48">
-              <label class="text-xs font-medium text-slate-500">Shift (from signup)</label>
+              <label class="text-xs font-medium text-slate-500">Shift</label>
               <select id="filter-timeslot" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mt-1 bg-white">
                 <option value="">All shifts</option>
               </select>
@@ -119,22 +106,51 @@
       </div>
 
       <section class="bg-white rounded-2xl shadow-card border border-slate-100 p-6">
-        <h2 class="font-bold text-slate-900 mb-2 flex items-center gap-2"><i class="fas fa-comments text-brand"></i> Encouragement wall</h2>
-        <p class="text-sm text-slate-600 mb-4">Short notes for the whole team (max 400 characters).</p>
+        <h2 class="font-bold text-slate-900 mb-2 flex items-center gap-2"><i class="fas fa-comments text-brand"></i> Shift chat</h2>
+        <p class="text-sm text-slate-600 mb-4">Pick a channel (same shift/role as your signup) or General. Everyone can read; volunteers sign in to post.</p>
         <div class="flex flex-col sm:flex-row gap-3 mb-4">
-          <textarea id="wall-message" rows="2" maxlength="400" class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Share prayer, gratitude, or a verse…"></textarea>
-          <button type="button" id="btn-post-wall" class="sm:self-end px-6 py-2.5 rounded-xl bg-brand text-white text-sm font-semibold h-fit">Post</button>
+          <div class="sm:w-64">
+            <label class="text-xs font-medium text-slate-500">Channel</label>
+            <select id="chat-channel" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mt-1 bg-white">
+              <option value="general">General — everyone</option>
+            </select>
+          </div>
         </div>
-        <div id="wall-feed" class="space-y-3 max-h-80 overflow-y-auto"></div>
+        <div class="flex flex-col sm:flex-row gap-3 mb-4">
+          <textarea id="wall-message" rows="2" maxlength="400" class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Sign in to post…" disabled></textarea>
+          <button type="button" id="btn-post-wall" class="sm:self-end px-6 py-2.5 rounded-xl bg-brand text-white text-sm font-semibold h-fit opacity-50 cursor-not-allowed" disabled>Post</button>
+        </div>
+        <div id="wall-feed" class="space-y-3 max-h-96 overflow-y-auto"></div>
+      </section>
+
+      <section class="bg-white rounded-2xl shadow-card border border-slate-100 p-6">
+        <h2 class="font-bold text-slate-900 mb-2">Volunteer sign-in</h2>
+        <p class="text-sm text-slate-600 mb-4">Use the same email as your invite. Needed to post, wave, shout-out, or save your tent.</p>
+        <div class="grid sm:grid-cols-2 gap-4 max-w-xl">
+          <div class="sm:col-span-2">
+            <label class="text-xs font-medium text-slate-500">Email</label>
+            <input type="email" id="gate-email" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mt-1" placeholder="you@example.com" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-slate-500">Password (if set)</label>
+            <input type="password" id="gate-password" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mt-1" />
+          </div>
+          <div class="flex items-end gap-2">
+            <button type="button" id="btn-password-signin" class="px-4 py-2 rounded-xl bg-brand text-white text-sm font-semibold">Sign in</button>
+          </div>
+          <div class="sm:col-span-2">
+            <button type="button" id="btn-email-link" class="text-sm font-medium text-brand hover:underline">Email me a sign-in link</button>
+            <p id="gate-status" class="text-sm text-slate-600 mt-2 min-h-[1.25rem]"></p>
+          </div>
+        </div>
       </section>
     </div>
   </div>
 
-  <!-- Shout-out modal -->
   <div id="modal-shout" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
       <h3 class="font-bold text-lg mb-1">Shout-out to <span id="modal-shout-name"></span></h3>
-      <p class="text-xs text-slate-500 mb-3">They’ll see it on the wall.</p>
+      <p class="text-xs text-slate-500 mb-3">Posts to the channel you’re viewing.</p>
       <textarea id="modal-shout-text" rows="3" maxlength="400" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mb-4" placeholder="Your message…"></textarea>
       <div class="flex gap-2 justify-end">
         <button type="button" id="modal-shout-cancel" class="px-4 py-2 rounded-xl border border-slate-200 text-sm">Cancel</button>
@@ -152,7 +168,7 @@
       var cfg = window.__FIREBASE_CONFIG__ || {};
       if (!cfg.apiKey || cfg.apiKey === 'REPLACE_ME') {
         document.getElementById('setup-banner').classList.remove('hidden');
-        document.getElementById('auth-gate').classList.add('hidden');
+        document.getElementById('hub-main').classList.add('hidden');
         return;
       }
 
@@ -163,11 +179,11 @@
 
       var directoryData = {};
       var waveCounts = {};
+      var wallDocs = [];
       var shoutTargetUid = null;
       var shoutTargetName = '';
 
       var els = {
-        authGate: document.getElementById('auth-gate'),
         hubMain: document.getElementById('hub-main'),
         gateEmail: document.getElementById('gate-email'),
         gatePassword: document.getElementById('gate-password'),
@@ -175,11 +191,15 @@
         btnPasswordSignin: document.getElementById('btn-password-signin'),
         btnEmailLink: document.getElementById('btn-email-link'),
         btnSignout: document.getElementById('btn-signout'),
+        navAuth: document.getElementById('nav-auth'),
         navMe: document.getElementById('nav-me'),
+        memberSidebar: document.getElementById('member-sidebar'),
+        signinBanner: document.getElementById('signin-banner'),
         rosterGrid: document.getElementById('roster-grid'),
         filterSearch: document.getElementById('filter-search'),
         filterTent: document.getElementById('filter-tent'),
         filterTimeslot: document.getElementById('filter-timeslot'),
+        chatChannel: document.getElementById('chat-channel'),
         myTent: document.getElementById('my-tent'),
         myShiftsDisplay: document.getElementById('my-shifts-display'),
         btnSaveAssignment: document.getElementById('btn-save-assignment'),
@@ -199,14 +219,27 @@
         els.gateStatus.className = 'text-sm min-h-[1.25rem] ' + (err ? 'text-red-600' : 'text-slate-600');
       }
 
-      function showGate() {
-        els.authGate.classList.remove('hidden');
-        els.hubMain.classList.add('hidden');
-      }
-
-      function showHub() {
-        els.authGate.classList.add('hidden');
-        els.hubMain.classList.remove('hidden');
+      function setMemberUi(user) {
+        if (user) {
+          els.memberSidebar.classList.remove('hidden');
+          els.signinBanner.classList.add('hidden');
+          els.navAuth.classList.remove('hidden');
+          els.wallMessage.disabled = false;
+          els.wallMessage.placeholder = 'Message this channel…';
+          els.btnPostWall.disabled = false;
+          els.btnPostWall.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+          els.memberSidebar.classList.add('hidden');
+          els.signinBanner.classList.remove('hidden');
+          els.navAuth.classList.add('hidden');
+          els.navMe.textContent = '';
+          els.wallMessage.disabled = true;
+          els.wallMessage.placeholder = 'Sign in to post…';
+          els.btnPostWall.disabled = true;
+          els.btnPostWall.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+        renderRoster();
+        renderWallFiltered();
       }
 
       function mergeProfile() {
@@ -250,6 +283,14 @@
         return sh || '—';
       }
 
+      function normalizeChannelKey(s) {
+        return String(s || '')
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, ' ')
+          .slice(0, 200);
+      }
+
       function loadMyVolunteer(uid) {
         return db
           .collection('volunteers')
@@ -269,10 +310,7 @@
         if (!firebase.auth().isSignInWithEmailLink(window.location.href)) return Promise.resolve(false);
         var email = window.localStorage.getItem('emailForSignIn');
         if (!email) email = window.prompt('Your email:');
-        if (!email) {
-          setGateStatus('Email required.', true);
-          return Promise.resolve(false);
-        }
+        if (!email) return Promise.resolve(false);
         return auth.signInWithEmailLink(email, window.location.href).then(function () {
           window.localStorage.removeItem('emailForSignIn');
           window.history.replaceState({}, document.title, window.location.pathname);
@@ -308,6 +346,20 @@
           });
         tentSel.value = tv;
         tsSel.value = tsv;
+
+        var ch = els.chatChannel;
+        var cv = ch.value;
+        while (ch.options.length > 1) ch.remove(1);
+        Object.keys(times)
+          .sort()
+          .forEach(function (t) {
+            ch.add(new Option('Shift: ' + t.slice(0, 60) + (t.length > 60 ? '…' : ''), t));
+          });
+        if ([].slice.call(ch.options).some(function (o) { return o.value === cv; })) {
+          ch.value = cv;
+        } else {
+          ch.value = 'general';
+        }
       }
 
       function renderRoster() {
@@ -315,6 +367,7 @@
         var ft = (els.filterTent.value || '').trim();
         var fts = (els.filterTimeslot.value || '').trim();
         var uidSelf = auth.currentUser && auth.currentUser.uid;
+        var loggedIn = !!auth.currentUser;
         var list = Object.keys(directoryData).map(function (uid) {
           return { uid: uid, r: directoryData[uid] };
         });
@@ -323,10 +376,15 @@
         });
         list = list.filter(function (x) {
           var r = x.r;
-          var name = (r.name || '').toLowerCase();
           if (q) {
-            var hay = (name + ' ' + (r.shifts || '').toLowerCase() + ' ' + (r.tent || '').toLowerCase()).trim();
-            if (hay.indexOf(q) === -1) return false;
+            var hay = (
+              (r.name || '') +
+              ' ' +
+              (r.shifts || '').toLowerCase() +
+              ' ' +
+              (r.tent || '').toLowerCase()
+            ).trim();
+            if (hay.toLowerCase().indexOf(q) === -1) return false;
           }
           if (ft && (r.tent || '').trim() !== ft) return false;
           if (fts && getShiftFilterKey(r) !== fts) return false;
@@ -335,7 +393,7 @@
 
         if (list.length === 0) {
           els.rosterGrid.innerHTML =
-            '<p class="text-slate-500 text-sm col-span-full">No volunteers match. Adjust filters or check back after more teammates sign in.</p>';
+            '<p class="text-slate-500 text-sm col-span-full">No volunteers match. Check back after invites go out.</p>';
           return;
         }
 
@@ -353,6 +411,21 @@
                 '</div>';
             var waves = waveCounts[uid] || 0;
             var isSelf = uid === uidSelf;
+            var actions = '';
+            if (loggedIn && !isSelf) {
+              actions =
+                '<button type="button" class="wave-btn text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-soft text-brand hover:bg-brand/10 transition" data-uid="' +
+                uid +
+                '">Wave 👋</button>' +
+                '<button type="button" class="shout-btn text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition" data-uid="' +
+                uid +
+                '" data-name="' +
+                (r.name || 'Volunteer').replace(/"/g, '&quot;') +
+                '">Shout-out</button>';
+            } else if (!loggedIn) {
+              actions =
+                '<span class="text-xs text-slate-400"><i class="fas fa-lock mr-1"></i>Sign in to wave or shout-out</span>';
+            }
             return (
               '<div class="bg-white rounded-2xl border border-slate-100 shadow-card p-4 flex flex-col gap-3 hover:border-brand/30 transition">' +
               '<div class="flex gap-3">' +
@@ -369,22 +442,13 @@
               getShiftLineForCard(r).replace(/</g, '&lt;') +
               '</p>' +
               '</div></div>' +
-              '<div class="flex flex-wrap gap-2 pt-1 border-t border-slate-100">' +
+              '<div class="flex flex-wrap gap-2 pt-1 border-t border-slate-100 items-center">' +
               '<span class="text-xs text-slate-400"><i class="fas fa-hand-sparkles mr-1"></i>' +
               waves +
               ' wave' +
               (waves === 1 ? '' : 's') +
               '</span>' +
-              (isSelf
-                ? ''
-                : '<button type="button" class="wave-btn text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-soft text-brand hover:bg-brand/10 transition" data-uid="' +
-                  uid +
-                  '">Wave 👋</button>' +
-                  '<button type="button" class="shout-btn text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition" data-uid="' +
-                  uid +
-                  '" data-name="' +
-                  (r.name || 'Volunteer').replace(/"/g, '&quot;') +
-                  '">Shout-out</button>') +
+              actions +
               '</div></div>'
             );
           })
@@ -428,8 +492,15 @@
         return '';
       }
 
-      function renderWall(snapDocs) {
-        var arr = snapDocs.slice().sort(function (a, b) {
+      function renderWallFiltered() {
+        var arr = wallDocs.slice();
+        var ch = els.chatChannel.value || 'general';
+        arr = arr.filter(function (d) {
+          var c = d.channel;
+          if (!c || c === 'general') return ch === 'general';
+          return normalizeChannelKey(c) === normalizeChannelKey(ch);
+        });
+        arr.sort(function (a, b) {
           var ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
           var tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
           return tb - ta;
@@ -446,8 +517,10 @@
                   '</span>'
                 : '';
             var t = formatPostTime(d.createdAt);
+            var chLabel = d.channel && d.channel !== 'general' ? '<span class="text-xs text-slate-400 block mb-1">' + String(d.channel).replace(/</g, '&lt;').slice(0, 80) + '</span>' : '';
             return (
               '<div class="rounded-xl border border-slate-100 bg-slate-50/80 p-3 text-sm">' +
+              chLabel +
               '<p class="font-semibold text-slate-800">' +
               String(who).replace(/</g, '&lt;') +
               extra +
@@ -462,9 +535,12 @@
             );
           })
           .join('');
+        if (arr.length === 0) {
+          els.wallFeed.innerHTML =
+            '<p class="text-slate-500 text-sm">No messages in this channel yet. Sign in to start the conversation.</p>';
+        }
       }
 
-      var wallDocs = [];
       var unsubDirectory = null;
       var unsubWaves = null;
       var unsubPosts = null;
@@ -499,21 +575,26 @@
             x._id = doc.id;
             wallDocs.push(x);
           });
-          renderWall(wallDocs);
+          renderWallFiltered();
         });
+      }
+
+      function currentPostChannel() {
+        var v = els.chatChannel.value;
+        if (!v || v === 'general') return 'general';
+        return v;
       }
 
       els.filterSearch.addEventListener('input', renderRoster);
       els.filterTent.addEventListener('change', renderRoster);
       els.filterTimeslot.addEventListener('change', renderRoster);
+      els.chatChannel.addEventListener('change', renderWallFiltered);
 
       els.btnSaveAssignment.addEventListener('click', function () {
         var user = auth.currentUser;
         if (!user) return;
         els.assignmentStatus.textContent = 'Saving…';
-        var patch = {
-          tent: els.myTent.value.trim(),
-        };
+        var patch = { tent: els.myTent.value.trim() };
         db.collection('volunteers')
           .doc(user.uid)
           .set(patch, { merge: true })
@@ -527,7 +608,7 @@
               });
           })
           .then(function () {
-            els.assignmentStatus.textContent = 'Saved. Your card updates for everyone.';
+            els.assignmentStatus.textContent = 'Saved.';
           })
           .catch(function (e) {
             els.assignmentStatus.textContent = e.message || 'Save failed';
@@ -543,6 +624,7 @@
         db.collection('community_posts')
           .add({
             type: 'message',
+            channel: currentPostChannel(),
             fromUid: user.uid,
             fromName: name,
             message: msg.slice(0, 400),
@@ -569,6 +651,7 @@
         db.collection('community_posts')
           .add({
             type: 'shoutout',
+            channel: currentPostChannel(),
             fromUid: user.uid,
             fromName: name,
             toUid: shoutTargetUid,
@@ -586,7 +669,7 @@
 
       els.btnPasswordSignin.addEventListener('click', function () {
         var email = (els.gateEmail.value || '').trim();
-        var pw = els.gatePassword.value || '';
+        var pw = (els.gatePassword.value || '').trim();
         if (!email || !pw) {
           setGateStatus('Enter email and password.', true);
           return;
@@ -615,7 +698,7 @@
           sendSignInLinkFirebase(email)
             .then(function () {
               window.localStorage.setItem('emailForSignIn', email);
-              setGateStatus('Check email (link opens Home; then open Team roster).');
+              setGateStatus('Check your email — link opens My dashboard; then return here.');
             })
             .catch(function (e) {
               setGateStatus(e.message || 'Failed', true);
@@ -639,7 +722,7 @@
           .then(function (res) {
             if (res.status === 200 && res.body.ok) {
               window.localStorage.setItem('emailForSignIn', email);
-              setGateStatus('Check email. After signing in on Home, return here.');
+              setGateStatus('Check email, then open the link and come back to Volunteer hub.');
               return;
             }
             if (res.status === 503 || res.status === 502) {
@@ -666,17 +749,15 @@
       });
 
       auth.onAuthStateChanged(function (user) {
-        if (!user) {
-          showGate();
-          return;
+        setMemberUi(user);
+        if (user) {
+          mergeProfile().then(function () {
+            return loadMyVolunteer(user.uid);
+          });
         }
-        showHub();
-        mergeProfile().then(function () {
-          return loadMyVolunteer(user.uid);
-        });
-        subscribeHub();
       });
 
+      subscribeHub();
       completeEmailLinkIfNeeded().catch(function () {});
     })();
   </script>

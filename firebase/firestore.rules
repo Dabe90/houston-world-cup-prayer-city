@@ -13,5 +13,27 @@ service cloud.firestore {
       allow create, update: if request.auth != null && request.auth.uid == userId;
       allow delete: if false;
     }
+
+    // Public roster (name, tent, shifts, photo only — no email). Writes: owner only.
+    match /volunteer_directory/{userId} {
+      allow read: if true;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // Shift channels + wall; anyone can read; only signed-in volunteers can post (spam control).
+    match /community_posts/{postId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.fromUid == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.fromUid == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /community_waves/{waveId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.fromUid == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.fromUid == request.auth.uid;
+      allow update: if false;
+    }
   }
 }

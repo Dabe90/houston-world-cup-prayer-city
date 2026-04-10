@@ -66,6 +66,9 @@ inviteApp.post('/', async (req, res) => {
           notes: body.notes || '',
           shifts: body.shifts || '',
           sheetRowId: body.sheetRowId || '',
+          tent: body.tent || '',
+          timeslot: body.timeslot || '',
+          position: body.position || '',
           invitedAt: admin.firestore.FieldValue.serverTimestamp(),
         },
         { merge: true }
@@ -230,19 +233,45 @@ exports.mergeVolunteerProfile = onCall(async (request) => {
   }
 
   const data = snap.data();
-  await admin
-    .firestore()
-    .collection('volunteers')
-    .doc(uid)
-    .set(
+  const volRef = admin.firestore().collection('volunteers').doc(uid);
+  await volRef.set(
+    {
+      email,
+      name: data.name || '',
+      phone: data.phone || '',
+      notes: data.notes || '',
+      shifts: data.shifts || '',
+      sheetRowId: data.sheetRowId || '',
+      tent: data.tent || '',
+      timeslot: data.timeslot || '',
+      position: data.position || '',
+      mergedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  const volSnap = await volRef.get();
+  const vol = volSnap.exists ? volSnap.data() : {};
+    await admin
+      .firestore()
+      .collection('volunteer_directory')
+      .doc(uid)
+      .set(
       {
-        email,
-        name: data.name || '',
-        phone: data.phone || '',
-        notes: data.notes || '',
-        shifts: data.shifts || '',
-        sheetRowId: data.sheetRowId || '',
-        mergedAt: admin.firestore.FieldValue.serverTimestamp(),
+        uid,
+        name: (vol.name || data.name || '').trim(),
+        photoURL: vol.photoURL || '',
+        shifts: vol.shifts !== undefined && vol.shifts !== '' ? vol.shifts : data.shifts || '',
+        tent: vol.tent !== undefined && vol.tent !== '' ? vol.tent : data.tent || '',
+        timeslot:
+          vol.timeslot !== undefined && vol.timeslot !== ''
+            ? vol.timeslot
+            : data.timeslot || '',
+        position:
+          vol.position !== undefined && vol.position !== ''
+            ? vol.position
+            : data.position || '',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       },
       { merge: true }
     );
