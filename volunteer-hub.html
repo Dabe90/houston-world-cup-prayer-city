@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team roster — Prayer City Volunteers</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: '#0f3d5c', light: '#1a5f8a', soft: '#e8f4fc', accent: '#c9a227' },
+          },
+          boxShadow: { card: '0 4px 24px rgba(15, 61, 92, 0.08)' },
+        },
+      },
+    };
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; }
+    .auth-bg {
+      background: linear-gradient(135deg, rgba(15,61,92,0.9), rgba(26,95,138,0.85)),
+        url('https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1400&q=80') center/cover;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-800">
+
+  <div id="setup-banner" class="hidden max-w-3xl mx-auto m-6 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900">
+    <p class="font-semibold">Configure <code class="bg-white px-1 rounded">js/firebase-config.js</code> and deploy Firestore rules for <code class="bg-white px-1">volunteer_directory</code>.</p>
+  </div>
+
+  <div id="auth-gate" class="min-h-screen flex flex-col lg:flex-row">
+    <div class="auth-bg lg:w-1/2 min-h-[200px] lg:min-h-screen p-10 flex items-end text-white">
+      <div class="max-w-md">
+        <p class="text-brand-accent text-sm font-semibold uppercase tracking-wide mb-2">Volunteer team</p>
+        <h1 class="text-3xl font-bold mb-3">Find your crew by tent &amp; shift.</h1>
+        <p class="text-white/90 text-sm">Sign in with the same email as your dashboard. If you use an email link, open it from your invite first (Home), then come here.</p>
+      </div>
+    </div>
+    <div class="flex-1 flex items-center justify-center p-8 bg-white">
+      <div class="w-full max-w-md space-y-4">
+        <h2 class="text-2xl font-bold text-slate-900">Sign in</h2>
+        <input type="email" id="gate-email" class="w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="Email" />
+        <input type="password" id="gate-password" class="w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="Password (optional)" />
+        <button type="button" id="btn-password-signin" class="w-full py-3 rounded-xl bg-brand text-white font-semibold">Sign in</button>
+        <button type="button" id="btn-email-link" class="w-full py-3 rounded-xl border-2 border-brand text-brand font-semibold">Email me a sign-in link</button>
+        <p id="gate-status" class="text-sm text-slate-600 min-h-[1.25rem]"></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="hub-main" class="hidden pb-20">
+    <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+      <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-3">
+          <span class="w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light text-white text-xs font-bold flex items-center justify-center">PC</span>
+          <span class="font-semibold text-slate-900">Team roster</span>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <a href="dashboard.html" class="text-sm font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50">Home</a>
+          <span class="text-sm font-semibold text-brand px-2 py-1 rounded-lg bg-brand-soft">Team roster</span>
+          <span id="nav-me" class="hidden sm:inline text-sm text-slate-500 max-w-[140px] truncate"></span>
+          <button type="button" id="btn-signout" class="text-sm text-slate-600 hover:text-red-600 px-2">Sign out</button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+      <header class="text-center sm:text-left">
+        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Serve together — know who’s beside you.</h1>
+        <p class="text-slate-600 mt-2 max-w-2xl">Filter by tent or time, send a wave, share encouragement, and keep your assignment up to date.</p>
+      </header>
+
+      <div class="grid lg:grid-cols-3 gap-6">
+        <section class="lg:col-span-1 space-y-4">
+          <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
+            <h2 class="font-bold text-slate-900 mb-3 flex items-center gap-2"><i class="fas fa-id-card text-brand"></i> Your assignment</h2>
+            <p class="text-xs text-slate-500 mb-3">Tents are auto-assigned (1–7) from the sheet to balance teams. Shift and role come from your signup (column F).</p>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Tent (override if needed)</label>
+            <input type="text" id="my-tent" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mb-3" placeholder="e.g. Tent 3" />
+            <label class="block text-xs font-medium text-slate-500 mb-1">Shift &amp; role <span class="text-slate-400">(from signup)</span></label>
+            <p id="my-shifts-display" class="text-sm text-slate-800 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 mb-3 whitespace-pre-wrap min-h-[2.5rem]">—</p>
+            <button type="button" id="btn-save-assignment" class="w-full py-2.5 rounded-xl bg-brand text-white text-sm font-semibold hover:bg-brand-light transition">Save tent</button>
+            <p id="assignment-status" class="text-xs text-slate-500 mt-2 min-h-[1rem]"></p>
+          </div>
+        </section>
+
+        <section class="lg:col-span-2 space-y-4">
+          <div class="flex flex-col sm:flex-row gap-3 flex-wrap items-stretch sm:items-end">
+            <div class="flex-1 min-w-[140px]">
+              <label class="text-xs font-medium text-slate-500">Search name</label>
+              <input type="search" id="filter-search" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mt-1" placeholder="Type to filter…" />
+            </div>
+            <div class="w-full sm:w-40">
+              <label class="text-xs font-medium text-slate-500">Tent</label>
+              <select id="filter-tent" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mt-1 bg-white">
+                <option value="">All tents</option>
+              </select>
+            </div>
+            <div class="w-full sm:w-48">
+              <label class="text-xs font-medium text-slate-500">Shift (from signup)</label>
+              <select id="filter-timeslot" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mt-1 bg-white">
+                <option value="">All shifts</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="roster-grid" class="grid sm:grid-cols-2 gap-4">
+            <p class="text-slate-500 text-sm col-span-full">Loading volunteers…</p>
+          </div>
+        </section>
+      </div>
+
+      <section class="bg-white rounded-2xl shadow-card border border-slate-100 p-6">
+        <h2 class="font-bold text-slate-900 mb-2 flex items-center gap-2"><i class="fas fa-comments text-brand"></i> Encouragement wall</h2>
+        <p class="text-sm text-slate-600 mb-4">Short notes for the whole team (max 400 characters).</p>
+        <div class="flex flex-col sm:flex-row gap-3 mb-4">
+          <textarea id="wall-message" rows="2" maxlength="400" class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Share prayer, gratitude, or a verse…"></textarea>
+          <button type="button" id="btn-post-wall" class="sm:self-end px-6 py-2.5 rounded-xl bg-brand text-white text-sm font-semibold h-fit">Post</button>
+        </div>
+        <div id="wall-feed" class="space-y-3 max-h-80 overflow-y-auto"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Shout-out modal -->
+  <div id="modal-shout" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+      <h3 class="font-bold text-lg mb-1">Shout-out to <span id="modal-shout-name"></span></h3>
+      <p class="text-xs text-slate-500 mb-3">They’ll see it on the wall.</p>
+      <textarea id="modal-shout-text" rows="3" maxlength="400" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mb-4" placeholder="Your message…"></textarea>
+      <div class="flex gap-2 justify-end">
+        <button type="button" id="modal-shout-cancel" class="px-4 py-2 rounded-xl border border-slate-200 text-sm">Cancel</button>
+        <button type="button" id="modal-shout-send" class="px-4 py-2 rounded-xl bg-brand text-white text-sm font-semibold">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var EMAIL_LINK_CONTINUE_URL = 'https://houston-world-cup-prayer-city.vercel.app/dashboard.html';
+      var SELF_SERVE_SIGNIN_URL =
+        'https://us-central1-bible-study-dashboard-99f2d.cloudfunctions.net/volunteerSelfServeSignInMail';
+
+      var cfg = window.__FIREBASE_CONFIG__ || {};
+      if (!cfg.apiKey || cfg.apiKey === 'REPLACE_ME') {
+        document.getElementById('setup-banner').classList.remove('hidden');
+        document.getElementById('auth-gate').classList.add('hidden');
+        return;
+      }
+
+      firebase.initializeApp(cfg);
+      var auth = firebase.auth();
+      var db = firebase.firestore();
+      var functions = firebase.app().functions('us-central1');
+
+      var directoryData = {};
+      var waveCounts = {};
+      var shoutTargetUid = null;
+      var shoutTargetName = '';
+
+      var els = {
+        authGate: document.getElementById('auth-gate'),
+        hubMain: document.getElementById('hub-main'),
+        gateEmail: document.getElementById('gate-email'),
+        gatePassword: document.getElementById('gate-password'),
+        gateStatus: document.getElementById('gate-status'),
+        btnPasswordSignin: document.getElementById('btn-password-signin'),
+        btnEmailLink: document.getElementById('btn-email-link'),
+        btnSignout: document.getElementById('btn-signout'),
+        navMe: document.getElementById('nav-me'),
+        rosterGrid: document.getElementById('roster-grid'),
+        filterSearch: document.getElementById('filter-search'),
+        filterTent: document.getElementById('filter-tent'),
+        filterTimeslot: document.getElementById('filter-timeslot'),
+        myTent: document.getElementById('my-tent'),
+        myShiftsDisplay: document.getElementById('my-shifts-display'),
+        btnSaveAssignment: document.getElementById('btn-save-assignment'),
+        assignmentStatus: document.getElementById('assignment-status'),
+        wallMessage: document.getElementById('wall-message'),
+        btnPostWall: document.getElementById('btn-post-wall'),
+        wallFeed: document.getElementById('wall-feed'),
+        modalShout: document.getElementById('modal-shout'),
+        modalShoutName: document.getElementById('modal-shout-name'),
+        modalShoutText: document.getElementById('modal-shout-text'),
+        modalShoutCancel: document.getElementById('modal-shout-cancel'),
+        modalShoutSend: document.getElementById('modal-shout-send'),
+      };
+
+      function setGateStatus(msg, err) {
+        els.gateStatus.textContent = msg || '';
+        els.gateStatus.className = 'text-sm min-h-[1.25rem] ' + (err ? 'text-red-600' : 'text-slate-600');
+      }
+
+      function showGate() {
+        els.authGate.classList.remove('hidden');
+        els.hubMain.classList.add('hidden');
+      }
+
+      function showHub() {
+        els.authGate.classList.add('hidden');
+        els.hubMain.classList.remove('hidden');
+      }
+
+      function mergeProfile() {
+        return functions
+          .httpsCallable('mergeVolunteerProfile')()
+          .catch(function () {});
+      }
+
+      function syncVolunteerDirectory(uid, d) {
+        return db
+          .collection('volunteer_directory')
+          .doc(uid)
+          .set(
+            {
+              uid: uid,
+              name: d.name || '',
+              photoURL: d.photoURL || '',
+              shifts: d.shifts || '',
+              tent: d.tent || '',
+              timeslot: d.timeslot || '',
+              position: d.position || '',
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+      }
+
+      function getShiftFilterKey(r) {
+        var ts = (r.timeslot || '').trim();
+        if (ts) return ts;
+        var sh = (r.shifts || '').trim();
+        if (!sh) return '';
+        return sh.split('\n')[0].trim().slice(0, 120);
+      }
+
+      function getShiftLineForCard(r) {
+        var ts = (r.timeslot || '').trim();
+        var pos = (r.position || '').trim();
+        if (ts || pos) return ts && pos ? ts + ' · ' + pos : ts || pos;
+        var sh = (r.shifts || '').trim();
+        return sh || '—';
+      }
+
+      function loadMyVolunteer(uid) {
+        return db
+          .collection('volunteers')
+          .doc(uid)
+          .get()
+          .then(function (snap) {
+            var d = snap.exists ? snap.data() : {};
+            els.myTent.value = d.tent || '';
+            els.myShiftsDisplay.textContent = (d.shifts || '').trim() || '—';
+            var name = d.name || (auth.currentUser.email || '').split('@')[0];
+            els.navMe.textContent = name;
+            return syncVolunteerDirectory(uid, d);
+          });
+      }
+
+      function completeEmailLinkIfNeeded() {
+        if (!firebase.auth().isSignInWithEmailLink(window.location.href)) return Promise.resolve(false);
+        var email = window.localStorage.getItem('emailForSignIn');
+        if (!email) email = window.prompt('Your email:');
+        if (!email) {
+          setGateStatus('Email required.', true);
+          return Promise.resolve(false);
+        }
+        return auth.signInWithEmailLink(email, window.location.href).then(function () {
+          window.localStorage.removeItem('emailForSignIn');
+          window.history.replaceState({}, document.title, window.location.pathname);
+          return true;
+        });
+      }
+
+      function updateFilterDropdowns() {
+        var tents = {};
+        var times = {};
+        Object.keys(directoryData).forEach(function (uid) {
+          var r = directoryData[uid];
+          var t = (r.tent || '').trim();
+          var ts = getShiftFilterKey(r);
+          if (t) tents[t] = true;
+          if (ts) times[ts] = true;
+        });
+        var tentSel = els.filterTent;
+        var tsSel = els.filterTimeslot;
+        var tv = tentSel.value;
+        var tsv = tsSel.value;
+        while (tentSel.options.length > 1) tentSel.remove(1);
+        while (tsSel.options.length > 1) tsSel.remove(1);
+        Object.keys(tents)
+          .sort()
+          .forEach(function (t) {
+            tentSel.add(new Option(t, t));
+          });
+        Object.keys(times)
+          .sort()
+          .forEach(function (t) {
+            tsSel.add(new Option(t, t));
+          });
+        tentSel.value = tv;
+        tsSel.value = tsv;
+      }
+
+      function renderRoster() {
+        var q = (els.filterSearch.value || '').toLowerCase().trim();
+        var ft = (els.filterTent.value || '').trim();
+        var fts = (els.filterTimeslot.value || '').trim();
+        var uidSelf = auth.currentUser && auth.currentUser.uid;
+        var list = Object.keys(directoryData).map(function (uid) {
+          return { uid: uid, r: directoryData[uid] };
+        });
+        list.sort(function (a, b) {
+          return (a.r.name || '').localeCompare(b.r.name || '');
+        });
+        list = list.filter(function (x) {
+          var r = x.r;
+          var name = (r.name || '').toLowerCase();
+          if (q) {
+            var hay = (name + ' ' + (r.shifts || '').toLowerCase() + ' ' + (r.tent || '').toLowerCase()).trim();
+            if (hay.indexOf(q) === -1) return false;
+          }
+          if (ft && (r.tent || '').trim() !== ft) return false;
+          if (fts && getShiftFilterKey(r) !== fts) return false;
+          return true;
+        });
+
+        if (list.length === 0) {
+          els.rosterGrid.innerHTML =
+            '<p class="text-slate-500 text-sm col-span-full">No volunteers match. Adjust filters or check back after more teammates sign in.</p>';
+          return;
+        }
+
+        els.rosterGrid.innerHTML = list
+          .map(function (x) {
+            var r = x.r;
+            var uid = x.uid;
+            var initial = (r.name || 'V').trim().charAt(0).toUpperCase();
+            var img = r.photoURL
+              ? '<img src="' +
+                r.photoURL.replace(/"/g, '&quot;') +
+                '" alt="" class="w-16 h-16 rounded-xl object-cover border border-slate-100" />'
+              : '<div class="w-16 h-16 rounded-xl bg-brand-soft text-brand font-bold text-xl flex items-center justify-center border border-slate-100">' +
+                initial +
+                '</div>';
+            var waves = waveCounts[uid] || 0;
+            var isSelf = uid === uidSelf;
+            return (
+              '<div class="bg-white rounded-2xl border border-slate-100 shadow-card p-4 flex flex-col gap-3 hover:border-brand/30 transition">' +
+              '<div class="flex gap-3">' +
+              img +
+              '<div class="min-w-0 flex-1">' +
+              '<p class="font-bold text-slate-900 truncate">' +
+              (r.name || 'Volunteer') +
+              (isSelf ? ' <span class="text-xs font-normal text-brand">(you)</span>' : '') +
+              '</p>' +
+              '<p class="text-xs text-slate-500 mt-1"><i class="fas fa-campground mr-1"></i>' +
+              (r.tent || '—') +
+              '</p>' +
+              '<p class="text-sm text-slate-700 mt-1 whitespace-pre-wrap"><i class="fas fa-clock mr-1 text-brand"></i>' +
+              getShiftLineForCard(r).replace(/</g, '&lt;') +
+              '</p>' +
+              '</div></div>' +
+              '<div class="flex flex-wrap gap-2 pt-1 border-t border-slate-100">' +
+              '<span class="text-xs text-slate-400"><i class="fas fa-hand-sparkles mr-1"></i>' +
+              waves +
+              ' wave' +
+              (waves === 1 ? '' : 's') +
+              '</span>' +
+              (isSelf
+                ? ''
+                : '<button type="button" class="wave-btn text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-soft text-brand hover:bg-brand/10 transition" data-uid="' +
+                  uid +
+                  '">Wave 👋</button>' +
+                  '<button type="button" class="shout-btn text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition" data-uid="' +
+                  uid +
+                  '" data-name="' +
+                  (r.name || 'Volunteer').replace(/"/g, '&quot;') +
+                  '">Shout-out</button>') +
+              '</div></div>'
+            );
+          })
+          .join('');
+
+        els.rosterGrid.querySelectorAll('.wave-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var to = btn.getAttribute('data-uid');
+            if (!to || to === uidSelf) return;
+            db.collection('community_waves')
+              .add({
+                fromUid: uidSelf,
+                toUid: to,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+              })
+              .then(function () {
+                btn.textContent = 'Sent! 👋';
+                btn.disabled = true;
+              })
+              .catch(function (e) {
+                alert(e.message || 'Could not send wave');
+              });
+          });
+        });
+
+        els.rosterGrid.querySelectorAll('.shout-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            shoutTargetUid = btn.getAttribute('data-uid');
+            shoutTargetName = btn.getAttribute('data-name') || 'Volunteer';
+            els.modalShoutName.textContent = shoutTargetName;
+            els.modalShoutText.value = '';
+            els.modalShout.classList.remove('hidden');
+          });
+        });
+      }
+
+      function formatPostTime(ts) {
+        if (!ts) return '';
+        if (ts.toDate) return ts.toDate().toLocaleString();
+        if (ts.seconds) return new Date(ts.seconds * 1000).toLocaleString();
+        return '';
+      }
+
+      function renderWall(snapDocs) {
+        var arr = snapDocs.slice().sort(function (a, b) {
+          var ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+          var tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+          return tb - ta;
+        });
+        els.wallFeed.innerHTML = arr
+          .map(function (d) {
+            var m = d.message || '';
+            var who = d.fromName || 'Volunteer';
+            var type = d.type || 'message';
+            var extra =
+              type === 'shoutout' && d.toName
+                ? '<span class="text-brand font-medium"> @ ' +
+                  String(d.toName).replace(/</g, '&lt;') +
+                  '</span>'
+                : '';
+            var t = formatPostTime(d.createdAt);
+            return (
+              '<div class="rounded-xl border border-slate-100 bg-slate-50/80 p-3 text-sm">' +
+              '<p class="font-semibold text-slate-800">' +
+              String(who).replace(/</g, '&lt;') +
+              extra +
+              '</p>' +
+              '<p class="text-slate-700 mt-1 whitespace-pre-wrap">' +
+              m.replace(/</g, '&lt;') +
+              '</p>' +
+              '<p class="text-xs text-slate-400 mt-2">' +
+              t +
+              '</p>' +
+              '</div>'
+            );
+          })
+          .join('');
+      }
+
+      var wallDocs = [];
+      var unsubDirectory = null;
+      var unsubWaves = null;
+      var unsubPosts = null;
+
+      function subscribeHub() {
+        if (unsubDirectory) unsubDirectory();
+        if (unsubWaves) unsubWaves();
+        if (unsubPosts) unsubPosts();
+
+        unsubDirectory = db.collection('volunteer_directory').onSnapshot(function (snap) {
+          directoryData = {};
+          snap.forEach(function (doc) {
+            directoryData[doc.id] = doc.data();
+          });
+          updateFilterDropdowns();
+          renderRoster();
+        });
+
+        unsubWaves = db.collection('community_waves').onSnapshot(function (snap) {
+          waveCounts = {};
+          snap.forEach(function (doc) {
+            var t = doc.data().toUid;
+            if (t) waveCounts[t] = (waveCounts[t] || 0) + 1;
+          });
+          renderRoster();
+        });
+
+        unsubPosts = db.collection('community_posts').onSnapshot(function (snap) {
+          wallDocs = [];
+          snap.forEach(function (doc) {
+            var x = doc.data();
+            x._id = doc.id;
+            wallDocs.push(x);
+          });
+          renderWall(wallDocs);
+        });
+      }
+
+      els.filterSearch.addEventListener('input', renderRoster);
+      els.filterTent.addEventListener('change', renderRoster);
+      els.filterTimeslot.addEventListener('change', renderRoster);
+
+      els.btnSaveAssignment.addEventListener('click', function () {
+        var user = auth.currentUser;
+        if (!user) return;
+        els.assignmentStatus.textContent = 'Saving…';
+        var patch = {
+          tent: els.myTent.value.trim(),
+        };
+        db.collection('volunteers')
+          .doc(user.uid)
+          .set(patch, { merge: true })
+          .then(function () {
+            return db
+              .collection('volunteers')
+              .doc(user.uid)
+              .get()
+              .then(function (s) {
+                return syncVolunteerDirectory(user.uid, s.exists ? s.data() : patch);
+              });
+          })
+          .then(function () {
+            els.assignmentStatus.textContent = 'Saved. Your card updates for everyone.';
+          })
+          .catch(function (e) {
+            els.assignmentStatus.textContent = e.message || 'Save failed';
+          });
+      });
+
+      els.btnPostWall.addEventListener('click', function () {
+        var user = auth.currentUser;
+        if (!user) return;
+        var msg = (els.wallMessage.value || '').trim();
+        if (msg.length < 1) return;
+        var name = (directoryData[user.uid] && directoryData[user.uid].name) || user.email.split('@')[0];
+        db.collection('community_posts')
+          .add({
+            type: 'message',
+            fromUid: user.uid,
+            fromName: name,
+            message: msg.slice(0, 400),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          })
+          .then(function () {
+            els.wallMessage.value = '';
+          })
+          .catch(function (e) {
+            alert(e.message || 'Post failed');
+          });
+      });
+
+      els.modalShoutCancel.addEventListener('click', function () {
+        els.modalShout.classList.add('hidden');
+      });
+
+      els.modalShoutSend.addEventListener('click', function () {
+        var user = auth.currentUser;
+        if (!user || !shoutTargetUid) return;
+        var msg = (els.modalShoutText.value || '').trim();
+        if (msg.length < 1) return;
+        var name = (directoryData[user.uid] && directoryData[user.uid].name) || user.email.split('@')[0];
+        db.collection('community_posts')
+          .add({
+            type: 'shoutout',
+            fromUid: user.uid,
+            fromName: name,
+            toUid: shoutTargetUid,
+            toName: shoutTargetName,
+            message: msg.slice(0, 400),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          })
+          .then(function () {
+            els.modalShout.classList.add('hidden');
+          })
+          .catch(function (e) {
+            alert(e.message || 'Send failed');
+          });
+      });
+
+      els.btnPasswordSignin.addEventListener('click', function () {
+        var email = (els.gateEmail.value || '').trim();
+        var pw = els.gatePassword.value || '';
+        if (!email || !pw) {
+          setGateStatus('Enter email and password.', true);
+          return;
+        }
+        setGateStatus('Signing in…');
+        auth.signInWithEmailAndPassword(email, pw).catch(function (e) {
+          setGateStatus(e.message || 'Failed', true);
+        });
+      });
+
+      function sendSignInLinkFirebase(email) {
+        return auth.sendSignInLinkToEmail(email, {
+          url: EMAIL_LINK_CONTINUE_URL,
+          handleCodeInApp: true,
+        });
+      }
+
+      els.btnEmailLink.addEventListener('click', function () {
+        var email = (els.gateEmail.value || '').trim();
+        if (!email) {
+          setGateStatus('Enter email first.', true);
+          return;
+        }
+        setGateStatus('Sending…');
+        if (!SELF_SERVE_SIGNIN_URL) {
+          sendSignInLinkFirebase(email)
+            .then(function () {
+              window.localStorage.setItem('emailForSignIn', email);
+              setGateStatus('Check email (link opens Home; then open Team roster).');
+            })
+            .catch(function (e) {
+              setGateStatus(e.message || 'Failed', true);
+            });
+          return;
+        }
+        fetch(SELF_SERVE_SIGNIN_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email }),
+        })
+          .then(function (r) {
+            return r.text().then(function (t) {
+              var j = {};
+              try {
+                j = JSON.parse(t);
+              } catch (e) {}
+              return { status: r.status, body: j };
+            });
+          })
+          .then(function (res) {
+            if (res.status === 200 && res.body.ok) {
+              window.localStorage.setItem('emailForSignIn', email);
+              setGateStatus('Check email. After signing in on Home, return here.');
+              return;
+            }
+            if (res.status === 503 || res.status === 502) {
+              return sendSignInLinkFirebase(email).then(function () {
+                window.localStorage.setItem('emailForSignIn', email);
+                setGateStatus('Check email.');
+              });
+            }
+            setGateStatus((res.body && res.body.message) || 'Could not send.', true);
+          })
+          .catch(function () {
+            return sendSignInLinkFirebase(email).then(function () {
+              window.localStorage.setItem('emailForSignIn', email);
+              setGateStatus('Check email.');
+            });
+          })
+          .catch(function (e) {
+            setGateStatus(e.message || 'Failed', true);
+          });
+      });
+
+      els.btnSignout.addEventListener('click', function () {
+        auth.signOut();
+      });
+
+      auth.onAuthStateChanged(function (user) {
+        if (!user) {
+          showGate();
+          return;
+        }
+        showHub();
+        mergeProfile().then(function () {
+          return loadMyVolunteer(user.uid);
+        });
+        subscribeHub();
+      });
+
+      completeEmailLinkIfNeeded().catch(function () {});
+    })();
+  </script>
+</body>
+</html>

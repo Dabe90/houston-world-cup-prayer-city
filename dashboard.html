@@ -124,7 +124,11 @@
             <span class="hidden sm:inline text-slate-400 text-xs ml-2">Volunteer hub</span>
           </div>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+          <nav class="flex items-center gap-1 mr-1">
+            <span class="text-sm font-semibold text-brand px-2.5 py-1 rounded-lg bg-brand-soft">Home</span>
+            <a href="volunteer-hub.html" class="text-sm font-medium text-slate-600 hover:text-brand px-2.5 py-1 rounded-lg hover:bg-slate-50 transition">Team roster</a>
+          </nav>
           <span id="nav-welcome" class="hidden sm:inline text-sm text-slate-600 max-w-[200px] truncate"></span>
           <button type="button" id="btn-signout" class="text-sm font-medium text-slate-600 hover:text-red-600 transition px-3 py-1.5 rounded-lg hover:bg-slate-50">
             <i class="fas fa-sign-out-alt mr-1"></i> Sign out
@@ -431,6 +435,28 @@
         });
       }
 
+      function syncVolunteerDirectory(uid, d) {
+        return db
+          .collection('volunteer_directory')
+          .doc(uid)
+          .set(
+            {
+              uid: uid,
+              name: d.name || '',
+              photoURL: d.photoURL || '',
+              shifts: d.shifts || '',
+              tent: d.tent || '',
+              timeslot: d.timeslot || '',
+              position: d.position || '',
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          )
+          .catch(function (e) {
+            console.warn('syncVolunteerDirectory', e);
+          });
+      }
+
       function loadVolunteerDoc(uid) {
         return db
           .collection('volunteers')
@@ -461,6 +487,8 @@
                 n.disabled = true;
               });
             }
+
+            return syncVolunteerDirectory(uid, d);
           });
       }
 
