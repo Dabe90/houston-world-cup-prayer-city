@@ -7,3 +7,7 @@ firebase-debug.log
 
 .vercel
 .env*.local
+
+# Apps Script CLI — contains your Google Script project ID (local only)
+google-apps-script/.clasp.json
+google-apps-script/node_modules

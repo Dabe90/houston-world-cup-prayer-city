@@ -555,13 +555,70 @@ function sendPendingInvites() {
 // Deploy: Deploy → New deployment → Select type: Web app
 // Execute as: Me  |  Who has access: Anyone
 // Copy the Web app URL into Firebase secret APPS_SCRIPT_SELF_SERVE_MAIL_URL
+//
+// Also handles type "volunteer_sheet_update" (POST from Firebase Callable) to
+// update columns A, F, I, J and rebalance Tent (H) when shifts (F) change.
 // =============================================
+
+function findRowByEmail_(sheet, email) {
+  var target = String(email || "")
+    .trim()
+    .toLowerCase();
+  if (!target) return 0;
+  var data = sheet.getDataRange().getValues();
+  for (var r = 1; r < data.length; r++) {
+    var cell = String(data[r][CONFIG.EMAIL_COLUMN - 1] || "")
+      .trim()
+      .toLowerCase();
+    if (cell === target) return r + 1;
+  }
+  return 0;
+}
+
+function handleVolunteerSheetUpdate_(data) {
+  if (data.secret !== CONFIG.SELF_SERVE_MAIL_SECRET) {
+    return jsonResponse({ ok: false, error: "unauthorized" });
+  }
+  var email = String(data.email || "")
+    .trim()
+    .toLowerCase();
+  if (!email) return jsonResponse({ ok: false, error: "missing_email" });
+
+  var dateStr = String(data.dateStr || "").trim();
+  var position = String(data.position || "").trim();
+  var timeslot = String(data.timeslot || "").trim();
+  var shifts = String(data.shifts || "").trim();
+
+  if (!dateStr && !position && !timeslot && !shifts) {
+    return jsonResponse({ ok: false, error: "nothing_to_update" });
+  }
+
+  var sheet = getVolunteerSheet_();
+  var rowNum = findRowByEmail_(sheet, email);
+  if (!rowNum) return jsonResponse({ ok: false, error: "email_not_in_sheet" });
+
+  if (dateStr) sheet.getRange(rowNum, CONFIG.DATE_COLUMN).setValue(dateStr);
+  if (position) sheet.getRange(rowNum, CONFIG.POSITION_COLUMN).setValue(position);
+  if (timeslot) sheet.getRange(rowNum, CONFIG.TIMESLOT_COLUMN).setValue(timeslot);
+  if (shifts) {
+    sheet.getRange(rowNum, CONFIG.SHIFTS_COLUMN).setValue(shifts);
+    var tent = computeBalancedTent_(sheet, rowNum, shifts);
+    sheet.getRange(rowNum, CONFIG.TENT_COLUMN).setValue(tent);
+  }
+
+  return jsonResponse({ ok: true, row: rowNum });
+}
+
 function doPost(e) {
   var data = {};
   try {
     data = JSON.parse((e.postData && e.postData.contents) || "{}");
   } catch (err) {
     return jsonResponse({ ok: false, error: "invalid_json" });
+  }
+
+  if (data.type === "volunteer_sheet_update") {
+    return handleVolunteerSheetUpdate_(data);
   }
 
   if (data.type !== "self_serve_signin") {

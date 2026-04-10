@@ -1,0 +1,12 @@
+{
+  "name": "prayer-city-apps-script",
+  "private": true,
+  "scripts": {
+    "push": "clasp push",
+    "open": "clasp open",
+    "pull": "clasp pull"
+  },
+  "devDependencies": {
+    "@google/clasp": "^2.4.2"
+  }
+}

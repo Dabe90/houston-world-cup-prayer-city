@@ -231,6 +231,46 @@
             <div id="role-summaries-container" class="space-y-4"></div>
           </section>
 
+          <section id="sheet-update-section" class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+              <div>
+                <h2 class="text-2xl font-bold text-slate-900">Update availability &amp; role</h2>
+                <p class="text-sm text-slate-600 mt-1">
+                  If your schedule opens up or changes, save here. We write to the <strong>Google Sheet</strong> (same row as your email) and refresh your dashboard record.
+                </p>
+              </div>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-4 max-w-2xl">
+              <div class="sm:col-span-2">
+                <label for="sheet-update-date-primary" class="block text-sm font-medium text-slate-700 mb-1">Preferred date (start)</label>
+                <input type="date" id="sheet-update-date-primary" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light" />
+              </div>
+              <div class="sm:col-span-2">
+                <label for="sheet-update-date-extra" class="block text-sm font-medium text-slate-700 mb-1">More dates (optional)</label>
+                <input type="text" id="sheet-update-date-extra" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light" placeholder="e.g. June 12–18, 2026 or extra days" />
+              </div>
+              <div class="sm:col-span-2">
+                <label for="sheet-update-position" class="block text-sm font-medium text-slate-700 mb-1">Position</label>
+                <select id="sheet-update-position" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light bg-white">
+                  <option value="">— Keep current / not set —</option>
+                  <option value="Prayer Partners">Prayer Partners</option>
+                  <option value="Counselors">Counselors</option>
+                  <option value="Logistics and Welfare">Logistics and Welfare</option>
+                  <option value="Photography and Video">Photography and Video</option>
+                  <option value="Social Media and Virtual Support">Social Media and Virtual Support</option>
+                </select>
+              </div>
+              <div class="sm:col-span-2">
+                <label for="sheet-update-time" class="block text-sm font-medium text-slate-700 mb-1">Time you can serve</label>
+                <textarea id="sheet-update-time" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light resize-y" placeholder="e.g. Weekday evenings · All day Saturdays · 10 AM – 2 PM"></textarea>
+              </div>
+            </div>
+            <button type="button" id="btn-sheet-update" class="mt-6 px-6 py-3 rounded-xl bg-brand hover:bg-brand-light text-white font-semibold transition shadow-card inline-flex items-center gap-2">
+              <i class="fas fa-table"></i> Save to Google Sheet
+            </button>
+            <p id="sheet-update-status" class="mt-3 text-sm min-h-[1.25rem] text-slate-600"></p>
+          </section>
+
           <section id="daily-social-section" class="hidden bg-gradient-to-br from-indigo-50 via-white to-violet-50 rounded-2xl shadow-card border border-indigo-100/80 p-6 sm:p-8">
             <h2 class="text-2xl font-bold text-slate-900">Today’s social posts</h2>
             <p class="text-sm text-slate-600 mt-1 mb-6">
@@ -430,6 +470,8 @@
         btnSignout: document.getElementById('btn-signout'),
       };
 
+      var lastVolunteerData = {};
+
       function showGate() {
         els.authGate.classList.remove('hidden');
         els.dashboardMain.classList.add('hidden');
@@ -517,6 +559,73 @@
         var d = document.createElement('div');
         d.textContent = s == null ? '' : String(s);
         return d.innerHTML;
+      }
+
+      function prefillSheetForm(d) {
+        var pos = document.getElementById('sheet-update-position');
+        var timeEl = document.getElementById('sheet-update-time');
+        var datePrimary = document.getElementById('sheet-update-date-primary');
+        var dateExtra = document.getElementById('sheet-update-date-extra');
+        if (!pos || !timeEl || !datePrimary || !dateExtra) return;
+        pos.value = '';
+        timeEl.value = '';
+        datePrimary.value = '';
+        dateExtra.value = '';
+        if (d.position) {
+          var opts = pos.querySelectorAll('option');
+          for (var i = 0; i < opts.length; i++) {
+            if (opts[i].value === d.position) {
+              pos.value = d.position;
+              break;
+            }
+          }
+        }
+        if (d.timeslot) timeEl.value = d.timeslot;
+        if (d.availabilityDate) {
+          var ad = String(d.availabilityDate);
+          var iso = ad.match(/^(\d{4}-\d{2}-\d{2})/);
+          if (iso) datePrimary.value = iso[1];
+          else dateExtra.value = ad;
+        }
+      }
+
+      function buildSheetAvailabilityPayload() {
+        var primaryEl = document.getElementById('sheet-update-date-primary');
+        var extraEl = document.getElementById('sheet-update-date-extra');
+        var posEl = document.getElementById('sheet-update-position');
+        var timeEl = document.getElementById('sheet-update-time');
+        var primary = (primaryEl && primaryEl.value) || '';
+        var extra = (extraEl && extraEl.value) ? extraEl.value.trim() : '';
+        var position = ((posEl && posEl.value) || '').trim() || (lastVolunteerData.position || '').trim();
+        var timeDetail = ((timeEl && timeEl.value) || '').trim() || (lastVolunteerData.timeslot || '').trim();
+
+        var dateParts = [];
+        if (primary) {
+          try {
+            dateParts.push(
+              new Date(primary + 'T12:00:00').toLocaleDateString(undefined, { dateStyle: 'long' })
+            );
+          } catch (e) {
+            dateParts.push(primary);
+          }
+        }
+        if (extra) dateParts.push(extra);
+        var dateStr = dateParts.join(' · ');
+
+        var shifts = [
+          position ? 'Position: ' + position : '',
+          dateStr ? 'Availability dates: ' + dateStr : '',
+          timeDetail ? 'Times: ' + timeDetail : '',
+        ]
+          .filter(Boolean)
+          .join(' · ');
+
+        return {
+          dateStr: dateStr || (lastVolunteerData.availabilityDate ? String(lastVolunteerData.availabilityDate) : ''),
+          position: position,
+          timeslot: timeDetail,
+          shifts: shifts,
+        };
       }
 
       function renderRoleSummaries(d) {
@@ -837,6 +946,8 @@
             els.fvPhone.textContent = d.phone || '—';
             els.fvShifts.textContent = d.shifts || '—';
             els.fvNotes.textContent = d.notes || '—';
+            lastVolunteerData = d;
+            prefillSheetForm(d);
             renderRoleSummaries(d);
             renderDailyModules(d);
             var name = d.name || (auth.currentUser.email || '').split('@')[0];
@@ -862,6 +973,48 @@
             return syncVolunteerDirectory(uid, d);
           });
       }
+
+      var btnSheetUpdate = document.getElementById('btn-sheet-update');
+      if (btnSheetUpdate) btnSheetUpdate.addEventListener('click', function () {
+        var status = document.getElementById('sheet-update-status');
+        var payload = buildSheetAvailabilityPayload();
+        if (!payload.dateStr && !payload.position && !payload.timeslot && !payload.shifts) {
+          status.textContent = 'Please set at least one of date, position, or time.';
+          status.className = 'mt-3 text-sm min-h-[1.25rem] text-red-600';
+          return;
+        }
+        if (!payload.shifts) {
+          payload.shifts = [
+            payload.position ? 'Position: ' + payload.position : '',
+            payload.dateStr ? 'Availability dates: ' + payload.dateStr : '',
+            payload.timeslot ? 'Times: ' + payload.timeslot : '',
+          ]
+            .filter(Boolean)
+            .join(' · ');
+        }
+        status.textContent = 'Saving to Google Sheet…';
+        status.className = 'mt-3 text-sm min-h-[1.25rem] text-slate-600';
+        var fn = functions.httpsCallable('updateVolunteerSheetPreferences');
+        fn({
+          dateStr: payload.dateStr,
+          position: payload.position,
+          timeslot: payload.timeslot,
+          shifts: payload.shifts,
+        })
+          .then(function () {
+            status.textContent = 'Saved. Your row in the sheet and this dashboard are updated.';
+            status.className = 'mt-3 text-sm min-h-[1.25rem] text-emerald-700 font-medium';
+            return loadVolunteerDoc(auth.currentUser.uid);
+          })
+          .catch(function (e) {
+            console.error('sheet update', e);
+            var msg =
+              (e && e.message) ||
+              'Could not save. Deploy Cloud Functions + Apps Script (volunteer_sheet_update).';
+            status.textContent = msg;
+            status.className = 'mt-3 text-sm min-h-[1.25rem] text-red-600';
+          });
+      });
 
       els.profileAvatarInput.addEventListener('change', function (ev) {
         var file = ev.target.files && ev.target.files[0];

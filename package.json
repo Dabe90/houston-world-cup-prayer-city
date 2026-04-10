@@ -1,5 +1,9 @@
 {
   "dependencies": {
     "@supabase/supabase-js": "^2.101.1"
+  },
+  "scripts": {
+    "apps-script:push": "npm run push --prefix google-apps-script",
+    "apps-script:open": "npm run open --prefix google-apps-script"
   }
 }

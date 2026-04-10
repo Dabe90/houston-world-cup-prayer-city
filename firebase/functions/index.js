@@ -280,6 +280,118 @@ exports.mergeVolunteerProfile = onCall(async (request) => {
 });
 
 /**
+ * Callable: update volunteer row in Google Sheet (date, position, time, shifts text)
+ * and sync Firestore. Uses same Apps Script URL + secret as self-serve mail.
+ */
+exports.updateVolunteerSheetPreferences = onCall(
+  { cors: true, secrets: [selfServeMailSecret, appsScriptSelfServeMailUrl] },
+  async (request) => {
+    if (!request.auth?.token?.email) {
+      throw new HttpsError('unauthenticated', 'Sign in required.');
+    }
+
+    const email = normalizeEmail(request.auth.token.email);
+    const uid = request.auth.uid;
+    const d = request.data || {};
+    const dateStr = String(d.dateStr || '').trim();
+    const position = String(d.position || '').trim();
+    const timeslot = String(d.timeslot || '').trim();
+    const shifts = String(d.shifts || '').trim();
+
+    if (!dateStr && !position && !timeslot && !shifts) {
+      throw new HttpsError(
+        'invalid-argument',
+        'Fill at least one of date, position, or time.'
+      );
+    }
+
+    const scriptUrl = appsScriptSelfServeMailUrl.value();
+    const secret = selfServeMailSecret.value();
+    if (!scriptUrl?.trim() || !secret?.trim()) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Sheet sync is not configured (Apps Script URL / secret).'
+      );
+    }
+
+    let res;
+    try {
+      res = await fetch(scriptUrl, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'volunteer_sheet_update',
+          secret,
+          email,
+          dateStr,
+          position,
+          timeslot,
+          shifts,
+        }),
+      });
+    } catch (e) {
+      console.error('updateVolunteerSheetPreferences fetch', e);
+      throw new HttpsError('unavailable', 'Could not reach Google Apps Script.');
+    }
+
+    const text = await res.text();
+    let parsed = null;
+    try {
+      parsed = text ? JSON.parse(text) : {};
+    } catch (_) {}
+
+    if (!res.ok || !parsed?.ok) {
+      const err = parsed?.error || 'sheet_update_failed';
+      if (err === 'email_not_in_sheet') {
+        throw new HttpsError(
+          'not-found',
+          'Your email was not found in the volunteer sheet. Ask an organizer to add your row, or use the same email you signed up with.'
+        );
+      }
+      throw new HttpsError(
+        'failed-precondition',
+        typeof err === 'string' ? err : 'sheet_update_failed'
+      );
+    }
+
+    const volRef = admin.firestore().collection('volunteers').doc(uid);
+    const patch = {
+      sheetRowUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+    if (shifts) patch.shifts = shifts;
+    if (position) patch.position = position;
+    if (timeslot) patch.timeslot = timeslot;
+    if (dateStr) patch.availabilityDate = dateStr;
+
+    await volRef.set(patch, { merge: true });
+
+    const volSnap = await volRef.get();
+    const vol = volSnap.exists ? volSnap.data() : {};
+
+    await admin
+      .firestore()
+      .collection('volunteer_directory')
+      .doc(uid)
+      .set(
+        {
+          uid,
+          name: vol.name || '',
+          photoURL: vol.photoURL || '',
+          shifts: vol.shifts || '',
+          tent: vol.tent || '',
+          timeslot: vol.timeslot || '',
+          position: vol.position || '',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+    return { ok: true, row: parsed.row };
+  }
+);
+
+/**
  * Callable: logistics volunteers — headline from public RSS + practical event tip.
  * Requires auth. Falls back to static tip if RSS fetch fails.
  */
