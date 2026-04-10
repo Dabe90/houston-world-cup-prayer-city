@@ -557,7 +557,16 @@
 
       function openShiftEditModal() {
         var P = window.VolunteerShiftPicker;
-        if (!P || !els.shiftEditMount || !els.shiftEditModal) return;
+        if (!els.shiftEditMount || !els.shiftEditModal) return;
+        if (!P) {
+          if (els.shiftEditStatus) {
+            els.shiftEditStatus.textContent =
+              'Shift editor failed to load. Hard-refresh the page (Ctrl+Shift+R). If it persists, contact an organizer.';
+          }
+          els.shiftEditModal.classList.remove('hidden');
+          document.body.style.overflow = 'hidden';
+          return;
+        }
         if (!els.shiftEditMount.dataset.rendered) {
           P.render(els.shiftEditMount);
           els.shiftEditMount.dataset.rendered = '1';
