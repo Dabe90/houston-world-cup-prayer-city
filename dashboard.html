@@ -40,6 +40,7 @@
   <script src="js/firebase-config.js"></script>
   <script src="js/volunteer-role-guides.js"></script>
   <script src="js/volunteer-daily-content.js"></script>
+  <script src="js/volunteer-shift-picker.js"></script>
 
   <style>
     body { font-family: system-ui, sans-serif; }
@@ -206,6 +207,9 @@
                 <dt class="text-slate-500 text-xs uppercase tracking-wide mb-1">Notes</dt>
                 <dd id="fv-notes" class="text-sm text-slate-700 whitespace-pre-wrap"></dd>
               </div>
+              <button type="button" id="btn-open-shift-edit" class="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand/25 bg-brand-soft text-brand font-semibold text-sm hover:bg-brand/10 transition">
+                <i class="fas fa-calendar-check"></i> Edit Shifts
+              </button>
             </div>
           </div>
 
@@ -229,46 +233,6 @@
               </a>
             </div>
             <div id="role-summaries-container" class="space-y-4"></div>
-          </section>
-
-          <section id="sheet-update-section" class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
-            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-              <div>
-                <h2 class="text-2xl font-bold text-slate-900">Update availability &amp; role</h2>
-                <p class="text-sm text-slate-600 mt-1">
-                  If your schedule opens up or changes, save here. We write to the <strong>Google Sheet</strong> (same row as your email) and refresh your dashboard record.
-                </p>
-              </div>
-            </div>
-            <div class="grid sm:grid-cols-2 gap-4 max-w-2xl">
-              <div class="sm:col-span-2">
-                <label for="sheet-update-date-primary" class="block text-sm font-medium text-slate-700 mb-1">Preferred date (start)</label>
-                <input type="date" id="sheet-update-date-primary" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light" />
-              </div>
-              <div class="sm:col-span-2">
-                <label for="sheet-update-date-extra" class="block text-sm font-medium text-slate-700 mb-1">More dates (optional)</label>
-                <input type="text" id="sheet-update-date-extra" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light" placeholder="e.g. June 12–18, 2026 or extra days" />
-              </div>
-              <div class="sm:col-span-2">
-                <label for="sheet-update-position" class="block text-sm font-medium text-slate-700 mb-1">Position</label>
-                <select id="sheet-update-position" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light bg-white">
-                  <option value="">— Keep current / not set —</option>
-                  <option value="Prayer Partners">Prayer Partners</option>
-                  <option value="Counselors">Counselors</option>
-                  <option value="Logistics and Welfare">Logistics and Welfare</option>
-                  <option value="Photography and Video">Photography and Video</option>
-                  <option value="Social Media and Virtual Support">Social Media and Virtual Support</option>
-                </select>
-              </div>
-              <div class="sm:col-span-2">
-                <label for="sheet-update-time" class="block text-sm font-medium text-slate-700 mb-1">Time you can serve</label>
-                <textarea id="sheet-update-time" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light resize-y" placeholder="e.g. Weekday evenings · All day Saturdays · 10 AM – 2 PM"></textarea>
-              </div>
-            </div>
-            <button type="button" id="btn-sheet-update" class="mt-6 px-6 py-3 rounded-xl bg-brand hover:bg-brand-light text-white font-semibold transition shadow-card inline-flex items-center gap-2">
-              <i class="fas fa-table"></i> Save to Google Sheet
-            </button>
-            <p id="sheet-update-status" class="mt-3 text-sm min-h-[1.25rem] text-slate-600"></p>
           </section>
 
           <section id="daily-social-section" class="hidden bg-gradient-to-br from-indigo-50 via-white to-violet-50 rounded-2xl shadow-card border border-indigo-100/80 p-6 sm:p-8">
@@ -416,6 +380,29 @@
         </main>
       </div>
     </div>
+
+    <!-- Edit shifts (same slot grid as signup form) -->
+    <div id="shift-edit-modal" class="hidden fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <button type="button" id="shift-edit-backdrop" class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" aria-label="Close"></button>
+      <div class="relative w-full max-w-2xl max-h-[90vh] sm:rounded-2xl bg-white shadow-2xl border border-slate-200 flex flex-col mt-auto sm:mt-0 rounded-t-2xl sm:rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100 bg-slate-50 shrink-0">
+          <h2 class="text-lg font-bold text-slate-900">Your shifts</h2>
+          <button type="button" id="btn-close-shift-edit" class="p-2 rounded-lg text-slate-500 hover:bg-slate-200/80 hover:text-slate-800 transition" aria-label="Close">
+            <i class="fas fa-times text-lg"></i>
+          </button>
+        </div>
+        <div class="overflow-y-auto flex-1 px-4 py-4">
+          <p class="text-sm text-slate-600 mb-3">Choose a role for each time slot you can serve. Leave as &ldquo;Not this slot&rdquo; to skip.</p>
+          <div id="shift-edit-mount"></div>
+        </div>
+        <div class="px-4 py-3 border-t border-slate-100 bg-white flex flex-col sm:flex-row sm:items-center gap-3 shrink-0">
+          <p id="shift-edit-status" class="text-sm min-h-[1.25rem] text-slate-600 flex-1 order-2 sm:order-1"></p>
+          <button type="button" id="btn-shift-edit-save" class="order-1 sm:order-2 px-6 py-2.5 rounded-xl bg-brand hover:bg-brand-light text-white font-semibold transition shadow-card">
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -468,6 +455,13 @@
         hasPasswordNote: document.getElementById('has-password-note'),
         passwordCard: document.getElementById('password-card'),
         btnSignout: document.getElementById('btn-signout'),
+        shiftEditModal: document.getElementById('shift-edit-modal'),
+        shiftEditMount: document.getElementById('shift-edit-mount'),
+        btnOpenShiftEdit: document.getElementById('btn-open-shift-edit'),
+        btnCloseShiftEdit: document.getElementById('btn-close-shift-edit'),
+        shiftEditBackdrop: document.getElementById('shift-edit-backdrop'),
+        btnShiftEditSave: document.getElementById('btn-shift-edit-save'),
+        shiftEditStatus: document.getElementById('shift-edit-status'),
       };
 
       var lastVolunteerData = {};
@@ -561,71 +555,22 @@
         return d.innerHTML;
       }
 
-      function prefillSheetForm(d) {
-        var pos = document.getElementById('sheet-update-position');
-        var timeEl = document.getElementById('sheet-update-time');
-        var datePrimary = document.getElementById('sheet-update-date-primary');
-        var dateExtra = document.getElementById('sheet-update-date-extra');
-        if (!pos || !timeEl || !datePrimary || !dateExtra) return;
-        pos.value = '';
-        timeEl.value = '';
-        datePrimary.value = '';
-        dateExtra.value = '';
-        if (d.position) {
-          var opts = pos.querySelectorAll('option');
-          for (var i = 0; i < opts.length; i++) {
-            if (opts[i].value === d.position) {
-              pos.value = d.position;
-              break;
-            }
-          }
+      function openShiftEditModal() {
+        var P = window.VolunteerShiftPicker;
+        if (!P || !els.shiftEditMount || !els.shiftEditModal) return;
+        if (!els.shiftEditMount.dataset.rendered) {
+          P.render(els.shiftEditMount);
+          els.shiftEditMount.dataset.rendered = '1';
         }
-        if (d.timeslot) timeEl.value = d.timeslot;
-        if (d.availabilityDate) {
-          var ad = String(d.availabilityDate);
-          var iso = ad.match(/^(\d{4}-\d{2}-\d{2})/);
-          if (iso) datePrimary.value = iso[1];
-          else dateExtra.value = ad;
-        }
+        P.applyShiftsText(els.shiftEditMount, lastVolunteerData.shifts || '');
+        if (els.shiftEditStatus) els.shiftEditStatus.textContent = '';
+        els.shiftEditModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
       }
 
-      function buildSheetAvailabilityPayload() {
-        var primaryEl = document.getElementById('sheet-update-date-primary');
-        var extraEl = document.getElementById('sheet-update-date-extra');
-        var posEl = document.getElementById('sheet-update-position');
-        var timeEl = document.getElementById('sheet-update-time');
-        var primary = (primaryEl && primaryEl.value) || '';
-        var extra = (extraEl && extraEl.value) ? extraEl.value.trim() : '';
-        var position = ((posEl && posEl.value) || '').trim() || (lastVolunteerData.position || '').trim();
-        var timeDetail = ((timeEl && timeEl.value) || '').trim() || (lastVolunteerData.timeslot || '').trim();
-
-        var dateParts = [];
-        if (primary) {
-          try {
-            dateParts.push(
-              new Date(primary + 'T12:00:00').toLocaleDateString(undefined, { dateStyle: 'long' })
-            );
-          } catch (e) {
-            dateParts.push(primary);
-          }
-        }
-        if (extra) dateParts.push(extra);
-        var dateStr = dateParts.join(' · ');
-
-        var shifts = [
-          position ? 'Position: ' + position : '',
-          dateStr ? 'Availability dates: ' + dateStr : '',
-          timeDetail ? 'Times: ' + timeDetail : '',
-        ]
-          .filter(Boolean)
-          .join(' · ');
-
-        return {
-          dateStr: dateStr || (lastVolunteerData.availabilityDate ? String(lastVolunteerData.availabilityDate) : ''),
-          position: position,
-          timeslot: timeDetail,
-          shifts: shifts,
-        };
+      function closeShiftEditModal() {
+        if (els.shiftEditModal) els.shiftEditModal.classList.add('hidden');
+        document.body.style.overflow = '';
       }
 
       function renderRoleSummaries(d) {
@@ -947,7 +892,6 @@
             els.fvShifts.textContent = d.shifts || '—';
             els.fvNotes.textContent = d.notes || '—';
             lastVolunteerData = d;
-            prefillSheetForm(d);
             renderRoleSummaries(d);
             renderDailyModules(d);
             var name = d.name || (auth.currentUser.email || '').split('@')[0];
@@ -974,46 +918,59 @@
           });
       }
 
-      var btnSheetUpdate = document.getElementById('btn-sheet-update');
-      if (btnSheetUpdate) btnSheetUpdate.addEventListener('click', function () {
-        var status = document.getElementById('sheet-update-status');
-        var payload = buildSheetAvailabilityPayload();
-        if (!payload.dateStr && !payload.position && !payload.timeslot && !payload.shifts) {
-          status.textContent = 'Please set at least one of date, position, or time.';
-          status.className = 'mt-3 text-sm min-h-[1.25rem] text-red-600';
-          return;
-        }
-        if (!payload.shifts) {
-          payload.shifts = [
-            payload.position ? 'Position: ' + payload.position : '',
-            payload.dateStr ? 'Availability dates: ' + payload.dateStr : '',
-            payload.timeslot ? 'Times: ' + payload.timeslot : '',
-          ]
-            .filter(Boolean)
-            .join(' · ');
-        }
-        status.textContent = 'Saving to Google Sheet…';
-        status.className = 'mt-3 text-sm min-h-[1.25rem] text-slate-600';
-        var fn = functions.httpsCallable('updateVolunteerSheetPreferences');
-        fn({
-          dateStr: payload.dateStr,
-          position: payload.position,
-          timeslot: payload.timeslot,
-          shifts: payload.shifts,
-        })
-          .then(function () {
-            status.textContent = 'Saved. Your row in the sheet and this dashboard are updated.';
-            status.className = 'mt-3 text-sm min-h-[1.25rem] text-emerald-700 font-medium';
-            return loadVolunteerDoc(auth.currentUser.uid);
+      if (els.btnOpenShiftEdit) els.btnOpenShiftEdit.addEventListener('click', openShiftEditModal);
+      if (els.btnCloseShiftEdit) els.btnCloseShiftEdit.addEventListener('click', closeShiftEditModal);
+      if (els.shiftEditBackdrop) els.shiftEditBackdrop.addEventListener('click', closeShiftEditModal);
+      if (els.btnShiftEditSave) {
+        els.btnShiftEditSave.addEventListener('click', function () {
+          var P = window.VolunteerShiftPicker;
+          var status = els.shiftEditStatus;
+          if (!P || !els.shiftEditMount) return;
+          var payload = P.buildSheetPayload(els.shiftEditMount);
+          if (!payload.dateStr && !payload.position && !payload.timeslot && !payload.shifts) {
+            if (status) {
+              status.textContent = 'Choose at least one time slot and role.';
+              status.className = 'text-sm min-h-[1.25rem] text-red-600 flex-1 order-2 sm:order-1';
+            }
+            return;
+          }
+          if (status) {
+            status.textContent = 'Saving…';
+            status.className = 'text-sm min-h-[1.25rem] text-slate-600 flex-1 order-2 sm:order-1';
+          }
+          var fn = functions.httpsCallable('updateVolunteerSheetPreferences');
+          fn({
+            dateStr: payload.dateStr,
+            position: payload.position,
+            timeslot: payload.timeslot,
+            shifts: payload.shifts,
           })
-          .catch(function (e) {
-            console.error('sheet update', e);
-            var msg =
-              (e && e.message) ||
-              'Could not save. Deploy Cloud Functions + Apps Script (volunteer_sheet_update).';
-            status.textContent = msg;
-            status.className = 'mt-3 text-sm min-h-[1.25rem] text-red-600';
-          });
+            .then(function () {
+              if (status) {
+                status.textContent = 'Saved.';
+                status.className = 'text-sm min-h-[1.25rem] text-emerald-700 font-medium flex-1 order-2 sm:order-1';
+              }
+              return loadVolunteerDoc(auth.currentUser.uid);
+            })
+            .then(function () {
+              closeShiftEditModal();
+            })
+            .catch(function (e) {
+              console.error('shift update', e);
+              var msg =
+                (e && e.message) ||
+                'Could not save. Try again or contact an organizer if this keeps happening.';
+              if (status) {
+                status.textContent = msg;
+                status.className = 'text-sm min-h-[1.25rem] text-red-600 flex-1 order-2 sm:order-1';
+              }
+            });
+        });
+      }
+      document.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape' && els.shiftEditModal && !els.shiftEditModal.classList.contains('hidden')) {
+          closeShiftEditModal();
+        }
       });
 
       els.profileAvatarInput.addEventListener('change', function (ev) {
