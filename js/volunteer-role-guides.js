@@ -52,7 +52,11 @@
   ];
 
   function findVolunteerRolesFromShifts(shiftsText) {
-    var t = String(shiftsText || '').toLowerCase();
+    var t = String(shiftsText || '')
+      .toLowerCase()
+      // Sheet / browsers sometimes swap em dash, en dash, minus — normalize for substring matches
+      .replace(/\u2013|\u2014|\u2212/g, '-')
+      .replace(/\s+/g, ' ');
     if (!t.trim()) return [];
     var out = [];
     var seen = {};

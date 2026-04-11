@@ -893,7 +893,7 @@
         return db
           .collection('volunteers')
           .doc(uid)
-          .get()
+          .get({ source: 'server' })
           .then(function (snap) {
             var d = snap.exists ? snap.data() : {};
             els.fvEmail.textContent = d.email || auth.currentUser.email || '—';
@@ -955,13 +955,26 @@
             shifts: payload.shifts,
           })
             .then(function () {
+              // Dashboard reads Firestore, not the Sheet. Mirror the saved payload here so
+              // tailored modules always match even if merge/callable timing is off.
+              var uid = auth.currentUser.uid;
+              var fsPatch = {
+                shifts: payload.shifts,
+                position: payload.position,
+                timeslot: payload.timeslot,
+                sheetRowUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              };
+              if (payload.dateStr) fsPatch.availabilityDate = payload.dateStr;
+              return db.collection('volunteers').doc(uid).set(fsPatch, { merge: true });
+            })
+            .then(function () {
+              return loadVolunteerDoc(auth.currentUser.uid);
+            })
+            .then(function () {
               if (status) {
                 status.textContent = 'Saved.';
                 status.className = 'text-sm min-h-[1.25rem] text-emerald-700 font-medium flex-1 order-2 sm:order-1';
               }
-              return loadVolunteerDoc(auth.currentUser.uid);
-            })
-            .then(function () {
               closeShiftEditModal();
             })
             .catch(function (e) {

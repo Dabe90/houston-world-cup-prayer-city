@@ -234,21 +234,34 @@ exports.mergeVolunteerProfile = onCall(async (request) => {
 
   const data = snap.data();
   const volRef = admin.firestore().collection('volunteers').doc(uid);
-  await volRef.set(
-    {
-      email,
-      name: data.name || '',
-      phone: data.phone || '',
-      notes: data.notes || '',
-      shifts: data.shifts || '',
-      sheetRowId: data.sheetRowId || '',
-      tent: data.tent || '',
-      timeslot: data.timeslot || '',
-      position: data.position || '',
-      mergedAt: admin.firestore.FieldValue.serverTimestamp(),
-    },
-    { merge: true }
-  );
+  const existingSnap = await volRef.get();
+  const existing = existingSnap.exists ? existingSnap.data() : {};
+  const hasStr = (v) =>
+    v !== undefined && v !== null && String(v).trim() !== '';
+
+  /**
+   * Do not copy signup sheet/onboarding role fields over a profile the volunteer
+   * already filled or updated from the dashboard (Edit Shifts sets sheetRowUpdatedAt).
+   */
+  const lockRoleFieldsFromOnboarding =
+    hasStr(existing.shifts) || existing.sheetRowUpdatedAt != null;
+
+  const patch = {
+    email,
+    name: data.name || '',
+    phone: data.phone || '',
+    notes: data.notes || '',
+    sheetRowId: data.sheetRowId || '',
+    mergedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+  if (!lockRoleFieldsFromOnboarding) {
+    patch.shifts = data.shifts || '';
+    patch.tent = data.tent || '';
+    patch.timeslot = data.timeslot || '';
+    patch.position = data.position || '';
+  }
+
+  await volRef.set(patch, { merge: true });
 
   const volSnap = await volRef.get();
   const vol = volSnap.exists ? volSnap.data() : {};
