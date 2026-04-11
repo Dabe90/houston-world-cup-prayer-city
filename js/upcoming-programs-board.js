@@ -1,6 +1,6 @@
 /**
  * Upcoming programs tiles: World Cup volunteer signup windows + ministry events.
- * Dashboard uses the same tile grid as the public page.
+ * Public page: full window copy on each day. Dashboard: each day shows only that volunteer’s saved shift(s), plus ministry tiles.
  */
 (function (global) {
   function escapeHtml(s) {
@@ -75,7 +75,7 @@
     {
       dateBadge: 'Date TBD',
       title: 'DearDaughter.ai',
-      body: 'Gathering around faith, Scripture, and the tools that help daughters grow.',
+      body: 'A summit of faith, technology, AI and the Kingdom.',
       img: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80',
       imgAlt: 'Abstract light technology',
       accent: 'from-cyan-600/95 via-slate-900/70',
@@ -90,6 +90,33 @@
     },
   ];
 
+  /** Map date label (e.g. June 14, 2026) → display lines "time · role" */
+  function parseShiftsByDate(shiftsText) {
+    var map = {};
+    String(shiftsText || '')
+      .split(/\r?\n/)
+      .map(function (l) {
+        return l.trim();
+      })
+      .filter(Boolean)
+      .forEach(function (line) {
+        var parts = line.split(/\s*—\s*/);
+        if (parts.length < 2) return;
+        var date = parts[0].trim();
+        var rest;
+        if (parts.length >= 3) {
+          var time = parts[1].trim();
+          var role = parts.slice(2).join(' — ').trim();
+          rest = time + ' · ' + role;
+        } else {
+          rest = parts.slice(1).join(' — ').trim();
+        }
+        if (!map[date]) map[date] = [];
+        map[date].push(rest);
+      });
+    return map;
+  }
+
   function tileArticle(tile, extraClass) {
     var grad = tile.accent || 'from-black/70';
     var cls =
@@ -99,7 +126,7 @@
       '<article class="' +
       cls +
       '">' +
-      '<div class="h-44 overflow-hidden relative">' +
+      '<div class="h-36 sm:h-44 overflow-hidden relative">' +
       '<img class="program-card-img w-full h-full object-cover" src="' +
       escapeHtml(tile.img) +
       '" alt="' +
@@ -110,13 +137,25 @@
       escapeHtml(tile.dateBadge) +
       '</span>' +
       '</div>' +
-      '<div class="p-4">' +
-      '<h3 class="font-semibold text-slate-900">' +
+      '<div class="p-4 min-w-0">' +
+      '<h3 class="font-semibold text-slate-900 break-words">' +
       escapeHtml(tile.title) +
       '</h3>' +
-      '<p class="text-sm text-slate-600 mt-1">' +
-      tile.body +
-      '</p>' +
+      (tile.bodyLines && tile.bodyLines.length
+        ? '<ul class="mt-2 space-y-1.5 text-sm text-slate-700 list-none pl-0">' +
+          tile.bodyLines
+            .map(function (l) {
+              return (
+                '<li class="flex gap-2"><span class="text-brand shrink-0 font-bold" aria-hidden="true">·</span><span>' +
+                escapeHtml(l) +
+                '</span></li>'
+              );
+            })
+            .join('') +
+          '</ul>'
+        : '<p class="text-sm text-slate-600 mt-1 break-words">' +
+          tile.body +
+          '</p>') +
       '</div>' +
       '</article>'
     );
@@ -134,9 +173,46 @@
     container.innerHTML = html;
   }
 
-  /** Same tile grid as the public sign-up page (volunteer dates + ministry nights). */
-  function renderDashboardBoard(container) {
-    renderPublicBoard(container);
+  function renderDashboardBoard(container, opts) {
+    if (!container) return;
+    opts = opts || {};
+    var byDate = parseShiftsByDate(opts.shiftsText || '');
+    var hasSaved = Object.keys(byDate).some(function (k) {
+      return byDate[k] && byDate[k].length;
+    });
+
+    var html = '';
+    WC_VOLUNTEER_TILES.forEach(function (t) {
+      var mine = byDate[t.dateBadge];
+      var dayPart = t.title.indexOf('·') !== -1 ? t.title.split('·')[0].trim() : t.title;
+      var tile = {
+        dateBadge: t.dateBadge,
+        title: t.title,
+        body: t.body,
+        img: t.img,
+        imgAlt: t.imgAlt,
+        accent: t.accent,
+        bodyLines: null,
+      };
+      var extraClass = '';
+      if (hasSaved) {
+        if (mine && mine.length) {
+          tile.title = dayPart + ' · Your shift(s)';
+          tile.bodyLines = mine;
+          tile.body = '';
+          extraClass = 'ring-2 ring-brand/20';
+        } else {
+          tile.body =
+            'No shift on file for this date. Use <strong>Edit Shifts</strong> or the main sign-up page if you’d like to serve this day.';
+        }
+      }
+      html += tileArticle(tile, extraClass);
+    });
+
+    MINISTRY_TILES.forEach(function (t) {
+      html += tileArticle(t);
+    });
+    container.innerHTML = html;
   }
 
   global.PrayerCityPrograms = {

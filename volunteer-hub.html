@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f3d5c" />
   <title>Volunteer hub — Prayer City</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -18,6 +19,7 @@
     };
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="css/mobile.css" />
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -26,7 +28,7 @@
     body { font-family: system-ui, sans-serif; }
   </style>
 </head>
-<body class="min-h-screen bg-slate-100 text-slate-800">
+<body class="min-h-screen bg-slate-100 text-slate-800 overflow-x-hidden">
 
   <div id="setup-banner" class="hidden max-w-3xl mx-auto m-6 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900">
     <p class="font-semibold">Configure <code class="bg-white px-1 rounded">js/firebase-config.js</code> and deploy Firestore rules (public read for <code class="bg-white px-1">volunteer_directory</code>).</p>
@@ -34,7 +36,7 @@
 
   <div id="hub-main">
     <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
-      <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between flex-wrap gap-2">
+      <div class="max-w-6xl mx-auto px-4 min-h-14 py-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
         <div class="flex items-center gap-2 sm:gap-3">
           <a href="index.html" class="w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light text-white text-xs font-bold flex items-center justify-center shrink-0 hover:opacity-90 transition" title="Home">PC</a>
           <div class="flex items-center gap-1 sm:gap-2 flex-wrap">

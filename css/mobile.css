@@ -1,0 +1,27 @@
+/**
+ * Shared mobile / touch helpers — Houston World Cup Prayer City
+ * Root pages: href="css/mobile.css"
+ * Training: href="../css/mobile.css"
+ */
+
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* 16px+ avoids iOS zoom-on-focus for inputs */
+#volunteer-form input,
+#volunteer-form select,
+#volunteer-form textarea,
+#contact-form input,
+#contact-form textarea,
+#gate-email,
+#gate-password,
+#new-pass,
+#new-pass2,
+#current-pass,
+#filter-search,
+#filter-tent,
+#filter-timeslot,
+#my-tent {
+  font-size: 1rem;
+}

@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0A66C2" />
   <title>Houston World Cup Prayer City Movement — Volunteer Sign-Up</title>
   <!-- Open Graph and Twitter Card meta tags for rich link previews on social media -->
   <meta property="og:title" content="Houston World Cup Prayer City Movement – Volunteer Sign-Up">
@@ -19,6 +20,7 @@
   <meta name="twitter:image" content="https://houston-world-cup-prayer-city.vercel.app/og-preview.jpg">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="css/mobile.css" />
   <script>
     tailwind.config = {
       theme: {
@@ -63,16 +65,16 @@
     .program-card:hover .program-card-img { transform: scale(1.06); }
   </style>
 </head>
-<body class="min-h-screen bg-gray-100 text-gray-800 antialiased">
-  <div class="min-h-screen flex flex-col">
+<body class="min-h-screen bg-gray-100 text-gray-800 antialiased overflow-x-hidden">
+  <div class="min-h-screen flex flex-col overflow-x-hidden">
     <!-- Hero -->
     <!-- Logo file: place logo.png in the same folder as index.html. -->
     <header class="bg-linkedin text-white py-10 px-4 sm:py-14 shadow-lg relative overflow-hidden">
       <div class="max-w-3xl mx-auto text-center relative z-10">
-        <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-4">
-          <img src="logo.png" alt="Houston World Cup Prayer City Movement Logo - Dear Daughter Bible Study Group" class="h-12 sm:h-14 md:h-16 w-auto object-contain rounded-lg shadow-md" />
-          <p class="text-base sm:text-lg font-medium text-blue-100 uppercase tracking-wider">Dear Daughter Bible Study Group</p>
-          <span class="text-3xl sm:text-4xl md:text-5xl leading-none" aria-hidden="true">⚽️</span>
+        <div class="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 mb-4 text-center sm:text-left">
+          <img src="logo.png" alt="Houston World Cup Prayer City Movement Logo - Dear Daughter Bible Study Group" class="h-12 sm:h-14 md:h-16 w-auto max-w-[min(100%,280px)] object-contain rounded-lg shadow-md" />
+          <p class="text-base sm:text-lg font-medium text-blue-100 uppercase tracking-wider max-w-prose">Dear Daughter Bible Study Group</p>
+          <span class="text-3xl sm:text-4xl md:text-5xl leading-none shrink-0" aria-hidden="true">⚽️</span>
         </div>
         <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mt-2">
           Houston World Cup Prayer City Movement
@@ -80,19 +82,19 @@
         <p class="mt-4 text-blue-100 text-sm sm:text-base max-w-3xl mx-auto leading-relaxed text-pretty">
           As we welcome thousands of visitors from around the world to our ever dynamic and bustling City of Houston during the World Cup Games, we declare Houston to be a prayer city. We are raising prayer tents across the city’s downtown area where there will be warm prayer partners interceding for everyone and counselors. Sign up to serve during the Houston World Cup. Choose your shifts below — you will receive a link to confirm your email and access your volunteer dashboard.
         </p>
-        <a href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 mt-6 px-6 py-3 rounded-2xl bg-white text-linkedin font-semibold text-sm sm:text-base shadow-lg hover:bg-blue-50 transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-linkedin">
+        <a href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement" target="_blank" rel="noopener noreferrer" class="touch-manipulation inline-flex items-center justify-center gap-2 mt-6 px-5 py-3 sm:px-6 rounded-2xl bg-white text-linkedin font-semibold text-sm sm:text-base text-center max-w-full shadow-lg hover:bg-blue-50 transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-linkedin">
           <i class="fas fa-heart text-linkedin"></i>
           <span>Give to the Houston World Cup Prayer City Movement</span>
         </a>
-        <p class="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm sm:text-base">
-          <a href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-full bg-amber-400 px-4 py-2 font-bold text-linkedin-dark shadow-md hover:bg-amber-300 transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-linkedin">
+        <p class="mt-5 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-x-3 gap-y-3 text-sm sm:text-base text-center sm:text-left px-1">
+          <a href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement" target="_blank" rel="noopener noreferrer" class="touch-manipulation inline-flex items-center justify-center gap-2 rounded-full bg-amber-400 px-4 py-2.5 min-h-[44px] font-bold text-linkedin-dark shadow-md hover:bg-amber-300 transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-linkedin">
             <i class="fas fa-heart" aria-hidden="true"></i> Donate
           </a>
-          <span class="text-blue-200 hidden sm:inline">·</span>
-          <a href="faq.html" class="text-white/95 underline font-medium hover:text-white">FAQ</a>
-          <span class="text-blue-200 hidden sm:inline">·</span>
-          <a href="volunteer-hub.html" class="text-white/95 underline font-medium hover:text-white">Volunteer hub — who’s serving &amp; shift chats</a>
-          <span class="text-blue-200 text-sm">(hub: no sign-in)</span>
+          <span class="text-blue-200 hidden sm:inline" aria-hidden="true">·</span>
+          <a href="faq.html" class="touch-manipulation text-white/95 underline font-medium hover:text-white py-1 min-h-[44px] inline-flex items-center">FAQ</a>
+          <span class="text-blue-200 hidden sm:inline" aria-hidden="true">·</span>
+          <a href="volunteer-hub.html" class="touch-manipulation text-white/95 underline font-medium hover:text-white break-words max-w-full text-center sm:text-left py-1">Volunteer hub — who’s serving &amp; shift chats</a>
+          <span class="text-blue-200 text-xs sm:text-sm">(hub: no sign-in)</span>
         </p>
       </div>
       <!-- Houston skyline silhouette -->
@@ -213,8 +215,8 @@
           <div class="p-4 sm:p-5 divide-y divide-gray-100">
             <!-- June 14 -->
             <details class="group accordion-item" data-date="June 14, 2026 (Sunday)" open>
-              <summary class="flex items-center justify-between cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset">
-                <span class="font-medium text-gray-800">June 14, 2026 (Sunday)</span>
+              <summary class="touch-manipulation flex items-center justify-between gap-2 cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset min-h-[48px]">
+                <span class="font-medium text-gray-800 min-w-0 text-left">June 14, 2026 (Sunday)</span>
                 <i class="fas fa-chevron-down summary-chevron text-gray-400"></i>
               </summary>
               <div class="accordion-content open">
@@ -280,8 +282,8 @@
 
             <!-- June 17 -->
             <details class="group accordion-item" data-date="June 17, 2026 (Wednesday)">
-              <summary class="flex items-center justify-between cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset">
-                <span class="font-medium text-gray-800">June 17, 2026 (Wednesday)</span>
+              <summary class="touch-manipulation flex items-center justify-between gap-2 cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset min-h-[48px]">
+                <span class="font-medium text-gray-800 min-w-0 text-left">June 17, 2026 (Wednesday)</span>
                 <i class="fas fa-chevron-down summary-chevron text-gray-400"></i>
               </summary>
               <div class="accordion-content">
@@ -297,8 +299,8 @@
 
             <!-- June 20 -->
             <details class="group accordion-item" data-date="June 20, 2026 (Saturday)">
-              <summary class="flex items-center justify-between cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset">
-                <span class="font-medium text-gray-800">June 20, 2026 (Saturday)</span>
+              <summary class="touch-manipulation flex items-center justify-between gap-2 cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset min-h-[48px]">
+                <span class="font-medium text-gray-800 min-w-0 text-left">June 20, 2026 (Saturday)</span>
                 <i class="fas fa-chevron-down summary-chevron text-gray-400"></i>
               </summary>
               <div class="accordion-content">
@@ -314,8 +316,8 @@
 
             <!-- June 23 -->
             <details class="group accordion-item" data-date="June 23, 2026 (Tuesday)">
-              <summary class="flex items-center justify-between cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset">
-                <span class="font-medium text-gray-800">June 23, 2026 (Tuesday)</span>
+              <summary class="touch-manipulation flex items-center justify-between gap-2 cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset min-h-[48px]">
+                <span class="font-medium text-gray-800 min-w-0 text-left">June 23, 2026 (Tuesday)</span>
                 <i class="fas fa-chevron-down summary-chevron text-gray-400"></i>
               </summary>
               <div class="accordion-content">
@@ -331,8 +333,8 @@
 
             <!-- June 26 - Evening coverage: 4 PM – 9 PM (5 hourly slots) -->
             <details class="group accordion-item" data-date="June 26, 2026 (Friday)">
-              <summary class="flex items-center justify-between cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset">
-                <span class="font-medium text-gray-800">June 26, 2026 (Friday) <span class="ml-2 text-xs font-normal text-amber-700">(Evening coverage: 4 PM – 9 PM)</span></span>
+              <summary class="touch-manipulation flex items-center justify-between gap-2 cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset min-h-[48px]">
+                <span class="font-medium text-gray-800 min-w-0 text-left">June 26, 2026 (Friday) <span class="block sm:inline sm:ml-2 mt-0.5 sm:mt-0 text-xs font-normal text-amber-700">(Evening: 4 PM – 9 PM)</span></span>
                 <i class="fas fa-chevron-down summary-chevron text-gray-400"></i>
               </summary>
               <div class="accordion-content">
@@ -398,8 +400,8 @@
 
             <!-- June 29 -->
             <details class="group accordion-item" data-date="June 29, 2026 (Monday)">
-              <summary class="flex items-center justify-between cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset">
-                <span class="font-medium text-gray-800">June 29, 2026 (Monday)</span>
+              <summary class="touch-manipulation flex items-center justify-between gap-2 cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset min-h-[48px]">
+                <span class="font-medium text-gray-800 min-w-0 text-left">June 29, 2026 (Monday)</span>
                 <i class="fas fa-chevron-down summary-chevron text-gray-400"></i>
               </summary>
               <div class="accordion-content">
@@ -415,8 +417,8 @@
 
             <!-- July 4 -->
             <details class="group accordion-item" data-date="July 4, 2026 (Saturday)">
-              <summary class="flex items-center justify-between cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset">
-                <span class="font-medium text-gray-800">July 4, 2026 (Saturday)</span>
+              <summary class="touch-manipulation flex items-center justify-between gap-2 cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset min-h-[48px]">
+                <span class="font-medium text-gray-800 min-w-0 text-left">July 4, 2026 (Saturday)</span>
                 <i class="fas fa-chevron-down summary-chevron text-gray-400"></i>
               </summary>
               <div class="accordion-content">
@@ -441,13 +443,13 @@
           </div>
           <div id="summary-box" class="p-5 min-h-[4rem]">
             <p id="summary-placeholder" class="text-gray-500 text-sm">Select shifts above to see your summary here.</p>
-            <ul id="summary-list" class="list-disc list-inside text-sm text-gray-700 space-y-1 hidden"></ul>
+            <ul id="summary-list" class="list-disc list-outside pl-5 sm:pl-6 text-sm text-gray-700 space-y-2 break-words hidden"></ul>
           </div>
         </section>
 
         <!-- Submit -->
         <div class="flex justify-center">
-          <button type="submit" id="submit-btn" class="w-full sm:w-auto px-10 py-4 bg-linkedin hover:bg-linkedin-dark text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition focus:outline-none focus:ring-4 focus:ring-linkedin/40 flex items-center justify-center gap-2">
+          <button type="submit" id="submit-btn" class="touch-manipulation w-full sm:w-auto min-h-[48px] px-8 sm:px-10 py-3.5 sm:py-4 bg-linkedin hover:bg-linkedin-dark text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition focus:outline-none focus:ring-4 focus:ring-linkedin/40 flex items-center justify-center gap-2 text-base">
             <i class="fas fa-paper-plane"></i> Submit Sign-Up
           </button>
         </div>
@@ -462,7 +464,7 @@
             </h2>
             <p class="text-sm text-gray-600 mt-1">Volunteer sign-up windows (dates &amp; shift hours) plus Dear Daughter gatherings — save what applies to you.</p>
           </div>
-          <div id="upcoming-programs-grid" class="p-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+          <div id="upcoming-programs-grid" class="p-4 sm:p-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 min-w-0"></div>
           <p class="px-5 pb-5 text-xs text-gray-500">Volunteers: your <a href="dashboard.html#upcoming-programs" class="text-linkedin font-medium hover:underline">dashboard</a> shows this same program calendar; your specific roles and times stay under <strong class="font-medium text-gray-700">Shifts</strong> in your dashboard profile column.</p>
         </div>
       </section>
@@ -475,13 +477,13 @@
         <p class="text-gray-600 mb-8 max-w-md mx-auto">Share this volunteer sign-up page with your church, friends, and family!</p>
 
         <!-- Main Web Share Button -->
-        <button id="mainShareBtn"
-          class="bg-linkedin hover:bg-linkedin-dark text-white font-semibold py-4 px-12 rounded-2xl text-xl shadow-lg hover:shadow-xl transition focus:outline-none focus:ring-4 focus:ring-linkedin/40 active:scale-95 mb-10">
+        <button id="mainShareBtn" type="button"
+          class="touch-manipulation w-full max-w-md mx-auto sm:w-auto bg-linkedin hover:bg-linkedin-dark text-white font-semibold py-3.5 px-8 sm:py-4 sm:px-12 rounded-2xl text-lg sm:text-xl shadow-lg hover:shadow-xl transition focus:outline-none focus:ring-4 focus:ring-linkedin/40 active:scale-95 mb-10 min-h-[52px]">
           Share This Page
         </button>
 
         <!-- Fallback buttons grid -->
-        <div id="fallbackShareBtns" class="grid grid-cols-3 sm:grid-cols-6 gap-4 max-w-2xl mx-auto hidden">
+        <div id="fallbackShareBtns" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 max-w-2xl mx-auto hidden">
           <!-- SMS -->
           <a id="smsBtn" href="#" class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-2xl hover:shadow-md transition-all">
             <span class="text-4xl mb-2">📱</span>
@@ -544,7 +546,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="mt-auto py-8 px-4 border-t border-gray-200 bg-white/90">
+    <footer class="mt-auto py-8 px-4 pb-[max(2rem,env(safe-area-inset-bottom))] border-t border-gray-200 bg-white/90">
       <div class="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
         <div class="text-center sm:text-left">
           <p class="text-gray-700 text-sm">
@@ -553,7 +555,7 @@
           </p>
           <p class="text-gray-500 text-xs mt-1">Houston World Cup Prayer City · Dear Daughter Bible Study Group</p>
         </div>
-        <a href="contact.html" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-linkedin text-white text-sm font-semibold hover:bg-linkedin-dark transition shadow-sm focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-offset-2">
+        <a href="contact.html" class="touch-manipulation inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-xl bg-linkedin text-white text-sm font-semibold hover:bg-linkedin-dark transition shadow-sm focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-offset-2 w-full sm:w-auto">
           <i class="fas fa-envelope" aria-hidden="true"></i> Contact us
         </a>
       </div>
@@ -567,7 +569,7 @@
       <p class="text-5xl mb-4 animate-bounce-ball" style="animation: bounce-ball 0.6s ease-in-out 3;">⚽️</p>
       <h2 id="modal-title" class="text-xl font-bold text-gray-800 mb-2">Thank you!</h2>
       <p class="text-gray-600 mb-6">Your signup has been received. We'll contact you soon!</p>
-      <button type="button" id="modal-reset-btn" class="w-full py-3 px-6 bg-linkedin hover:bg-linkedin-dark text-white font-semibold rounded-xl transition focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-offset-2">
+      <button type="button" id="modal-reset-btn" class="touch-manipulation w-full min-h-[48px] py-3 px-6 text-base bg-linkedin hover:bg-linkedin-dark text-white font-semibold rounded-xl transition focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-offset-2">
         Reset form
       </button>
     </div>

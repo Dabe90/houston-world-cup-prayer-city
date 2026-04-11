@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f3d5c" />
   <title>Volunteer Hub — Houston World Cup Prayer City</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -31,6 +32,7 @@
     };
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="css/mobile.css" />
 
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -73,7 +75,7 @@
     details.role-training-acc > summary::-webkit-details-marker { display: none; }
   </style>
 </head>
-<body class="min-h-screen bg-slate-100 text-slate-800">
+<body class="min-h-screen bg-slate-100 text-slate-800 overflow-x-hidden">
 
   <div id="setup-banner" class="hidden max-w-3xl mx-auto m-6 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900">
     <h2 class="font-bold text-lg mb-2">Firebase is not configured yet</h2>
@@ -94,7 +96,7 @@
         </p>
       </div>
     </div>
-    <div class="flex-1 flex items-center justify-center p-8 bg-white">
+    <div class="flex-1 flex items-center justify-center p-6 sm:p-10 bg-white">
       <div class="w-full max-w-md">
         <div class="mb-8">
           <h2 class="text-2xl font-bold text-slate-900">Sign in to your hub</h2>
@@ -124,8 +126,8 @@
   <!-- Main dashboard (signed in) -->
   <div id="dashboard-main" class="hidden pb-16">
     <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-        <div class="flex items-center gap-3">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 min-h-14 py-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
+        <div class="flex items-center gap-3 min-w-0">
           <a href="index.html" class="w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white text-sm font-bold shrink-0 hover:opacity-90 transition" title="Home">PC</a>
           <div class="flex items-center gap-1 sm:gap-2 flex-wrap">
             <a href="index.html" class="font-semibold text-slate-900 text-sm hover:text-brand transition">Prayer City</a>
@@ -135,7 +137,7 @@
             <a href="faq.html" class="text-sm font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition">FAQ</a>
           </div>
         </div>
-        <div class="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap justify-end w-full sm:w-auto">
           <a href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-xs sm:text-sm font-bold text-brand shadow-sm hover:bg-amber-300 transition">
             <i class="fas fa-heart" aria-hidden="true"></i> Donate
           </a>
@@ -155,7 +157,9 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 py-14 lg:py-20">
         <div class="grid lg:grid-cols-2 gap-10 items-center">
           <div class="animate-fade-up">
-            <p class="text-brand-accent font-semibold uppercase tracking-widest text-xs mb-4">Youth · Scripture · Houston 2026</p>
+            <p class="text-brand-accent font-semibold tracking-wide text-xs sm:text-sm mb-4">
+              <a href="https://www.JesusMarchhtx.com" target="_blank" rel="noopener noreferrer" class="text-brand-accent underline-offset-2 hover:underline focus:outline-none focus:ring-2 focus:ring-brand-accent/80 focus:ring-offset-2 focus:ring-offset-transparent rounded-sm">Dear Daughter Bible Study Group</a><span class="text-brand-accent"> · Houston 2026</span>
+            </p>
             <h1 class="text-3xl sm:text-4xl lg:text-5xl font-display font-bold leading-tight mb-6">
               Over 5,000 people lifting Jesus up during the World Cup in Houston
             </h1>
@@ -219,6 +223,9 @@
               </div>
               <button type="button" id="btn-open-shift-edit" class="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand/25 bg-brand-soft text-brand font-semibold text-sm hover:bg-brand/10 transition">
                 <i class="fas fa-calendar-check"></i> Edit Shifts
+              </button>
+              <button type="button" id="btn-open-password-modal" class="mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50 transition">
+                <i class="fas fa-key" aria-hidden="true"></i> Update password
               </button>
             </div>
           </div>
@@ -356,7 +363,7 @@
             <div class="flex items-end justify-between mb-4">
               <div>
                 <h2 class="text-2xl font-bold text-slate-900">Upcoming programs</h2>
-                <p class="text-sm text-slate-600 mt-1">Volunteer sign-up dates and shift windows, plus ministry gatherings — same tiles as the public calendar.</p>
+                <p class="text-sm text-slate-600 mt-1">World Cup days show <strong class="font-semibold text-slate-800">your</strong> saved slot(s) only; ministry gatherings follow. No saved shifts yet? You’ll see the full window text like the public page.</p>
               </div>
             </div>
             <div id="dashboard-upcoming-programs-grid" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5"></div>
@@ -398,30 +405,6 @@
                 <p class="text-sm text-slate-600 mt-2">Prayer points for the Houston World Cup outreach.</p>
               </div>
             </div>
-          </section>
-
-          <section id="password-card" class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
-            <h2 class="text-xl font-bold text-slate-900 mb-2">Password for quick return</h2>
-            <p id="password-card-intro" class="text-slate-600 text-sm mb-4">Set or change your password to sign in with email + password. The email sign-in link on the login screen still works anytime — use whichever you prefer.</p>
-            <div class="grid sm:grid-cols-2 gap-4 max-w-xl">
-              <div id="current-pass-wrap" class="hidden sm:col-span-2">
-                <label class="block text-sm font-medium text-slate-700 mb-1">Current password</label>
-                <input type="password" id="current-pass" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light" autocomplete="current-password" />
-                <p class="text-xs text-slate-500 mt-1">Firebase asks for this when updating your password after you’ve been signed in a while.</p>
-              </div>
-              <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-slate-700 mb-1">New password</label>
-                <input type="password" id="new-pass" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light" minlength="6" autocomplete="new-password" />
-              </div>
-              <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-slate-700 mb-1">Confirm new password</label>
-                <input type="password" id="new-pass2" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light" minlength="6" autocomplete="new-password" />
-              </div>
-            </div>
-            <button type="button" id="btn-link-password" class="mt-4 px-6 py-3 rounded-xl bg-brand hover:bg-brand-light text-white font-semibold transition">
-              Save password
-            </button>
-            <p id="pass-status" class="mt-2 text-sm text-slate-600 min-h-[1.25rem]"></p>
           </section>
         </main>
 
@@ -546,6 +529,39 @@
         </div>
       </div>
     </div>
+
+    <!-- Update password -->
+    <div id="password-modal" class="hidden fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <button type="button" id="password-modal-backdrop" class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" aria-label="Close"></button>
+      <div class="relative w-full max-w-md max-h-[90vh] sm:rounded-2xl bg-white shadow-2xl border border-slate-200 flex flex-col mt-auto sm:mt-0 rounded-t-2xl overflow-hidden">
+        <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100 bg-slate-50 shrink-0">
+          <h2 class="text-lg font-bold text-slate-900">Update password</h2>
+          <button type="button" id="btn-close-password-modal" class="p-2 rounded-lg text-slate-500 hover:bg-slate-200/80 hover:text-slate-800 transition" aria-label="Close">
+            <i class="fas fa-times text-lg"></i>
+          </button>
+        </div>
+        <div class="overflow-y-auto flex-1 px-4 py-4 space-y-4">
+          <p class="text-sm text-slate-600">Sign in next time with email + password, or keep using the email link on the login screen.</p>
+          <div id="current-pass-wrap" class="hidden">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Current password</label>
+            <input type="password" id="current-pass" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light" autocomplete="current-password" />
+            <p class="text-xs text-slate-500 mt-1">Required when updating after a long session.</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">New password</label>
+            <input type="password" id="new-pass" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light" minlength="6" autocomplete="new-password" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Confirm new password</label>
+            <input type="password" id="new-pass2" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light" minlength="6" autocomplete="new-password" />
+          </div>
+          <button type="button" id="btn-link-password" class="w-full px-6 py-3 rounded-xl bg-brand hover:bg-brand-light text-white font-semibold transition">
+            Save
+          </button>
+          <p id="pass-status" class="text-sm min-h-[1.25rem] text-slate-600 pt-1"></p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <footer class="py-8 px-4 sm:px-6 border-t border-slate-200 bg-white">
@@ -610,7 +626,10 @@
         newPass2: document.getElementById('new-pass2'),
         btnLinkPassword: document.getElementById('btn-link-password'),
         passStatus: document.getElementById('pass-status'),
-        passwordCard: document.getElementById('password-card'),
+        passwordModal: document.getElementById('password-modal'),
+        passwordModalBackdrop: document.getElementById('password-modal-backdrop'),
+        btnOpenPasswordModal: document.getElementById('btn-open-password-modal'),
+        btnClosePasswordModal: document.getElementById('btn-close-password-modal'),
         currentPassWrap: document.getElementById('current-pass-wrap'),
         currentPass: document.getElementById('current-pass'),
         btnSignout: document.getElementById('btn-signout'),
@@ -736,9 +755,34 @@
         document.body.style.overflow = 'hidden';
       }
 
+      function releaseBodyScrollIfNoModal() {
+        var shiftOpen = els.shiftEditModal && !els.shiftEditModal.classList.contains('hidden');
+        var passOpen = els.passwordModal && !els.passwordModal.classList.contains('hidden');
+        if (!shiftOpen && !passOpen) document.body.style.overflow = '';
+      }
+
       function closeShiftEditModal() {
         if (els.shiftEditModal) els.shiftEditModal.classList.add('hidden');
-        document.body.style.overflow = '';
+        releaseBodyScrollIfNoModal();
+      }
+
+      function openPasswordModal() {
+        if (!els.passwordModal) return;
+        if (els.passStatus) {
+          els.passStatus.textContent = '';
+          els.passStatus.className = 'text-sm min-h-[1.25rem] text-slate-600 pt-1';
+        }
+        if (els.newPass) els.newPass.value = '';
+        if (els.newPass2) els.newPass2.value = '';
+        if (els.currentPass) els.currentPass.value = '';
+        if (els.currentPassWrap) els.currentPassWrap.classList.add('hidden');
+        els.passwordModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closePasswordModal() {
+        if (els.passwordModal) els.passwordModal.classList.add('hidden');
+        releaseBodyScrollIfNoModal();
       }
 
       function renderRoleSummaries(d) {
@@ -1136,7 +1180,9 @@
 
             var progGrid = document.getElementById('dashboard-upcoming-programs-grid');
             if (progGrid && window.PrayerCityPrograms) {
-              window.PrayerCityPrograms.renderDashboardBoard(progGrid);
+              window.PrayerCityPrograms.renderDashboardBoard(progGrid, {
+                shiftsText: (d.shifts || '').trim(),
+              });
             }
 
             return syncVolunteerDirectory(uid, d);
@@ -1146,6 +1192,9 @@
       if (els.btnOpenShiftEdit) els.btnOpenShiftEdit.addEventListener('click', openShiftEditModal);
       if (els.btnCloseShiftEdit) els.btnCloseShiftEdit.addEventListener('click', closeShiftEditModal);
       if (els.shiftEditBackdrop) els.shiftEditBackdrop.addEventListener('click', closeShiftEditModal);
+      if (els.btnOpenPasswordModal) els.btnOpenPasswordModal.addEventListener('click', openPasswordModal);
+      if (els.btnClosePasswordModal) els.btnClosePasswordModal.addEventListener('click', closePasswordModal);
+      if (els.passwordModalBackdrop) els.passwordModalBackdrop.addEventListener('click', closePasswordModal);
       if (els.btnShiftEditSave) {
         els.btnShiftEditSave.addEventListener('click', function () {
           var P = window.VolunteerShiftPicker;
@@ -1206,8 +1255,13 @@
         });
       }
       document.addEventListener('keydown', function (ev) {
-        if (ev.key === 'Escape' && els.shiftEditModal && !els.shiftEditModal.classList.contains('hidden')) {
+        if (ev.key !== 'Escape') return;
+        if (els.shiftEditModal && !els.shiftEditModal.classList.contains('hidden')) {
           closeShiftEditModal();
+          return;
+        }
+        if (els.passwordModal && !els.passwordModal.classList.contains('hidden')) {
+          closePasswordModal();
         }
       });
 
@@ -1381,11 +1435,14 @@
         function afterPasswordSuccess() {
           els.passStatus.textContent =
             'Password saved. On the sign-in page you can use email + password or “Email me a sign-in link”.';
-          els.passStatus.className = 'mt-2 text-sm text-emerald-700 min-h-[1.25rem]';
+          els.passStatus.className = 'text-sm text-emerald-700 min-h-[1.25rem] pt-1';
           els.newPass.value = '';
           els.newPass2.value = '';
           if (els.currentPass) els.currentPass.value = '';
           if (els.currentPassWrap) els.currentPassWrap.classList.add('hidden');
+          window.setTimeout(function () {
+            closePasswordModal();
+          }, 2200);
         }
 
         function tryUpdatePassword() {
@@ -1394,7 +1451,7 @@
 
         var curPw = els.currentPass ? els.currentPass.value : '';
         if (curPw) {
-          els.passStatus.className = 'mt-2 text-sm text-slate-600 min-h-[1.25rem]';
+          els.passStatus.className = 'text-sm text-slate-600 min-h-[1.25rem] pt-1';
           els.passStatus.textContent = 'Verifying…';
           var reCred = firebase.auth.EmailAuthProvider.credential(email, curPw);
           user
@@ -1403,13 +1460,13 @@
               return tryUpdatePassword();
             })
             .catch(function (e) {
-              els.passStatus.className = 'mt-2 text-sm text-red-600 min-h-[1.25rem]';
+              els.passStatus.className = 'text-sm text-red-600 min-h-[1.25rem] pt-1';
               els.passStatus.textContent = e.message || 'Current password incorrect.';
             });
           return;
         }
 
-        els.passStatus.className = 'mt-2 text-sm text-slate-600 min-h-[1.25rem]';
+        els.passStatus.className = 'text-sm text-slate-600 min-h-[1.25rem] pt-1';
         els.passStatus.textContent = 'Saving…';
         var cred = firebase.auth.EmailAuthProvider.credential(email, p1);
         user
@@ -1421,18 +1478,18 @@
               return tryUpdatePassword().catch(function (e2) {
                 var c2 = e2 && e2.code;
                 if (c2 === 'auth/requires-recent-login') {
-                  els.passStatus.className = 'mt-2 text-sm text-amber-800 min-h-[1.25rem]';
+                  els.passStatus.className = 'text-sm text-amber-800 min-h-[1.25rem] pt-1';
                   els.passStatus.textContent =
-                    'Enter your current password above, then click Save password again.';
+                    'Enter your current password above, then click Save again.';
                   if (els.currentPassWrap) els.currentPassWrap.classList.remove('hidden');
                   if (els.currentPass) els.currentPass.focus();
                 } else {
-                  els.passStatus.className = 'mt-2 text-sm text-red-600 min-h-[1.25rem]';
+                  els.passStatus.className = 'text-sm text-red-600 min-h-[1.25rem] pt-1';
                   els.passStatus.textContent = e2.message || 'Could not update password.';
                 }
               });
             }
-            els.passStatus.className = 'mt-2 text-sm text-red-600 min-h-[1.25rem]';
+            els.passStatus.className = 'text-sm text-red-600 min-h-[1.25rem] pt-1';
             els.passStatus.textContent = e.message || 'Could not save password';
           });
       });
