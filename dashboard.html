@@ -41,6 +41,7 @@
   <script src="js/volunteer-role-guides.js"></script>
   <script src="js/volunteer-daily-content.js"></script>
   <script src="js/volunteer-shift-picker.js"></script>
+  <script src="js/social-feed-embed-config.js"></script>
 
   <style>
     body { font-family: system-ui, sans-serif; }
@@ -342,7 +343,7 @@
                   <i class="fas fa-chevron-down text-slate-400 text-sm transition-transform duration-200 group-open:rotate-180 shrink-0" aria-hidden="true"></i>
                 </summary>
                 <div class="border-t border-slate-100 bg-white px-4 py-5 sm:px-6 sm:py-6">
-                  <p class="text-sm text-slate-600 mt-1 mb-4">Static rotation plus a live headline when available (sports/news RSS).</p>
+                  <p class="text-sm text-slate-600 mt-1 mb-4">Static rotation plus a live headline when available — Houston and FIFA World Cup 2026 news only (filtered RSS).</p>
                   <div id="daily-logistics-news" class="rounded-xl bg-teal-50 border border-teal-100 p-4 mb-6 text-sm text-slate-800 hidden"></div>
                   <ul id="daily-logistics-tips" class="list-disc list-inside space-y-2 text-slate-700"></ul>
                 </div>
@@ -454,7 +455,7 @@
           </section>
         </main>
 
-        <!-- Social media hub (links open official apps / web — full profile feeds cannot be embedded without a third-party widget) -->
+        <!-- Social media hub: live iframes from js/social-feed-embed-config.js + quick profile links -->
         <aside class="lg:col-span-3 space-y-6" aria-label="Ministry social media">
           <div class="bg-white rounded-2xl shadow-card overflow-hidden border border-slate-100 lg:sticky lg:top-20 flex flex-col lg:max-h-[calc(100vh-5.5rem)]">
             <div class="h-28 bg-gradient-to-r from-pink-600 via-purple-600 to-slate-900 relative shrink-0">
@@ -469,12 +470,44 @@
             </div>
             <div class="px-4 py-5 sm:px-5 flex-1 min-h-0 overflow-y-auto space-y-5">
               <p class="text-xs text-slate-500 text-center leading-relaxed">
-                New reels, stories, and posts go up on Instagram and TikTok. Tap a profile to see the latest in the app or browser.
+                Live grids below use embed URLs from your widget provider (see <code class="text-[10px] bg-slate-100 px-1 rounded font-mono text-slate-700">js/social-feed-embed-config.js</code>). Open any profile for the full app experience.
               </p>
+
+              <div id="social-feed-live-wrap" class="hidden space-y-4">
+                <div id="social-feed-instagram-host">
+                  <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
+                    <i class="fab fa-instagram text-pink-600" aria-hidden="true"></i> Instagram — live
+                  </h3>
+                  <div id="social-feed-instagram-embeds" class="space-y-3"></div>
+                </div>
+                <div id="social-feed-tiktok-host">
+                  <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
+                    <i class="fab fa-tiktok text-slate-900" aria-hidden="true"></i> TikTok — live
+                  </h3>
+                  <div id="social-feed-tiktok-embeds" class="space-y-3"></div>
+                </div>
+              </div>
+
+              <div id="social-feed-setup-hint" class="rounded-xl border border-amber-200/80 bg-amber-50/90 p-3 text-xs text-amber-950 space-y-2">
+                <p class="font-semibold text-amber-900">Turn on live embedded feeds</p>
+                <p class="text-amber-900/90 leading-relaxed">
+                  Use a free widget such as
+                  <a href="https://snapwidget.com" target="_blank" rel="noopener noreferrer" class="font-semibold text-brand underline hover:no-underline">SnapWidget</a>
+                  or
+                  <a href="https://lightwidget.com" target="_blank" rel="noopener noreferrer" class="font-semibold text-brand underline hover:no-underline">LightWidget</a>
+                  (Instagram). For TikTok, SnapWidget and others offer feed widgets — create one per account or merge on a paid plan.
+                </p>
+                <p class="text-amber-900/90 leading-relaxed">
+                  Copy each embed’s <strong class="font-semibold">iframe src</strong> URL and add it to
+                  <code class="text-[10px] bg-white/90 px-1 py-0.5 rounded font-mono">instagramEmbeds</code> /
+                  <code class="text-[10px] bg-white/90 px-1 py-0.5 rounded font-mono">tiktokEmbeds</code>
+                  in <code class="text-[10px] bg-white/90 px-1 py-0.5 rounded font-mono">js/social-feed-embed-config.js</code>, then redeploy.
+                </p>
+              </div>
 
               <div>
                 <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
-                  <i class="fab fa-instagram text-pink-600" aria-hidden="true"></i> Instagram
+                  <i class="fas fa-link text-slate-400" aria-hidden="true"></i> Quick links — Instagram
                 </h3>
                 <ul class="space-y-2">
                   <li>
@@ -512,7 +545,7 @@
 
               <div>
                 <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
-                  <i class="fab fa-tiktok text-slate-900" aria-hidden="true"></i> TikTok
+                  <i class="fas fa-link text-slate-400" aria-hidden="true"></i> Quick links — TikTok
                 </h3>
                 <ul class="space-y-2">
                   <li>
@@ -1429,5 +1462,6 @@
       });
     })();
   </script>
+  <script src="js/social-feed-embed.js"></script>
 </body>
 </html>

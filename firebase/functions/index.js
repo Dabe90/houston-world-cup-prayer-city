@@ -404,6 +404,54 @@ exports.updateVolunteerSheetPreferences = onCall(
   }
 );
 
+/** Google News RSS — scoped to Houston + FIFA World Cup 2026 (query + server-side filter). */
+const LOGISTICS_RSS_FEED_URLS = [
+  'https://news.google.com/rss/search?q=Houston+%22FIFA+World+Cup%22+2026+OR+Houston+NRG+World+Cup+2026+OR+%22NRG+Stadium%22+FIFA+2026&hl=en-US&gl=US&ceid=US:en',
+];
+
+function extractRssItemTitles(xml, maxItems) {
+  const titles = [];
+  const parts = String(xml || '').split('<item');
+  for (let i = 1; i < parts.length && titles.length < maxItems; i++) {
+    const tm = parts[i].match(
+      /<title>(?:<!\[CDATA\[([\s\S]*?)\]\]>|([^<]*))<\/title>/i
+    );
+    if (!tm) continue;
+    let t = (tm[1] || tm[2] || '').replace(/\s+/g, ' ').trim();
+    if (!t || /^google news$/i.test(t)) continue;
+    if (t.startsWith('"') && t.endsWith('"')) t = t.slice(1, -1).trim();
+    titles.push(t);
+  }
+  return titles;
+}
+
+/** Keep logistics/welfare headlines on Houston + FIFA 2026 tournament context only. */
+function isLogisticsRssRelevant(title) {
+  const t = String(title || '').toLowerCase();
+  const hasWC =
+    /\bworld cup\b/.test(t) ||
+    (/\bfifa\b/.test(t) && /\b2026\b/.test(t));
+  if (!hasWC) return false;
+  if (
+    /\b(premier league|champions league|uefa champions|uefa europa|uefa conference|\bepl\b|la liga|bundesliga|serie a|ligue 1)\b/i.test(
+      t
+    )
+  ) {
+    return false;
+  }
+  return (
+    t.includes('houston') ||
+    t.includes('nrg') ||
+    /host cities|host stadium|16\s*cities|all\s*16/i.test(t) ||
+    (/\b2026\b/.test(t) &&
+      /\b(stadium|venue|schedule|ticket|security|fifa)\b/.test(t) &&
+      (t.includes('usa') ||
+        t.includes('u.s.') ||
+        t.includes('united states') ||
+        t.includes('america')))
+  );
+}
+
 /**
  * Callable: logistics volunteers — headline from public RSS + practical event tip.
  * Requires auth. Falls back to static tip if RSS fetch fails.
@@ -446,39 +494,36 @@ exports.getLogisticsNewsTip = onCall({ cors: true }, async (request) => {
   }
 
   try {
-    const res = await fetch(
-      'https://feeds.bbci.co.uk/sport/football/rss.xml',
-      { headers: { 'User-Agent': 'PrayerCityDashboard/1.0' } }
-    );
-    if (!res.ok) return fallback;
-    const xml = await res.text();
-    const titles = [];
-    const re = /<item[\s\S]*?<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/gi;
-    let m;
-    while ((m = re.exec(xml)) !== null && titles.length < 12) {
-      const t = m[1].replace(/\s+/g, ' ').trim();
-      if (t) titles.push(t);
-    }
-    if (titles.length === 0) {
-      const parts = xml.split('<item').slice(1);
-      for (const part of parts) {
-        const tm = part.match(
-          /<title>(?:<!\[CDATA\[([\s\S]*?)\]\]>|([^<]*))<\/title>/
-        );
-        if (tm) {
-          const t = (tm[1] || tm[2] || '').replace(/\s+/g, ' ').trim();
-          if (t) titles.push(t);
-        }
-        if (titles.length >= 12) break;
+    const fetchOpts = {
+      headers: { 'User-Agent': 'PrayerCityDashboard/1.0 (logistics RSS)' },
+    };
+    const seen = new Set();
+    const filtered = [];
+
+    for (const url of LOGISTICS_RSS_FEED_URLS) {
+      const res = await fetch(url, fetchOpts);
+      if (!res.ok) continue;
+      const xml = await res.text();
+      const titles = extractRssItemTitles(xml, 40);
+      for (const raw of titles) {
+        if (!isLogisticsRssRelevant(raw)) continue;
+        const key = raw.toLowerCase().slice(0, 120);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        filtered.push(raw);
+        if (filtered.length >= 24) break;
       }
+      if (filtered.length >= 24) break;
     }
-    if (titles.length === 0) return fallback;
+
+    if (filtered.length === 0) return fallback;
+
     const day = Math.floor(Date.now() / 86400000);
-    const headline = titles[day % titles.length];
+    const headline = filtered[day % filtered.length];
     return {
       ok: true,
       headline,
-      source: 'BBC Sport (RSS)',
+      source: 'Google News — Houston · FIFA World Cup 2026',
       tip: buildTipFromHeadline(headline),
       usedFallback: false,
     };
