@@ -41,7 +41,7 @@
   <script src="js/volunteer-role-guides.js"></script>
   <script src="js/volunteer-daily-content.js"></script>
   <script src="js/volunteer-shift-picker.js"></script>
-  <script src="js/social-feed-embed-config.js"></script>
+  <script src="js/upcoming-programs-board.js"></script>
 
   <style>
     body { font-family: system-ui, sans-serif; }
@@ -98,7 +98,7 @@
       <div class="w-full max-w-md">
         <div class="mb-8">
           <h2 class="text-2xl font-bold text-slate-900">Sign in to your hub</h2>
-          <p class="text-slate-600 text-sm mt-2">Use the email invite we sent, or your password if you already created one.</p>
+          <p class="text-slate-600 text-sm mt-2">Sign in with <strong class="font-semibold text-slate-800">email + password</strong> (if you saved one on your dashboard) or request a fresh <strong class="font-semibold text-slate-800">email sign-in link</strong> — both stay available.</p>
         </div>
         <div class="space-y-4">
           <div>
@@ -356,44 +356,10 @@
             <div class="flex items-end justify-between mb-4">
               <div>
                 <h2 class="text-2xl font-bold text-slate-900">Upcoming programs</h2>
-                <p class="text-sm text-slate-600 mt-1">Save these dates — your presence multiplies prayer.</p>
+                <p class="text-sm text-slate-600 mt-1">Volunteer sign-up dates and shift windows, plus ministry gatherings — same tiles as the public calendar.</p>
               </div>
             </div>
-            <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
-              <article class="program-card group bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden cursor-pointer">
-                <div class="h-44 overflow-hidden relative">
-                  <img class="program-card-img w-full h-full object-cover" src="https://images.unsplash.com/photo-1511632765276-a27960c3a1e8?w=600&q=80" alt="Prayer and worship" loading="lazy" />
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                  <span class="absolute bottom-3 left-3 text-white font-bold text-sm">June 14, 2026</span>
-                </div>
-                <div class="p-4">
-                  <h3 class="font-semibold text-slate-900">Sunday shifts</h3>
-                  <p class="text-sm text-slate-600 mt-1">10 AM – 3 PM · Stadium prayer coverage</p>
-                </div>
-              </article>
-              <article class="program-card group bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
-                <div class="h-44 overflow-hidden relative">
-                  <img class="program-card-img w-full h-full object-cover" src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=600&q=80" alt="Gathered crowd" loading="lazy" />
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                  <span class="absolute bottom-3 left-3 text-white font-bold text-sm">June 26, 2026</span>
-                </div>
-                <div class="p-4">
-                  <h3 class="font-semibold text-slate-900">Friday evening</h3>
-                  <p class="text-sm text-slate-600 mt-1">4 PM – 9 PM · Outreach &amp; intercession</p>
-                </div>
-              </article>
-              <article class="program-card group bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden sm:col-span-2 xl:col-span-1">
-                <div class="h-44 overflow-hidden relative">
-                  <img class="program-card-img w-full h-full object-cover" src="https://images.unsplash.com/photo-1529078155058-5d716f45d604?w=600&q=80" alt="Community hands together" loading="lazy" />
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                  <span class="absolute bottom-3 left-3 text-white font-bold text-sm">July 4, 2026</span>
-                </div>
-                <div class="p-4">
-                  <h3 class="font-semibold text-slate-900">Saturday shifts</h3>
-                  <p class="text-sm text-slate-600 mt-1">Holiday weekend · All hands welcome</p>
-                </div>
-              </article>
-            </div>
+            <div id="dashboard-upcoming-programs-grid" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5"></div>
           </section>
 
           <section class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
@@ -436,14 +402,19 @@
 
           <section id="password-card" class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
             <h2 class="text-xl font-bold text-slate-900 mb-2">Password for quick return</h2>
-            <p class="text-slate-600 text-sm mb-4">Optional — set a password so you can skip email links next time.</p>
+            <p id="password-card-intro" class="text-slate-600 text-sm mb-4">Set or change your password to sign in with email + password. The email sign-in link on the login screen still works anytime — use whichever you prefer.</p>
             <div class="grid sm:grid-cols-2 gap-4 max-w-xl">
+              <div id="current-pass-wrap" class="hidden sm:col-span-2">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Current password</label>
+                <input type="password" id="current-pass" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light" autocomplete="current-password" />
+                <p class="text-xs text-slate-500 mt-1">Firebase asks for this when updating your password after you’ve been signed in a while.</p>
+              </div>
               <div class="sm:col-span-2">
                 <label class="block text-sm font-medium text-slate-700 mb-1">New password</label>
                 <input type="password" id="new-pass" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light" minlength="6" autocomplete="new-password" />
               </div>
               <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-slate-700 mb-1">Confirm</label>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Confirm new password</label>
                 <input type="password" id="new-pass2" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light" minlength="6" autocomplete="new-password" />
               </div>
             </div>
@@ -451,11 +422,10 @@
               Save password
             </button>
             <p id="pass-status" class="mt-2 text-sm text-slate-600 min-h-[1.25rem]"></p>
-            <p id="has-password-note" class="hidden mt-4 text-sm text-emerald-700 font-medium">You already have a password linked to this account.</p>
           </section>
         </main>
 
-        <!-- Social media hub: live iframes from js/social-feed-embed-config.js + quick profile links -->
+        <!-- Social media hub: quick profile links -->
         <aside class="lg:col-span-3 space-y-6" aria-label="Ministry social media">
           <div class="bg-white rounded-2xl shadow-card overflow-hidden border border-slate-100 lg:sticky lg:top-20 flex flex-col lg:max-h-[calc(100vh-5.5rem)]">
             <div class="h-28 bg-gradient-to-r from-pink-600 via-purple-600 to-slate-900 relative shrink-0">
@@ -465,45 +435,13 @@
                   <i class="fab fa-instagram"></i>
                   <i class="fab fa-tiktok"></i>
                 </div>
-                <h2 class="mt-2 text-sm font-bold text-white tracking-tight drop-shadow-sm">Live from our channels</h2>
+                <h2 class="mt-2 text-sm font-bold text-white tracking-tight drop-shadow-sm">Ministry social</h2>
               </div>
             </div>
             <div class="px-4 py-5 sm:px-5 flex-1 min-h-0 overflow-y-auto space-y-5">
               <p class="text-xs text-slate-500 text-center leading-relaxed">
-                Live grids below use embed URLs from your widget provider (see <code class="text-[10px] bg-slate-100 px-1 rounded font-mono text-slate-700">js/social-feed-embed-config.js</code>). Open any profile for the full app experience.
+                Tap a profile to open Instagram or TikTok in the app or browser.
               </p>
-
-              <div id="social-feed-live-wrap" class="hidden space-y-4">
-                <div id="social-feed-instagram-host">
-                  <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
-                    <i class="fab fa-instagram text-pink-600" aria-hidden="true"></i> Instagram — live
-                  </h3>
-                  <div id="social-feed-instagram-embeds" class="space-y-3"></div>
-                </div>
-                <div id="social-feed-tiktok-host">
-                  <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
-                    <i class="fab fa-tiktok text-slate-900" aria-hidden="true"></i> TikTok — live
-                  </h3>
-                  <div id="social-feed-tiktok-embeds" class="space-y-3"></div>
-                </div>
-              </div>
-
-              <div id="social-feed-setup-hint" class="rounded-xl border border-amber-200/80 bg-amber-50/90 p-3 text-xs text-amber-950 space-y-2">
-                <p class="font-semibold text-amber-900">Turn on live embedded feeds</p>
-                <p class="text-amber-900/90 leading-relaxed">
-                  Use a free widget such as
-                  <a href="https://snapwidget.com" target="_blank" rel="noopener noreferrer" class="font-semibold text-brand underline hover:no-underline">SnapWidget</a>
-                  or
-                  <a href="https://lightwidget.com" target="_blank" rel="noopener noreferrer" class="font-semibold text-brand underline hover:no-underline">LightWidget</a>
-                  (Instagram). For TikTok, SnapWidget and others offer feed widgets — create one per account or merge on a paid plan.
-                </p>
-                <p class="text-amber-900/90 leading-relaxed">
-                  Copy each embed’s <strong class="font-semibold">iframe src</strong> URL and add it to
-                  <code class="text-[10px] bg-white/90 px-1 py-0.5 rounded font-mono">instagramEmbeds</code> /
-                  <code class="text-[10px] bg-white/90 px-1 py-0.5 rounded font-mono">tiktokEmbeds</code>
-                  in <code class="text-[10px] bg-white/90 px-1 py-0.5 rounded font-mono">js/social-feed-embed-config.js</code>, then redeploy.
-                </p>
-              </div>
 
               <div>
                 <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
@@ -672,8 +610,9 @@
         newPass2: document.getElementById('new-pass2'),
         btnLinkPassword: document.getElementById('btn-link-password'),
         passStatus: document.getElementById('pass-status'),
-        hasPasswordNote: document.getElementById('has-password-note'),
         passwordCard: document.getElementById('password-card'),
+        currentPassWrap: document.getElementById('current-pass-wrap'),
+        currentPass: document.getElementById('current-pass'),
         btnSignout: document.getElementById('btn-signout'),
         shiftEditModal: document.getElementById('shift-edit-modal'),
         shiftEditMount: document.getElementById('shift-edit-mount'),
@@ -1195,15 +1134,9 @@
             var photoURL = d.photoURL || (auth.currentUser.photoURL || '');
             setAvatarFromUser(name, photoURL);
 
-            var hasPwd = false;
-            (auth.currentUser.providerData || []).forEach(function (p) {
-              if (p.providerId === 'password') hasPwd = true;
-            });
-            if (hasPwd) {
-              els.hasPasswordNote.classList.remove('hidden');
-              els.passwordCard.querySelectorAll('#new-pass, #new-pass2, #btn-link-password').forEach(function (n) {
-                n.disabled = true;
-              });
+            var progGrid = document.getElementById('dashboard-upcoming-programs-grid');
+            if (progGrid && window.PrayerCityPrograms) {
+              window.PrayerCityPrograms.renderDashboardBoard(progGrid);
             }
 
             return syncVolunteerDirectory(uid, d);
@@ -1444,15 +1377,62 @@
         var user = auth.currentUser;
         var email = user && user.email;
         if (!user || !email) return;
+
+        function afterPasswordSuccess() {
+          els.passStatus.textContent =
+            'Password saved. On the sign-in page you can use email + password or “Email me a sign-in link”.';
+          els.passStatus.className = 'mt-2 text-sm text-emerald-700 min-h-[1.25rem]';
+          els.newPass.value = '';
+          els.newPass2.value = '';
+          if (els.currentPass) els.currentPass.value = '';
+          if (els.currentPassWrap) els.currentPassWrap.classList.add('hidden');
+        }
+
+        function tryUpdatePassword() {
+          return user.updatePassword(p1).then(afterPasswordSuccess);
+        }
+
+        var curPw = els.currentPass ? els.currentPass.value : '';
+        if (curPw) {
+          els.passStatus.className = 'mt-2 text-sm text-slate-600 min-h-[1.25rem]';
+          els.passStatus.textContent = 'Verifying…';
+          var reCred = firebase.auth.EmailAuthProvider.credential(email, curPw);
+          user
+            .reauthenticateWithCredential(reCred)
+            .then(function () {
+              return tryUpdatePassword();
+            })
+            .catch(function (e) {
+              els.passStatus.className = 'mt-2 text-sm text-red-600 min-h-[1.25rem]';
+              els.passStatus.textContent = e.message || 'Current password incorrect.';
+            });
+          return;
+        }
+
+        els.passStatus.className = 'mt-2 text-sm text-slate-600 min-h-[1.25rem]';
         els.passStatus.textContent = 'Saving…';
         var cred = firebase.auth.EmailAuthProvider.credential(email, p1);
         user
           .linkWithCredential(cred)
-          .then(function () {
-            els.passStatus.textContent = 'Password saved. You can sign in with email and password next time.';
-            els.hasPasswordNote.classList.remove('hidden');
-          })
+          .then(afterPasswordSuccess)
           .catch(function (e) {
+            var code = e && e.code;
+            if (code === 'auth/provider-already-linked') {
+              return tryUpdatePassword().catch(function (e2) {
+                var c2 = e2 && e2.code;
+                if (c2 === 'auth/requires-recent-login') {
+                  els.passStatus.className = 'mt-2 text-sm text-amber-800 min-h-[1.25rem]';
+                  els.passStatus.textContent =
+                    'Enter your current password above, then click Save password again.';
+                  if (els.currentPassWrap) els.currentPassWrap.classList.remove('hidden');
+                  if (els.currentPass) els.currentPass.focus();
+                } else {
+                  els.passStatus.className = 'mt-2 text-sm text-red-600 min-h-[1.25rem]';
+                  els.passStatus.textContent = e2.message || 'Could not update password.';
+                }
+              });
+            }
+            els.passStatus.className = 'mt-2 text-sm text-red-600 min-h-[1.25rem]';
             els.passStatus.textContent = e.message || 'Could not save password';
           });
       });
@@ -1462,6 +1442,5 @@
       });
     })();
   </script>
-  <script src="js/social-feed-embed.js"></script>
 </body>
 </html>

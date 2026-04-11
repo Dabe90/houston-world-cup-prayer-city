@@ -59,6 +59,8 @@
     details[open] .summary-chevron {
       transform: rotate(180deg);
     }
+    .program-card-img { transition: transform 0.5s ease; }
+    .program-card:hover .program-card-img { transform: scale(1.06); }
   </style>
 </head>
 <body class="min-h-screen bg-gray-100 text-gray-800 antialiased">
@@ -458,26 +460,10 @@
             <h2 class="font-semibold text-linkedin flex items-center gap-2 text-lg">
               <i class="fas fa-calendar-check"></i> Upcoming programs &amp; key dates
             </h2>
-            <p class="text-sm text-gray-600 mt-1">World Cup prayer coverage and related gatherings—save these on your calendar.</p>
+            <p class="text-sm text-gray-600 mt-1">Volunteer sign-up windows (dates &amp; shift hours) plus Dear Daughter gatherings — save what applies to you.</p>
           </div>
-          <div class="p-5 grid sm:grid-cols-3 gap-4 text-sm">
-            <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
-              <p class="font-bold text-linkedin">June 14, 2026</p>
-              <p class="text-gray-700 mt-1 font-medium">Sunday shifts</p>
-              <p class="text-gray-600 mt-1">Prayer tent coverage · downtown Houston</p>
-            </div>
-            <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
-              <p class="font-bold text-linkedin">June 26, 2026</p>
-              <p class="text-gray-700 mt-1 font-medium">Friday evening</p>
-              <p class="text-gray-600 mt-1">4 PM – 9 PM · outreach &amp; intercession</p>
-            </div>
-            <div class="rounded-lg border border-gray-100 bg-gray-50 p-4 sm:col-span-1">
-              <p class="font-bold text-linkedin">July 4, 2026</p>
-              <p class="text-gray-700 mt-1 font-medium">Saturday · holiday weekend</p>
-              <p class="text-gray-600 mt-1">All-hands prayer &amp; welcome</p>
-            </div>
-          </div>
-          <p class="px-5 pb-5 text-xs text-gray-500">Volunteers: after sign-in, your <a href="dashboard.html#upcoming-programs" class="text-linkedin font-medium hover:underline">dashboard</a> shows the same highlights with more context.</p>
+          <div id="upcoming-programs-grid" class="p-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+          <p class="px-5 pb-5 text-xs text-gray-500">Volunteers: your <a href="dashboard.html#upcoming-programs" class="text-linkedin font-medium hover:underline">dashboard</a> shows this same program calendar; your specific roles and times stay under <strong class="font-medium text-gray-700">Shifts</strong> in your dashboard profile column.</p>
         </div>
       </section>
 
@@ -803,6 +789,14 @@
         }
       });
     }
+  </script>
+
+  <script src="js/upcoming-programs-board.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var g = document.getElementById('upcoming-programs-grid');
+      if (g && window.PrayerCityPrograms) window.PrayerCityPrograms.renderPublicBoard(g);
+    });
   </script>
 
 </body>
