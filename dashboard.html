@@ -66,6 +66,10 @@
     .animate-fade-up { animation: fadeUp 0.6s ease forwards; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    details.daily-module > summary { list-style: none; }
+    details.daily-module > summary::-webkit-details-marker { display: none; }
+    details.role-training-acc > summary { list-style: none; }
+    details.role-training-acc > summary::-webkit-details-marker { display: none; }
   </style>
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800">
@@ -232,48 +236,114 @@
                 <i class="fas fa-layer-group"></i> All training guides
               </a>
             </div>
-            <div id="role-summaries-container" class="space-y-4"></div>
+            <div id="role-summaries-container" class="space-y-3"></div>
           </section>
 
-          <section id="daily-social-section" class="hidden bg-gradient-to-br from-indigo-50 via-white to-violet-50 rounded-2xl shadow-card border border-indigo-100/80 p-6 sm:p-8">
-            <h2 class="text-2xl font-bold text-slate-900">Today’s social posts</h2>
-            <p class="text-sm text-slate-600 mt-1 mb-6">
-              10 shareable posts for <span id="daily-social-date" class="font-semibold text-slate-800"></span> — prayer, encouragement, and an invite to Houston Prayer City. Use copy or share buttons (includes your site link).
-            </p>
-            <div id="daily-social-posts" class="grid gap-5 lg:grid-cols-2"></div>
-          </section>
+          <section id="daily-modules-hub" class="hidden rounded-2xl border border-slate-200/90 bg-white shadow-card overflow-hidden mb-2">
+            <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 via-white to-brand-soft/20">
+              <h2 class="text-lg sm:text-xl font-bold text-slate-900">Your volunteer toolkit</h2>
+              <p class="text-sm text-slate-600 mt-1 max-w-2xl">Daily content for each role you’re serving. Expand a section when you need it—keep the rest tucked away for a calmer page.</p>
+              <div id="daily-role-badges" class="flex flex-wrap gap-2 mt-3" aria-label="Your matched roles"></div>
+            </div>
+            <div id="daily-modules-stack" class="p-3 sm:p-4 space-y-2 bg-slate-50/70">
 
-          <section id="daily-prayer-section" class="hidden bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
-            <h2 class="text-2xl font-bold text-slate-900">Today’s prayer points</h2>
-            <p class="text-sm text-slate-600 mt-1 mb-6">Five focuses — salvation, healing, deliverance, Houston, and the nations — with Scripture.</p>
-            <ul id="daily-prayer-list" class="space-y-4"></ul>
-          </section>
+              <details id="daily-social-section" class="daily-module group hidden rounded-xl border border-indigo-200/70 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-indigo-50/40 transition-colors rounded-xl">
+                  <span class="flex items-center gap-3 min-w-0">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><i class="fas fa-hashtag"></i></span>
+                    <span class="min-w-0">
+                      <span class="block font-semibold text-slate-900">Social media</span>
+                      <span class="block text-xs text-slate-500">Posts &amp; share links for today</span>
+                    </span>
+                  </span>
+                  <i class="fas fa-chevron-down text-slate-400 text-sm transition-transform duration-200 group-open:rotate-180 shrink-0" aria-hidden="true"></i>
+                </summary>
+                <div class="border-t border-slate-100 bg-gradient-to-br from-indigo-50/40 via-white to-violet-50/30 px-4 py-5 sm:px-6 sm:py-6">
+                  <p class="text-sm text-slate-600 mb-6">
+                    10 shareable posts for <span id="daily-social-date" class="font-semibold text-slate-800"></span> — prayer, encouragement, and an invite to Houston Prayer City. Use copy or share buttons (includes your site link).
+                  </p>
+                  <div id="daily-social-posts" class="grid gap-5 lg:grid-cols-2"></div>
+                </div>
+              </details>
 
-          <section id="daily-counselor-section" class="hidden bg-white rounded-2xl shadow-card border border-amber-100 p-6 sm:p-8">
-            <h2 class="text-2xl font-bold text-slate-900">Daily outreach tips</h2>
-            <p class="text-sm text-slate-600 mt-1 mb-2">Gospel clarity, invitation, and encouragement — themes common to mass-evangelism outreach (not quotations from any book).</p>
-            <p id="daily-counselor-disclaimer" class="text-xs text-slate-500 mb-6 italic"></p>
-            <div id="daily-counselor-cards" class="grid gap-6 md:grid-cols-3"></div>
-          </section>
+              <details id="daily-prayer-section" class="daily-module group hidden rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-slate-50 transition-colors rounded-xl">
+                  <span class="flex items-center gap-3 min-w-0">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand"><i class="fas fa-hands-praying"></i></span>
+                    <span class="min-w-0">
+                      <span class="block font-semibold text-slate-900">Prayer partners</span>
+                      <span class="block text-xs text-slate-500">Today’s prayer points &amp; Scripture</span>
+                    </span>
+                  </span>
+                  <i class="fas fa-chevron-down text-slate-400 text-sm transition-transform duration-200 group-open:rotate-180 shrink-0" aria-hidden="true"></i>
+                </summary>
+                <div class="border-t border-slate-100 bg-white px-4 py-5 sm:px-6 sm:py-6">
+                  <p class="text-sm text-slate-600 mb-6">Five focuses — salvation, healing, deliverance, Houston, and the nations — with Scripture.</p>
+                  <ul id="daily-prayer-list" class="space-y-4"></ul>
+                </div>
+              </details>
 
-          <section id="daily-photo-section" class="hidden bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
-            <h2 class="text-2xl font-bold text-slate-900">Upload photos &amp; video</h2>
-            <p class="text-sm text-slate-600 mt-1 mb-4">
-              Files save to your team’s <strong>Firebase Storage</strong> folder (secure, multiple files allowed). For Google Drive, coordinators can mirror from exports — uploads here are fastest for the dashboard.
-            </p>
-            <label class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-white font-semibold cursor-pointer hover:bg-brand-light transition shadow-md">
-              <i class="fas fa-cloud-arrow-up"></i> Choose files
-              <input type="file" id="volunteer-media-input" multiple accept="image/*,video/*" class="hidden" />
-            </label>
-            <p id="volunteer-media-status" class="text-sm text-slate-600 mt-3 min-h-[1.25rem]"></p>
-            <ul id="volunteer-media-results" class="mt-4 space-y-2 text-sm"></ul>
-          </section>
+              <details id="daily-counselor-section" class="daily-module group hidden rounded-xl border border-amber-200/80 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-amber-50/50 transition-colors rounded-xl">
+                  <span class="flex items-center gap-3 min-w-0">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-800"><i class="fas fa-heart"></i></span>
+                    <span class="min-w-0">
+                      <span class="block font-semibold text-slate-900">Counselors &amp; outreach</span>
+                      <span class="block text-xs text-slate-500">Daily tips for conversations</span>
+                    </span>
+                  </span>
+                  <i class="fas fa-chevron-down text-slate-400 text-sm transition-transform duration-200 group-open:rotate-180 shrink-0" aria-hidden="true"></i>
+                </summary>
+                <div class="border-t border-slate-100 bg-white px-4 py-5 sm:px-6 sm:py-6">
+                  <p class="text-sm text-slate-600 mb-2">Gospel clarity, invitation, and encouragement — themes common to mass-evangelism outreach (not quotations from any book).</p>
+                  <p id="daily-counselor-disclaimer" class="text-xs text-slate-500 mb-6 italic"></p>
+                  <div id="daily-counselor-cards" class="grid gap-6 md:grid-cols-3"></div>
+                </div>
+              </details>
 
-          <section id="daily-logistics-section" class="hidden bg-white rounded-2xl shadow-card border border-teal-100 p-6 sm:p-8">
-            <h2 class="text-2xl font-bold text-slate-900">Logistics &amp; welfare — today</h2>
-            <p class="text-sm text-slate-600 mt-1 mb-4">Static rotation plus a live headline when available (sports/news RSS).</p>
-            <div id="daily-logistics-news" class="rounded-xl bg-teal-50 border border-teal-100 p-4 mb-6 text-sm text-slate-800 hidden"></div>
-            <ul id="daily-logistics-tips" class="list-disc list-inside space-y-2 text-slate-700"></ul>
+              <details id="daily-photo-section" class="daily-module group hidden rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-slate-50 transition-colors rounded-xl">
+                  <span class="flex items-center gap-3 min-w-0">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i class="fas fa-camera"></i></span>
+                    <span class="min-w-0">
+                      <span class="block font-semibold text-slate-900">Photos &amp; video</span>
+                      <span class="block text-xs text-slate-500">Upload to team storage</span>
+                    </span>
+                  </span>
+                  <i class="fas fa-chevron-down text-slate-400 text-sm transition-transform duration-200 group-open:rotate-180 shrink-0" aria-hidden="true"></i>
+                </summary>
+                <div class="border-t border-slate-100 bg-white px-4 py-5 sm:px-6 sm:py-6">
+                  <p class="text-sm text-slate-600 mt-1 mb-4">
+                    Files save to your team’s <strong>Firebase Storage</strong> folder (secure, multiple files allowed). For Google Drive, coordinators can mirror from exports — uploads here are fastest for the dashboard.
+                  </p>
+                  <label class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-white font-semibold cursor-pointer hover:bg-brand-light transition shadow-md">
+                    <i class="fas fa-cloud-arrow-up"></i> Choose files
+                    <input type="file" id="volunteer-media-input" multiple accept="image/*,video/*" class="hidden" />
+                  </label>
+                  <p id="volunteer-media-status" class="text-sm text-slate-600 mt-3 min-h-[1.25rem]"></p>
+                  <ul id="volunteer-media-results" class="mt-4 space-y-2 text-sm"></ul>
+                </div>
+              </details>
+
+              <details id="daily-logistics-section" class="daily-module group hidden rounded-xl border border-teal-200/70 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-teal-50/40 transition-colors rounded-xl">
+                  <span class="flex items-center gap-3 min-w-0">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-teal-800"><i class="fas fa-boxes-stacked"></i></span>
+                    <span class="min-w-0">
+                      <span class="block font-semibold text-slate-900">Logistics &amp; welfare</span>
+                      <span class="block text-xs text-slate-500">Rotation tips &amp; live headline</span>
+                    </span>
+                  </span>
+                  <i class="fas fa-chevron-down text-slate-400 text-sm transition-transform duration-200 group-open:rotate-180 shrink-0" aria-hidden="true"></i>
+                </summary>
+                <div class="border-t border-slate-100 bg-white px-4 py-5 sm:px-6 sm:py-6">
+                  <p class="text-sm text-slate-600 mt-1 mb-4">Static rotation plus a live headline when available (sports/news RSS).</p>
+                  <div id="daily-logistics-news" class="rounded-xl bg-teal-50 border border-teal-100 p-4 mb-6 text-sm text-slate-800 hidden"></div>
+                  <ul id="daily-logistics-tips" class="list-disc list-inside space-y-2 text-slate-700"></ul>
+                </div>
+              </details>
+
+            </div>
           </section>
 
           <section>
@@ -598,27 +668,57 @@
             'Browse all training guides <i class="fas fa-arrow-right text-xs"></i></a>';
           return;
         }
-        roles.forEach(function (g) {
-          var card = document.createElement('article');
-          card.className =
-            'rounded-xl border border-slate-100 bg-gradient-to-br from-white to-slate-50/80 p-5 sm:p-6 shadow-sm';
-          card.innerHTML =
-            '<div class="flex gap-4">' +
-            '<div class="w-12 h-12 rounded-xl bg-brand text-white flex items-center justify-center shrink-0 shadow-md">' +
-            '<i class="fas ' + escapeHtml(g.icon) + ' text-lg"></i></div>' +
-            '<div class="min-w-0 flex-1">' +
-            '<h3 class="font-bold text-slate-900 text-lg">' +
-            escapeHtml(g.label) +
-            '</h3>' +
-            '<p class="text-sm text-slate-600 mt-2 leading-relaxed">' +
-            escapeHtml(g.short) +
-            '</p>' +
-            '<a href="' +
-            escapeHtml(g.page) +
-            '" class="inline-flex items-center gap-2 mt-4 text-brand font-semibold text-sm hover:underline">' +
-            'Learn more — open training guide <i class="fas fa-arrow-right text-xs"></i></a>' +
-            '</div></div>';
-          container.appendChild(card);
+        var compactTraining = roles.length >= 3;
+        roles.forEach(function (g, idx) {
+          if (compactTraining) {
+            var det = document.createElement('details');
+            det.className =
+              'role-training-acc group rounded-xl border border-slate-100 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow';
+            det.open = idx === 0;
+            det.innerHTML =
+              '<summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-slate-50/90 transition-colors">' +
+              '<span class="flex items-center gap-3 min-w-0">' +
+              '<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand text-white shadow-md">' +
+              '<i class="fas ' +
+              escapeHtml(g.icon) +
+              '"></i></span>' +
+              '<span class="font-semibold text-slate-900">' +
+              escapeHtml(g.label) +
+              '</span></span>' +
+              '<i class="fas fa-chevron-down text-slate-400 text-sm transition-transform duration-200 group-open:rotate-180 shrink-0" aria-hidden="true"></i></summary>' +
+              '<div class="px-4 pb-4 border-t border-slate-100 bg-gradient-to-b from-slate-50/30 to-white">' +
+              '<p class="text-sm text-slate-600 mt-3 leading-relaxed">' +
+              escapeHtml(g.short) +
+              '</p>' +
+              '<a href="' +
+              escapeHtml(g.page) +
+              '" class="inline-flex items-center gap-2 mt-3 text-brand font-semibold text-sm hover:underline">' +
+              'Open training guide <i class="fas fa-arrow-right text-xs"></i></a></div>';
+            container.appendChild(det);
+          } else {
+            var card = document.createElement('article');
+            card.className =
+              'rounded-xl border border-slate-100 bg-gradient-to-br from-white to-slate-50/80 p-5 sm:p-6 shadow-sm';
+            card.innerHTML =
+              '<div class="flex gap-4">' +
+              '<div class="w-12 h-12 rounded-xl bg-brand text-white flex items-center justify-center shrink-0 shadow-md">' +
+              '<i class="fas ' +
+              escapeHtml(g.icon) +
+              ' text-lg"></i></div>' +
+              '<div class="min-w-0 flex-1">' +
+              '<h3 class="font-bold text-slate-900 text-lg">' +
+              escapeHtml(g.label) +
+              '</h3>' +
+              '<p class="text-sm text-slate-600 mt-2 leading-relaxed">' +
+              escapeHtml(g.short) +
+              '</p>' +
+              '<a href="' +
+              escapeHtml(g.page) +
+              '" class="inline-flex items-center gap-2 mt-4 text-brand font-semibold text-sm hover:underline">' +
+              'Learn more — open training guide <i class="fas fa-arrow-right text-xs"></i></a>' +
+              '</div></div>';
+            container.appendChild(card);
+          }
         });
       }
 
@@ -635,13 +735,42 @@
       function hideAllDailySections() {
         dailySectionIds().forEach(function (id) {
           var el = document.getElementById(id);
-          if (el) el.classList.add('hidden');
+          if (el) {
+            el.classList.add('hidden');
+            el.open = false;
+          }
         });
+        var hub = document.getElementById('daily-modules-hub');
+        if (hub) hub.classList.add('hidden');
       }
 
       function showDailySection(id, show) {
         var el = document.getElementById(id);
         if (el) el.classList.toggle('hidden', !show);
+      }
+
+      function syncDailyModulesHub(roles) {
+        var hub = document.getElementById('daily-modules-hub');
+        var badges = document.getElementById('daily-role-badges');
+        if (badges) {
+          badges.innerHTML = '';
+          roles.forEach(function (r) {
+            var span = document.createElement('span');
+            span.className =
+              'inline-flex items-center rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-brand border border-brand/25 shadow-sm';
+            span.textContent = r.label;
+            badges.appendChild(span);
+          });
+        }
+        var visible = [];
+        dailySectionIds().forEach(function (sid) {
+          var el = document.getElementById(sid);
+          if (el && !el.classList.contains('hidden')) visible.push(el);
+        });
+        if (hub) hub.classList.toggle('hidden', visible.length === 0);
+        visible.forEach(function (el, i) {
+          el.open = visible.length === 1 || i === 0;
+        });
       }
 
       function siteUrlForShares() {
@@ -654,7 +783,9 @@
 
       function renderDailyModules(d) {
         hideAllDailySections();
-        if (typeof window.findVolunteerRolesFromShifts !== 'function' || !window.VolunteerDailyContent) return;
+        if (typeof window.findVolunteerRolesFromShifts !== 'function' || !window.VolunteerDailyContent) {
+          return;
+        }
         var combined = [d.shifts || '', d.position || '', d.timeslot || '', d.tent || ''].join(' ');
         var roles = window.findVolunteerRolesFromShifts(combined);
         var ids = roles.map(function (r) {
@@ -817,6 +948,8 @@
               newsEl.classList.add('hidden');
             });
         }
+
+        syncDailyModulesHub(roles);
       }
 
       (function bindMediaUpload() {
