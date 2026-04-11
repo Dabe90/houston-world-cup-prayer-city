@@ -123,16 +123,21 @@
   <!-- Main dashboard (signed in) -->
   <div id="dashboard-main" class="hidden pb-16">
     <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <a href="index.html" class="w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white text-sm font-bold shrink-0 hover:opacity-90 transition" title="Home">PC</a>
           <div class="flex items-center gap-1 sm:gap-2 flex-wrap">
             <a href="index.html" class="font-semibold text-slate-900 text-sm hover:text-brand transition">Prayer City</a>
             <span class="text-slate-300 hidden sm:inline">|</span>
             <a href="volunteer-hub.html" class="text-sm font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition">Volunteer hub</a>
+            <span class="text-slate-300 hidden sm:inline">|</span>
+            <a href="faq.html" class="text-sm font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition">FAQ</a>
           </div>
         </div>
         <div class="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+          <a href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-xs sm:text-sm font-bold text-brand shadow-sm hover:bg-amber-300 transition">
+            <i class="fas fa-heart" aria-hidden="true"></i> Donate
+          </a>
           <nav class="flex items-center gap-1 mr-1">
             <span class="text-sm font-semibold text-brand px-2.5 py-1 rounded-lg bg-brand-soft">My dashboard</span>
           </nav>
@@ -146,7 +151,7 @@
 
     <!-- Hero -->
     <header class="hero-mesh text-white relative overflow-hidden">
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-14 lg:py-20">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-14 lg:py-20">
         <div class="grid lg:grid-cols-2 gap-10 items-center">
           <div class="animate-fade-up">
             <p class="text-brand-accent font-semibold uppercase tracking-widest text-xs mb-4">Youth · Scripture · Houston 2026</p>
@@ -168,11 +173,11 @@
       </div>
     </header>
 
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 -mt-6 relative z-10">
       <div class="grid lg:grid-cols-12 gap-6">
 
         <!-- Profile column -->
-        <aside class="lg:col-span-4 space-y-6">
+        <aside class="lg:col-span-3 space-y-6">
           <div class="bg-white rounded-2xl shadow-card overflow-hidden border border-slate-100">
             <div class="h-28 bg-gradient-to-r from-brand via-brand-light to-sky-600 relative">
               <div class="absolute inset-0 opacity-30 bg-[url('https://images.unsplash.com/photo-1473163928189-364b2c4e1135?w=600&q=80')] bg-cover bg-center"></div>
@@ -224,7 +229,7 @@
         </aside>
 
         <!-- Main feed -->
-        <main class="lg:col-span-8 space-y-8">
+        <main class="lg:col-span-6 space-y-8">
 
           <section id="role-training-section" class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
             <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
@@ -346,7 +351,7 @@
             </div>
           </section>
 
-          <section>
+          <section id="upcoming-programs" class="scroll-mt-24">
             <div class="flex items-end justify-between mb-4">
               <div>
                 <h2 class="text-2xl font-bold text-slate-900">Upcoming programs</h2>
@@ -448,6 +453,103 @@
             <p id="has-password-note" class="hidden mt-4 text-sm text-emerald-700 font-medium">You already have a password linked to this account.</p>
           </section>
         </main>
+
+        <!-- Social media hub (links open official apps / web — full profile feeds cannot be embedded without a third-party widget) -->
+        <aside class="lg:col-span-3 space-y-6" aria-label="Ministry social media">
+          <div class="bg-white rounded-2xl shadow-card overflow-hidden border border-slate-100 lg:sticky lg:top-20 flex flex-col lg:max-h-[calc(100vh-5.5rem)]">
+            <div class="h-28 bg-gradient-to-r from-pink-600 via-purple-600 to-slate-900 relative shrink-0">
+              <div class="absolute inset-0 opacity-25 bg-[url('https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=600&q=80')] bg-cover bg-center mix-blend-overlay"></div>
+              <div class="relative h-full flex flex-col items-center justify-end pb-3 px-4 text-center">
+                <div class="flex items-center justify-center gap-5 text-white text-2xl drop-shadow-sm" aria-hidden="true">
+                  <i class="fab fa-instagram"></i>
+                  <i class="fab fa-tiktok"></i>
+                </div>
+                <h2 class="mt-2 text-sm font-bold text-white tracking-tight drop-shadow-sm">Live from our channels</h2>
+              </div>
+            </div>
+            <div class="px-4 py-5 sm:px-5 flex-1 min-h-0 overflow-y-auto space-y-5">
+              <p class="text-xs text-slate-500 text-center leading-relaxed">
+                New reels, stories, and posts go up on Instagram and TikTok. Tap a profile to see the latest in the app or browser.
+              </p>
+
+              <div>
+                <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
+                  <i class="fab fa-instagram text-pink-600" aria-hidden="true"></i> Instagram
+                </h3>
+                <ul class="space-y-2">
+                  <li>
+                    <a href="https://www.instagram.com/_abedamilola/" target="_blank" rel="noopener noreferrer" class="group flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/80 hover:bg-white hover:border-pink-200 hover:shadow-sm transition">
+                      <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 text-white text-sm font-bold shadow-sm">@</span>
+                      <span class="min-w-0 flex-1">
+                        <span class="block text-sm font-semibold text-slate-900 truncate group-hover:text-pink-700">@_abedamilola</span>
+                        <span class="block text-xs text-slate-500">Open profile</span>
+                      </span>
+                      <i class="fas fa-external-link-alt text-slate-400 text-xs shrink-0 group-hover:text-pink-600" aria-hidden="true"></i>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://www.instagram.com/ddbs.htx/" target="_blank" rel="noopener noreferrer" class="group flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/80 hover:bg-white hover:border-pink-200 hover:shadow-sm transition">
+                      <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 text-white text-sm font-bold shadow-sm">HTX</span>
+                      <span class="min-w-0 flex-1">
+                        <span class="block text-sm font-semibold text-slate-900 truncate group-hover:text-pink-700">@ddbs.htx</span>
+                        <span class="block text-xs text-slate-500">Houston · Open profile</span>
+                      </span>
+                      <i class="fas fa-external-link-alt text-slate-400 text-xs shrink-0 group-hover:text-pink-600" aria-hidden="true"></i>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://www.instagram.com/ddbs.global/" target="_blank" rel="noopener noreferrer" class="group flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/80 hover:bg-white hover:border-pink-200 hover:shadow-sm transition">
+                      <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 text-white text-xs font-bold shadow-sm leading-tight text-center px-1">GL</span>
+                      <span class="min-w-0 flex-1">
+                        <span class="block text-sm font-semibold text-slate-900 truncate group-hover:text-pink-700">@ddbs.global</span>
+                        <span class="block text-xs text-slate-500">Global · Open profile</span>
+                      </span>
+                      <i class="fas fa-external-link-alt text-slate-400 text-xs shrink-0 group-hover:text-pink-600" aria-hidden="true"></i>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
+                  <i class="fab fa-tiktok text-slate-900" aria-hidden="true"></i> TikTok
+                </h3>
+                <ul class="space-y-2">
+                  <li>
+                    <a href="https://www.tiktok.com/@_abedamilola" target="_blank" rel="noopener noreferrer" class="group flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/80 hover:bg-white hover:border-slate-300 hover:shadow-sm transition">
+                      <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white text-sm font-bold shadow-sm">@</span>
+                      <span class="min-w-0 flex-1">
+                        <span class="block text-sm font-semibold text-slate-900 truncate">@_abedamilola</span>
+                        <span class="block text-xs text-slate-500">Open profile</span>
+                      </span>
+                      <i class="fas fa-external-link-alt text-slate-400 text-xs shrink-0 group-hover:text-slate-700" aria-hidden="true"></i>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://www.tiktok.com/@ddbs.htx" target="_blank" rel="noopener noreferrer" class="group flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/80 hover:bg-white hover:border-slate-300 hover:shadow-sm transition">
+                      <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white text-xs font-bold shadow-sm leading-tight text-center px-1">HTX</span>
+                      <span class="min-w-0 flex-1">
+                        <span class="block text-sm font-semibold text-slate-900 truncate">@ddbs.htx</span>
+                        <span class="block text-xs text-slate-500">Houston · Open profile</span>
+                      </span>
+                      <i class="fas fa-external-link-alt text-slate-400 text-xs shrink-0 group-hover:text-slate-700" aria-hidden="true"></i>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://www.tiktok.com/@ddbs.global" target="_blank" rel="noopener noreferrer" class="group flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/80 hover:bg-white hover:border-slate-300 hover:shadow-sm transition">
+                      <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white text-xs font-bold shadow-sm leading-tight text-center px-1">GL</span>
+                      <span class="min-w-0 flex-1">
+                        <span class="block text-sm font-semibold text-slate-900 truncate">@ddbs.global</span>
+                        <span class="block text-xs text-slate-500">Global · Open profile</span>
+                      </span>
+                      <i class="fas fa-external-link-alt text-slate-400 text-xs shrink-0 group-hover:text-slate-700" aria-hidden="true"></i>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
 
@@ -474,6 +576,21 @@
       </div>
     </div>
   </div>
+
+  <footer class="py-8 px-4 sm:px-6 border-t border-slate-200 bg-white">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="text-center sm:text-left">
+        <p class="text-slate-700 text-sm">
+          Email:
+          <a href="mailto:ddbs.htx@gmail.com" class="text-brand font-semibold hover:underline">ddbs.htx@gmail.com</a>
+        </p>
+        <p class="text-slate-500 text-xs mt-1">Houston World Cup Prayer City · Dear Daughter Bible Study Group</p>
+      </div>
+      <a href="contact.html" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-sm font-semibold hover:bg-brand-light transition shadow-sm focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2">
+        <i class="fas fa-envelope" aria-hidden="true"></i> Contact us
+      </a>
+    </div>
+  </footer>
 
   <script>
     (function () {
