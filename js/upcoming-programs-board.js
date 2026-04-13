@@ -1,6 +1,7 @@
 /**
  * Upcoming programs tiles: World Cup volunteer signup windows + ministry events.
- * Public page: full window copy on each day. Dashboard: each day shows only that volunteer’s saved shift(s), plus ministry tiles.
+ * Public page: full window copy on each day. Dashboard: World Cup tiles only for dates
+ * with saved shifts (your slots as lines); ministry tiles always follow.
  */
 (function (global) {
   function escapeHtml(s) {
@@ -90,6 +91,14 @@
     },
   ];
 
+  /** Strip trailing "(Sunday)" etc. so sheet/form dates match tile dateBadge. */
+  function normalizeProgramDateKey(dateStr) {
+    return String(dateStr || '')
+      .replace(/\s*\([^)]*\)\s*$/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   /** Map date label (e.g. June 14, 2026) → display lines "time · role" */
   function parseShiftsByDate(shiftsText) {
     var map = {};
@@ -102,7 +111,8 @@
       .forEach(function (line) {
         var parts = line.split(/\s*—\s*/);
         if (parts.length < 2) return;
-        var date = parts[0].trim();
+        var date = normalizeProgramDateKey(parts[0].trim());
+        if (!date) return;
         var rest;
         if (parts.length >= 3) {
           var time = parts[1].trim();
@@ -177,36 +187,24 @@
     if (!container) return;
     opts = opts || {};
     var byDate = parseShiftsByDate(opts.shiftsText || '');
-    var hasSaved = Object.keys(byDate).some(function (k) {
-      return byDate[k] && byDate[k].length;
-    });
 
     var html = '';
     WC_VOLUNTEER_TILES.forEach(function (t) {
-      var mine = byDate[t.dateBadge];
+      var badgeKey = normalizeProgramDateKey(t.dateBadge);
+      var mine = byDate[badgeKey] || byDate[t.dateBadge];
+      if (!mine || !mine.length) return;
+
       var dayPart = t.title.indexOf('·') !== -1 ? t.title.split('·')[0].trim() : t.title;
       var tile = {
         dateBadge: t.dateBadge,
-        title: t.title,
-        body: t.body,
+        title: dayPart + ' · Your shift(s)',
+        body: '',
         img: t.img,
         imgAlt: t.imgAlt,
         accent: t.accent,
-        bodyLines: null,
+        bodyLines: mine,
       };
-      var extraClass = '';
-      if (hasSaved) {
-        if (mine && mine.length) {
-          tile.title = dayPart + ' · Your shift(s)';
-          tile.bodyLines = mine;
-          tile.body = '';
-          extraClass = 'ring-2 ring-brand/20';
-        } else {
-          tile.body =
-            'No shift on file for this date. Use <strong>Edit Shifts</strong> or the main sign-up page if you’d like to serve this day.';
-        }
-      }
-      html += tileArticle(tile, extraClass);
+      html += tileArticle(tile, 'ring-2 ring-brand/20');
     });
 
     MINISTRY_TILES.forEach(function (t) {

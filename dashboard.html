@@ -73,6 +73,20 @@
     details.daily-module > summary::-webkit-details-marker { display: none; }
     details.role-training-acc > summary { list-style: none; }
     details.role-training-acc > summary::-webkit-details-marker { display: none; }
+    /* Contain long URLs / shift lines on narrow screens */
+    #fv-shifts,
+    #fv-notes {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    #daily-social-posts article {
+      min-width: 0;
+      max-width: 100%;
+    }
+    #daily-social-posts .social-post-body {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
   </style>
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800 overflow-x-hidden">
@@ -85,22 +99,22 @@
 
   <!-- Sign-in gate -->
   <div id="auth-gate" class="min-h-screen flex flex-col lg:flex-row">
-    <div class="auth-visual-grid lg:w-1/2 min-h-[220px] lg:min-h-screen relative flex items-end p-10 text-white">
+    <div class="auth-visual-grid lg:w-1/2 min-h-[200px] sm:min-h-[240px] lg:min-h-screen relative flex items-end p-6 sm:p-10 text-white">
       <div class="relative z-10 max-w-md">
         <p class="text-brand-accent font-semibold tracking-wide uppercase text-sm mb-2">Daughter Team · Prayer City</p>
-        <h1 class="text-3xl lg:text-4xl font-display font-semibold leading-tight mb-4">
+        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-display font-semibold leading-tight mb-4">
           Welcome back, servant heart. Your shift in prayer matters.
         </h1>
-        <p class="text-white/90 text-sm leading-relaxed verse-font italic">
+        <p class="text-white/90 text-sm sm:text-base leading-relaxed verse-font italic">
           “How can a young person stay on the path of purity? By living according to your word.” — Psalm 119:9 (NIV)
         </p>
       </div>
     </div>
     <div class="flex-1 flex items-center justify-center p-6 sm:p-10 bg-white">
       <div class="w-full max-w-md">
-        <div class="mb-8">
-          <h2 class="text-2xl font-bold text-slate-900">Sign in to your hub</h2>
-          <p class="text-slate-600 text-sm mt-2">Sign in with <strong class="font-semibold text-slate-800">email + password</strong> (if you saved one on your dashboard) or request a fresh <strong class="font-semibold text-slate-800">email sign-in link</strong> — both stay available.</p>
+        <div class="mb-6 sm:mb-8">
+          <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Sign in to your hub</h2>
+          <p class="text-slate-600 text-sm mt-2 leading-relaxed">Sign in with <strong class="font-semibold text-slate-800">email + password</strong> (if you saved one on your dashboard) or request a fresh <strong class="font-semibold text-slate-800">email sign-in link</strong> — both stay available.</p>
         </div>
         <div class="space-y-4">
           <div>
@@ -124,29 +138,30 @@
   </div>
 
   <!-- Main dashboard (signed in) -->
-  <div id="dashboard-main" class="hidden pb-16">
+  <div id="dashboard-main" class="hidden pb-16 w-full min-w-0 max-w-[100vw] overflow-x-hidden">
     <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 min-h-14 py-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
-        <div class="flex items-center gap-3 min-w-0">
-          <a href="index.html" class="w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white text-sm font-bold shrink-0 hover:opacity-90 transition" title="Home">PC</a>
-          <div class="flex items-center gap-1 sm:gap-2 flex-wrap">
-            <a href="index.html" class="font-semibold text-slate-900 text-sm hover:text-brand transition">Prayer City</a>
-            <span class="text-slate-300 hidden sm:inline">|</span>
-            <a href="volunteer-hub.html" class="text-sm font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition">Volunteer hub</a>
-            <span class="text-slate-300 hidden sm:inline">|</span>
-            <a href="faq.html" class="text-sm font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition">FAQ</a>
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 min-h-14 py-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
+        <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 basis-[min(100%,16rem)] sm:flex-initial">
+          <a href="index.html" class="touch-manipulation w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white text-sm font-bold shrink-0 hover:opacity-90 transition" title="Home">PC</a>
+          <div class="flex items-center gap-1 sm:gap-2 flex-wrap min-w-0">
+            <a href="index.html" class="font-semibold text-slate-900 text-xs sm:text-sm hover:text-brand transition shrink-0">Prayer City</a>
+            <span class="text-slate-300" aria-hidden="true">|</span>
+            <a href="volunteer-hub.html" class="touch-manipulation text-xs sm:text-sm font-medium text-slate-600 hover:text-brand px-1.5 sm:px-2 py-1 rounded-lg hover:bg-slate-50 transition md:hidden">Hub</a>
+            <a href="volunteer-hub.html" class="touch-manipulation hidden md:inline text-sm font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition">Volunteer hub</a>
+            <span class="text-slate-300" aria-hidden="true">|</span>
+            <a href="faq.html" class="touch-manipulation text-xs sm:text-sm font-medium text-slate-600 hover:text-brand px-1.5 sm:px-2 py-1 rounded-lg hover:bg-slate-50 transition">FAQ</a>
           </div>
         </div>
-        <div class="flex items-center gap-2 sm:gap-3 flex-wrap justify-end w-full sm:w-auto">
-          <a href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-xs sm:text-sm font-bold text-brand shadow-sm hover:bg-amber-300 transition">
+        <div class="flex items-center gap-1.5 sm:gap-3 flex-wrap justify-end w-full sm:w-auto sm:flex-initial">
+          <a href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement" target="_blank" rel="noopener noreferrer" class="touch-manipulation inline-flex items-center gap-1 rounded-full bg-amber-400 px-2.5 sm:px-3 py-1.5 text-xs font-bold text-brand shadow-sm hover:bg-amber-300 transition">
             <i class="fas fa-heart" aria-hidden="true"></i> Donate
           </a>
-          <nav class="flex items-center gap-1 mr-1">
-            <span class="text-sm font-semibold text-brand px-2.5 py-1 rounded-lg bg-brand-soft">My dashboard</span>
+          <nav class="flex items-center gap-1 mr-0 sm:mr-1" aria-label="Current page">
+            <span class="text-xs sm:text-sm font-semibold text-brand px-2 py-1 rounded-lg bg-brand-soft whitespace-nowrap"><span class="md:hidden">Dashboard</span><span class="hidden md:inline">My dashboard</span></span>
           </nav>
-          <span id="nav-welcome" class="hidden sm:inline text-sm text-slate-600 max-w-[200px] truncate"></span>
-          <button type="button" id="btn-signout" class="text-sm font-medium text-slate-600 hover:text-red-600 transition px-3 py-1.5 rounded-lg hover:bg-slate-50">
-            <i class="fas fa-sign-out-alt mr-1"></i> Sign out
+          <span id="nav-welcome" class="hidden lg:inline text-sm text-slate-600 max-w-[200px] truncate"></span>
+          <button type="button" id="btn-signout" class="touch-manipulation text-xs sm:text-sm font-medium text-slate-600 hover:text-red-600 transition px-2 sm:px-3 py-1.5 rounded-lg hover:bg-slate-50 whitespace-nowrap min-h-[40px] min-w-[40px] sm:min-w-0" aria-label="Sign out" title="Sign out">
+            <i class="fas fa-sign-out-alt sm:mr-1" aria-hidden="true"></i><span class="hidden sm:inline">Sign out</span>
           </button>
         </div>
       </div>
@@ -154,17 +169,17 @@
 
     <!-- Hero -->
     <header class="hero-mesh text-white relative overflow-hidden">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-14 lg:py-20">
-        <div class="grid lg:grid-cols-2 gap-10 items-center">
-          <div class="animate-fade-up">
-            <p class="text-brand-accent font-semibold tracking-wide text-xs sm:text-sm mb-4">
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 py-8 sm:py-14 lg:py-20">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-center">
+          <div class="animate-fade-up min-w-0">
+            <p class="text-brand-accent font-semibold tracking-wide text-xs sm:text-sm mb-3 sm:mb-4">
               <a href="https://www.JesusMarchhtx.com" target="_blank" rel="noopener noreferrer" class="text-brand-accent underline-offset-2 hover:underline focus:outline-none focus:ring-2 focus:ring-brand-accent/80 focus:ring-offset-2 focus:ring-offset-transparent rounded-sm">Dear Daughter Bible Study Group</a><span class="text-brand-accent"> · Houston 2026</span>
             </p>
-            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-display font-bold leading-tight mb-6">
+            <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-bold leading-[1.15] sm:leading-tight mb-4 sm:mb-6">
               Over 5,000 people lifting Jesus up during the World Cup in Houston
             </h1>
-            <p id="welcome-line" class="text-lg text-white/95 font-medium mb-6"></p>
-            <p class="verse-font text-white/85 italic text-lg leading-relaxed border-l-4 border-brand-accent pl-5">
+            <p id="welcome-line" class="text-base sm:text-lg text-white/95 font-medium mb-4 sm:mb-6"></p>
+            <p class="verse-font text-white/85 italic text-base sm:text-lg leading-relaxed border-l-4 border-brand-accent pl-4 sm:pl-5">
               “Your word is a lamp for my feet, a light on my path.” — Psalm 119:105
             </p>
           </div>
@@ -178,17 +193,17 @@
       </div>
     </header>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 -mt-6 relative z-10">
-      <div class="grid lg:grid-cols-12 gap-6">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 -mt-4 sm:-mt-6 relative z-10 w-full min-w-0">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 w-full min-w-0">
 
-        <!-- Profile column -->
-        <aside class="lg:col-span-3 space-y-6">
-          <div class="bg-white rounded-2xl shadow-card overflow-hidden border border-slate-100">
-            <div class="h-28 bg-gradient-to-r from-brand via-brand-light to-sky-600 relative">
+        <!-- Profile column (after main on mobile) -->
+        <aside class="order-2 lg:order-1 lg:col-span-3 space-y-4 lg:space-y-6 min-w-0 max-w-full">
+          <div class="bg-white rounded-2xl shadow-card overflow-hidden border border-slate-100 max-w-full min-w-0">
+            <div class="h-24 sm:h-28 bg-gradient-to-r from-brand via-brand-light to-sky-600 relative">
               <div class="absolute inset-0 opacity-30 bg-[url('https://images.unsplash.com/photo-1473163928189-364b2c4e1135?w=600&q=80')] bg-cover bg-center"></div>
             </div>
-            <div class="px-6 pb-6 relative">
-              <div class="flex flex-col items-center -mt-14">
+            <div class="px-4 sm:px-6 pb-5 sm:pb-6 relative min-w-0 max-w-full">
+              <div class="flex flex-col items-center -mt-14 min-w-0 w-full max-w-full">
                 <div class="relative group">
                   <div id="profile-avatar-wrap" class="w-28 h-28 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-slate-200 flex items-center justify-center">
                     <img id="profile-avatar-img" src="" alt="" class="w-full h-full object-cover hidden" />
@@ -199,27 +214,27 @@
                     <input type="file" id="profile-avatar-input" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" />
                   </label>
                 </div>
-                <h2 id="profile-display-name" class="mt-4 text-xl font-bold text-slate-900 text-center"></h2>
+                <h2 id="profile-display-name" class="mt-4 text-xl font-bold text-slate-900 text-center break-words max-w-full px-1"></h2>
                 <p class="text-sm text-brand font-medium">Volunteer · Daughter Team</p>
                 <p id="profile-upload-status" class="mt-2 text-xs text-slate-500 min-h-[1rem] text-center"></p>
               </div>
-              <dl class="mt-6 space-y-3 text-sm border-t border-slate-100 pt-5">
-                <div class="flex justify-between gap-2">
-                  <dt class="text-slate-500">Email</dt>
-                  <dd id="fv-email" class="font-medium text-slate-800 text-right break-all"></dd>
+              <dl class="mt-5 sm:mt-6 space-y-3 text-sm border-t border-slate-100 pt-4 sm:pt-5">
+                <div class="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:items-baseline sm:gap-2">
+                  <dt class="text-slate-500 shrink-0">Email</dt>
+                  <dd id="fv-email" class="font-medium text-slate-800 break-all sm:text-right min-w-0"></dd>
                 </div>
-                <div class="flex justify-between gap-2">
-                  <dt class="text-slate-500">Phone</dt>
-                  <dd id="fv-phone" class="font-medium text-slate-800 text-right"></dd>
+                <div class="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:items-baseline sm:gap-2">
+                  <dt class="text-slate-500 shrink-0">Phone</dt>
+                  <dd id="fv-phone" class="font-medium text-slate-800 sm:text-right break-words min-w-0"></dd>
                 </div>
               </dl>
-              <div class="mt-4">
+              <div class="mt-4 min-w-0 max-w-full">
                 <dt class="text-slate-500 text-xs uppercase tracking-wide mb-1">Shifts</dt>
-                <dd id="fv-shifts" class="text-sm font-medium text-slate-800 whitespace-pre-wrap"></dd>
+                <dd id="fv-shifts" class="text-sm font-medium text-slate-800 whitespace-pre-wrap break-words max-w-full"></dd>
               </div>
-              <div class="mt-3">
+              <div class="mt-3 min-w-0 max-w-full">
                 <dt class="text-slate-500 text-xs uppercase tracking-wide mb-1">Notes</dt>
-                <dd id="fv-notes" class="text-sm text-slate-700 whitespace-pre-wrap"></dd>
+                <dd id="fv-notes" class="text-sm text-slate-700 whitespace-pre-wrap break-words max-w-full"></dd>
               </div>
               <button type="button" id="btn-open-shift-edit" class="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand/25 bg-brand-soft text-brand font-semibold text-sm hover:bg-brand/10 transition">
                 <i class="fas fa-calendar-check"></i> Edit Shifts
@@ -236,31 +251,31 @@
           </a>
         </aside>
 
-        <!-- Main feed -->
-        <main class="lg:col-span-6 space-y-8">
+        <!-- Main feed (first on mobile) -->
+        <main class="order-1 lg:order-2 lg:col-span-6 space-y-6 lg:space-y-8 min-w-0 max-w-full overflow-x-hidden">
 
-          <section id="role-training-section" class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
-            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
-              <div>
-                <h2 class="text-2xl font-bold text-slate-900">Your role &amp; training</h2>
-                <p class="text-sm text-slate-600 mt-1">Tailored to what you signed up for. Open your guide before your first shift.</p>
+          <section id="role-training-section" class="bg-white rounded-2xl shadow-card border border-slate-100 p-4 sm:p-6 md:p-8 min-w-0 max-w-full overflow-x-hidden">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4 min-w-0">
+              <div class="min-w-0 max-w-full">
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 break-words">Your role &amp; training</h2>
+                <p class="text-sm text-slate-600 mt-1 break-words">Tailored to what you signed up for. Open your guide before your first shift.</p>
               </div>
-              <a href="training/index.html" class="shrink-0 inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-light border border-brand/20 rounded-xl px-4 py-2 hover:bg-brand-soft transition">
+              <a href="training/index.html" class="w-full sm:w-auto justify-center shrink-0 inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-light border border-brand/20 rounded-xl px-4 py-2.5 min-h-[44px] hover:bg-brand-soft transition touch-manipulation">
                 <i class="fas fa-layer-group"></i> All training guides
               </a>
             </div>
-            <div id="role-summaries-container" class="space-y-3"></div>
+            <div id="role-summaries-container" class="space-y-3 min-w-0 max-w-full"></div>
           </section>
 
-          <section id="daily-modules-hub" class="hidden rounded-2xl border border-slate-200/90 bg-white shadow-card overflow-hidden mb-2">
-            <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 via-white to-brand-soft/20">
-              <h2 class="text-lg sm:text-xl font-bold text-slate-900">Your volunteer toolkit</h2>
-              <p class="text-sm text-slate-600 mt-1 max-w-2xl">Daily content for each role you’re serving. Expand a section when you need it—keep the rest tucked away for a calmer page.</p>
-              <div id="daily-role-badges" class="flex flex-wrap gap-2 mt-3" aria-label="Your matched roles"></div>
+          <section id="daily-modules-hub" class="hidden rounded-2xl border border-slate-200/90 bg-white shadow-card overflow-hidden mb-2 min-w-0 max-w-full">
+            <div class="px-4 py-4 sm:px-6 sm:py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 via-white to-brand-soft/20 min-w-0 max-w-full">
+              <h2 class="text-lg sm:text-xl font-bold text-slate-900 break-words">Your volunteer toolkit</h2>
+              <p class="text-sm text-slate-600 mt-1 max-w-2xl break-words">Daily content for each role you’re serving. Expand a section when you need it—keep the rest tucked away for a calmer page.</p>
+              <div id="daily-role-badges" class="flex flex-wrap gap-2 mt-3 min-w-0" aria-label="Your matched roles"></div>
             </div>
-            <div id="daily-modules-stack" class="p-3 sm:p-4 space-y-2 bg-slate-50/70">
+            <div id="daily-modules-stack" class="p-3 sm:p-4 space-y-2 bg-slate-50/70 min-w-0 max-w-full overflow-x-hidden">
 
-              <details id="daily-social-section" class="daily-module group hidden rounded-xl border border-indigo-200/70 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow">
+              <details id="daily-social-section" class="daily-module group hidden rounded-xl border border-indigo-200/70 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow min-w-0 max-w-full">
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-indigo-50/40 transition-colors rounded-xl">
                   <span class="flex items-center gap-3 min-w-0">
                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><i class="fas fa-hashtag"></i></span>
@@ -271,15 +286,15 @@
                   </span>
                   <i class="fas fa-chevron-down text-slate-400 text-sm transition-transform duration-200 group-open:rotate-180 shrink-0" aria-hidden="true"></i>
                 </summary>
-                <div class="border-t border-slate-100 bg-gradient-to-br from-indigo-50/40 via-white to-violet-50/30 px-4 py-5 sm:px-6 sm:py-6">
-                  <p class="text-sm text-slate-600 mb-6">
-                    10 shareable posts for <span id="daily-social-date" class="font-semibold text-slate-800"></span> — prayer, encouragement, and an invite to Houston Prayer City. Use copy or share buttons (includes your site link).
+                <div class="border-t border-slate-100 bg-gradient-to-br from-indigo-50/40 via-white to-violet-50/30 px-4 py-5 sm:px-6 sm:py-6 min-w-0 max-w-full overflow-x-hidden">
+                  <p class="text-sm text-slate-600 mb-6 break-words">
+                    10 shareable posts for <span id="daily-social-date" class="font-semibold text-slate-800 break-all"></span> — prayer, encouragement, and an invite to Houston Prayer City. Use copy or share buttons (includes your site link).
                   </p>
-                  <div id="daily-social-posts" class="grid gap-5 lg:grid-cols-2"></div>
+                  <div id="daily-social-posts" class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 min-w-0 max-w-full"></div>
                 </div>
               </details>
 
-              <details id="daily-prayer-section" class="daily-module group hidden rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow">
+              <details id="daily-prayer-section" class="daily-module group hidden rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow min-w-0 max-w-full">
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-slate-50 transition-colors rounded-xl">
                   <span class="flex items-center gap-3 min-w-0">
                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand"><i class="fas fa-hands-praying"></i></span>
@@ -296,7 +311,7 @@
                 </div>
               </details>
 
-              <details id="daily-counselor-section" class="daily-module group hidden rounded-xl border border-amber-200/80 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow">
+              <details id="daily-counselor-section" class="daily-module group hidden rounded-xl border border-amber-200/80 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow min-w-0 max-w-full">
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-amber-50/50 transition-colors rounded-xl">
                   <span class="flex items-center gap-3 min-w-0">
                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-800"><i class="fas fa-heart"></i></span>
@@ -314,7 +329,7 @@
                 </div>
               </details>
 
-              <details id="daily-photo-section" class="daily-module group hidden rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow">
+              <details id="daily-photo-section" class="daily-module group hidden rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow min-w-0 max-w-full">
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-slate-50 transition-colors rounded-xl">
                   <span class="flex items-center gap-3 min-w-0">
                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i class="fas fa-camera"></i></span>
@@ -338,7 +353,7 @@
                 </div>
               </details>
 
-              <details id="daily-logistics-section" class="daily-module group hidden rounded-xl border border-teal-200/70 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow">
+              <details id="daily-logistics-section" class="daily-module group hidden rounded-xl border border-teal-200/70 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow min-w-0 max-w-full">
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-teal-50/40 transition-colors rounded-xl">
                   <span class="flex items-center gap-3 min-w-0">
                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-teal-800"><i class="fas fa-boxes-stacked"></i></span>
@@ -359,33 +374,30 @@
             </div>
           </section>
 
-          <section id="upcoming-programs" class="scroll-mt-24">
-            <div class="flex items-end justify-between mb-4">
-              <div>
-                <h2 class="text-2xl font-bold text-slate-900">Upcoming programs</h2>
-                <p class="text-sm text-slate-600 mt-1">World Cup days show <strong class="font-semibold text-slate-800">your</strong> saved slot(s) only; ministry gatherings follow. No saved shifts yet? You’ll see the full window text like the public page.</p>
-              </div>
+          <section id="upcoming-programs" class="scroll-mt-24 min-w-0">
+            <div class="mb-4">
+              <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Upcoming programs</h2>
             </div>
-            <div id="dashboard-upcoming-programs-grid" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+            <div id="dashboard-upcoming-programs-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5 min-w-0"></div>
           </section>
 
-          <section class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
-            <h2 class="text-xl font-bold text-slate-900 mb-2">In the Word together</h2>
-            <p class="text-sm text-slate-600 mb-6">Young people carrying Scripture — the same Spirit that moved the early church moves us today.</p>
-            <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x">
-              <figure class="flex-shrink-0 w-64 snap-start rounded-xl overflow-hidden shadow-md border border-slate-100">
+          <section class="bg-white rounded-2xl shadow-card border border-slate-100 p-4 sm:p-6 md:p-8">
+            <h2 class="text-lg sm:text-xl font-bold text-slate-900 mb-2">In the Word together</h2>
+            <p class="text-sm text-slate-600 mb-4 sm:mb-6">Young people carrying Scripture — the same Spirit that moved the early church moves us today.</p>
+            <div class="flex gap-3 sm:gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x -mx-1 px-1">
+              <figure class="flex-shrink-0 w-[min(16rem,calc(100vw-2.5rem))] sm:w-64 snap-start rounded-xl overflow-hidden shadow-md border border-slate-100">
                 <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&q=80" alt="Students studying" class="h-40 w-full object-cover" loading="lazy" />
                 <figcaption class="p-3 bg-brand-soft text-xs text-brand font-medium verse-font italic">“I have hidden your word in my heart…” — Ps. 119:11</figcaption>
               </figure>
-              <figure class="flex-shrink-0 w-64 snap-start rounded-xl overflow-hidden shadow-md border border-slate-100">
+              <figure class="flex-shrink-0 w-[min(16rem,calc(100vw-2.5rem))] sm:w-64 snap-start rounded-xl overflow-hidden shadow-md border border-slate-100">
                 <img src="https://images.unsplash.com/photo-1491841550275-de78548fa1af?w=400&q=80" alt="Reading" class="h-40 w-full object-cover" loading="lazy" />
                 <figcaption class="p-3 bg-brand-soft text-xs text-brand font-medium verse-font italic">“Bind them on your fingers…” — Prov. 7:3</figcaption>
               </figure>
-              <figure class="flex-shrink-0 w-64 snap-start rounded-xl overflow-hidden shadow-md border border-slate-100">
+              <figure class="flex-shrink-0 w-[min(16rem,calc(100vw-2.5rem))] sm:w-64 snap-start rounded-xl overflow-hidden shadow-md border border-slate-100">
                 <img src="https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=400&q=80" alt="Books and learning" class="h-40 w-full object-cover" loading="lazy" />
                 <figcaption class="p-3 bg-brand-soft text-xs text-brand font-medium verse-font italic">“All Scripture is God-breathed…” — 2 Tim. 3:16</figcaption>
               </figure>
-              <figure class="flex-shrink-0 w-64 snap-start rounded-xl overflow-hidden shadow-md border border-slate-100">
+              <figure class="flex-shrink-0 w-[min(16rem,calc(100vw-2.5rem))] sm:w-64 snap-start rounded-xl overflow-hidden shadow-md border border-slate-100">
                 <img src="https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=400&q=80" alt="Faith community" class="h-40 w-full object-cover" loading="lazy" />
                 <figcaption class="p-3 bg-brand-soft text-xs text-brand font-medium verse-font italic">“Let the message of Christ dwell among you…” — Col. 3:16</figcaption>
               </figure>
@@ -393,9 +405,9 @@
             <p class="text-xs text-slate-400 mt-4">Photos via Unsplash — community &amp; study imagery.</p>
           </section>
 
-          <section class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
-            <h2 class="text-xl font-bold text-slate-900 mb-4">Resources</h2>
-            <div class="grid sm:grid-cols-2 gap-4">
+          <section class="bg-white rounded-2xl shadow-card border border-slate-100 p-4 sm:p-6 md:p-8">
+            <h2 class="text-lg sm:text-xl font-bold text-slate-900 mb-3 sm:mb-4">Resources</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div class="p-5 rounded-xl bg-slate-50 border border-slate-100 hover:border-brand/20 transition">
                 <h3 class="font-semibold text-slate-900">Dear Daughter Bible study</h3>
                 <p class="text-sm text-slate-600 mt-2">Weekly materials and discussion guides for volunteers.</p>
@@ -409,9 +421,9 @@
         </main>
 
         <!-- Social media hub: quick profile links -->
-        <aside class="lg:col-span-3 space-y-6" aria-label="Ministry social media">
+        <aside class="order-3 lg:order-3 lg:col-span-3 space-y-4 lg:space-y-6 min-w-0" aria-label="Ministry social media">
           <div class="bg-white rounded-2xl shadow-card overflow-hidden border border-slate-100 lg:sticky lg:top-20 flex flex-col lg:max-h-[calc(100vh-5.5rem)]">
-            <div class="h-28 bg-gradient-to-r from-pink-600 via-purple-600 to-slate-900 relative shrink-0">
+            <div class="h-24 sm:h-28 bg-gradient-to-r from-pink-600 via-purple-600 to-slate-900 relative shrink-0">
               <div class="absolute inset-0 opacity-25 bg-[url('https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=600&q=80')] bg-cover bg-center mix-blend-overlay"></div>
               <div class="relative h-full flex flex-col items-center justify-end pb-3 px-4 text-center">
                 <div class="flex items-center justify-center gap-5 text-white text-2xl drop-shadow-sm" aria-hidden="true">
@@ -564,8 +576,8 @@
     </div>
   </div>
 
-  <footer class="py-8 px-4 sm:px-6 border-t border-slate-200 bg-white">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+  <footer class="py-8 px-4 sm:px-6 pb-[max(2rem,env(safe-area-inset-bottom))] border-t border-slate-200 bg-white">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 w-full min-w-0">
       <div class="text-center sm:text-left">
         <p class="text-slate-700 text-sm">
           Email:
@@ -573,7 +585,7 @@
         </p>
         <p class="text-slate-500 text-xs mt-1">Houston World Cup Prayer City · Dear Daughter Bible Study Group</p>
       </div>
-      <a href="contact.html" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-sm font-semibold hover:bg-brand-light transition shadow-sm focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2">
+      <a href="contact.html" class="touch-manipulation inline-flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-brand text-white text-sm font-semibold hover:bg-brand-light transition shadow-sm focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2">
         <i class="fas fa-envelope" aria-hidden="true"></i> Contact us
       </a>
     </div>
@@ -794,11 +806,11 @@
         container.innerHTML = '';
         if (roles.length === 0) {
           container.innerHTML =
-            '<p class="text-sm text-slate-600 leading-relaxed">' +
+            '<p class="text-sm text-slate-600 leading-relaxed break-words">' +
             'We couldn’t match a volunteer role from your signup yet. When your shifts are saved, your personalized summary will show here. ' +
             'You can still explore every role below.</p>' +
-            '<a href="training/index.html" class="inline-flex items-center gap-2 mt-4 text-brand font-semibold hover:underline">' +
-            'Browse all training guides <i class="fas fa-arrow-right text-xs"></i></a>';
+            '<a href="training/index.html" class="inline-flex items-center gap-2 mt-4 text-brand font-semibold hover:underline break-words">' +
+            'Browse all training guides <i class="fas fa-arrow-right text-xs shrink-0"></i></a>';
           return;
         }
         var compactTraining = roles.length >= 3;
@@ -806,49 +818,49 @@
           if (compactTraining) {
             var det = document.createElement('details');
             det.className =
-              'role-training-acc group rounded-xl border border-slate-100 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow';
+              'role-training-acc group rounded-xl border border-slate-100 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow min-w-0 max-w-full';
             det.open = idx === 0;
             det.innerHTML =
-              '<summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-slate-50/90 transition-colors">' +
-              '<span class="flex items-center gap-3 min-w-0">' +
+              '<summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-slate-50/90 transition-colors min-w-0">' +
+              '<span class="flex items-center gap-3 min-w-0 flex-1">' +
               '<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand text-white shadow-md">' +
               '<i class="fas ' +
               escapeHtml(g.icon) +
               '"></i></span>' +
-              '<span class="font-semibold text-slate-900">' +
+              '<span class="font-semibold text-slate-900 min-w-0 break-words">' +
               escapeHtml(g.label) +
               '</span></span>' +
               '<i class="fas fa-chevron-down text-slate-400 text-sm transition-transform duration-200 group-open:rotate-180 shrink-0" aria-hidden="true"></i></summary>' +
-              '<div class="px-4 pb-4 border-t border-slate-100 bg-gradient-to-b from-slate-50/30 to-white">' +
-              '<p class="text-sm text-slate-600 mt-3 leading-relaxed">' +
+              '<div class="px-4 pb-4 border-t border-slate-100 bg-gradient-to-b from-slate-50/30 to-white min-w-0 max-w-full overflow-x-hidden">' +
+              '<p class="text-sm text-slate-600 mt-3 leading-relaxed break-words">' +
               escapeHtml(g.short) +
               '</p>' +
               '<a href="' +
               escapeHtml(g.page) +
-              '" class="inline-flex items-center gap-2 mt-3 text-brand font-semibold text-sm hover:underline">' +
-              'Open training guide <i class="fas fa-arrow-right text-xs"></i></a></div>';
+              '" class="inline-flex items-center gap-2 mt-3 text-brand font-semibold text-sm hover:underline break-words max-w-full">' +
+              'Open training guide <i class="fas fa-arrow-right text-xs shrink-0"></i></a></div>';
             container.appendChild(det);
           } else {
             var card = document.createElement('article');
             card.className =
-              'rounded-xl border border-slate-100 bg-gradient-to-br from-white to-slate-50/80 p-5 sm:p-6 shadow-sm';
+              'rounded-xl border border-slate-100 bg-gradient-to-br from-white to-slate-50/80 p-5 sm:p-6 shadow-sm min-w-0 max-w-full overflow-hidden';
             card.innerHTML =
-              '<div class="flex gap-4">' +
+              '<div class="flex gap-4 min-w-0">' +
               '<div class="w-12 h-12 rounded-xl bg-brand text-white flex items-center justify-center shrink-0 shadow-md">' +
               '<i class="fas ' +
               escapeHtml(g.icon) +
               ' text-lg"></i></div>' +
-              '<div class="min-w-0 flex-1">' +
-              '<h3 class="font-bold text-slate-900 text-lg">' +
+              '<div class="min-w-0 flex-1 overflow-hidden">' +
+              '<h3 class="font-bold text-slate-900 text-lg break-words">' +
               escapeHtml(g.label) +
               '</h3>' +
-              '<p class="text-sm text-slate-600 mt-2 leading-relaxed">' +
+              '<p class="text-sm text-slate-600 mt-2 leading-relaxed break-words">' +
               escapeHtml(g.short) +
               '</p>' +
               '<a href="' +
               escapeHtml(g.page) +
-              '" class="inline-flex items-center gap-2 mt-4 text-brand font-semibold text-sm hover:underline">' +
-              'Learn more — open training guide <i class="fas fa-arrow-right text-xs"></i></a>' +
+              '" class="inline-flex items-center gap-2 mt-4 text-brand font-semibold text-sm hover:underline break-words max-w-full">' +
+              'Learn more — open training guide <i class="fas fa-arrow-right text-xs shrink-0"></i></a>' +
               '</div></div>';
             container.appendChild(card);
           }
@@ -890,7 +902,7 @@
           roles.forEach(function (r) {
             var span = document.createElement('span');
             span.className =
-              'inline-flex items-center rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-brand border border-brand/25 shadow-sm';
+              'inline-flex items-center max-w-full rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-brand border border-brand/25 shadow-sm break-words text-left';
             span.textContent = r.label;
             badges.appendChild(span);
           });
@@ -938,19 +950,20 @@
           posts.forEach(function (p) {
             var links = window.VolunteerDailyContent.buildShareLinks(p.shareText, p.shareUrl);
             var card = document.createElement('article');
-            card.className = 'rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm flex flex-col';
+            card.className =
+              'rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm flex flex-col min-w-0 max-w-full';
             card.innerHTML =
               '<img src="' +
               escapeHtml(p.image) +
-              '" alt="" class="w-full h-40 object-cover" loading="lazy" />' +
-              '<div class="p-4 flex-1 flex flex-col">' +
-              '<p class="text-xs font-bold text-brand-accent uppercase tracking-wide">' +
+              '" alt="" class="w-full max-w-full h-40 object-cover" loading="lazy" />' +
+              '<div class="p-4 flex-1 flex flex-col min-w-0 max-w-full">' +
+              '<p class="text-xs font-bold text-brand-accent uppercase tracking-wide break-words">' +
               escapeHtml(p.title) +
               '</p>' +
-              '<p class="text-sm text-slate-700 mt-2 whitespace-pre-wrap line-clamp-4">' +
+              '<p class="social-post-body text-sm text-slate-700 mt-2 whitespace-pre-wrap line-clamp-4">' +
               escapeHtml(p.body) +
               '</p>' +
-              '<div class="flex flex-wrap gap-2 mt-4 text-xs">' +
+              '<div class="flex flex-wrap gap-2 mt-4 text-xs min-w-0 max-w-full">' +
               '<button type="button" class="daily-copy-btn px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 font-medium text-slate-800">Copy text</button>' +
               '<a class="px-3 py-2 rounded-lg bg-sky-500 text-white font-medium hover:bg-sky-600" href="' +
               escapeHtml(links.twitter) +

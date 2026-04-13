@@ -25,3 +25,12 @@
 #my-tent {
   font-size: 1rem;
 }
+
+/* Dashboard shift editor — iOS-friendly selects, avoid horizontal bleed */
+#dashboard-main {
+  max-width: 100%;
+}
+.dash-shift-select {
+  font-size: 1rem;
+  max-width: 100%;
+}

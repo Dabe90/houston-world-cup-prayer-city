@@ -101,7 +101,7 @@
         '<summary class="cursor-pointer list-none px-3 py-2.5 bg-slate-50 font-medium text-slate-900 text-sm flex justify-between items-center">';
       html += '<span>' + escapeHtml(title) + '</span>';
       html += '<i class="fas fa-chevron-down text-slate-400 text-xs"></i></summary>';
-      html += '<div class="p-3 grid gap-2 sm:grid-cols-2">';
+      html += '<div class="p-3 grid gap-2 sm:grid-cols-2 min-w-0">';
       slots.forEach(function (s) {
         html += '<div class="space-y-1">';
         html +=
