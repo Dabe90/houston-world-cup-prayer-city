@@ -1,0 +1,14 @@
+{
+  "redirects": [
+    { "source": "/dashboard.html", "destination": "/", "permanent": true },
+    { "source": "/volunteer", "destination": "/volunteer/", "permanent": true }
+  ],
+  "headers": [
+    {
+      "source": "/images/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ]
+}

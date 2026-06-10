@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f3d5c" />
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="apple-touch-icon" href="images/favicon.png" />
   <title>Volunteer hub — Prayer City</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -23,7 +25,12 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
   <script src="js/firebase-config.js"></script>
+  <script src="js/site-assets.js"></script>
+  <script src="js/volunteer-role-guides.js"></script>
+  <script src="js/virtual-session.js"></script>
+  <script src="js/serve-day-flow.js"></script>
   <style>
     body { font-family: system-ui, sans-serif; }
   </style>
@@ -38,9 +45,9 @@
     <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
       <div class="max-w-6xl mx-auto px-4 min-h-14 py-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
         <div class="flex items-center gap-2 sm:gap-3">
-          <a href="index.html" class="w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light text-white text-xs font-bold flex items-center justify-center shrink-0 hover:opacity-90 transition" title="Home">PC</a>
+          <a href="/" class="w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light text-white text-xs font-bold flex items-center justify-center shrink-0 hover:opacity-90 transition" title="Home">PC</a>
           <div class="flex items-center gap-1 sm:gap-2 flex-wrap">
-            <a href="index.html" class="font-semibold text-slate-900 text-sm hover:text-brand transition">Prayer City</a>
+            <a href="/" class="font-semibold text-slate-900 text-sm hover:text-brand transition">Prayer City</a>
             <span class="text-slate-300 hidden sm:inline">|</span>
             <a href="faq.html" class="text-sm font-medium text-slate-600 hover:text-brand transition">FAQ</a>
             <span class="text-slate-300 hidden sm:inline">|</span>
@@ -51,7 +58,7 @@
           <a href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-xs sm:text-sm font-bold text-brand shadow-sm hover:bg-amber-300 transition">
             <i class="fas fa-heart" aria-hidden="true"></i> Donate
           </a>
-          <a href="dashboard.html" class="text-sm font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition">My dashboard</a>
+          <a href="/" class="text-sm font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition">My dashboard</a>
           <span id="nav-auth" class="hidden flex items-center gap-2">
             <span id="nav-me" class="hidden sm:inline text-sm text-slate-500 max-w-[140px] truncate"></span>
             <button type="button" id="btn-signout" class="text-sm text-slate-600 hover:text-red-600 px-2">Sign out</button>
@@ -68,8 +75,44 @@
         </p>
       </header>
 
+      <section id="virtual-session-section" class="min-w-0 max-w-full overflow-x-hidden">
+        <div id="virtual-session-container"></div>
+      </section>
+      <script>
+        (function () {
+          var section = document.getElementById('virtual-session-section');
+          var c = document.getElementById('virtual-session-container');
+          if (
+            section &&
+            c &&
+            window.PrayerCityVirtualSession &&
+            typeof window.PrayerCityVirtualSession.render === 'function'
+          ) {
+            if (!window.PrayerCityVirtualSession.render(c)) {
+              section.classList.add('hidden');
+            }
+          }
+        })();
+      </script>
+
+      <section id="serve-day-flow-section" class="min-w-0 max-w-full overflow-x-hidden">
+        <div id="serve-day-flow-container"></div>
+      </section>
+      <script>
+        (function () {
+          var c = document.getElementById('serve-day-flow-container');
+          if (
+            c &&
+            window.PrayerCityServeDay &&
+            typeof window.PrayerCityServeDay.renderServeDayFlow === 'function'
+          ) {
+            window.PrayerCityServeDay.renderServeDayFlow(c, {});
+          }
+        })();
+      </script>
+
       <div id="signin-banner" class="rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-sm text-amber-950">
-        <strong class="font-semibold">Want to chat or interact?</strong> Scroll to <strong>Sign in</strong> below, or open <a href="dashboard.html" class="text-brand underline font-medium">My dashboard</a> first.
+        <strong class="font-semibold">Want to chat or interact?</strong> Scroll to <strong>Sign in</strong> below, or open <a href="/" class="text-brand underline font-medium">My dashboard</a> first.
       </div>
 
       <div class="grid lg:grid-cols-3 gap-6">
@@ -183,9 +226,10 @@
 
   <script>
     (function () {
-      var EMAIL_LINK_CONTINUE_URL = 'https://houston-world-cup-prayer-city.vercel.app/dashboard.html';
+      var EMAIL_LINK_CONTINUE_URL = 'https://prayercityhtx.com/';
       var SELF_SERVE_SIGNIN_URL =
         'https://us-central1-bible-study-dashboard-99f2d.cloudfunctions.net/volunteerSelfServeSignInMail';
+      var PUBLIC_ROSTER_FIRST_NAMES = ['damilola', 'daniel', 'caroline'];
 
       var cfg = window.__FIREBASE_CONFIG__ || {};
       if (!cfg.apiKey || cfg.apiKey === 'REPLACE_ME') {
@@ -239,6 +283,26 @@
       function setGateStatus(msg, err) {
         els.gateStatus.textContent = msg || '';
         els.gateStatus.className = 'text-sm min-h-[1.25rem] ' + (err ? 'text-red-600' : 'text-slate-600');
+      }
+
+      function friendlyPasswordSignInError(e) {
+        var code = e && e.code;
+        if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
+          return 'Invalid password, or a password is not set for this account. Check that your email is correct. If your email is right, the password is wrong or you have not set one yet—use “Email me a sign-in link” below.';
+        }
+        if (code === 'auth/user-not-found') {
+          return 'No account found with that email. Check the spelling, or sign up to volunteer first.';
+        }
+        if (code === 'auth/invalid-email') {
+          return 'Enter a valid email address.';
+        }
+        if (code === 'auth/too-many-requests') {
+          return 'Too many sign-in attempts. Wait a few minutes, then try again or use a sign-in link.';
+        }
+        if (code === 'auth/user-disabled') {
+          return 'This account has been disabled. Contact the team for help.';
+        }
+        return (e && e.message) || 'Sign-in failed';
       }
 
       function setMemberUi(user) {
@@ -324,8 +388,21 @@
             els.myShiftsDisplay.textContent = (d.shifts || '').trim() || '—';
             var name = d.name || (auth.currentUser.email || '').split('@')[0];
             els.navMe.textContent = name;
+            renderServeDayHub(d);
             return syncVolunteerDirectory(uid, d);
           });
+      }
+
+      function renderServeDayHub(volunteerData) {
+        var container = document.getElementById('serve-day-flow-container');
+        if (
+          !container ||
+          !window.PrayerCityServeDay ||
+          typeof window.PrayerCityServeDay.renderServeDayFlow !== 'function'
+        ) {
+          return;
+        }
+        window.PrayerCityServeDay.renderServeDayFlow(container, volunteerData || {});
       }
 
       function completeEmailLinkIfNeeded() {
@@ -384,6 +461,14 @@
         }
       }
 
+      function isPublicRosterName(name) {
+        var first = String(name || '')
+          .trim()
+          .split(/\s+/)[0]
+          .toLowerCase();
+        return PUBLIC_ROSTER_FIRST_NAMES.indexOf(first) !== -1;
+      }
+
       function renderRoster() {
         var q = (els.filterSearch.value || '').toLowerCase().trim();
         var ft = (els.filterTent.value || '').trim();
@@ -413,13 +498,20 @@
           return true;
         });
 
+        if (!loggedIn) {
+          list = list.filter(function (x) {
+            return isPublicRosterName(x.r.name);
+          });
+        }
+
         if (list.length === 0) {
-          els.rosterGrid.innerHTML =
-            '<p class="text-slate-500 text-sm col-span-full">No volunteers match. Check back after invites go out.</p>';
+          els.rosterGrid.innerHTML = loggedIn
+            ? '<p class="text-slate-500 text-sm col-span-full">No volunteers match. Check back after invites go out.</p>'
+            : '<p class="text-slate-500 text-sm col-span-full">Sign in to see the full volunteer roster.</p>';
           return;
         }
 
-        els.rosterGrid.innerHTML = list
+        var rosterHtml = list
           .map(function (x) {
             var r = x.r;
             var uid = x.uid;
@@ -475,6 +567,15 @@
             );
           })
           .join('');
+
+        if (!loggedIn) {
+          rosterHtml +=
+            '<div class="col-span-full rounded-xl border border-brand/20 bg-brand-soft/60 p-4 text-sm text-slate-700 flex items-start gap-3">' +
+            '<i class="fas fa-lock text-brand mt-0.5 shrink-0" aria-hidden="true"></i>' +
+            '<p><strong>Sign in</strong> to see other volunteers, wave, and shout-out.</p></div>';
+        }
+
+        els.rosterGrid.innerHTML = rosterHtml;
 
         els.rosterGrid.querySelectorAll('.wave-btn').forEach(function (btn) {
           btn.addEventListener('click', function () {
@@ -698,7 +799,7 @@
         }
         setGateStatus('Signing in…');
         auth.signInWithEmailAndPassword(email, pw).catch(function (e) {
-          setGateStatus(e.message || 'Failed', true);
+          setGateStatus(friendlyPasswordSignInError(e), true);
         });
       });
 
@@ -776,6 +877,8 @@
           mergeProfile().then(function () {
             return loadMyVolunteer(user.uid);
           });
+        } else {
+          renderServeDayHub({});
         }
       });
 

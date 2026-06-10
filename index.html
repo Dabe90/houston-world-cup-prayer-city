@@ -1,795 +1,2635 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0A66C2" />
-  <title>Houston World Cup Prayer City Movement — Volunteer Sign-Up</title>
-  <!-- Open Graph and Twitter Card meta tags for rich link previews on social media -->
-  <meta property="og:title" content="Houston World Cup Prayer City Movement – Volunteer Sign-Up">
-  <meta property="og:description" content="Join us in prayer, service, and Gospel outreach during the 2026 FIFA World Cup in Houston! Sign up to volunteer or support the movement. 100% tax-deductible. ⚽🙏">
-  <meta property="og:image" content="https://houston-world-cup-prayer-city.vercel.app/og-preview.jpg">
-  <meta property="og:url" content="https://houston-world-cup-prayer-city.vercel.app/">
-  <meta property="og:type" content="website">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <!-- Twitter Cards -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Houston World Cup Prayer City Movement – Volunteer Sign-Up">
-  <meta name="twitter:description" content="Join us in prayer, service, and Gospel outreach during the 2026 FIFA World Cup in Houston! ⚽🙏">
-  <meta name="twitter:image" content="https://houston-world-cup-prayer-city.vercel.app/og-preview.jpg">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="css/mobile.css" />
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            'linkedin': '#0A66C2',
-            'linkedin-dark': '#004182',
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0f3d5c" />
+    <link rel="icon" type="image/png" href="images/favicon.png" />
+    <link rel="apple-touch-icon" href="images/favicon.png" />
+    <title>Volunteer Hub — Houston World Cup Prayer City</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                DEFAULT: "#0f3d5c",
+                light: "#1a5f8a",
+                soft: "#e8f4fc",
+                accent: "#c9a227",
+              },
+            },
+            fontFamily: {
+              display: ["Georgia", "Cambria", "Times New Roman", "serif"],
+              sans: ["system-ui", "Segoe UI", "Roboto", "sans-serif"],
+            },
+            boxShadow: {
+              card: "0 4px 24px rgba(15, 61, 92, 0.08), 0 1px 3px rgba(0,0,0,0.06)",
+              lift: "0 12px 40px rgba(15, 61, 92, 0.12)",
+            },
           },
         },
-      },
-    };
-  </script>
-  <style>
-    @keyframes bounce-ball {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      50% { transform: translateY(-20px) rotate(180deg); }
-    }
-    @keyframes confetti-fall {
-      0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-    }
-    @keyframes fade-in {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    .accordion-content {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.35s ease-out;
-    }
-    .accordion-content.open {
-      max-height: 2000px;
-      transition: max-height 0.5s ease-in;
-    }
-    .summary-chevron {
-      transition: transform 0.3s ease;
-    }
-    details[open] .summary-chevron {
-      transform: rotate(180deg);
-    }
-    .program-card-img { transition: transform 0.5s ease; }
-    .program-card:hover .program-card-img { transform: scale(1.06); }
-  </style>
-</head>
-<body class="min-h-screen bg-gray-100 text-gray-800 antialiased overflow-x-hidden">
-  <div class="min-h-screen flex flex-col overflow-x-hidden">
-    <!-- Hero -->
-    <!-- Logo file: place logo.png in the same folder as index.html. -->
-    <header class="bg-linkedin text-white py-10 px-4 sm:py-14 shadow-lg relative overflow-hidden">
-      <div class="max-w-3xl mx-auto text-center relative z-10">
-        <div class="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 mb-4 text-center sm:text-left">
-          <img src="logo.png" alt="Houston World Cup Prayer City Movement Logo - Dear Daughter Bible Study Group" class="h-12 sm:h-14 md:h-16 w-auto max-w-[min(100%,280px)] object-contain rounded-lg shadow-md" />
-          <p class="text-base sm:text-lg font-medium text-blue-100 uppercase tracking-wider max-w-prose">Dear Daughter Bible Study Group</p>
-          <span class="text-3xl sm:text-4xl md:text-5xl leading-none shrink-0" aria-hidden="true">⚽️</span>
+      };
+    </script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <link rel="stylesheet" href="css/mobile.css" />
+
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/site-assets.js"></script>
+  <script src="js/volunteer-role-guides.js"></script>
+    <script src="js/volunteer-daily-content.js"></script>
+    <script src="js/virtual-session.js"></script>
+    <script src="js/serve-day-flow.js"></script>
+    <script src="js/volunteer-tshirt.js"></script>
+    <script src="js/volunteer-shift-picker.js"></script>
+    <script src="js/upcoming-programs-board.js"></script>
+
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+      }
+      .hero-mesh {
+        background:
+          linear-gradient(
+            135deg,
+            rgba(15, 61, 92, 0.92) 0%,
+            rgba(26, 95, 138, 0.85) 50%,
+            rgba(15, 61, 92, 0.9) 100%
+          ),
+          url("https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1600&q=80")
+            center/cover no-repeat;
+      }
+      .auth-visual-grid {
+        background-image:
+          linear-gradient(
+            135deg,
+            rgba(15, 61, 92, 0.75),
+            rgba(26, 95, 138, 0.65)
+          ),
+          url("https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=1200&q=80");
+        background-size: cover;
+        background-position: center;
+      }
+      .program-card-img {
+        transition: transform 0.5s ease;
+      }
+      .program-card:hover .program-card-img {
+        transform: scale(1.06);
+      }
+      .verse-font {
+        font-family: Georgia, Cambria, serif;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-fade-up {
+        animation: fadeUp 0.6s ease forwards;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      details.daily-module > summary {
+        list-style: none;
+      }
+      details.daily-module > summary::-webkit-details-marker {
+        display: none;
+      }
+      details.role-training-acc > summary {
+        list-style: none;
+      }
+      details.role-training-acc > summary::-webkit-details-marker {
+        display: none;
+      }
+      /* Contain long URLs / shift lines on narrow screens */
+      #fv-shifts,
+      #fv-notes {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      #daily-social-posts article {
+        min-width: 0;
+        max-width: 100%;
+      }
+      #daily-social-posts .social-post-body {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-slate-100 text-slate-800 overflow-x-hidden">
+    <div
+      id="setup-banner"
+      class="hidden max-w-3xl mx-auto m-6 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900"
+    >
+      <h2 class="font-bold text-lg mb-2">Firebase is not configured yet</h2>
+      <p class="text-sm mb-2">
+        Edit
+        <code class="bg-white px-1 rounded">js/firebase-config.js</code> with
+        your Web app keys from the Firebase console, then deploy again.
+      </p>
+      <p class="text-sm">
+        Enable <strong>Storage</strong> in Firebase Console and run
+        <code class="bg-white px-1 rounded"
+          >firebase deploy --only storage</code
+        >
+        for profile photos.
+      </p>
+    </div>
+
+    <!-- Main dashboard (home; signed-out visitors see volunteer CTA + sign-in, signed-in see full hub) -->
+    <div
+      id="dashboard-main"
+      class="hidden pb-16 w-full min-w-0 max-w-[100vw] overflow-x-hidden"
+    >
+      <nav
+        class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm"
+      >
+        <div
+          class="max-w-7xl mx-auto px-3 sm:px-6 min-h-14 py-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-2"
+        >
+          <div
+            class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 basis-[min(100%,16rem)] sm:flex-initial"
+          >
+            <a
+              href="/"
+              class="touch-manipulation w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white text-sm font-bold shrink-0 hover:opacity-90 transition"
+              title="Home"
+              >PC</a
+            >
+            <div class="flex items-center gap-1 sm:gap-2 flex-wrap min-w-0">
+              <a
+                href="/"
+                class="font-semibold text-slate-900 text-xs sm:text-sm hover:text-brand transition shrink-0"
+                >Prayer City</a
+              >
+              <span class="text-slate-300" aria-hidden="true">|</span>
+              <a
+                href="volunteer-hub.html"
+                class="touch-manipulation text-xs sm:text-sm font-medium text-slate-600 hover:text-brand px-1.5 sm:px-2 py-1 rounded-lg hover:bg-slate-50 transition md:hidden"
+                >Hub</a
+              >
+              <a
+                href="volunteer-hub.html"
+                class="touch-manipulation hidden md:inline text-sm font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition"
+                >Volunteer hub</a
+              >
+              <span class="text-slate-300" aria-hidden="true">|</span>
+              <a
+                href="faq.html"
+                class="touch-manipulation text-xs sm:text-sm font-medium text-slate-600 hover:text-brand px-1.5 sm:px-2 py-1 rounded-lg hover:bg-slate-50 transition"
+                >FAQ</a
+              >
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-1.5 sm:gap-3 flex-wrap justify-end w-full sm:w-auto sm:flex-initial"
+          >
+            <a
+              href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="touch-manipulation inline-flex items-center gap-1 rounded-full bg-amber-400 px-2.5 sm:px-3 py-1.5 text-xs font-bold text-brand shadow-sm hover:bg-amber-300 transition"
+            >
+              <i class="fas fa-heart" aria-hidden="true"></i> Donate
+            </a>
+            <nav
+              class="flex items-center gap-1 mr-0 sm:mr-1"
+              aria-label="Current page"
+            >
+              <span
+                class="text-xs sm:text-sm font-semibold text-brand px-2 py-1 rounded-lg bg-brand-soft whitespace-nowrap"
+                ><span class="md:hidden">Dashboard</span
+                ><span class="hidden md:inline">My dashboard</span></span
+              >
+            </nav>
+            <a
+              id="nav-link-signin"
+              href="#visitor-signin"
+              class="hidden touch-manipulation text-xs sm:text-sm font-medium text-brand hover:text-brand-light px-2 sm:px-3 py-1.5 rounded-lg hover:bg-brand-soft whitespace-nowrap min-h-[40px]"
+              >Sign in</a
+            >
+            <span
+              id="nav-welcome"
+              class="hidden lg:inline text-sm text-slate-600 max-w-[200px] truncate"
+            ></span>
+            <button
+              type="button"
+              id="btn-signout"
+              class="hidden touch-manipulation text-xs sm:text-sm font-medium text-slate-600 hover:text-red-600 transition px-2 sm:px-3 py-1.5 rounded-lg hover:bg-slate-50 whitespace-nowrap min-h-[40px] min-w-[40px] sm:min-w-0"
+              aria-label="Sign out"
+              title="Sign out"
+            >
+              <i class="fas fa-sign-out-alt sm:mr-1" aria-hidden="true"></i
+              ><span class="hidden sm:inline">Sign out</span>
+            </button>
+          </div>
         </div>
-        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mt-2">
-          Houston World Cup Prayer City Movement
-        </h1>
-        <p class="mt-4 text-blue-100 text-sm sm:text-base max-w-3xl mx-auto leading-relaxed text-pretty">
-          As we welcome thousands of visitors from around the world to our ever dynamic and bustling City of Houston during the World Cup Games, we declare Houston to be a prayer city. We are raising prayer tents across the city’s downtown area where there will be warm prayer partners interceding for everyone and counselors. Sign up to serve during the Houston World Cup. Choose your shifts below — you will receive a link to confirm your email and access your volunteer dashboard.
-        </p>
-        <a href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement" target="_blank" rel="noopener noreferrer" class="touch-manipulation inline-flex items-center justify-center gap-2 mt-6 px-5 py-3 sm:px-6 rounded-2xl bg-yellow-400 text-slate-900 font-semibold text-sm sm:text-base text-center max-w-full shadow-lg hover:bg-yellow-300 transition focus:outline-none focus:ring-2 focus:ring-yellow-200 focus:ring-offset-2 focus:ring-offset-linkedin">
-          <i class="fas fa-heart text-slate-900" aria-hidden="true"></i>
-          <span>Give to the Houston World Cup Prayer City Movement</span>
-        </a>
+      </nav>
+
+      <!-- Hero -->
+      <header class="hero-mesh text-white relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 py-8 sm:py-14 lg:py-20">
+          <div
+            class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-center"
+          >
+            <div class="animate-fade-up min-w-0">
+              <p
+                class="text-brand-accent font-semibold tracking-wide text-xs sm:text-sm mb-3 sm:mb-4"
+              >
+                <a
+                  href="https://www.JesusMarchhtx.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-brand-accent underline-offset-2 hover:underline focus:outline-none focus:ring-2 focus:ring-brand-accent/80 focus:ring-offset-2 focus:ring-offset-transparent rounded-sm"
+                  >Dear Daughter Bible Study Group</a
+                ><span class="text-brand-accent"> · Houston 2026</span>
+              </p>
+              <h1
+                class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-bold leading-[1.15] sm:leading-tight mb-4 sm:mb-6"
+              >
+                Over 5,000 people lifting Jesus up during the World Cup in
+                Houston
+              </h1>
+              <p
+                id="welcome-line"
+                class="text-base sm:text-lg text-white/95 font-medium mb-4 sm:mb-6"
+              ></p>
+              <p
+                class="verse-font text-white/85 italic text-base sm:text-lg leading-relaxed border-l-4 border-brand-accent pl-4 sm:pl-5"
+              >
+                “Your word is a lamp for my feet, a light on my path.” — Psalm
+                119:105
+              </p>
+            </div>
+            <div
+              class="hidden lg:grid grid-cols-2 gap-3 animate-fade-up"
+              style="animation-delay: 0.15s"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&q=80"
+                alt="Young people reading together"
+                class="rounded-2xl object-cover h-44 w-full shadow-lift border border-white/20"
+                loading="lazy"
+              />
+              <img
+                src="https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=400&q=80"
+                alt="Open Bible and study"
+                class="rounded-2xl object-cover h-44 w-full shadow-lift border border-white/20 mt-8"
+                loading="lazy"
+              />
+              <img
+                src="https://images.unsplash.com/photo-1529390079861-591de354faf5?w=400&q=80"
+                alt="Youth in community"
+                class="rounded-2xl object-cover h-44 w-full shadow-lift border border-white/20 -mt-4"
+                loading="lazy"
+              />
+              <img
+                src="https://images.unsplash.com/photo-1491841550275-de78548fa1af?w=400&q=80"
+                alt="Reading scripture"
+                class="rounded-2xl object-cover h-44 w-full shadow-lift border border-white/20"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- About Prayer City video -->
+      <section class="max-w-7xl mx-auto px-3 sm:px-6 mt-6 sm:mt-10">
+        <div
+          class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden"
+        >
+          <div class="px-4 sm:px-6 pt-5 sm:pt-6">
+            <p
+              class="text-brand font-semibold tracking-wide uppercase text-xs sm:text-sm"
+            >
+              About Prayer City
+            </p>
+            <h2
+              class="mt-2 text-xl sm:text-2xl md:text-3xl font-display font-bold text-slate-900"
+            >
+              All About Prayer City
+            </h2>
+            <p class="mt-2 text-sm sm:text-base text-slate-600 max-w-2xl">
+              Watch a quick overview of the vision, the mission, and how you can
+              be part of what God is doing in Houston during the World Cup.
+            </p>
+          </div>
+          <div class="mt-4 sm:mt-5 px-4 sm:px-6 pb-5 sm:pb-6">
+            <div
+              class="aspect-video w-full rounded-xl overflow-hidden bg-slate-900 shadow-sm border border-slate-200"
+            >
+              <iframe
+                class="w-full h-full"
+                src="https://www.youtube-nocookie.com/embed/3Sn8ysMi1Lk?rel=0&modestbranding=1"
+                title="All About Prayer City"
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div
+        class="max-w-7xl mx-auto px-3 sm:px-6 -mt-4 sm:-mt-6 relative z-10 w-full min-w-0"
+      >
+        <div
+          class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 w-full min-w-0"
+        >
+          <!-- Profile column (after main on mobile) -->
+          <aside
+            class="order-2 lg:order-1 lg:col-span-3 space-y-4 lg:space-y-6 min-w-0 max-w-full"
+          >
+            <div
+              id="aside-profile-visitor"
+              class="hidden max-lg:hidden bg-gradient-to-br from-brand via-brand-light to-sky-700 rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8 text-center text-white"
+            >
+              <p
+                class="text-brand-accent font-semibold tracking-wide uppercase text-xs mb-2"
+              >
+                Houston World Cup
+              </p>
+              <h2
+                class="text-xl sm:text-2xl font-display font-bold leading-tight mb-2"
+              >
+                Volunteer with us
+              </h2>
+              <p class="text-white/90 text-sm leading-relaxed mb-6">
+                Choose your shifts and join the movement — new volunteers start
+                here.
+              </p>
+              <a
+                href="volunteer/"
+                class="inline-flex items-center justify-center gap-2 w-full py-4 px-5 rounded-2xl bg-amber-400 text-brand font-bold text-base sm:text-lg shadow-lg hover:bg-amber-300 transition focus:outline-none focus:ring-2 focus:ring-amber-200 focus:ring-offset-2 focus:ring-offset-brand min-h-[52px]"
+              >
+                <i class="fas fa-hand-holding-heart" aria-hidden="true"></i>
+                Sign up here
+              </a>
+            </div>
+            <div
+              id="aside-profile-authed"
+              class="main-signed-in-only hidden space-y-4 lg:space-y-6"
+            >
+              <div
+                class="bg-white rounded-2xl shadow-card overflow-hidden border border-slate-100 max-w-full min-w-0"
+              >
+                <div
+                  class="h-24 sm:h-28 bg-gradient-to-r from-brand via-brand-light to-sky-600 relative"
+                >
+                  <div
+                    class="absolute inset-0 opacity-30 bg-[url('https://images.unsplash.com/photo-1473163928189-364b2c4e1135?w=600&q=80')] bg-cover bg-center"
+                  ></div>
+                </div>
+                <div
+                  class="px-4 sm:px-6 pb-5 sm:pb-6 relative min-w-0 max-w-full"
+                >
+                  <div
+                    class="flex flex-col items-center -mt-14 min-w-0 w-full max-w-full"
+                  >
+                    <div class="relative group">
+                      <div
+                        id="profile-avatar-wrap"
+                        class="w-28 h-28 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-slate-200 flex items-center justify-center"
+                      >
+                        <img
+                          id="profile-avatar-img"
+                          src=""
+                          alt=""
+                          class="w-full h-full object-cover hidden"
+                        />
+                        <span
+                          id="profile-avatar-initial"
+                          class="text-3xl font-bold text-brand"
+                        ></span>
+                      </div>
+                      <label
+                        class="absolute bottom-0 right-0 w-9 h-9 rounded-xl bg-brand text-white flex items-center justify-center cursor-pointer shadow-lg hover:bg-brand-light transition ring-2 ring-white"
+                        title="Change photo"
+                      >
+                        <i class="fas fa-camera text-sm"></i>
+                        <input
+                          type="file"
+                          id="profile-avatar-input"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          class="hidden"
+                        />
+                      </label>
+                    </div>
+                    <h2
+                      id="profile-display-name"
+                      class="mt-4 text-xl font-bold text-slate-900 text-center break-words max-w-full px-1"
+                    ></h2>
+                    <p class="text-sm text-brand font-medium">
+                      Volunteer · Daughter Team
+                    </p>
+                    <p
+                      id="profile-upload-status"
+                      class="mt-2 text-xs text-slate-500 min-h-[1rem] text-center"
+                    ></p>
+                  </div>
+                  <dl
+                    class="mt-5 sm:mt-6 space-y-3 text-sm border-t border-slate-100 pt-4 sm:pt-5"
+                  >
+                    <div
+                      class="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:items-baseline sm:gap-2"
+                    >
+                      <dt class="text-slate-500 shrink-0">Email</dt>
+                      <dd
+                        id="fv-email"
+                        class="font-medium text-slate-800 break-all sm:text-right min-w-0"
+                      ></dd>
+                    </div>
+                    <div
+                      class="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:items-baseline sm:gap-2"
+                    >
+                      <dt class="text-slate-500 shrink-0">Phone</dt>
+                      <dd
+                        id="fv-phone"
+                        class="font-medium text-slate-800 sm:text-right break-words min-w-0"
+                      ></dd>
+                    </div>
+                  </dl>
+                  <div class="mt-4 min-w-0 max-w-full">
+                    <dt
+                      class="text-slate-500 text-xs uppercase tracking-wide mb-1"
+                    >
+                      Shifts
+                    </dt>
+                    <dd
+                      id="fv-shifts"
+                      class="text-sm font-medium text-slate-800 whitespace-pre-wrap break-words max-w-full"
+                    ></dd>
+                  </div>
+                  <div class="mt-3 min-w-0 max-w-full">
+                    <dt
+                      class="text-slate-500 text-xs uppercase tracking-wide mb-1"
+                    >
+                      Notes
+                    </dt>
+                    <dd
+                      id="fv-notes"
+                      class="text-sm text-slate-700 whitespace-pre-wrap break-words max-w-full"
+                    ></dd>
+                  </div>
+                  <button
+                    type="button"
+                    id="btn-open-shift-edit"
+                    class="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand/25 bg-brand-soft text-brand font-semibold text-sm hover:bg-brand/10 transition"
+                  >
+                    <i class="fas fa-calendar-check"></i> Edit Shifts
+                  </button>
+                  <button
+                    type="button"
+                    id="btn-open-password-modal"
+                    class="mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50 transition"
+                  >
+                    <i class="fas fa-key" aria-hidden="true"></i> Update
+                    password
+                  </button>
+                </div>
+              </div>
+
+              <a
+                href="https://prayercityhtx.com/volunteer/"
+                class="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50 transition shadow-sm"
+              >
+                <i class="fas fa-arrow-left"></i> Back to sign-up
+              </a>
+            </div>
+          </aside>
+
+          <!-- Main feed (first on mobile) -->
+          <main
+            class="order-1 lg:order-2 lg:col-span-6 space-y-6 lg:space-y-8 min-w-0 max-w-full overflow-x-hidden"
+          >
+            <div
+              id="mobile-signup-cta"
+              class="hidden lg:hidden bg-gradient-to-br from-brand via-brand-light to-sky-700 rounded-2xl shadow-card border border-slate-100 p-5 sm:p-7 md:p-8 text-center text-white"
+            >
+              <p
+                class="text-brand-accent font-semibold tracking-wide uppercase text-xs mb-2"
+              >
+                Houston World Cup
+              </p>
+              <h2
+                class="text-xl sm:text-2xl font-display font-bold leading-tight mb-2"
+              >
+                Volunteer with us
+              </h2>
+              <p class="text-white/90 text-sm leading-relaxed mb-6">
+                Choose your shifts and join the movement — new volunteers start
+                here.
+              </p>
+              <a
+                href="volunteer/"
+                class="inline-flex items-center justify-center gap-2 w-full py-4 px-5 rounded-2xl bg-amber-400 text-brand font-bold text-base sm:text-lg shadow-lg hover:bg-amber-300 transition focus:outline-none focus:ring-2 focus:ring-amber-200 focus:ring-offset-2 focus:ring-offset-brand min-h-[52px]"
+              >
+                <i class="fas fa-hand-holding-heart" aria-hidden="true"></i>
+                Sign up here
+              </a>
+            </div>
+
+            <section
+              id="visitor-signin"
+              class="scroll-mt-28 bg-white rounded-2xl shadow-card border border-slate-100 p-5 sm:p-7 md:p-8 min-w-0 max-w-full overflow-x-hidden"
+            >
+              <h2 class="text-xl sm:text-2xl font-bold text-slate-900">
+                Sign in to your hub
+              </h2>
+              <p class="text-slate-600 text-sm mt-2 leading-relaxed">
+                Sign in with
+                <strong class="font-semibold text-slate-800"
+                  >email + password</strong
+                >
+                (if you saved one) or request a
+                <strong class="font-semibold text-slate-800"
+                  >email sign-in link</strong
+                >.
+              </p>
+              <div class="mt-6 space-y-4 max-w-md">
+                <div>
+                  <label
+                    class="block text-sm font-medium text-slate-700 mb-1"
+                    for="gate-email"
+                    >Email</label
+                  >
+                  <input
+                    type="email"
+                    id="gate-email"
+                    class="w-full rounded-xl border border-slate-200 px-4 py-3 focus:ring-2 focus:ring-brand-light focus:border-brand outline-none transition"
+                    placeholder="you@example.com"
+                    autocomplete="email"
+                  />
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-slate-700 mb-1"
+                    for="gate-password"
+                    >Password
+                    <span class="text-slate-400 font-normal"
+                      >(optional)</span
+                    ></label
+                  >
+                  <input
+                    type="password"
+                    id="gate-password"
+                    class="w-full rounded-xl border border-slate-200 px-4 py-3 focus:ring-2 focus:ring-brand-light outline-none transition"
+                    placeholder="If you set one"
+                    autocomplete="current-password"
+                  />
+                </div>
+                <button
+                  type="button"
+                  id="btn-password-signin"
+                  class="w-full py-3.5 rounded-xl bg-brand hover:bg-brand-light text-white font-semibold transition shadow-card"
+                >
+                  Sign in with password
+                </button>
+                <button
+                  type="button"
+                  id="btn-email-link"
+                  class="w-full py-3.5 rounded-xl border-2 border-brand text-brand font-semibold hover:bg-brand-soft transition"
+                >
+                  <i class="fas fa-envelope mr-2"></i>Email me a sign-in link
+                </button>
+                <p
+                  id="gate-status"
+                  class="text-sm min-h-[1.25rem] text-slate-600"
+                ></p>
+              </div>
+            </section>
+
+            <section
+              id="virtual-session-section"
+              class="main-signed-in-only hidden min-w-0 max-w-full overflow-x-hidden mb-6"
+            >
+              <div id="virtual-session-container"></div>
+            </section>
+
+            <section
+              id="serve-day-flow-section"
+              class="main-signed-in-only hidden min-w-0 max-w-full overflow-x-hidden mb-6"
+            >
+              <div id="serve-day-flow-container"></div>
+            </section>
+
+            <section
+              id="tshirt-section"
+              class="main-signed-in-only hidden min-w-0 max-w-full overflow-x-hidden mb-6"
+            >
+              <div id="tshirt-container"></div>
+            </section>
+
+            <section
+              id="role-training-section"
+              class="main-signed-in-only hidden bg-white rounded-2xl shadow-card border border-slate-100 p-4 sm:p-6 md:p-8 min-w-0 max-w-full overflow-x-hidden"
+            >
+              <div
+                class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4 min-w-0"
+              >
+                <div class="min-w-0 max-w-full">
+                  <h2
+                    class="text-xl sm:text-2xl font-bold text-slate-900 break-words"
+                  >
+                    Your role &amp; training
+                  </h2>
+                  <p class="text-sm text-slate-600 mt-1 break-words">
+                    Tailored to what you signed up for. Open your guide before
+                    your first shift.
+                  </p>
+                </div>
+                <a
+                  href="training/index.html"
+                  class="w-full sm:w-auto justify-center shrink-0 inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-light border border-brand/20 rounded-xl px-4 py-2.5 min-h-[44px] hover:bg-brand-soft transition touch-manipulation"
+                >
+                  <i class="fas fa-layer-group"></i> All training guides
+                </a>
+              </div>
+              <div
+                id="role-summaries-container"
+                class="space-y-3 min-w-0 max-w-full"
+              ></div>
+            </section>
+
+            <section
+              id="daily-modules-hub"
+              class="main-signed-in-only hidden rounded-2xl border border-slate-200/90 bg-white shadow-card overflow-hidden mb-2 min-w-0 max-w-full"
+            >
+              <div
+                class="px-4 py-4 sm:px-6 sm:py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 via-white to-brand-soft/20 min-w-0 max-w-full"
+              >
+                <h2
+                  class="text-lg sm:text-xl font-bold text-slate-900 break-words"
+                >
+                  Your volunteer toolkit
+                </h2>
+                <p class="text-sm text-slate-600 mt-1 max-w-2xl break-words">
+                  Daily content for each role you’re serving. Expand a section
+                  when you need it—keep the rest tucked away for a calmer page.
+                </p>
+                <div
+                  id="daily-role-badges"
+                  class="flex flex-wrap gap-2 mt-3 min-w-0"
+                  aria-label="Your matched roles"
+                ></div>
+              </div>
+              <div
+                id="daily-modules-stack"
+                class="p-3 sm:p-4 space-y-2 bg-slate-50/70 min-w-0 max-w-full overflow-x-hidden"
+              >
+                <details
+                  id="daily-social-section"
+                  class="daily-module group hidden rounded-xl border border-indigo-200/70 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow min-w-0 max-w-full"
+                >
+                  <summary
+                    class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-indigo-50/40 transition-colors rounded-xl"
+                  >
+                    <span class="flex items-center gap-3 min-w-0">
+                      <span
+                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"
+                        ><i class="fas fa-hashtag"></i
+                      ></span>
+                      <span class="min-w-0">
+                        <span class="block font-semibold text-slate-900"
+                          >Social media</span
+                        >
+                        <span class="block text-xs text-slate-500"
+                          >Posts &amp; share links for today</span
+                        >
+                      </span>
+                    </span>
+                    <i
+                      class="fas fa-chevron-down text-slate-400 text-sm transition-transform duration-200 group-open:rotate-180 shrink-0"
+                      aria-hidden="true"
+                    ></i>
+                  </summary>
+                  <div
+                    class="border-t border-slate-100 bg-gradient-to-br from-indigo-50/40 via-white to-violet-50/30 px-4 py-5 sm:px-6 sm:py-6 min-w-0 max-w-full overflow-x-hidden"
+                  >
+                    <p class="text-sm text-slate-600 mb-6 break-words">
+                      10 shareable posts for
+                      <span
+                        id="daily-social-date"
+                        class="font-semibold text-slate-800 break-all"
+                      ></span>
+                      — prayer, encouragement, and an invite to Houston Prayer
+                      City. Use copy or share buttons (includes your site link).
+                    </p>
+                    <div
+                      id="daily-social-posts"
+                      class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 min-w-0 max-w-full"
+                    ></div>
+                  </div>
+                </details>
+
+                <details
+                  id="daily-prayer-section"
+                  class="daily-module group hidden rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow min-w-0 max-w-full"
+                >
+                  <summary
+                    class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-slate-50 transition-colors rounded-xl"
+                  >
+                    <span class="flex items-center gap-3 min-w-0">
+                      <span
+                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand"
+                        ><i class="fas fa-hands-praying"></i
+                      ></span>
+                      <span class="min-w-0">
+                        <span class="block font-semibold text-slate-900"
+                          >Prayer partners</span
+                        >
+                        <span class="block text-xs text-slate-500"
+                          >Today’s prayer points &amp; Scripture</span
+                        >
+                      </span>
+                    </span>
+                    <i
+                      class="fas fa-chevron-down text-slate-400 text-sm transition-transform duration-200 group-open:rotate-180 shrink-0"
+                      aria-hidden="true"
+                    ></i>
+                  </summary>
+                  <div
+                    class="border-t border-slate-100 bg-white px-4 py-5 sm:px-6 sm:py-6"
+                  >
+                    <p class="text-sm text-slate-600 mb-6">
+                      Five focuses — salvation, healing, deliverance, Houston,
+                      and the nations — with Scripture.
+                    </p>
+                    <ul id="daily-prayer-list" class="space-y-4"></ul>
+                  </div>
+                </details>
+
+                <details
+                  id="daily-counselor-section"
+                  class="daily-module group hidden rounded-xl border border-amber-200/80 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow min-w-0 max-w-full"
+                >
+                  <summary
+                    class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-amber-50/50 transition-colors rounded-xl"
+                  >
+                    <span class="flex items-center gap-3 min-w-0">
+                      <span
+                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-800"
+                        ><i class="fas fa-heart"></i
+                      ></span>
+                      <span class="min-w-0">
+                        <span class="block font-semibold text-slate-900"
+                          >Counselors &amp; outreach</span
+                        >
+                        <span class="block text-xs text-slate-500"
+                          >Daily tips for conversations</span
+                        >
+                      </span>
+                    </span>
+                    <i
+                      class="fas fa-chevron-down text-slate-400 text-sm transition-transform duration-200 group-open:rotate-180 shrink-0"
+                      aria-hidden="true"
+                    ></i>
+                  </summary>
+                  <div
+                    class="border-t border-slate-100 bg-white px-4 py-5 sm:px-6 sm:py-6"
+                  >
+                    <p class="text-sm text-slate-600 mb-2">
+                      Gospel clarity, invitation, and encouragement — themes
+                      common to mass-evangelism outreach (not quotations from
+                      any book).
+                    </p>
+                    <p
+                      id="daily-counselor-disclaimer"
+                      class="text-xs text-slate-500 mb-6 italic"
+                    ></p>
+                    <div
+                      id="daily-counselor-cards"
+                      class="grid gap-6 md:grid-cols-3"
+                    ></div>
+                  </div>
+                </details>
+
+                <details
+                  id="daily-photo-section"
+                  class="daily-module group hidden rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow min-w-0 max-w-full"
+                >
+                  <summary
+                    class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-slate-50 transition-colors rounded-xl"
+                  >
+                    <span class="flex items-center gap-3 min-w-0">
+                      <span
+                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"
+                        ><i class="fas fa-camera"></i
+                      ></span>
+                      <span class="min-w-0">
+                        <span class="block font-semibold text-slate-900"
+                          >Photos &amp; video</span
+                        >
+                        <span class="block text-xs text-slate-500"
+                          >Upload to team storage</span
+                        >
+                      </span>
+                    </span>
+                    <i
+                      class="fas fa-chevron-down text-slate-400 text-sm transition-transform duration-200 group-open:rotate-180 shrink-0"
+                      aria-hidden="true"
+                    ></i>
+                  </summary>
+                  <div
+                    class="border-t border-slate-100 bg-white px-4 py-5 sm:px-6 sm:py-6"
+                  >
+                    <p class="text-sm text-slate-600 mt-1 mb-4">
+                      Files save to your team’s
+                      <strong>Firebase Storage</strong> folder (secure, multiple
+                      files allowed). For Google Drive, coordinators can mirror
+                      from exports — uploads here are fastest for the dashboard.
+                    </p>
+                    <label
+                      class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-white font-semibold cursor-pointer hover:bg-brand-light transition shadow-md"
+                    >
+                      <i class="fas fa-cloud-arrow-up"></i> Choose files
+                      <input
+                        type="file"
+                        id="volunteer-media-input"
+                        multiple
+                        accept="image/*,video/*"
+                        class="hidden"
+                      />
+                    </label>
+                    <p
+                      id="volunteer-media-status"
+                      class="text-sm text-slate-600 mt-3 min-h-[1.25rem]"
+                    ></p>
+                    <ul
+                      id="volunteer-media-results"
+                      class="mt-4 space-y-2 text-sm"
+                    ></ul>
+                  </div>
+                </details>
+
+                <details
+                  id="daily-logistics-section"
+                  class="daily-module group hidden rounded-xl border border-teal-200/70 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow min-w-0 max-w-full"
+                >
+                  <summary
+                    class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-teal-50/40 transition-colors rounded-xl"
+                  >
+                    <span class="flex items-center gap-3 min-w-0">
+                      <span
+                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-teal-800"
+                        ><i class="fas fa-boxes-stacked"></i
+                      ></span>
+                      <span class="min-w-0">
+                        <span class="block font-semibold text-slate-900"
+                          >Logistics &amp; welfare</span
+                        >
+                        <span class="block text-xs text-slate-500"
+                          >Rotation tips &amp; live headline</span
+                        >
+                      </span>
+                    </span>
+                    <i
+                      class="fas fa-chevron-down text-slate-400 text-sm transition-transform duration-200 group-open:rotate-180 shrink-0"
+                      aria-hidden="true"
+                    ></i>
+                  </summary>
+                  <div
+                    class="border-t border-slate-100 bg-white px-4 py-5 sm:px-6 sm:py-6"
+                  >
+                    <p class="text-sm text-slate-600 mt-1 mb-4">
+                      Static rotation plus a live headline when available —
+                      Houston and FIFA World Cup 2026 news only (filtered RSS).
+                    </p>
+                    <div
+                      id="daily-logistics-news"
+                      class="rounded-xl bg-teal-50 border border-teal-100 p-4 mb-6 text-sm text-slate-800 hidden"
+                    ></div>
+                    <ul
+                      id="daily-logistics-tips"
+                      class="list-disc list-inside space-y-2 text-slate-700"
+                    ></ul>
+                  </div>
+                </details>
+              </div>
+            </section>
+
+            <section id="upcoming-programs" class="scroll-mt-24 min-w-0">
+              <div class="mb-4">
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-900">
+                  Upcoming programs
+                </h2>
+              </div>
+              <div
+                id="dashboard-upcoming-programs-grid"
+                class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5 min-w-0"
+              ></div>
+            </section>
+
+            <section
+              class="bg-white rounded-2xl shadow-card border border-slate-100 p-4 sm:p-6 md:p-8"
+            >
+              <h2 class="text-lg sm:text-xl font-bold text-slate-900 mb-2">
+                In the Word together
+              </h2>
+              <p class="text-sm text-slate-600 mb-4 sm:mb-6">
+                Young people carrying Scripture — the same Spirit that moved the
+                early church moves us today.
+              </p>
+              <div
+                class="flex gap-3 sm:gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x -mx-1 px-1"
+              >
+                <figure
+                  class="flex-shrink-0 w-[min(16rem,calc(100vw-2.5rem))] sm:w-64 snap-start rounded-xl overflow-hidden shadow-md border border-slate-100"
+                >
+                  <img
+                    src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&q=80"
+                    alt="Students studying"
+                    class="h-40 w-full object-cover"
+                    loading="lazy"
+                  />
+                  <figcaption
+                    class="p-3 bg-brand-soft text-xs text-brand font-medium verse-font italic"
+                  >
+                    “I have hidden your word in my heart…” — Ps. 119:11
+                  </figcaption>
+                </figure>
+                <figure
+                  class="flex-shrink-0 w-[min(16rem,calc(100vw-2.5rem))] sm:w-64 snap-start rounded-xl overflow-hidden shadow-md border border-slate-100"
+                >
+                  <img
+                    src="https://images.unsplash.com/photo-1491841550275-de78548fa1af?w=400&q=80"
+                    alt="Reading"
+                    class="h-40 w-full object-cover"
+                    loading="lazy"
+                  />
+                  <figcaption
+                    class="p-3 bg-brand-soft text-xs text-brand font-medium verse-font italic"
+                  >
+                    “Bind them on your fingers…” — Prov. 7:3
+                  </figcaption>
+                </figure>
+                <figure
+                  class="flex-shrink-0 w-[min(16rem,calc(100vw-2.5rem))] sm:w-64 snap-start rounded-xl overflow-hidden shadow-md border border-slate-100"
+                >
+                  <img
+                    src="https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=400&q=80"
+                    alt="Books and learning"
+                    class="h-40 w-full object-cover"
+                    loading="lazy"
+                  />
+                  <figcaption
+                    class="p-3 bg-brand-soft text-xs text-brand font-medium verse-font italic"
+                  >
+                    “All Scripture is God-breathed…” — 2 Tim. 3:16
+                  </figcaption>
+                </figure>
+                <figure
+                  class="flex-shrink-0 w-[min(16rem,calc(100vw-2.5rem))] sm:w-64 snap-start rounded-xl overflow-hidden shadow-md border border-slate-100"
+                >
+                  <img
+                    src="https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=400&q=80"
+                    alt="Faith community"
+                    class="h-40 w-full object-cover"
+                    loading="lazy"
+                  />
+                  <figcaption
+                    class="p-3 bg-brand-soft text-xs text-brand font-medium verse-font italic"
+                  >
+                    “Let the message of Christ dwell among you…” — Col. 3:16
+                  </figcaption>
+                </figure>
+              </div>
+              <p class="text-xs text-slate-400 mt-4">
+                Photos via Unsplash — community &amp; study imagery.
+              </p>
+            </section>
+
+            <section
+              class="bg-white rounded-2xl shadow-card border border-slate-100 p-4 sm:p-6 md:p-8"
+            >
+              <h2
+                class="text-lg sm:text-xl font-bold text-slate-900 mb-3 sm:mb-4"
+              >
+                Resources
+              </h2>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div
+                  class="p-5 rounded-xl bg-slate-50 border border-slate-100 hover:border-brand/20 transition"
+                >
+                  <h3 class="font-semibold text-slate-900">
+                    Dear Daughter Bible study
+                  </h3>
+                  <p class="text-sm text-slate-600 mt-2">
+                    Weekly materials and discussion guides for volunteers.
+                  </p>
+                </div>
+                <div
+                  class="p-5 rounded-xl bg-slate-50 border border-slate-100 hover:border-brand/20 transition"
+                >
+                  <h3 class="font-semibold text-slate-900">
+                    Daily prayer guide
+                  </h3>
+                  <p class="text-sm text-slate-600 mt-2">
+                    Prayer points for the Houston World Cup outreach.
+                  </p>
+                </div>
+              </div>
+            </section>
+          </main>
+
+          <!-- Social media hub: quick profile links -->
+          <aside
+            class="order-3 lg:order-3 lg:col-span-3 space-y-4 lg:space-y-6 min-w-0"
+            aria-label="Ministry social media"
+          >
+            <div
+              class="bg-white rounded-2xl shadow-card overflow-hidden border border-slate-100 lg:sticky lg:top-20 flex flex-col lg:max-h-[calc(100vh-5.5rem)]"
+            >
+              <div
+                class="h-24 sm:h-28 bg-gradient-to-r from-pink-600 via-purple-600 to-slate-900 relative shrink-0"
+              >
+                <div
+                  class="absolute inset-0 opacity-25 bg-[url('https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=600&q=80')] bg-cover bg-center mix-blend-overlay"
+                ></div>
+                <div
+                  class="relative h-full flex flex-col items-center justify-end pb-3 px-4 text-center"
+                >
+                  <div
+                    class="flex items-center justify-center gap-5 text-white text-2xl drop-shadow-sm"
+                    aria-hidden="true"
+                  >
+                    <i class="fab fa-instagram"></i>
+                    <i class="fab fa-tiktok"></i>
+                  </div>
+                  <h2
+                    class="mt-2 text-sm font-bold text-white tracking-tight drop-shadow-sm"
+                  >
+                    Ministry social
+                  </h2>
+                </div>
+              </div>
+              <div
+                class="px-4 py-5 sm:px-5 flex-1 min-h-0 overflow-y-auto space-y-5"
+              >
+                <p class="text-xs text-slate-500 text-center leading-relaxed">
+                  Tap a profile to open Instagram or TikTok in the app or
+                  browser.
+                </p>
+
+                <div>
+                  <h3
+                    class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2"
+                  >
+                    <i
+                      class="fas fa-link text-slate-400"
+                      aria-hidden="true"
+                    ></i>
+                    Quick links — Instagram
+                  </h3>
+                  <ul class="space-y-2">
+                    <li>
+                      <a
+                        href="https://www.instagram.com/_abedamilola/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="group flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/80 hover:bg-white hover:border-pink-200 hover:shadow-sm transition"
+                      >
+                        <span
+                          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 text-white text-sm font-bold shadow-sm"
+                          >@</span
+                        >
+                        <span class="min-w-0 flex-1">
+                          <span
+                            class="block text-sm font-semibold text-slate-900 truncate group-hover:text-pink-700"
+                            >@_abedamilola</span
+                          >
+                          <span class="block text-xs text-slate-500"
+                            >Open profile</span
+                          >
+                        </span>
+                        <i
+                          class="fas fa-external-link-alt text-slate-400 text-xs shrink-0 group-hover:text-pink-600"
+                          aria-hidden="true"
+                        ></i>
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href="https://www.instagram.com/ddbs.htx/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="group flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/80 hover:bg-white hover:border-pink-200 hover:shadow-sm transition"
+                      >
+                        <span
+                          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 text-white text-sm font-bold shadow-sm"
+                          >HTX</span
+                        >
+                        <span class="min-w-0 flex-1">
+                          <span
+                            class="block text-sm font-semibold text-slate-900 truncate group-hover:text-pink-700"
+                            >@ddbs.htx</span
+                          >
+                          <span class="block text-xs text-slate-500"
+                            >Houston · Open profile</span
+                          >
+                        </span>
+                        <i
+                          class="fas fa-external-link-alt text-slate-400 text-xs shrink-0 group-hover:text-pink-600"
+                          aria-hidden="true"
+                        ></i>
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href="https://www.instagram.com/ddbs.global/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="group flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/80 hover:bg-white hover:border-pink-200 hover:shadow-sm transition"
+                      >
+                        <span
+                          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 text-white text-xs font-bold shadow-sm leading-tight text-center px-1"
+                          >GL</span
+                        >
+                        <span class="min-w-0 flex-1">
+                          <span
+                            class="block text-sm font-semibold text-slate-900 truncate group-hover:text-pink-700"
+                            >@ddbs.global</span
+                          >
+                          <span class="block text-xs text-slate-500"
+                            >Global · Open profile</span
+                          >
+                        </span>
+                        <i
+                          class="fas fa-external-link-alt text-slate-400 text-xs shrink-0 group-hover:text-pink-600"
+                          aria-hidden="true"
+                        ></i>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3
+                    class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2"
+                  >
+                    <i
+                      class="fas fa-link text-slate-400"
+                      aria-hidden="true"
+                    ></i>
+                    Quick links — TikTok
+                  </h3>
+                  <ul class="space-y-2">
+                    <li>
+                      <a
+                        href="https://www.tiktok.com/@_abedamilola"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="group flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/80 hover:bg-white hover:border-slate-300 hover:shadow-sm transition"
+                      >
+                        <span
+                          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white text-sm font-bold shadow-sm"
+                          >@</span
+                        >
+                        <span class="min-w-0 flex-1">
+                          <span
+                            class="block text-sm font-semibold text-slate-900 truncate"
+                            >@_abedamilola</span
+                          >
+                          <span class="block text-xs text-slate-500"
+                            >Open profile</span
+                          >
+                        </span>
+                        <i
+                          class="fas fa-external-link-alt text-slate-400 text-xs shrink-0 group-hover:text-slate-700"
+                          aria-hidden="true"
+                        ></i>
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href="https://www.tiktok.com/@ddbs.htx"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="group flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/80 hover:bg-white hover:border-slate-300 hover:shadow-sm transition"
+                      >
+                        <span
+                          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white text-xs font-bold shadow-sm leading-tight text-center px-1"
+                          >HTX</span
+                        >
+                        <span class="min-w-0 flex-1">
+                          <span
+                            class="block text-sm font-semibold text-slate-900 truncate"
+                            >@ddbs.htx</span
+                          >
+                          <span class="block text-xs text-slate-500"
+                            >Houston · Open profile</span
+                          >
+                        </span>
+                        <i
+                          class="fas fa-external-link-alt text-slate-400 text-xs shrink-0 group-hover:text-slate-700"
+                          aria-hidden="true"
+                        ></i>
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href="https://www.tiktok.com/@ddbs.global"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="group flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/80 hover:bg-white hover:border-slate-300 hover:shadow-sm transition"
+                      >
+                        <span
+                          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white text-xs font-bold shadow-sm leading-tight text-center px-1"
+                          >GL</span
+                        >
+                        <span class="min-w-0 flex-1">
+                          <span
+                            class="block text-sm font-semibold text-slate-900 truncate"
+                            >@ddbs.global</span
+                          >
+                          <span class="block text-xs text-slate-500"
+                            >Global · Open profile</span
+                          >
+                        </span>
+                        <i
+                          class="fas fa-external-link-alt text-slate-400 text-xs shrink-0 group-hover:text-slate-700"
+                          aria-hidden="true"
+                        ></i>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
-      <!-- Houston skyline silhouette -->
-      <div class="absolute bottom-0 left-0 right-0 h-20 sm:h-24 md:h-28 text-white/25" aria-hidden="true">
-        <svg viewBox="0 0 1200 100" fill="currentColor" class="w-full h-full object-cover object-bottom" preserveAspectRatio="none">
-          <path d="M0,100 L0,68 L60,68 L60,88 L110,88 L110,58 L170,58 L170,78 L230,78 L230,48 L290,48 L290,92 L350,92 L350,62 L410,62 L410,82 L470,82 L470,52 L530,52 L530,98 L590,98 L590,38 L650,38 L650,18 L710,18 L710,100 L750,100 L750,58 L810,58 L810,78 L870,78 L870,48 L930,48 L930,72 L990,72 L990,42 L1050,42 L1050,88 L1110,88 L1110,55 L1170,55 L1170,75 L1200,75 L1200,100 Z"/>
-        </svg>
+
+      <!-- Edit shifts (same slot grid as signup form) -->
+      <div
+        id="shift-edit-modal"
+        class="hidden fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
+      >
+        <button
+          type="button"
+          id="shift-edit-backdrop"
+          class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+          aria-label="Close"
+        ></button>
+        <div
+          class="relative w-full max-w-2xl max-h-[90vh] sm:rounded-2xl bg-white shadow-2xl border border-slate-200 flex flex-col mt-auto sm:mt-0 rounded-t-2xl sm:rounded-2xl overflow-hidden"
+        >
+          <div
+            class="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100 bg-slate-50 shrink-0"
+          >
+            <h2 class="text-lg font-bold text-slate-900">Your shifts</h2>
+            <button
+              type="button"
+              id="btn-close-shift-edit"
+              class="p-2 rounded-lg text-slate-500 hover:bg-slate-200/80 hover:text-slate-800 transition"
+              aria-label="Close"
+            >
+              <i class="fas fa-times text-lg"></i>
+            </button>
+          </div>
+          <div class="overflow-y-auto flex-1 px-4 py-4">
+            <p class="text-sm text-slate-600 mb-3">
+              Choose a role for each time slot you can serve. Leave as
+              &ldquo;Not this slot&rdquo; to skip.
+            </p>
+            <div id="shift-edit-mount"></div>
+          </div>
+          <div
+            class="px-4 py-3 border-t border-slate-100 bg-white flex flex-col sm:flex-row sm:items-center gap-3 shrink-0"
+          >
+            <p
+              id="shift-edit-status"
+              class="text-sm min-h-[1.25rem] text-slate-600 flex-1 order-2 sm:order-1"
+            ></p>
+            <button
+              type="button"
+              id="btn-shift-edit-save"
+              class="order-1 sm:order-2 px-6 py-2.5 rounded-xl bg-brand hover:bg-brand-light text-white font-semibold transition shadow-card"
+            >
+              Save
+            </button>
+          </div>
+        </div>
       </div>
-    </header>
 
-    <main class="flex-1 max-w-3xl mx-auto w-full px-4 py-8 sm:py-12">
-      <form id="volunteer-form" method="POST" action="https://formsubmit.co/ddbs.htx@gmail.com" class="space-y-8">
-        <!-- Honeypot (hidden from users) -->
-        <div class="absolute -left-[9999px]" aria-hidden="true">
-          <label for="website">Website</label>
-          <input type="text" name="_honey" id="website" tabindex="-1" autocomplete="off" />
-        </div>
-
-        <!-- Personal info card -->
-        <section class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-          <div class="bg-linkedin/10 px-5 py-3 border-b border-gray-200">
-            <h2 class="font-semibold text-linkedin flex items-center gap-2">
-              <i class="fas fa-user"></i> Personal Information
-            </h2>
+      <!-- Update password -->
+      <div
+        id="password-modal"
+        class="hidden fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
+      >
+        <button
+          type="button"
+          id="password-modal-backdrop"
+          class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+          aria-label="Close"
+        ></button>
+        <div
+          class="relative w-full max-w-md max-h-[90vh] sm:rounded-2xl bg-white shadow-2xl border border-slate-200 flex flex-col mt-auto sm:mt-0 rounded-t-2xl overflow-hidden"
+        >
+          <div
+            class="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100 bg-slate-50 shrink-0"
+          >
+            <h2 class="text-lg font-bold text-slate-900">Update password</h2>
+            <button
+              type="button"
+              id="btn-close-password-modal"
+              class="p-2 rounded-lg text-slate-500 hover:bg-slate-200/80 hover:text-slate-800 transition"
+              aria-label="Close"
+            >
+              <i class="fas fa-times text-lg"></i>
+            </button>
           </div>
-          <div class="p-5 sm:p-6 space-y-4">
-            <div>
-              <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full name <span class="text-red-500">*</span></label>
-              <input type="text" id="name" name="name" required
-                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none transition"
-                placeholder="Your name" />
+          <div class="overflow-y-auto flex-1 px-4 py-4 space-y-4">
+            <p class="text-sm text-slate-600">
+              Sign in next time with email + password, or keep using the email
+              link on the login screen.
+            </p>
+            <div id="current-pass-wrap" class="hidden">
+              <label class="block text-sm font-medium text-slate-700 mb-1"
+                >Current password</label
+              >
+              <input
+                type="password"
+                id="current-pass"
+                class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light"
+                autocomplete="current-password"
+              />
+              <p class="text-xs text-slate-500 mt-1">
+                Required when updating after a long session.
+              </p>
             </div>
             <div>
-              <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
-              <input type="email" id="email" name="email" required
-                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none transition"
-                placeholder="you@example.com" />
+              <label class="block text-sm font-medium text-slate-700 mb-1"
+                >New password</label
+              >
+              <input
+                type="password"
+                id="new-pass"
+                class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light"
+                minlength="6"
+                autocomplete="new-password"
+              />
             </div>
             <div>
-              <span class="block text-sm font-medium text-gray-700 mb-1" id="phone-label">Phone number <span class="text-red-500">*</span></span>
-              <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <label for="phone-country" class="sr-only">Country code</label>
-                <select id="phone-country"
-                  class="w-full sm:w-[min(100%,14rem)] shrink-0 rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none transition bg-white"
-                  aria-describedby="phone-hint">
-                  <option value="+1" selected>United States (+1)</option>
-                  <option value="+1">Canada (+1)</option>
-                  <option value="+52">Mexico (+52)</option>
-                  <option value="+44">United Kingdom (+44)</option>
-                  <option value="+353">Ireland (+353)</option>
-                  <option value="+33">France (+33)</option>
-                  <option value="+49">Germany (+49)</option>
-                  <option value="+34">Spain (+34)</option>
-                  <option value="+39">Italy (+39)</option>
-                  <option value="+31">Netherlands (+31)</option>
-                  <option value="+32">Belgium (+32)</option>
-                  <option value="+41">Switzerland (+41)</option>
-                  <option value="+43">Austria (+43)</option>
-                  <option value="+351">Portugal (+351)</option>
-                  <option value="+48">Poland (+48)</option>
-                  <option value="+46">Sweden (+46)</option>
-                  <option value="+47">Norway (+47)</option>
-                  <option value="+45">Denmark (+45)</option>
-                  <option value="+358">Finland (+358)</option>
-                  <option value="+55">Brazil (+55)</option>
-                  <option value="+54">Argentina (+54)</option>
-                  <option value="+57">Colombia (+57)</option>
-                  <option value="+56">Chile (+56)</option>
-                  <option value="+51">Peru (+51)</option>
-                  <option value="+593">Ecuador (+593)</option>
-                  <option value="+234">Nigeria (+234)</option>
-                  <option value="+27">South Africa (+27)</option>
-                  <option value="+233">Ghana (+233)</option>
-                  <option value="+254">Kenya (+254)</option>
-                  <option value="+91">India (+91)</option>
-                  <option value="+86">China (+86)</option>
-                  <option value="+81">Japan (+81)</option>
-                  <option value="+82">South Korea (+82)</option>
-                  <option value="+61">Australia (+61)</option>
-                  <option value="+64">New Zealand (+64)</option>
-                  <option value="+63">Philippines (+63)</option>
-                  <option value="+62">Indonesia (+62)</option>
-                  <option value="+966">Saudi Arabia (+966)</option>
-                  <option value="+971">United Arab Emirates (+971)</option>
-                  <option value="+972">Israel (+972)</option>
-                  <option value="+90">Turkey (+90)</option>
-                  <option value="+7">Russia / Kazakhstan (+7)</option>
-                  <option value="+380">Ukraine (+380)</option>
-                  <option value="+385">Croatia (+385)</option>
-                  <option value="+974">Qatar (+974)</option>
-                </select>
-                <div class="flex-1 min-w-0">
-                  <label for="phone-national" class="sr-only">Phone number (without country code)</label>
-                  <input type="tel" id="phone-national" inputmode="tel" autocomplete="tel-national" required
-                    class="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none transition"
-                    placeholder="555 123 4567"
-                    aria-labelledby="phone-label" />
-                </div>
-              </div>
-              <p id="phone-hint" class="mt-1.5 text-xs text-gray-500">Include your local number only (no country code in this box). We store your full international number.</p>
+              <label class="block text-sm font-medium text-slate-700 mb-1"
+                >Confirm new password</label
+              >
+              <input
+                type="password"
+                id="new-pass2"
+                class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-light"
+                minlength="6"
+                autocomplete="new-password"
+              />
             </div>
-            <div>
-              <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Any notes or restrictions <span class="text-gray-400 font-normal">(optional)</span></label>
-              <textarea id="notes" name="notes" rows="3"
-                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none transition resize-y"
-                placeholder="Accessibility needs, dietary restrictions, etc."></textarea>
-            </div>
+            <button
+              type="button"
+              id="btn-link-password"
+              class="w-full px-6 py-3 rounded-xl bg-brand hover:bg-brand-light text-white font-semibold transition"
+            >
+              Save
+            </button>
+            <p
+              id="pass-status"
+              class="text-sm min-h-[1.25rem] text-slate-600 pt-1"
+            ></p>
           </div>
-        </section>
-
-        <!-- Shifts section -->
-        <section class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-          <div class="bg-linkedin/10 px-5 py-3 border-b border-gray-200">
-            <h2 class="font-semibold text-linkedin flex items-center gap-2">
-              <i class="fas fa-calendar-alt"></i> Shifts
-            </h2>
-          </div>
-          <div class="p-4 sm:p-5 divide-y divide-gray-100">
-            <!-- June 14 -->
-            <details class="group accordion-item" data-date="June 14, 2026 (Sunday)" open>
-              <summary class="touch-manipulation flex items-center justify-between gap-2 cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset min-h-[48px]">
-                <span class="font-medium text-gray-800 min-w-0 text-left">June 14, 2026 (Sunday)</span>
-                <i class="fas fa-chevron-down summary-chevron text-gray-400"></i>
-              </summary>
-              <div class="accordion-content open">
-                <div class="pt-2 pb-4 grid gap-3 sm:grid-cols-2">
-                  <div class="space-y-1">
-                    <label class="block text-sm text-gray-600">10:00 AM – 11:00 AM</label>
-                    <select name="shift_2026-06-14_10-11" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none">
-                      <option value="">-- Not volunteering this slot --</option>
-                      <option value="Prayer Partners">Prayer Partners</option>
-                      <option value="Counselors">Counselors</option>
-                      <option value="Logistics and Welfare">Logistics and Welfare</option>
-                      <option value="Photography and Video">Photography and Video</option>
-                      <option value="Social Media and Virtual Support">Social Media and Virtual Support</option>
-                    </select>
-                  </div>
-                  <div class="space-y-1">
-                    <label class="block text-sm text-gray-600">11:00 AM – 12:00 PM</label>
-                    <select name="shift_2026-06-14_11-12" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none">
-                      <option value="">-- Not volunteering this slot --</option>
-                      <option value="Prayer Partners">Prayer Partners</option>
-                      <option value="Counselors">Counselors</option>
-                      <option value="Logistics and Welfare">Logistics and Welfare</option>
-                      <option value="Photography and Video">Photography and Video</option>
-                      <option value="Social Media and Virtual Support">Social Media and Virtual Support</option>
-                    </select>
-                  </div>
-                  <div class="space-y-1">
-                    <label class="block text-sm text-gray-600">12:00 PM – 1:00 PM</label>
-                    <select name="shift_2026-06-14_12-13" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none">
-                      <option value="">-- Not volunteering this slot --</option>
-                      <option value="Prayer Partners">Prayer Partners</option>
-                      <option value="Counselors">Counselors</option>
-                      <option value="Logistics and Welfare">Logistics and Welfare</option>
-                      <option value="Photography and Video">Photography and Video</option>
-                      <option value="Social Media and Virtual Support">Social Media and Virtual Support</option>
-                    </select>
-                  </div>
-                  <div class="space-y-1">
-                    <label class="block text-sm text-gray-600">1:00 PM – 2:00 PM</label>
-                    <select name="shift_2026-06-14_13-14" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none">
-                      <option value="">-- Not volunteering this slot --</option>
-                      <option value="Prayer Partners">Prayer Partners</option>
-                      <option value="Counselors">Counselors</option>
-                      <option value="Logistics and Welfare">Logistics and Welfare</option>
-                      <option value="Photography and Video">Photography and Video</option>
-                      <option value="Social Media and Virtual Support">Social Media and Virtual Support</option>
-                    </select>
-                  </div>
-                  <div class="space-y-1">
-                    <label class="block text-sm text-gray-600">2:00 PM – 3:00 PM</label>
-                    <select name="shift_2026-06-14_14-15" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none">
-                      <option value="">-- Not volunteering this slot --</option>
-                      <option value="Prayer Partners">Prayer Partners</option>
-                      <option value="Counselors">Counselors</option>
-                      <option value="Logistics and Welfare">Logistics and Welfare</option>
-                      <option value="Photography and Video">Photography and Video</option>
-                      <option value="Social Media and Virtual Support">Social Media and Virtual Support</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </details>
-
-            <!-- June 17 -->
-            <details class="group accordion-item" data-date="June 17, 2026 (Wednesday)">
-              <summary class="touch-manipulation flex items-center justify-between gap-2 cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset min-h-[48px]">
-                <span class="font-medium text-gray-800 min-w-0 text-left">June 17, 2026 (Wednesday)</span>
-                <i class="fas fa-chevron-down summary-chevron text-gray-400"></i>
-              </summary>
-              <div class="accordion-content">
-                <div class="pt-2 pb-4 grid gap-3 sm:grid-cols-2">
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">10:00 AM – 11:00 AM</label><select name="shift_2026-06-17_10-11" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">11:00 AM – 12:00 PM</label><select name="shift_2026-06-17_11-12" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">12:00 PM – 1:00 PM</label><select name="shift_2026-06-17_12-13" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">1:00 PM – 2:00 PM</label><select name="shift_2026-06-17_13-14" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">2:00 PM – 3:00 PM</label><select name="shift_2026-06-17_14-15" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                </div>
-              </div>
-            </details>
-
-            <!-- June 20 -->
-            <details class="group accordion-item" data-date="June 20, 2026 (Saturday)">
-              <summary class="touch-manipulation flex items-center justify-between gap-2 cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset min-h-[48px]">
-                <span class="font-medium text-gray-800 min-w-0 text-left">June 20, 2026 (Saturday)</span>
-                <i class="fas fa-chevron-down summary-chevron text-gray-400"></i>
-              </summary>
-              <div class="accordion-content">
-                <div class="pt-2 pb-4 grid gap-3 sm:grid-cols-2">
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">10:00 AM – 11:00 AM</label><select name="shift_2026-06-20_10-11" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">11:00 AM – 12:00 PM</label><select name="shift_2026-06-20_11-12" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">12:00 PM – 1:00 PM</label><select name="shift_2026-06-20_12-13" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">1:00 PM – 2:00 PM</label><select name="shift_2026-06-20_13-14" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">2:00 PM – 3:00 PM</label><select name="shift_2026-06-20_14-15" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                </div>
-              </div>
-            </details>
-
-            <!-- June 23 -->
-            <details class="group accordion-item" data-date="June 23, 2026 (Tuesday)">
-              <summary class="touch-manipulation flex items-center justify-between gap-2 cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset min-h-[48px]">
-                <span class="font-medium text-gray-800 min-w-0 text-left">June 23, 2026 (Tuesday)</span>
-                <i class="fas fa-chevron-down summary-chevron text-gray-400"></i>
-              </summary>
-              <div class="accordion-content">
-                <div class="pt-2 pb-4 grid gap-3 sm:grid-cols-2">
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">10:00 AM – 11:00 AM</label><select name="shift_2026-06-23_10-11" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">11:00 AM – 12:00 PM</label><select name="shift_2026-06-23_11-12" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">12:00 PM – 1:00 PM</label><select name="shift_2026-06-23_12-13" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">1:00 PM – 2:00 PM</label><select name="shift_2026-06-23_13-14" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">2:00 PM – 3:00 PM</label><select name="shift_2026-06-23_14-15" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                </div>
-              </div>
-            </details>
-
-            <!-- June 26 - Evening coverage: 4 PM – 9 PM (5 hourly slots) -->
-            <details class="group accordion-item" data-date="June 26, 2026 (Friday)">
-              <summary class="touch-manipulation flex items-center justify-between gap-2 cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset min-h-[48px]">
-                <span class="font-medium text-gray-800 min-w-0 text-left">June 26, 2026 (Friday) <span class="block sm:inline sm:ml-2 mt-0.5 sm:mt-0 text-xs font-normal text-amber-700">(Evening: 4 PM – 9 PM)</span></span>
-                <i class="fas fa-chevron-down summary-chevron text-gray-400"></i>
-              </summary>
-              <div class="accordion-content">
-                <div class="pt-2 pb-4 grid gap-3 sm:grid-cols-2">
-                  <div class="space-y-1">
-                    <label class="block text-sm text-gray-600">4:00 PM – 5:00 PM</label>
-                    <select name="shift_2026-06-26_16-17" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none">
-                      <option value="">-- Not volunteering this slot --</option>
-                      <option value="Prayer Partners">Prayer Partners</option>
-                      <option value="Counselors">Counselors</option>
-                      <option value="Logistics and Welfare">Logistics and Welfare</option>
-                      <option value="Photography and Video">Photography and Video</option>
-                      <option value="Social Media and Virtual Support">Social Media and Virtual Support</option>
-                    </select>
-                  </div>
-                  <div class="space-y-1">
-                    <label class="block text-sm text-gray-600">5:00 PM – 6:00 PM</label>
-                    <select name="shift_2026-06-26_17-18" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none">
-                      <option value="">-- Not volunteering this slot --</option>
-                      <option value="Prayer Partners">Prayer Partners</option>
-                      <option value="Counselors">Counselors</option>
-                      <option value="Logistics and Welfare">Logistics and Welfare</option>
-                      <option value="Photography and Video">Photography and Video</option>
-                      <option value="Social Media and Virtual Support">Social Media and Virtual Support</option>
-                    </select>
-                  </div>
-                  <div class="space-y-1">
-                    <label class="block text-sm text-gray-600">6:00 PM – 7:00 PM</label>
-                    <select name="shift_2026-06-26_18-19" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none">
-                      <option value="">-- Not volunteering this slot --</option>
-                      <option value="Prayer Partners">Prayer Partners</option>
-                      <option value="Counselors">Counselors</option>
-                      <option value="Logistics and Welfare">Logistics and Welfare</option>
-                      <option value="Photography and Video">Photography and Video</option>
-                      <option value="Social Media and Virtual Support">Social Media and Virtual Support</option>
-                    </select>
-                  </div>
-                  <div class="space-y-1">
-                    <label class="block text-sm text-gray-600">7:00 PM – 8:00 PM</label>
-                    <select name="shift_2026-06-26_19-20" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none">
-                      <option value="">-- Not volunteering this slot --</option>
-                      <option value="Prayer Partners">Prayer Partners</option>
-                      <option value="Counselors">Counselors</option>
-                      <option value="Logistics and Welfare">Logistics and Welfare</option>
-                      <option value="Photography and Video">Photography and Video</option>
-                      <option value="Social Media and Virtual Support">Social Media and Virtual Support</option>
-                    </select>
-                  </div>
-                  <div class="space-y-1">
-                    <label class="block text-sm text-gray-600">8:00 PM – 9:00 PM</label>
-                    <select name="shift_2026-06-26_20-21" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none">
-                      <option value="">-- Not volunteering this slot --</option>
-                      <option value="Prayer Partners">Prayer Partners</option>
-                      <option value="Counselors">Counselors</option>
-                      <option value="Logistics and Welfare">Logistics and Welfare</option>
-                      <option value="Photography and Video">Photography and Video</option>
-                      <option value="Social Media and Virtual Support">Social Media and Virtual Support</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </details>
-
-            <!-- June 29 -->
-            <details class="group accordion-item" data-date="June 29, 2026 (Monday)">
-              <summary class="touch-manipulation flex items-center justify-between gap-2 cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset min-h-[48px]">
-                <span class="font-medium text-gray-800 min-w-0 text-left">June 29, 2026 (Monday)</span>
-                <i class="fas fa-chevron-down summary-chevron text-gray-400"></i>
-              </summary>
-              <div class="accordion-content">
-                <div class="pt-2 pb-4 grid gap-3 sm:grid-cols-2">
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">10:00 AM – 11:00 AM</label><select name="shift_2026-06-29_10-11" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">11:00 AM – 12:00 PM</label><select name="shift_2026-06-29_11-12" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">12:00 PM – 1:00 PM</label><select name="shift_2026-06-29_12-13" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">1:00 PM – 2:00 PM</label><select name="shift_2026-06-29_13-14" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">2:00 PM – 3:00 PM</label><select name="shift_2026-06-29_14-15" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                </div>
-              </div>
-            </details>
-
-            <!-- July 4 -->
-            <details class="group accordion-item" data-date="July 4, 2026 (Saturday)">
-              <summary class="touch-manipulation flex items-center justify-between gap-2 cursor-pointer list-none py-3 px-2 -mx-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-inset min-h-[48px]">
-                <span class="font-medium text-gray-800 min-w-0 text-left">July 4, 2026 (Saturday)</span>
-                <i class="fas fa-chevron-down summary-chevron text-gray-400"></i>
-              </summary>
-              <div class="accordion-content">
-                <div class="pt-2 pb-4 grid gap-3 sm:grid-cols-2">
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">10:00 AM – 11:00 AM</label><select name="shift_2026-07-04_10-11" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">11:00 AM – 12:00 PM</label><select name="shift_2026-07-04_11-12" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">12:00 PM – 1:00 PM</label><select name="shift_2026-07-04_12-13" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">1:00 PM – 2:00 PM</label><select name="shift_2026-07-04_13-14" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                  <div class="space-y-1"><label class="block text-sm text-gray-600">2:00 PM – 3:00 PM</label><select name="shift_2026-07-04_14-15" class="slot-select w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-linkedin focus:border-linkedin outline-none"><option value="">-- Not volunteering this slot --</option><option value="Prayer Partners">Prayer Partners</option><option value="Counselors">Counselors</option><option value="Logistics and Welfare">Logistics and Welfare</option><option value="Photography and Video">Photography and Video</option><option value="Social Media and Virtual Support">Social Media and Virtual Support</option></select></div>
-                </div>
-              </div>
-            </details>
-          </div>
-        </section>
-
-        <!-- Live summary -->
-        <section class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-          <div class="bg-linkedin/10 px-5 py-3 border-b border-gray-200">
-            <h2 class="font-semibold text-linkedin flex items-center gap-2">
-              <i class="fas fa-list-check"></i> Your selected shifts
-            </h2>
-          </div>
-          <div id="summary-box" class="p-5 min-h-[4rem]">
-            <p id="summary-placeholder" class="text-gray-500 text-sm">Select shifts above to see your summary here.</p>
-            <ul id="summary-list" class="list-disc list-outside pl-5 sm:pl-6 text-sm text-gray-700 space-y-2 break-words hidden"></ul>
-          </div>
-        </section>
-
-        <!-- Submit -->
-        <div class="flex justify-center">
-          <button type="submit" id="submit-btn" class="touch-manipulation w-full sm:w-auto min-h-[48px] px-8 sm:px-10 py-3.5 sm:py-4 bg-linkedin hover:bg-linkedin-dark text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition focus:outline-none focus:ring-4 focus:ring-linkedin/40 flex items-center justify-center gap-2 text-base">
-            <i class="fas fa-paper-plane"></i> Submit Sign-Up
-          </button>
         </div>
-      </form>
+      </div>
+    </div>
 
-      <!-- Upcoming programs (anchor for FAQ & sharing) -->
-      <section id="upcoming-programs" class="mt-12 scroll-mt-20">
-        <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-          <div class="bg-linkedin/10 px-5 py-3 border-b border-gray-200">
-            <h2 class="font-semibold text-linkedin flex items-center gap-2 text-lg">
-              <i class="fas fa-calendar-check"></i> Upcoming programs &amp; key dates
-            </h2>
-            <p class="text-sm text-gray-600 mt-1">Volunteer sign-up windows (dates &amp; shift hours) plus Dear Daughter gatherings — save what applies to you.</p>
-          </div>
-          <div id="upcoming-programs-grid" class="p-4 sm:p-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 min-w-0"></div>
-          <p class="px-5 pb-5 text-xs text-gray-500">Volunteers: your <a href="dashboard.html#upcoming-programs" class="text-linkedin font-medium hover:underline">dashboard</a> lists the World Cup days you’ve signed up for (with your slots) plus ministry gatherings. Your full shift list also appears under <strong class="font-medium text-gray-700">Shifts</strong> in your profile column.</p>
-        </div>
-      </section>
-
-      <!-- Share the Movement -->
-      <section class="mt-12 pt-8 border-t border-gray-200 text-center">
-        <h3 class="text-2xl font-bold mb-2 flex items-center justify-center gap-3">
-          <span>⚽️</span> Spread the Movement <span>🙏</span>
-        </h3>
-        <p class="text-gray-600 mb-8 max-w-md mx-auto">Share this volunteer sign-up page with your church, friends, and family!</p>
-
-        <!-- Main Web Share Button -->
-        <button id="mainShareBtn" type="button"
-          class="touch-manipulation w-full max-w-md mx-auto sm:w-auto bg-linkedin hover:bg-linkedin-dark text-white font-semibold py-3.5 px-8 sm:py-4 sm:px-12 rounded-2xl text-lg sm:text-xl shadow-lg hover:shadow-xl transition focus:outline-none focus:ring-4 focus:ring-linkedin/40 active:scale-95 mb-10 min-h-[52px]">
-          Share This Page
-        </button>
-
-        <!-- Fallback buttons grid -->
-        <div id="fallbackShareBtns" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 max-w-2xl mx-auto hidden">
-          <!-- SMS -->
-          <a id="smsBtn" href="#" class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-2xl hover:shadow-md transition-all">
-            <span class="text-4xl mb-2">📱</span>
-            <span class="text-sm font-medium text-gray-700">Text</span>
-          </a>
-          <!-- Email -->
-          <a id="emailBtn" href="#" class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-2xl hover:shadow-md transition-all">
-            <span class="text-4xl mb-2">✉️</span>
-            <span class="text-sm font-medium text-gray-700">Email</span>
-          </a>
-          <!-- Facebook -->
-          <a id="fbBtn" href="#" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-2xl hover:shadow-md transition-all">
-            <span class="text-4xl mb-2">f</span>
-            <span class="text-sm font-medium text-gray-700">Facebook</span>
-          </a>
-          <!-- X / Twitter -->
-          <a id="xBtn" href="#" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-2xl hover:shadow-md transition-all">
-            <span class="text-4xl mb-2">𝕏</span>
-            <span class="text-sm font-medium text-gray-700">X</span>
-          </a>
-          <!-- Instagram -->
-          <a id="igBtn" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-2xl hover:shadow-md transition-all">
-            <span class="text-4xl mb-2">📸</span>
-            <span class="text-sm font-medium text-gray-700">Instagram</span>
-          </a>
-          <!-- TikTok -->
-          <a id="tiktokBtn" href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-2xl hover:shadow-md transition-all">
-            <span class="text-4xl mb-2">🎵</span>
-            <span class="text-sm font-medium text-gray-700">TikTok</span>
-          </a>
-        </div>
-      </section>
-
-      <!-- Follow Us on Social Media (official DDBS social links) -->
-      <section class="mt-10 py-8 border-t border-gray-200 text-center">
-        <h3 class="text-2xl font-bold mb-6 flex items-center justify-center gap-3">
-          Follow Us on Social Media <span>🙏</span>
-        </h3>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto px-4">
-          <a href="https://www.instagram.com/ddbs.global" target="_blank" rel="noopener noreferrer"
-             class="flex flex-col items-center p-6 bg-white border border-gray-200 rounded-2xl hover:shadow-md hover:border-linkedin transition-all">
-            <span class="text-5xl mb-3">📸</span>
-            <span class="text-lg font-semibold text-gray-800">Instagram</span>
-            <span class="text-sm text-gray-500">@ddbs.global</span>
-          </a>
-          <a href="https://www.facebook.com/share/1Nhzij8xoo/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
-             class="flex flex-col items-center p-6 bg-white border border-gray-200 rounded-2xl hover:shadow-md hover:border-linkedin transition-all">
-            <span class="text-5xl mb-3">f</span>
-            <span class="text-lg font-semibold text-gray-800">Facebook</span>
-            <span class="text-sm text-gray-500">Dear Daughter Bible Study Group</span>
-          </a>
-          <a href="https://www.tiktok.com/@ddbs.global" target="_blank" rel="noopener noreferrer"
-             class="flex flex-col items-center p-6 bg-white border border-gray-200 rounded-2xl hover:shadow-md hover:border-linkedin transition-all">
-            <span class="text-5xl mb-3">🎵</span>
-            <span class="text-lg font-semibold text-gray-800">TikTok</span>
-            <span class="text-sm text-gray-500">@ddbs.global</span>
-          </a>
-        </div>
-      </section>
-    </main>
-
-    <!-- Footer -->
-    <footer class="mt-auto py-8 px-4 pb-[max(2rem,env(safe-area-inset-bottom))] border-t border-gray-200 bg-white/90">
-      <div class="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+    <footer
+      class="py-8 px-4 sm:px-6 pb-[max(2rem,env(safe-area-inset-bottom))] border-t border-slate-200 bg-white"
+    >
+      <div
+        class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 w-full min-w-0"
+      >
         <div class="text-center sm:text-left">
-          <p class="text-gray-700 text-sm">
+          <p class="text-slate-700 text-sm">
             Email:
-            <a href="mailto:ddbs.htx@gmail.com" class="text-linkedin font-semibold hover:underline">ddbs.htx@gmail.com</a>
+            <a
+              href="mailto:ddbs.htx@gmail.com"
+              class="text-brand font-semibold hover:underline"
+              >ddbs.htx@gmail.com</a
+            >
           </p>
-          <p class="text-gray-500 text-xs mt-1">Houston World Cup Prayer City · Dear Daughter Bible Study Group</p>
+          <p class="text-slate-500 text-xs mt-1">
+            Houston World Cup Prayer City · Dear Daughter Bible Study Group
+          </p>
         </div>
-        <a href="contact.html" class="touch-manipulation inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-xl bg-linkedin text-white text-sm font-semibold hover:bg-linkedin-dark transition shadow-sm focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-offset-2 w-full sm:w-auto">
+        <a
+          href="contact.html"
+          class="touch-manipulation inline-flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-brand text-white text-sm font-semibold hover:bg-brand-light transition shadow-sm focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2"
+        >
           <i class="fas fa-envelope" aria-hidden="true"></i> Contact us
         </a>
       </div>
     </footer>
-  </div>
 
-  <!-- Success modal -->
-  <div id="success-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/50 backdrop-blur-sm" aria-modal="true" aria-labelledby="modal-title" role="dialog">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 text-center relative" style="animation: fade-in 0.3s ease-out;">
-      <div id="confetti-container" class="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl"></div>
-      <p class="text-5xl mb-4 animate-bounce-ball" style="animation: bounce-ball 0.6s ease-in-out 3;">⚽️</p>
-      <h2 id="modal-title" class="text-xl font-bold text-gray-800 mb-2">Thank you!</h2>
-      <p class="text-gray-600 mb-6">Your signup has been received. We'll contact you soon!</p>
-      <button type="button" id="modal-reset-btn" class="touch-manipulation w-full min-h-[48px] py-3 px-6 text-base bg-linkedin hover:bg-linkedin-dark text-white font-semibold rounded-xl transition focus:outline-none focus:ring-2 focus:ring-linkedin focus:ring-offset-2">
-        Reset form
-      </button>
-    </div>
-  </div>
+    <script>
+      (function () {
+        var EMAIL_LINK_CONTINUE_URL = "https://prayercityhtx.com/";
 
-  <script>
-    (function () {
-      const FORM_SUBMIT_URL = 'https://formsubmit.co/ddbs.htx@gmail.com';
+        var SELF_SERVE_SIGNIN_URL =
+          "https://us-central1-bible-study-dashboard-99f2d.cloudfunctions.net/volunteerSelfServeSignInMail";
 
-      // Slot name -> display string (date + time)
-      const SLOT_META = {
-        'shift_2026-06-14_10-11': { date: 'June 14, 2026', time: '10:00 AM – 11:00 AM' },
-        'shift_2026-06-14_11-12': { date: 'June 14, 2026', time: '11:00 AM – 12:00 PM' },
-        'shift_2026-06-14_12-13': { date: 'June 14, 2026', time: '12:00 PM – 1:00 PM' },
-        'shift_2026-06-14_13-14': { date: 'June 14, 2026', time: '1:00 PM – 2:00 PM' },
-        'shift_2026-06-14_14-15': { date: 'June 14, 2026', time: '2:00 PM – 3:00 PM' },
-        'shift_2026-06-17_10-11': { date: 'June 17, 2026', time: '10:00 AM – 11:00 AM' },
-        'shift_2026-06-17_11-12': { date: 'June 17, 2026', time: '11:00 AM – 12:00 PM' },
-        'shift_2026-06-17_12-13': { date: 'June 17, 2026', time: '12:00 PM – 1:00 PM' },
-        'shift_2026-06-17_13-14': { date: 'June 17, 2026', time: '1:00 PM – 2:00 PM' },
-        'shift_2026-06-17_14-15': { date: 'June 17, 2026', time: '2:00 PM – 3:00 PM' },
-        'shift_2026-06-20_10-11': { date: 'June 20, 2026', time: '10:00 AM – 11:00 AM' },
-        'shift_2026-06-20_11-12': { date: 'June 20, 2026', time: '11:00 AM – 12:00 PM' },
-        'shift_2026-06-20_12-13': { date: 'June 20, 2026', time: '12:00 PM – 1:00 PM' },
-        'shift_2026-06-20_13-14': { date: 'June 20, 2026', time: '1:00 PM – 2:00 PM' },
-        'shift_2026-06-20_14-15': { date: 'June 20, 2026', time: '2:00 PM – 3:00 PM' },
-        'shift_2026-06-23_10-11': { date: 'June 23, 2026', time: '10:00 AM – 11:00 AM' },
-        'shift_2026-06-23_11-12': { date: 'June 23, 2026', time: '11:00 AM – 12:00 PM' },
-        'shift_2026-06-23_12-13': { date: 'June 23, 2026', time: '12:00 PM – 1:00 PM' },
-        'shift_2026-06-23_13-14': { date: 'June 23, 2026', time: '1:00 PM – 2:00 PM' },
-        'shift_2026-06-23_14-15': { date: 'June 23, 2026', time: '2:00 PM – 3:00 PM' },
-        'shift_2026-06-26_16-17': { date: 'June 26, 2026', time: '4:00 PM – 5:00 PM' },
-        'shift_2026-06-26_17-18': { date: 'June 26, 2026', time: '5:00 PM – 6:00 PM' },
-        'shift_2026-06-26_18-19': { date: 'June 26, 2026', time: '6:00 PM – 7:00 PM' },
-        'shift_2026-06-26_19-20': { date: 'June 26, 2026', time: '7:00 PM – 8:00 PM' },
-        'shift_2026-06-26_20-21': { date: 'June 26, 2026', time: '8:00 PM – 9:00 PM' },
-        'shift_2026-06-29_10-11': { date: 'June 29, 2026', time: '10:00 AM – 11:00 AM' },
-        'shift_2026-06-29_11-12': { date: 'June 29, 2026', time: '11:00 AM – 12:00 PM' },
-        'shift_2026-06-29_12-13': { date: 'June 29, 2026', time: '12:00 PM – 1:00 PM' },
-        'shift_2026-06-29_13-14': { date: 'June 29, 2026', time: '1:00 PM – 2:00 PM' },
-        'shift_2026-06-29_14-15': { date: 'June 29, 2026', time: '2:00 PM – 3:00 PM' },
-        'shift_2026-07-04_10-11': { date: 'July 4, 2026', time: '10:00 AM – 11:00 AM' },
-        'shift_2026-07-04_11-12': { date: 'July 4, 2026', time: '11:00 AM – 12:00 PM' },
-        'shift_2026-07-04_12-13': { date: 'July 4, 2026', time: '12:00 PM – 1:00 PM' },
-        'shift_2026-07-04_13-14': { date: 'July 4, 2026', time: '1:00 PM – 2:00 PM' },
-        'shift_2026-07-04_14-15': { date: 'July 4, 2026', time: '2:00 PM – 3:00 PM' },
-      };
+        var cfg = window.__FIREBASE_CONFIG__ || {};
+        var invalid = !cfg.apiKey || cfg.apiKey === "REPLACE_ME";
 
-      const form = document.getElementById('volunteer-form');
-      const summaryPlaceholder = document.getElementById('summary-placeholder');
-      const summaryList = document.getElementById('summary-list');
-      const submitBtn = document.getElementById('submit-btn');
-      const successModal = document.getElementById('success-modal');
-      const modalResetBtn = document.getElementById('modal-reset-btn');
-      const confettiContainer = document.getElementById('confetti-container');
-
-      // Accordion: sync details[open] with .accordion-content.open
-      document.querySelectorAll('.accordion-item').forEach(function (detailsEl) {
-        var content = detailsEl.querySelector('.accordion-content');
-        if (!content) return;
-        detailsEl.addEventListener('toggle', function () {
-          content.classList.toggle('open', detailsEl.open);
-        });
-        content.classList.toggle('open', detailsEl.open);
-      });
-
-      function getSelectedShifts() {
-        var list = [];
-        document.querySelectorAll('.slot-select').forEach(function (select) {
-          var val = select.value && select.value.trim();
-          if (!val) return;
-          var meta = SLOT_META[select.name];
-          if (meta) list.push(meta.date + ' — ' + meta.time + ' — ' + val);
-        });
-        return list;
-      }
-
-      function updateSummary() {
-        var shifts = getSelectedShifts();
-        if (shifts.length === 0) {
-          summaryPlaceholder.classList.remove('hidden');
-          summaryList.classList.add('hidden');
-          summaryList.innerHTML = '';
-        } else {
-          summaryPlaceholder.classList.add('hidden');
-          summaryList.classList.remove('hidden');
-          summaryList.innerHTML = shifts.map(function (s) { return '<li>' + s + '</li>'; }).join('');
-        }
-      }
-
-      document.querySelectorAll('.slot-select').forEach(function (el) {
-        el.addEventListener('change', updateSummary);
-      });
-      updateSummary();
-
-      function runConfetti() {
-        var colors = ['#0A66C2', '#378fe9', '#fbbf24', '#ffffff', '#e5e7eb'];
-        for (var i = 0; i < 50; i++) {
-          var c = document.createElement('div');
-          c.className = 'absolute w-2 h-2 rounded-full';
-          c.style.left = Math.random() * 100 + '%';
-          c.style.top = '-10px';
-          c.style.background = colors[Math.floor(Math.random() * colors.length)];
-          c.style.animation = 'confetti-fall ' + (2 + Math.random() * 2) + 's linear forwards';
-          c.style.animationDelay = Math.random() * 0.5 + 's';
-          confettiContainer.appendChild(c);
-          setTimeout(function (el) { return function () { el.remove(); }; }(c), 4000);
-        }
-      }
-
-      function showSuccessModal() {
-        successModal.classList.add('flex');
-        successModal.classList.remove('hidden');
-        runConfetti();
-        modalResetBtn.focus();
-      }
-
-      function hideSuccessModal() {
-        successModal.classList.add('hidden');
-        successModal.classList.remove('flex');
-        confettiContainer.innerHTML = '';
-      }
-
-      modalResetBtn.addEventListener('click', function () {
-        hideSuccessModal();
-        form.reset();
-        updateSummary();
-        document.querySelectorAll('.accordion-item').forEach(function (d) { d.open = false; });
-        document.querySelector('.accordion-item').open = true;
-      });
-
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        var name = document.getElementById('name').value.trim();
-        var email = document.getElementById('email').value.trim();
-        var countryEl = document.getElementById('phone-country');
-        var nationalEl = document.getElementById('phone-national');
-        var dial = (countryEl && countryEl.value) ? countryEl.value.trim() : '+1';
-        var nationalDigits = nationalEl ? nationalEl.value.replace(/\D/g, '') : '';
-        if (!nationalDigits) {
-          alert('Please enter your phone number.');
-          if (nationalEl) nationalEl.focus();
+        if (invalid) {
+          document.getElementById("setup-banner").classList.remove("hidden");
+          if (document.getElementById("dashboard-main")) {
+            document.getElementById("dashboard-main").classList.add("hidden");
+          }
           return;
         }
-        if (nationalDigits.length < 5 || nationalDigits.length > 14) {
-          alert('Please check your phone number — the local part should be 5–14 digits.');
-          if (nationalEl) nationalEl.focus();
-          return;
-        }
-        var phone = dial + nationalDigits;
-        var notes = document.getElementById('notes').value.trim();
-        var shifts = getSelectedShifts();
 
-        var body = new URLSearchParams();
-        body.append('_subject', 'New World Cup Volunteer Signup');
-        body.append('_next', '');
-        body.append('_captcha', 'false');
-        body.append('_honey', document.querySelector('input[name="_honey"]').value || '');
-        body.append('name', name);
-        body.append('email', email);
-        body.append('phone', phone);
-        body.append('notes', notes);
-        body.append('Selected shifts', shifts.join('\n'));
+        firebase.initializeApp(cfg);
+        var auth = firebase.auth();
+        var db = firebase.firestore();
+        var storage = firebase.storage();
+        var functions = firebase.app().functions("us-central1");
 
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        var els = {
+          setupBanner: document.getElementById("setup-banner"),
+          visitorSignin: document.getElementById("visitor-signin"),
+          asideProfileVisitor: document.getElementById("aside-profile-visitor"),
+          mobileSignupCta: document.getElementById("mobile-signup-cta"),
+          asideProfileAuthed: document.getElementById("aside-profile-authed"),
+          navLinkSignin: document.getElementById("nav-link-signin"),
+          dashboardMain: document.getElementById("dashboard-main"),
+          gateEmail: document.getElementById("gate-email"),
+          gatePassword: document.getElementById("gate-password"),
+          gateStatus: document.getElementById("gate-status"),
+          btnPasswordSignin: document.getElementById("btn-password-signin"),
+          btnEmailLink: document.getElementById("btn-email-link"),
+          welcomeLine: document.getElementById("welcome-line"),
+          navWelcome: document.getElementById("nav-welcome"),
+          profileDisplayName: document.getElementById("profile-display-name"),
+          profileAvatarImg: document.getElementById("profile-avatar-img"),
+          profileAvatarInitial: document.getElementById(
+            "profile-avatar-initial",
+          ),
+          profileAvatarInput: document.getElementById("profile-avatar-input"),
+          profileUploadStatus: document.getElementById("profile-upload-status"),
+          fvEmail: document.getElementById("fv-email"),
+          fvPhone: document.getElementById("fv-phone"),
+          fvShifts: document.getElementById("fv-shifts"),
+          fvNotes: document.getElementById("fv-notes"),
+          newPass: document.getElementById("new-pass"),
+          newPass2: document.getElementById("new-pass2"),
+          btnLinkPassword: document.getElementById("btn-link-password"),
+          passStatus: document.getElementById("pass-status"),
+          passwordModal: document.getElementById("password-modal"),
+          passwordModalBackdrop: document.getElementById(
+            "password-modal-backdrop",
+          ),
+          btnOpenPasswordModal: document.getElementById(
+            "btn-open-password-modal",
+          ),
+          btnClosePasswordModal: document.getElementById(
+            "btn-close-password-modal",
+          ),
+          currentPassWrap: document.getElementById("current-pass-wrap"),
+          currentPass: document.getElementById("current-pass"),
+          btnSignout: document.getElementById("btn-signout"),
+          shiftEditModal: document.getElementById("shift-edit-modal"),
+          shiftEditMount: document.getElementById("shift-edit-mount"),
+          btnOpenShiftEdit: document.getElementById("btn-open-shift-edit"),
+          btnCloseShiftEdit: document.getElementById("btn-close-shift-edit"),
+          shiftEditBackdrop: document.getElementById("shift-edit-backdrop"),
+          btnShiftEditSave: document.getElementById("btn-shift-edit-save"),
+          shiftEditStatus: document.getElementById("shift-edit-status"),
+        };
 
-        fetch(FORM_SUBMIT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: body.toString(),
-        })
-          .then(function (res) {
-            if (!res.ok) throw new Error('Submission failed');
-            showSuccessModal();
-          })
-          .catch(function () {
-            alert('Something went wrong. Please check your connection and try again.');
-          })
-          .finally(function () {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Sign-Up';
-          });
-      });
-    })();
-  </script>
+        var lastVolunteerData = {};
 
-  <script>
-    // Share functionality
-    var shareTitle = "Houston World Cup Prayer City Movement – Volunteer Sign-Up";
-    var shareText = "Join us in prayer, service, and Gospel outreach during the 2026 World Cup in Houston! Sign up to volunteer as Counselor, Logistics, Photography, Prayer Partner, or Social Media & Virtual Support ⚽️🙏";
-    var shareUrl = window.location.href;
-
-    var mainShareBtn = document.getElementById('mainShareBtn');
-    var fallbackDiv = document.getElementById('fallbackShareBtns');
-
-    function setFallbackHrefs() {
-      var encUrl = encodeURIComponent(shareUrl);
-      var encTitle = encodeURIComponent(shareTitle);
-      var encBody = encodeURIComponent(shareText + '\n\n' + shareUrl);
-      if (document.getElementById('smsBtn')) document.getElementById('smsBtn').href = 'sms:?body=' + encBody;
-      if (document.getElementById('emailBtn')) document.getElementById('emailBtn').href = 'mailto:?subject=' + encTitle + '&body=' + encBody;
-      if (document.getElementById('fbBtn')) document.getElementById('fbBtn').href = 'https://www.facebook.com/sharer/sharer.php?u=' + encUrl;
-      if (document.getElementById('xBtn')) document.getElementById('xBtn').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText) + '&url=' + encUrl;
-    }
-
-    if (mainShareBtn) {
-      mainShareBtn.addEventListener('click', function () {
-        if (navigator.share) {
-          navigator.share({ title: shareTitle, text: shareText, url: shareUrl })
-            .then(function () { })
-            .catch(function () {
-              setFallbackHrefs();
-              if (fallbackDiv) fallbackDiv.classList.remove('hidden');
+        function showVisitorHome() {
+          els.dashboardMain.classList.remove("hidden");
+          if (els.visitorSignin) els.visitorSignin.classList.remove("hidden");
+          if (els.asideProfileVisitor)
+            els.asideProfileVisitor.classList.remove("hidden");
+          if (els.mobileSignupCta)
+            els.mobileSignupCta.classList.remove("hidden");
+          if (els.asideProfileAuthed)
+            els.asideProfileAuthed.classList.add("hidden");
+          if (els.navLinkSignin) els.navLinkSignin.classList.remove("hidden");
+          if (els.btnSignout) els.btnSignout.classList.add("hidden");
+          if (els.navWelcome) {
+            els.navWelcome.classList.add("hidden");
+            els.navWelcome.textContent = "";
+          }
+          document
+            .querySelectorAll(".main-signed-in-only")
+            .forEach(function (el) {
+              el.classList.add("hidden");
             });
-        } else {
-          setFallbackHrefs();
-          if (fallbackDiv) fallbackDiv.classList.remove('hidden');
+          if (els.welcomeLine) {
+            els.welcomeLine.textContent =
+              "Welcome. Sign in here to see your personal volunteer schedule and training.";
+          }
+          var progGrid = document.getElementById(
+            "dashboard-upcoming-programs-grid",
+          );
+          if (progGrid && window.PrayerCityPrograms) {
+            window.PrayerCityPrograms.renderPublicBoard(progGrid);
+          }
         }
-      });
-    }
-  </script>
 
-  <script src="js/upcoming-programs-board.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      var g = document.getElementById('upcoming-programs-grid');
-      if (g && window.PrayerCityPrograms) window.PrayerCityPrograms.renderPublicBoard(g);
-    });
-  </script>
+        function showDash() {
+          els.dashboardMain.classList.remove("hidden");
+          if (els.visitorSignin) els.visitorSignin.classList.add("hidden");
+          if (els.asideProfileVisitor)
+            els.asideProfileVisitor.classList.add("hidden");
+          if (els.mobileSignupCta) els.mobileSignupCta.classList.add("hidden");
+          if (els.asideProfileAuthed)
+            els.asideProfileAuthed.classList.remove("hidden");
+          if (els.navLinkSignin) els.navLinkSignin.classList.add("hidden");
+          if (els.btnSignout) els.btnSignout.classList.remove("hidden");
+          if (els.navWelcome) els.navWelcome.classList.remove("hidden");
+          document
+            .querySelectorAll(".main-signed-in-only")
+            .forEach(function (el) {
+              el.classList.remove("hidden");
+            });
+        }
 
-</body>
+        function setGateStatus(msg, isErr) {
+          els.gateStatus.textContent = msg || "";
+          els.gateStatus.className =
+            "mt-4 text-sm min-h-[1.25rem] " +
+            (isErr ? "text-red-600" : "text-slate-600");
+        }
+
+        function friendlyPasswordSignInError(e) {
+          var code = e && e.code;
+          if (
+            code === "auth/invalid-credential" ||
+            code === "auth/wrong-password"
+          ) {
+            return "Invalid password, or a password is not set for this account. Check that your email is correct. If your email is right, the password is wrong or you have not set one yet—use “Email me a sign-in link” below.";
+          }
+          if (code === "auth/user-not-found") {
+            return "No account found with that email. Check the spelling, or sign up to volunteer first.";
+          }
+          if (code === "auth/invalid-email") {
+            return "Enter a valid email address.";
+          }
+          if (code === "auth/too-many-requests") {
+            return "Too many sign-in attempts. Wait a few minutes, then try again or use a sign-in link.";
+          }
+          if (code === "auth/user-disabled") {
+            return "This account has been disabled. Contact the team for help.";
+          }
+          return (e && e.message) || "Sign-in failed";
+        }
+
+        function setAvatarFromUser(displayName, photoURL) {
+          var initial =
+            (displayName || "V").trim().charAt(0).toUpperCase() || "V";
+          if (photoURL) {
+            els.profileAvatarImg.src = photoURL;
+            els.profileAvatarImg.classList.remove("hidden");
+            els.profileAvatarInitial.classList.add("hidden");
+          } else {
+            els.profileAvatarImg.removeAttribute("src");
+            els.profileAvatarImg.classList.add("hidden");
+            els.profileAvatarInitial.textContent = initial;
+            els.profileAvatarInitial.classList.remove("hidden");
+          }
+        }
+
+        function completeEmailLinkIfNeeded() {
+          if (!firebase.auth().isSignInWithEmailLink(window.location.href)) {
+            return Promise.resolve(false);
+          }
+          var email = window.localStorage.getItem("emailForSignIn");
+          if (!email) {
+            email = window.prompt(
+              "Enter the same email address we used for your invite:",
+            );
+          }
+          if (!email) {
+            setGateStatus("Email required to finish sign-in.", true);
+            return Promise.resolve(false);
+          }
+          return auth
+            .signInWithEmailLink(email, window.location.href)
+            .then(function () {
+              window.localStorage.removeItem("emailForSignIn");
+              window.history.replaceState(
+                {},
+                document.title,
+                window.location.pathname,
+              );
+              return true;
+            })
+            .catch(function (e) {
+              setGateStatus(e.message || "Sign-in failed", true);
+              return false;
+            });
+        }
+
+        function mergeProfile() {
+          var mergeFn = functions.httpsCallable("mergeVolunteerProfile");
+          return mergeFn().catch(function (e) {
+            console.warn("mergeVolunteerProfile", e);
+          });
+        }
+
+        function syncVolunteerDirectory(uid, d) {
+          return db
+            .collection("volunteer_directory")
+            .doc(uid)
+            .set(
+              {
+                uid: uid,
+                name: d.name || "",
+                photoURL: d.photoURL || "",
+                shifts: d.shifts || "",
+                tent: d.tent || "",
+                timeslot: d.timeslot || "",
+                position: d.position || "",
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              },
+              { merge: true },
+            )
+            .catch(function (e) {
+              console.warn("syncVolunteerDirectory", e);
+            });
+        }
+
+        function escapeHtml(s) {
+          var d = document.createElement("div");
+          d.textContent = s == null ? "" : String(s);
+          return d.innerHTML;
+        }
+
+        function openShiftEditModal() {
+          var P = window.VolunteerShiftPicker;
+          if (!els.shiftEditMount || !els.shiftEditModal) return;
+          if (!P) {
+            if (els.shiftEditStatus) {
+              els.shiftEditStatus.textContent =
+                "Shift editor failed to load. Hard-refresh the page (Ctrl+Shift+R). If it persists, contact an organizer.";
+            }
+            els.shiftEditModal.classList.remove("hidden");
+            document.body.style.overflow = "hidden";
+            return;
+          }
+          if (!els.shiftEditMount.dataset.rendered) {
+            P.render(els.shiftEditMount);
+            els.shiftEditMount.dataset.rendered = "1";
+          }
+          P.applyShiftsText(els.shiftEditMount, lastVolunteerData.shifts || "");
+          if (els.shiftEditStatus) els.shiftEditStatus.textContent = "";
+          els.shiftEditModal.classList.remove("hidden");
+          document.body.style.overflow = "hidden";
+        }
+
+        function releaseBodyScrollIfNoModal() {
+          var shiftOpen =
+            els.shiftEditModal &&
+            !els.shiftEditModal.classList.contains("hidden");
+          var passOpen =
+            els.passwordModal &&
+            !els.passwordModal.classList.contains("hidden");
+          if (!shiftOpen && !passOpen) document.body.style.overflow = "";
+        }
+
+        function closeShiftEditModal() {
+          if (els.shiftEditModal) els.shiftEditModal.classList.add("hidden");
+          releaseBodyScrollIfNoModal();
+        }
+
+        function openPasswordModal() {
+          if (!els.passwordModal) return;
+          if (els.passStatus) {
+            els.passStatus.textContent = "";
+            els.passStatus.className =
+              "text-sm min-h-[1.25rem] text-slate-600 pt-1";
+          }
+          if (els.newPass) els.newPass.value = "";
+          if (els.newPass2) els.newPass2.value = "";
+          if (els.currentPass) els.currentPass.value = "";
+          if (els.currentPassWrap) els.currentPassWrap.classList.add("hidden");
+          els.passwordModal.classList.remove("hidden");
+          document.body.style.overflow = "hidden";
+        }
+
+        function closePasswordModal() {
+          if (els.passwordModal) els.passwordModal.classList.add("hidden");
+          releaseBodyScrollIfNoModal();
+        }
+
+        function renderRoleSummaries(d) {
+          var section = document.getElementById("role-training-section");
+          var container = document.getElementById("role-summaries-container");
+          if (
+            !section ||
+            !container ||
+            typeof window.findVolunteerRolesFromShifts !== "function"
+          )
+            return;
+          var combined = [
+            d.shifts || "",
+            d.position || "",
+            d.timeslot || "",
+            d.tent || "",
+          ].join(" ");
+          var roles = window.findVolunteerRolesFromShifts(combined);
+          container.innerHTML = "";
+          if (roles.length === 0) {
+            container.innerHTML =
+              '<p class="text-sm text-slate-600 leading-relaxed break-words">' +
+              "We couldn’t match a volunteer role from your signup yet. When your shifts are saved, your personalized summary will show here. " +
+              "You can still explore every role below.</p>" +
+              '<a href="training/index.html" class="inline-flex items-center gap-2 mt-4 text-brand font-semibold hover:underline break-words">' +
+              'Browse all training guides <i class="fas fa-arrow-right text-xs shrink-0"></i></a>';
+            return;
+          }
+          var compactTraining = roles.length >= 3;
+          roles.forEach(function (g, idx) {
+            if (compactTraining) {
+              var det = document.createElement("details");
+              det.className =
+                "role-training-acc group rounded-xl border border-slate-100 bg-white shadow-sm overflow-hidden open:shadow-md transition-shadow min-w-0 max-w-full";
+              det.open = idx === 0;
+              det.innerHTML =
+                '<summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-slate-50/90 transition-colors min-w-0">' +
+                '<span class="flex items-center gap-3 min-w-0 flex-1">' +
+                '<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand text-white shadow-md">' +
+                '<i class="fas ' +
+                escapeHtml(g.icon) +
+                '"></i></span>' +
+                '<span class="font-semibold text-slate-900 min-w-0 break-words">' +
+                escapeHtml(g.label) +
+                "</span></span>" +
+                '<i class="fas fa-chevron-down text-slate-400 text-sm transition-transform duration-200 group-open:rotate-180 shrink-0" aria-hidden="true"></i></summary>' +
+                '<div class="px-4 pb-4 border-t border-slate-100 bg-gradient-to-b from-slate-50/30 to-white min-w-0 max-w-full overflow-x-hidden">' +
+                '<p class="text-sm text-slate-600 mt-3 leading-relaxed break-words">' +
+                escapeHtml(g.short) +
+                "</p>" +
+                '<a href="' +
+                escapeHtml(g.page) +
+                '" class="inline-flex items-center gap-2 mt-3 text-brand font-semibold text-sm hover:underline break-words max-w-full">' +
+                'Open training guide <i class="fas fa-arrow-right text-xs shrink-0"></i></a></div>';
+              container.appendChild(det);
+            } else {
+              var card = document.createElement("article");
+              card.className =
+                "rounded-xl border border-slate-100 bg-gradient-to-br from-white to-slate-50/80 p-5 sm:p-6 shadow-sm min-w-0 max-w-full overflow-hidden";
+              card.innerHTML =
+                '<div class="flex gap-4 min-w-0">' +
+                '<div class="w-12 h-12 rounded-xl bg-brand text-white flex items-center justify-center shrink-0 shadow-md">' +
+                '<i class="fas ' +
+                escapeHtml(g.icon) +
+                ' text-lg"></i></div>' +
+                '<div class="min-w-0 flex-1 overflow-hidden">' +
+                '<h3 class="font-bold text-slate-900 text-lg break-words">' +
+                escapeHtml(g.label) +
+                "</h3>" +
+                '<p class="text-sm text-slate-600 mt-2 leading-relaxed break-words">' +
+                escapeHtml(g.short) +
+                "</p>" +
+                '<a href="' +
+                escapeHtml(g.page) +
+                '" class="inline-flex items-center gap-2 mt-4 text-brand font-semibold text-sm hover:underline break-words max-w-full">' +
+                'Learn more — open training guide <i class="fas fa-arrow-right text-xs shrink-0"></i></a>' +
+                "</div></div>";
+              container.appendChild(card);
+            }
+          });
+        }
+
+        function dailySectionIds() {
+          return [
+            "daily-social-section",
+            "daily-prayer-section",
+            "daily-counselor-section",
+            "daily-photo-section",
+            "daily-logistics-section",
+          ];
+        }
+
+        function hideAllDailySections() {
+          dailySectionIds().forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) {
+              el.classList.add("hidden");
+              el.open = false;
+            }
+          });
+          var hub = document.getElementById("daily-modules-hub");
+          if (hub) hub.classList.add("hidden");
+        }
+
+        function showDailySection(id, show) {
+          var el = document.getElementById(id);
+          if (el) el.classList.toggle("hidden", !show);
+        }
+
+        function syncDailyModulesHub(roles) {
+          var hub = document.getElementById("daily-modules-hub");
+          var badges = document.getElementById("daily-role-badges");
+          if (badges) {
+            badges.innerHTML = "";
+            roles.forEach(function (r) {
+              var span = document.createElement("span");
+              span.className =
+                "inline-flex items-center max-w-full rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-brand border border-brand/25 shadow-sm break-words text-left";
+              span.textContent = r.label;
+              badges.appendChild(span);
+            });
+          }
+          var visible = [];
+          dailySectionIds().forEach(function (sid) {
+            var el = document.getElementById(sid);
+            if (el && !el.classList.contains("hidden")) visible.push(el);
+          });
+          if (hub) hub.classList.toggle("hidden", visible.length === 0);
+          visible.forEach(function (el, i) {
+            el.open = visible.length === 1 || i === 0;
+          });
+        }
+
+        function siteUrlForShares() {
+          try {
+            var o = window.location.origin;
+            if (o && o.indexOf("http") === 0)
+              return o.replace(/\/?$/, "/") + "volunteer/";
+          } catch (e) {}
+          return (
+            (window.VolunteerDailyContent &&
+              window.VolunteerDailyContent.SITE_DEFAULT) ||
+            "https://prayercityhtx.com/volunteer/"
+          );
+        }
+
+        function renderDailyModules(d) {
+          hideAllDailySections();
+          if (
+            typeof window.findVolunteerRolesFromShifts !== "function" ||
+            !window.VolunteerDailyContent
+          ) {
+            return;
+          }
+          var combined = [
+            d.shifts || "",
+            d.position || "",
+            d.timeslot || "",
+            d.tent || "",
+          ].join(" ");
+          var roles = window.findVolunteerRolesFromShifts(combined);
+          var ids = roles.map(function (r) {
+            return r.id;
+          });
+          var has = function (id) {
+            return ids.indexOf(id) !== -1;
+          };
+
+          if (has("social-media")) {
+            showDailySection("daily-social-section", true);
+            var site = siteUrlForShares();
+            var posts = window.VolunteerDailyContent.getSocialPosts(site);
+            document.getElementById("daily-social-date").textContent =
+              window.VolunteerDailyContent.todayYmd();
+            var wrap = document.getElementById("daily-social-posts");
+            wrap.innerHTML = "";
+            posts.forEach(function (p) {
+              var links = window.VolunteerDailyContent.buildShareLinks(
+                p.shareText,
+                p.shareUrl,
+              );
+              var card = document.createElement("article");
+              card.className =
+                "rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm flex flex-col min-w-0 max-w-full";
+              card.innerHTML =
+                '<img src="' +
+                escapeHtml(p.image) +
+                '" alt="" class="w-full max-w-full h-40 object-cover" loading="lazy" />' +
+                '<div class="p-4 flex-1 flex flex-col min-w-0 max-w-full">' +
+                '<p class="text-xs font-bold text-brand-accent uppercase tracking-wide break-words">' +
+                escapeHtml(p.title) +
+                "</p>" +
+                '<p class="social-post-body text-sm text-slate-700 mt-2 whitespace-pre-wrap line-clamp-4">' +
+                escapeHtml(p.body) +
+                "</p>" +
+                '<div class="flex flex-wrap gap-2 mt-4 text-xs min-w-0 max-w-full">' +
+                '<button type="button" class="daily-copy-btn px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 font-medium text-slate-800">Copy text</button>' +
+                '<a class="px-3 py-2 rounded-lg bg-sky-500 text-white font-medium hover:bg-sky-600" href="' +
+                escapeHtml(links.twitter) +
+                '" target="_blank" rel="noopener">X</a>' +
+                '<a class="px-3 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700" href="' +
+                escapeHtml(links.facebook) +
+                '" target="_blank" rel="noopener">Facebook</a>' +
+                '<a class="px-3 py-2 rounded-lg bg-blue-800 text-white font-medium hover:bg-blue-900" href="' +
+                escapeHtml(links.linkedin) +
+                '" target="_blank" rel="noopener">LinkedIn</a>' +
+                '<a class="px-3 py-2 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700" href="' +
+                escapeHtml(links.whatsapp) +
+                '" target="_blank" rel="noopener">WhatsApp</a>' +
+                '<a class="px-3 py-2 rounded-lg bg-slate-600 text-white font-medium hover:bg-slate-700" href="' +
+                escapeHtml(links.email) +
+                '">Email</a>' +
+                "</div></div>";
+              card
+                .querySelector(".daily-copy-btn")
+                .addEventListener("click", function () {
+                  navigator.clipboard.writeText(links.copy).then(
+                    function () {
+                      card.querySelector(".daily-copy-btn").textContent =
+                        "Copied!";
+                      setTimeout(function () {
+                        card.querySelector(".daily-copy-btn").textContent =
+                          "Copy text";
+                      }, 2000);
+                    },
+                    function () {
+                      window.prompt("Copy:", links.copy);
+                    },
+                  );
+                });
+              wrap.appendChild(card);
+            });
+          }
+
+          if (has("prayer-partners")) {
+            showDailySection("daily-prayer-section", true);
+            var pts = window.VolunteerDailyContent.getPrayerPoints();
+            var ul = document.getElementById("daily-prayer-list");
+            ul.innerHTML = "";
+            pts.forEach(function (pt) {
+              var li = document.createElement("li");
+              li.className =
+                "rounded-xl border border-slate-100 bg-slate-50/80 p-4";
+              li.innerHTML =
+                '<p class="text-xs font-bold text-brand uppercase">' +
+                escapeHtml(pt.theme) +
+                "</p>" +
+                '<p class="text-slate-800 font-medium mt-1">' +
+                escapeHtml(pt.point) +
+                "</p>" +
+                '<p class="text-sm text-slate-600 mt-2 verse-font italic">“' +
+                escapeHtml(pt.scripture) +
+                "” — " +
+                escapeHtml(pt.ref) +
+                "</p>";
+              ul.appendChild(li);
+            });
+          }
+
+          if (has("counselors")) {
+            showDailySection("daily-counselor-section", true);
+            var pack = window.VolunteerDailyContent.getCounselorDaily();
+            document.getElementById("daily-counselor-disclaimer").textContent =
+              pack.disclaimer;
+            var grid = document.getElementById("daily-counselor-cards");
+            grid.innerHTML = "";
+            pack.tips.forEach(function (t) {
+              var div = document.createElement("div");
+              div.className =
+                "rounded-xl overflow-hidden border border-amber-100 bg-white shadow-sm flex flex-col";
+              div.innerHTML =
+                '<img src="' +
+                escapeHtml(t.image) +
+                '" alt="" class="w-full h-36 object-cover" loading="lazy" />' +
+                '<div class="p-4 flex-1 flex flex-col">' +
+                '<h3 class="font-bold text-slate-900">' +
+                escapeHtml(t.title) +
+                "</h3>" +
+                '<p class="text-sm text-slate-600 mt-2 flex-1">' +
+                escapeHtml(t.tip) +
+                "</p>" +
+                '<p class="text-xs text-brand font-semibold mt-3">' +
+                escapeHtml(t.ref) +
+                "</p></div>";
+              grid.appendChild(div);
+            });
+          }
+
+          if (has("photography-video")) {
+            showDailySection("daily-photo-section", true);
+          }
+
+          if (has("logistics-welfare")) {
+            showDailySection("daily-logistics-section", true);
+            var staticTips =
+              window.VolunteerDailyContent.getLogisticsStaticTips();
+            var ulTip = document.getElementById("daily-logistics-tips");
+            ulTip.innerHTML = "";
+            staticTips.forEach(function (line) {
+              var li = document.createElement("li");
+              li.textContent = line;
+              ulTip.appendChild(li);
+            });
+            var newsEl = document.getElementById("daily-logistics-news");
+            newsEl.textContent = "Loading sports headline…";
+            newsEl.classList.remove("hidden");
+            var tipFn = functions.httpsCallable("getLogisticsNewsTip");
+            tipFn()
+              .then(function (res) {
+                var data = res && res.data;
+                if (!data || !data.tip) {
+                  newsEl.classList.add("hidden");
+                  return;
+                }
+                newsEl.classList.remove("hidden");
+                var headlinePart = data.headline
+                  ? '<strong class="block text-teal-900 mb-1">' +
+                    escapeHtml(data.headline) +
+                    '</strong><span class="text-xs text-teal-700">' +
+                    escapeHtml(data.source || "") +
+                    (data.usedFallback ? " · fallback" : "") +
+                    "</span>"
+                  : "";
+                newsEl.innerHTML =
+                  headlinePart +
+                  '<p class="mt-2 text-slate-800">' +
+                  escapeHtml(data.tip) +
+                  "</p>";
+              })
+              .catch(function () {
+                newsEl.classList.add("hidden");
+              });
+          }
+
+          syncDailyModulesHub(roles);
+        }
+
+        (function bindMediaUpload() {
+          var input = document.getElementById("volunteer-media-input");
+          if (!input || input.dataset.bound) return;
+          input.dataset.bound = "1";
+          var statusEl = document.getElementById("volunteer-media-status");
+          var listEl = document.getElementById("volunteer-media-results");
+          var maxBytes = 100 * 1024 * 1024;
+          input.addEventListener("change", function (ev) {
+            var fileList = ev.target.files;
+            ev.target.value = "";
+            if (!fileList || !fileList.length) return;
+            var user = auth.currentUser;
+            if (!user) return;
+            if (listEl) listEl.innerHTML = "";
+            if (statusEl) statusEl.textContent = "Uploading…";
+            var files = Array.prototype.slice.call(fileList, 0);
+            var run = Promise.resolve();
+            files.forEach(function (file) {
+              run = run.then(function () {
+                if (file.size > maxBytes) {
+                  var li = document.createElement("li");
+                  li.className = "text-red-600";
+                  li.textContent = "Skipped (over 100 MB): " + file.name;
+                  if (listEl) listEl.appendChild(li);
+                  return;
+                }
+                if (
+                  !file.type.match(/^image\//) &&
+                  !file.type.match(/^video\//)
+                ) {
+                  var li2 = document.createElement("li");
+                  li2.className = "text-amber-700";
+                  li2.textContent = "Skipped (not image/video): " + file.name;
+                  if (listEl) listEl.appendChild(li2);
+                  return;
+                }
+                var safe = String(file.name).replace(/[^a-zA-Z0-9._-]/g, "_");
+                var path =
+                  "volunteer_media/" + user.uid + "/" + Date.now() + "_" + safe;
+                var ref = storage.ref(path);
+                return ref
+                  .put(file, { contentType: file.type })
+                  .then(function () {
+                    return ref.getDownloadURL();
+                  })
+                  .then(function (url) {
+                    var li = document.createElement("li");
+                    li.className =
+                      "flex flex-wrap items-center gap-2 border border-slate-100 rounded-lg px-3 py-2 bg-slate-50";
+                    li.innerHTML =
+                      '<span class="text-slate-700 truncate max-w-[200px]">' +
+                      escapeHtml(file.name) +
+                      "</span>" +
+                      '<a href="' +
+                      escapeHtml(url) +
+                      '" target="_blank" rel="noopener" class="text-brand font-semibold text-sm">Open link</a>';
+                    if (listEl) listEl.appendChild(li);
+                  });
+              });
+            });
+            run
+              .then(function () {
+                if (statusEl) statusEl.textContent = "Upload finished.";
+              })
+              .catch(function (e) {
+                console.error(e);
+                if (statusEl) {
+                  statusEl.textContent =
+                    (e && e.code) ||
+                    e.message ||
+                    "Upload failed. Deploy storage rules for volunteer_media.";
+                }
+              });
+          });
+        })();
+
+        function loadVolunteerDoc(uid) {
+          return db
+            .collection("volunteers")
+            .doc(uid)
+            .get({ source: "server" })
+            .then(function (snap) {
+              var d = snap.exists ? snap.data() : {};
+              els.fvEmail.textContent =
+                d.email || auth.currentUser.email || "—";
+              els.fvPhone.textContent = d.phone || "—";
+              els.fvShifts.textContent = d.shifts || "—";
+              els.fvNotes.textContent = d.notes || "—";
+              lastVolunteerData = d;
+              var virtualSection = document.getElementById("virtual-session-section");
+              var virtualContainer = document.getElementById("virtual-session-container");
+              if (
+                virtualSection &&
+                virtualContainer &&
+                window.PrayerCityVirtualSession &&
+                typeof window.PrayerCityVirtualSession.render === "function"
+              ) {
+                if (window.PrayerCityVirtualSession.render(virtualContainer)) {
+                  virtualSection.classList.remove("hidden");
+                } else {
+                  virtualSection.classList.add("hidden");
+                }
+              }
+              var serveSection = document.getElementById("serve-day-flow-section");
+              var serveContainer = document.getElementById("serve-day-flow-container");
+              if (
+                serveSection &&
+                serveContainer &&
+                window.PrayerCityServeDay &&
+                typeof window.PrayerCityServeDay.renderServeDayFlow === "function"
+              ) {
+                window.PrayerCityServeDay.renderServeDayFlow(serveContainer, d);
+                serveSection.classList.remove("hidden");
+              }
+              var tshirtSection = document.getElementById("tshirt-section");
+              var tshirtContainer = document.getElementById("tshirt-container");
+              if (
+                tshirtSection &&
+                tshirtContainer &&
+                window.PrayerCityTshirt &&
+                typeof window.PrayerCityTshirt.render === "function"
+              ) {
+                window.PrayerCityTshirt.render(tshirtContainer, d, {
+                  onSave: function (size) {
+                    var patch = {
+                      shirtSize: size,
+                      shirtSizeUpdatedAt:
+                        firebase.firestore.FieldValue.serverTimestamp(),
+                    };
+                    return db
+                      .collection("volunteers")
+                      .doc(uid)
+                      .set(patch, { merge: true })
+                      .then(function () {
+                        lastVolunteerData = Object.assign({}, d, patch);
+                        return syncVolunteerDirectory(uid, lastVolunteerData);
+                      })
+                      .then(function () {
+                        return functions
+                          .httpsCallable("notifyVolunteerTshirtSize")({
+                            shirtSize: size,
+                          })
+                          .catch(function (e) {
+                            console.warn("notifyVolunteerTshirtSize", e);
+                          });
+                      });
+                  },
+                });
+                tshirtSection.classList.remove("hidden");
+              }
+              renderRoleSummaries(d);
+              renderDailyModules(d);
+              var name = d.name || (auth.currentUser.email || "").split("@")[0];
+              els.profileDisplayName.textContent = name;
+              els.welcomeLine.textContent =
+                "We're glad you're here, " +
+                name +
+                " — thank you for standing in the gap.";
+              els.navWelcome.textContent = "Hi, " + name.split(" ")[0];
+
+              var photoURL = d.photoURL || auth.currentUser.photoURL || "";
+              setAvatarFromUser(name, photoURL);
+
+              var progGrid = document.getElementById(
+                "dashboard-upcoming-programs-grid",
+              );
+              if (progGrid && window.PrayerCityPrograms) {
+                window.PrayerCityPrograms.renderDashboardBoard(progGrid, {
+                  shiftsText: (d.shifts || "").trim(),
+                });
+              }
+
+              return syncVolunteerDirectory(uid, d);
+            });
+        }
+
+        if (els.btnOpenShiftEdit)
+          els.btnOpenShiftEdit.addEventListener("click", openShiftEditModal);
+        if (els.btnCloseShiftEdit)
+          els.btnCloseShiftEdit.addEventListener("click", closeShiftEditModal);
+        if (els.shiftEditBackdrop)
+          els.shiftEditBackdrop.addEventListener("click", closeShiftEditModal);
+        if (els.btnOpenPasswordModal)
+          els.btnOpenPasswordModal.addEventListener("click", openPasswordModal);
+        if (els.btnClosePasswordModal)
+          els.btnClosePasswordModal.addEventListener(
+            "click",
+            closePasswordModal,
+          );
+        if (els.passwordModalBackdrop)
+          els.passwordModalBackdrop.addEventListener(
+            "click",
+            closePasswordModal,
+          );
+        if (els.btnShiftEditSave) {
+          els.btnShiftEditSave.addEventListener("click", function () {
+            var P = window.VolunteerShiftPicker;
+            var status = els.shiftEditStatus;
+            if (!P || !els.shiftEditMount) return;
+            var payload = P.buildSheetPayload(els.shiftEditMount);
+            if (
+              !payload.dateStr &&
+              !payload.position &&
+              !payload.timeslot &&
+              !payload.shifts
+            ) {
+              if (status) {
+                status.textContent = "Choose at least one time slot and role.";
+                status.className =
+                  "text-sm min-h-[1.25rem] text-red-600 flex-1 order-2 sm:order-1";
+              }
+              return;
+            }
+            if (status) {
+              status.textContent = "Saving…";
+              status.className =
+                "text-sm min-h-[1.25rem] text-slate-600 flex-1 order-2 sm:order-1";
+            }
+            var fn = functions.httpsCallable("updateVolunteerSheetPreferences");
+            fn({
+              dateStr: payload.dateStr,
+              position: payload.position,
+              timeslot: payload.timeslot,
+              shifts: payload.shifts,
+            })
+              .then(function () {
+                // Dashboard reads Firestore, not the Sheet. Mirror the saved payload here so
+                // tailored modules always match even if merge/callable timing is off.
+                var uid = auth.currentUser.uid;
+                var fsPatch = {
+                  shifts: payload.shifts,
+                  position: payload.position,
+                  timeslot: payload.timeslot,
+                  sheetRowUpdatedAt:
+                    firebase.firestore.FieldValue.serverTimestamp(),
+                };
+                if (payload.dateStr) fsPatch.availabilityDate = payload.dateStr;
+                return db
+                  .collection("volunteers")
+                  .doc(uid)
+                  .set(fsPatch, { merge: true });
+              })
+              .then(function () {
+                return loadVolunteerDoc(auth.currentUser.uid);
+              })
+              .then(function () {
+                if (status) {
+                  status.textContent = "Saved.";
+                  status.className =
+                    "text-sm min-h-[1.25rem] text-emerald-700 font-medium flex-1 order-2 sm:order-1";
+                }
+                closeShiftEditModal();
+              })
+              .catch(function (e) {
+                console.error("shift update", e);
+                var msg =
+                  (e && e.message) ||
+                  "Could not save. Try again or contact an organizer if this keeps happening.";
+                if (status) {
+                  status.textContent = msg;
+                  status.className =
+                    "text-sm min-h-[1.25rem] text-red-600 flex-1 order-2 sm:order-1";
+                }
+              });
+          });
+        }
+        document.addEventListener("keydown", function (ev) {
+          if (ev.key !== "Escape") return;
+          if (
+            els.shiftEditModal &&
+            !els.shiftEditModal.classList.contains("hidden")
+          ) {
+            closeShiftEditModal();
+            return;
+          }
+          if (
+            els.passwordModal &&
+            !els.passwordModal.classList.contains("hidden")
+          ) {
+            closePasswordModal();
+          }
+        });
+
+        els.profileAvatarInput.addEventListener("change", function (ev) {
+          var file = ev.target.files && ev.target.files[0];
+          ev.target.value = "";
+          if (!file || !file.type.match(/^image\//)) return;
+          if (file.size > 3 * 1024 * 1024) {
+            els.profileUploadStatus.textContent = "Image must be under 3 MB.";
+            return;
+          }
+          var user = auth.currentUser;
+          if (!user) return;
+
+          els.profileUploadStatus.textContent = "Uploading…";
+          var path = "volunteer_photos/" + user.uid + "/avatar.jpg";
+          var ref = storage.ref(path);
+          var metadata = { contentType: file.type };
+
+          ref
+            .put(file, metadata)
+            .then(function () {
+              return ref.getDownloadURL();
+            })
+            .then(function (url) {
+              return db
+                .collection("volunteers")
+                .doc(user.uid)
+                .set({ photoURL: url }, { merge: true });
+            })
+            .then(function () {
+              els.profileUploadStatus.textContent = "Profile photo saved.";
+              return loadVolunteerDoc(user.uid);
+            })
+            .catch(function (e) {
+              console.error("upload", e);
+              var msg = (e && e.code) || e.message || "Upload failed";
+              if (e.code === "storage/unauthorized") {
+                msg =
+                  "Storage permission denied. Deploy storage rules and enable Storage in Firebase.";
+              }
+              els.profileUploadStatus.textContent = msg;
+            });
+        });
+
+        function refreshUI(user) {
+          if (!user) {
+            showVisitorHome();
+            return;
+          }
+          showDash();
+          mergeProfile().then(function () {
+            return loadVolunteerDoc(user.uid);
+          });
+        }
+
+        auth.onAuthStateChanged(function (user) {
+          refreshUI(user);
+        });
+
+        completeEmailLinkIfNeeded().then(function () {});
+
+        els.btnPasswordSignin.addEventListener("click", function () {
+          var email = (els.gateEmail.value || "").trim();
+          var pw = els.gatePassword.value || "";
+          if (!email || !pw) {
+            setGateStatus("Enter email and password.", true);
+            return;
+          }
+          setGateStatus("Signing in…");
+          auth.signInWithEmailAndPassword(email, pw).catch(function (e) {
+            setGateStatus(friendlyPasswordSignInError(e), true);
+          });
+        });
+
+        function sendSignInLinkViaFirebaseClient(email) {
+          var settings = {
+            url: EMAIL_LINK_CONTINUE_URL,
+            handleCodeInApp: true,
+          };
+          return auth.sendSignInLinkToEmail(email, settings).then(function () {
+            window.localStorage.setItem("emailForSignIn", email);
+            setGateStatus(
+              'If mail does not arrive in ~2 minutes, check spam for sender from Firebase or "noreply".',
+            );
+          });
+        }
+
+        els.btnEmailLink.addEventListener("click", function () {
+          var email = (els.gateEmail.value || "").trim();
+          if (!email) {
+            setGateStatus("Enter your email first.", true);
+            return;
+          }
+          setGateStatus("Sending link…");
+
+          if (!SELF_SERVE_SIGNIN_URL) {
+            sendSignInLinkViaFirebaseClient(email).catch(function (e) {
+              console.error("sendSignInLinkToEmail", e);
+              var detail =
+                (e && e.code ? e.code + " — " : "") +
+                (e && e.message ? e.message : "Could not send link");
+              setGateStatus(detail, true);
+            });
+            return;
+          }
+
+          fetch(SELF_SERVE_SIGNIN_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email }),
+          })
+            .then(function (r) {
+              return r.text().then(function (t) {
+                var j = {};
+                try {
+                  j = t ? JSON.parse(t) : {};
+                } catch (ignore) {}
+                return { status: r.status, body: j };
+              });
+            })
+            .then(function (result) {
+              if (result.status === 200 && result.body && result.body.ok) {
+                window.localStorage.setItem("emailForSignIn", email);
+                setGateStatus(
+                  "Check your inbox for the sign-in link (sent from our Gmail). Allow 1–2 minutes; check spam if needed.",
+                );
+                return;
+              }
+              if (
+                result.status === 404 &&
+                result.body &&
+                result.body.error === "not_registered"
+              ) {
+                setGateStatus(
+                  result.body.message || "No record for this email.",
+                  true,
+                );
+                return;
+              }
+              if (result.status === 429) {
+                setGateStatus(
+                  result.body.message ||
+                    "Please wait a minute before trying again.",
+                  true,
+                );
+                return;
+              }
+              if (result.status === 503 || result.status === 502) {
+                return sendSignInLinkViaFirebaseClient(email);
+              }
+              var msg =
+                (result.body && result.body.message) ||
+                (result.body && result.body.detail) ||
+                (result.body && result.body.error) ||
+                "Could not send link.";
+              setGateStatus(msg, true);
+            })
+            .catch(function () {
+              return sendSignInLinkViaFirebaseClient(email);
+            })
+            .catch(function (e) {
+              console.error("sendSignInLinkToEmail", e);
+              var detail =
+                (e && e.code ? e.code + " — " : "") +
+                (e && e.message ? e.message : "Could not send link");
+              setGateStatus(detail, true);
+            });
+        });
+
+        els.btnLinkPassword.addEventListener("click", function () {
+          var p1 = els.newPass.value;
+          var p2 = els.newPass2.value;
+          if (p1.length < 6) {
+            els.passStatus.textContent = "Use at least 6 characters.";
+            return;
+          }
+          if (p1 !== p2) {
+            els.passStatus.textContent = "Passwords do not match.";
+            return;
+          }
+          var user = auth.currentUser;
+          var email = user && user.email;
+          if (!user || !email) return;
+
+          function afterPasswordSuccess() {
+            els.passStatus.textContent =
+              "Password saved. On the sign-in page you can use email + password or “Email me a sign-in link”.";
+            els.passStatus.className =
+              "text-sm text-emerald-700 min-h-[1.25rem] pt-1";
+            els.newPass.value = "";
+            els.newPass2.value = "";
+            if (els.currentPass) els.currentPass.value = "";
+            if (els.currentPassWrap)
+              els.currentPassWrap.classList.add("hidden");
+            window.setTimeout(function () {
+              closePasswordModal();
+            }, 2200);
+          }
+
+          function tryUpdatePassword() {
+            return user.updatePassword(p1).then(afterPasswordSuccess);
+          }
+
+          var curPw = els.currentPass ? els.currentPass.value : "";
+          if (curPw) {
+            els.passStatus.className =
+              "text-sm text-slate-600 min-h-[1.25rem] pt-1";
+            els.passStatus.textContent = "Verifying…";
+            var reCred = firebase.auth.EmailAuthProvider.credential(
+              email,
+              curPw,
+            );
+            user
+              .reauthenticateWithCredential(reCred)
+              .then(function () {
+                return tryUpdatePassword();
+              })
+              .catch(function (e) {
+                els.passStatus.className =
+                  "text-sm text-red-600 min-h-[1.25rem] pt-1";
+                els.passStatus.textContent =
+                  e.message || "Current password incorrect.";
+              });
+            return;
+          }
+
+          els.passStatus.className =
+            "text-sm text-slate-600 min-h-[1.25rem] pt-1";
+          els.passStatus.textContent = "Saving…";
+          var cred = firebase.auth.EmailAuthProvider.credential(email, p1);
+          user
+            .linkWithCredential(cred)
+            .then(afterPasswordSuccess)
+            .catch(function (e) {
+              var code = e && e.code;
+              if (code === "auth/provider-already-linked") {
+                return tryUpdatePassword().catch(function (e2) {
+                  var c2 = e2 && e2.code;
+                  if (c2 === "auth/requires-recent-login") {
+                    els.passStatus.className =
+                      "text-sm text-amber-800 min-h-[1.25rem] pt-1";
+                    els.passStatus.textContent =
+                      "Enter your current password above, then click Save again.";
+                    if (els.currentPassWrap)
+                      els.currentPassWrap.classList.remove("hidden");
+                    if (els.currentPass) els.currentPass.focus();
+                  } else {
+                    els.passStatus.className =
+                      "text-sm text-red-600 min-h-[1.25rem] pt-1";
+                    els.passStatus.textContent =
+                      e2.message || "Could not update password.";
+                  }
+                });
+              }
+              els.passStatus.className =
+                "text-sm text-red-600 min-h-[1.25rem] pt-1";
+              els.passStatus.textContent =
+                e.message || "Could not save password";
+            });
+        });
+
+        els.btnSignout.addEventListener("click", function () {
+          auth.signOut();
+        });
+      })();
+    </script>
+  </body>
 </html>
