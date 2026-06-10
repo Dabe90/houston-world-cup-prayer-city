@@ -19,7 +19,7 @@ Your **public sign-up form** (`index.html`) can stay on **Formsubmit**; as long 
    - Turn on **Email/Password**.
    - Under Email/Password, enable **Email link (passwordless sign-in)**.
 4. **Authentication** → **Settings** → **Authorized domains**: add  
-   `houston-world-cup-prayer-city.vercel.app`  
+   `prayercityhtx.com` and `www.prayercityhtx.com` (if you use www), plus your Vercel preview host if you still use it,  
    (and `localhost` for local testing if needed).
 5. **Build** → **Firestore Database** → **Create database** → start in **production mode** (you will deploy rules from this repo).
 6. **Project settings** (gear) → **Your apps** → **Web** (`</>`) → register app → copy the `firebaseConfig` object into **`js/firebase-config.js`** (replace the `REPLACE_ME` values).

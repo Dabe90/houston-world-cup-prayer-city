@@ -3,7 +3,7 @@
  * Social / prayer / counselor modules use seeded shuffles.
  */
 (function () {
-  var SITE_DEFAULT = 'https://houston-world-cup-prayer-city.vercel.app/';
+  var SITE_DEFAULT = 'https://prayercityhtx.com/volunteer/';
 
   function pad2(n) {
     return n < 10 ? '0' + n : String(n);
@@ -39,20 +39,23 @@
     return out;
   }
 
-  var SOCIAL_IMAGES = [
-    'https://images.unsplash.com/photo-1529078155058-5d716f45d604?w=900&q=80',
-    'https://images.unsplash.com/photo-1511632765276-a27960c3a1e8?w=900&q=80',
-    'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=900&q=80',
-    'https://images.unsplash.com/photo-1504052464689-1586d9d4d0c9?w=900&q=80',
-    'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=900&q=80',
-    'https://images.unsplash.com/photo-1491841550275-de78548fa1af?w=900&q=80',
-    'https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=900&q=80',
-    'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=900&q=80',
-    'https://images.unsplash.com/photo-1529390079861-591de354faf5?w=900&q=80',
-    'https://images.unsplash.com/photo-1473163928189-364b2c4e1135?w=900&q=80',
-    'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=900&q=80',
-    'https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=900&q=80',
-  ];
+  var stock = (typeof window !== 'undefined' && window.PrayerCityStockImages) || {};
+  var SOCIAL_IMAGES =
+    stock.socialPool ||
+    [
+      'https://images.unsplash.com/photo-1529078155058-5d716f45d604?w=900&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=900&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=900&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=900&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=900&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1529390079861-591de354faf5?w=900&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1473163928189-364b2c4e1135?w=900&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=900&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=900&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1507692049790-de58290a4334?w=900&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=900&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=900&q=80&auto=format&fit=crop',
+    ];
 
   var SCRIPTURE_LINES = [
     { ref: 'Philippians 4:6', text: 'Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God.' },
@@ -119,7 +122,7 @@
         index: i + 1,
         title: 'Post ' + (i + 1) + ' · ' + dateStr,
         body: body,
-        image: imgs[i],
+        image: stock.fixUrl ? stock.fixUrl(imgs[i]) : imgs[i],
         ref: v.ref,
         shareText: body,
         shareUrl: base,
@@ -199,16 +202,9 @@
     },
   ];
 
-  var COUNSELOR_IMAGES = [
-    'https://images.unsplash.com/photo-1504052464689-1586d9d4d0c9?w=900&q=80',
-    'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=900&q=80',
-    'https://images.unsplash.com/photo-1529078155058-5d716f45d604?w=900&q=80',
-    'https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=900&q=80',
-    'https://images.unsplash.com/photo-1491841550275-de78548fa1af?w=900&q=80',
-    'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=900&q=80',
-    'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=900&q=80',
-    'https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=900&q=80',
-  ];
+  var COUNSELOR_IMAGES =
+    stock.counselorPool ||
+    SOCIAL_IMAGES.slice();
 
   function getCounselorDaily() {
     var dateStr = todayYmd();
@@ -216,7 +212,7 @@
     var tips = pickN(COUNSELOR_POOL, 3, rng);
     var imgs = pickN(COUNSELOR_IMAGES, 3, rng);
     for (var i = 0; i < tips.length; i++) {
-      tips[i].image = imgs[i];
+      tips[i].image = stock.fixUrl ? stock.fixUrl(imgs[i]) : imgs[i];
     }
     return {
       dateStr: dateStr,

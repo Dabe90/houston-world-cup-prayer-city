@@ -22,6 +22,9 @@
     tentImage: assets.tentSetup || assetUrl('images/prayer-city-tent-setup.png'),
     coordinatorName: 'Tricia Hill',
     coordinatorTitle: 'Prayer City Coordinator',
+    coordinatorPhone: '346-664-8066',
+    shuttleDriverName: 'Claudia',
+    shuttleDriverPhone: '979-231-6324',
     shuttleInterval: 'about every 30 minutes',
   };
 
@@ -52,9 +55,72 @@
     return global.findVolunteerRolesFromShifts(combined);
   }
 
-  function renderServeDayFlow(container, volunteerData) {
+  function phoneDigits(phone) {
+    return String(phone || '').replace(/\D/g, '');
+  }
+
+  function phoneLinkHtml(phone) {
+    if (!phone) return '';
+    return (
+      '<a href="tel:' +
+      esc(phoneDigits(phone)) +
+      '" class="text-brand hover:underline">' +
+      esc(phone) +
+      '</a>'
+    );
+  }
+
+  function contactsHtml(showContacts, d) {
+    if (!showContacts) {
+      return (
+        '<div class="rounded-xl border border-slate-200 bg-white p-4">' +
+        '<p class="text-sm text-slate-600 leading-relaxed">' +
+        '<i class="fas fa-lock text-slate-400 mr-1" aria-hidden="true"></i>' +
+        '<strong>Day-of phone numbers</strong> (shuttle driver &amp; coordinator) are shown when you ' +
+        '<a href="/" class="text-brand font-semibold hover:underline">sign in to your dashboard</a> or ' +
+        '<a href="volunteer-hub.html" class="text-brand font-semibold hover:underline">volunteer hub</a>.' +
+        '</p></div>'
+      );
+    }
+    var shuttleName = String(d.shuttleDriverName || CFG.shuttleDriverName || 'Shuttle driver').trim();
+    var shuttlePhone = String(d.shuttleDriverPhone || CFG.shuttleDriverPhone || '').trim();
+    var coordPhone = String(d.coordinatorPhone || CFG.coordinatorPhone || '').trim();
+    return (
+      '<div class="grid sm:grid-cols-2 gap-4">' +
+      '<div class="rounded-xl border border-slate-200 bg-white p-4">' +
+      '<p class="text-xs font-bold uppercase text-slate-500">Shuttle driver</p>' +
+      '<p class="text-sm font-semibold text-slate-900 mt-1">' +
+      esc(shuttleName) +
+      '</p>' +
+      '<p class="text-sm font-semibold text-slate-900 mt-0.5">' +
+      phoneLinkHtml(shuttlePhone) +
+      '</p></div>' +
+      '<div class="rounded-xl border border-slate-200 bg-white p-4">' +
+      '<p class="text-xs font-bold uppercase text-slate-500">' +
+      esc(CFG.coordinatorName) +
+      ' · Coordinator</p>' +
+      '<p class="text-sm font-semibold text-slate-900 mt-1">' +
+      phoneLinkHtml(coordPhone) +
+      '</p></div></div>' +
+      '<div class="rounded-xl border border-rose-200/80 bg-rose-50/50 p-4">' +
+      '<p class="text-xs font-bold uppercase text-rose-800 tracking-wide">Day-of emergency</p>' +
+      '<p class="text-sm text-slate-700 mt-2 leading-relaxed">Lost, running late, or need help on serve day? Call <strong>' +
+      esc(shuttleName) +
+      '</strong> (shuttle) at ' +
+      phoneLinkHtml(shuttlePhone) +
+      ' or <strong>' +
+      esc(CFG.coordinatorName) +
+      '</strong> (coordinator) at ' +
+      phoneLinkHtml(coordPhone) +
+      '.</p></div>'
+    );
+  }
+
+  function renderServeDayFlow(container, volunteerData, opts) {
     if (!container) return;
     var d = volunteerData || {};
+    opts = opts || {};
+    var showContacts = !!opts.showContacts;
     var roles = rolesFromVolunteer(d);
     var tent = String(d.tent || '').trim();
     var tentLabel = tent ? esc(tent) : 'See your dashboard after check-in';
@@ -136,43 +202,20 @@
       esc(CFG.coordinatorName) +
       ' will pray with you if your shift starts later.</li>' +
       '<li>Get materials; serve in your assigned area.</li>' +
-      '<li>Shuttle &amp; coordinator phone numbers are listed below.</li>' +
+      (showContacts
+        ? '<li>Shuttle &amp; coordinator phone numbers are listed below.</li>'
+        : '<li>Sign in to see day-of phone numbers for the shuttle and coordinator.</li>') +
       '</ol></div>' +
-      '<div class="grid sm:grid-cols-2 gap-4">' +
-      '<div class="rounded-xl border border-slate-200 bg-white p-4">' +
-      '<p class="text-xs font-bold uppercase text-slate-500">Shuttle driver</p>' +
-      '<p id="serve-day-shuttle-phone" class="text-sm font-semibold text-slate-900 mt-1">Posted before serve day</p>' +
-      '</div>' +
-      '<div class="rounded-xl border border-slate-200 bg-white p-4">' +
-      '<p class="text-xs font-bold uppercase text-slate-500">' +
-      esc(CFG.coordinatorName) +
-      ' · Coordinator</p>' +
-      '<p id="serve-day-coordinator-phone" class="text-sm font-semibold text-slate-900 mt-1">Posted before serve day</p>' +
-      '</div></div>' +
+      contactsHtml(showContacts, d) +
       '<div><h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3">On shift — your role</h3>' +
       '<div class="space-y-3">' +
       roleBlocks +
       '</div></div>' +
+      '<div class="rounded-xl border border-slate-100 bg-slate-50/60 p-4 text-sm text-slate-600 leading-relaxed space-y-2">' +
+      '<p><strong class="text-slate-800">Serving as a group?</strong> Email <a href="mailto:ddbs.htx@gmail.com" class="text-brand font-semibold hover:underline">ddbs.htx@gmail.com</a> with your names and dates — see <a href="faq.html" class="text-brand font-semibold hover:underline">FAQ</a> for details.</p>' +
+      '<p><strong class="text-slate-800">Serving remotely?</strong> Social Media &amp; Virtual Support volunteers share daily posts from your <a href="/" class="text-brand font-semibold hover:underline">dashboard</a> on game days — no shuttle needed.</p>' +
+      '</div>' +
       '</div></div>';
-
-    var shuttleEl = container.querySelector('#serve-day-shuttle-phone');
-    var coordEl = container.querySelector('#serve-day-coordinator-phone');
-    if (d.shuttleDriverPhone && shuttleEl) {
-      shuttleEl.innerHTML =
-        '<a href="tel:' +
-        esc(String(d.shuttleDriverPhone).replace(/\D/g, '')) +
-        '" class="text-brand hover:underline">' +
-        esc(d.shuttleDriverPhone) +
-        '</a>';
-    }
-    if (d.coordinatorPhone && coordEl) {
-      coordEl.innerHTML =
-        '<a href="tel:' +
-        esc(String(d.coordinatorPhone).replace(/\D/g, '')) +
-        '" class="text-brand hover:underline">' +
-        esc(d.coordinatorPhone) +
-        '</a>';
-    }
   }
 
   global.PrayerCityServeDay = {

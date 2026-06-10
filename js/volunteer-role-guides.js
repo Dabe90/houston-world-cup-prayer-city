@@ -1,6 +1,6 @@
 /**
  * Matches signup "shifts" text (column F / Firestore shifts) to role guides.
- * Option labels must match index.html select option values.
+ * Option labels must match the volunteer sign-up form select option values.
  */
 (function () {
   var GUIDES = [

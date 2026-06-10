@@ -1,5 +1,5 @@
 // Web app config from Firebase Console → Project settings. Client apiKey is not a secret.
-// dashboard.html reads window.__FIREBASE_CONFIG__ (not a bare firebaseConfig variable).
+// index.html (site home / volunteer dashboard) reads window.__FIREBASE_CONFIG__ (not a bare firebaseConfig variable).
 window.__FIREBASE_CONFIG__ = {
   apiKey: 'AIzaSyADAXaFx5trtfF9MaaceJ7FMKqvrVFN0JI',
   authDomain: 'bible-study-dashboard-99f2d.firebaseapp.com',

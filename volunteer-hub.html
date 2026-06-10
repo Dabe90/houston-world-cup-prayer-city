@@ -106,7 +106,7 @@
             window.PrayerCityServeDay &&
             typeof window.PrayerCityServeDay.renderServeDayFlow === 'function'
           ) {
-            window.PrayerCityServeDay.renderServeDayFlow(c, {});
+            window.PrayerCityServeDay.renderServeDayFlow(c, {}, { showContacts: false });
           }
         })();
       </script>
@@ -402,7 +402,10 @@
         ) {
           return;
         }
-        window.PrayerCityServeDay.renderServeDayFlow(container, volunteerData || {});
+        var signedIn = !!(auth.currentUser);
+        window.PrayerCityServeDay.renderServeDayFlow(container, volunteerData || {}, {
+          showContacts: signedIn,
+        });
       }
 
       function completeEmailLinkIfNeeded() {

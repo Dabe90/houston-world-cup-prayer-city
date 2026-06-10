@@ -1,5 +1,5 @@
 /**
- * Same slot model as index.html volunteer form (Selected shifts format).
+ * Same slot model as the volunteer sign-up form (Selected shifts format).
  */
 (function () {
   var SLOT_META = {

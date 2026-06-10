@@ -1,11 +1,14 @@
 'use strict';
 
+const crypto = require('crypto');
 const express = require('express');
 const { onRequest } = require('firebase-functions/v2/https');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
+const volunteerDailyDigest = require('./volunteerDailyDigest');
 
 const inviteSecret = defineSecret('INVITE_SECRET');
 const selfServeMailSecret = defineSecret('SELF_SERVE_MAIL_SECRET');
@@ -13,7 +16,7 @@ const appsScriptSelfServeMailUrl = defineSecret('APPS_SCRIPT_SELF_SERVE_MAIL_URL
 
 /** Must match where users land after clicking the email link (your live dashboard URL). */
 const SIGNIN_CONTINUE_URL =
-  'https://houston-world-cup-prayer-city.vercel.app/dashboard.html';
+  'https://prayercityhtx.com/';
 
 setGlobalOptions({ region: 'us-central1' });
 
@@ -211,6 +214,168 @@ exports.volunteerSelfServeSignInMail = onRequest(
     invoker: 'public',
   },
   selfServeApp
+);
+
+function htmlEscapeAttr(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/"/g, '&quot;');
+}
+
+const digestUnsubApp = express();
+async function digestUnsubHandler(req, res) {
+  const email = normalizeEmail(req.query.email);
+  const t = String(req.query.t || '');
+  const bad = (code, msg) => {
+    res
+      .status(code)
+      .set('Content-Type', 'text/html; charset=utf-8')
+      .send(
+        `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Unsubscribe</title></head><body style="font-family:system-ui;padding:2rem;max-width:32rem"><h1>Could not unsubscribe</h1><p>${htmlEscapeAttr(msg)}</p><p><a href="https://prayercityhtx.com/">Prayer City</a></p></body></html>`
+      );
+  };
+  if (!email || !t) {
+    bad(400, 'This link is incomplete. Use the link at the bottom of your latest daily email.');
+    return;
+  }
+  const secret = selfServeMailSecret.value();
+  const expected = volunteerDailyDigest.digestUnsubscribeToken(email, secret);
+  const expBuf = Buffer.from(expected, 'utf8');
+  const gotBuf = Buffer.from(t, 'utf8');
+  if (
+    expected.length === 0 ||
+    expBuf.length !== gotBuf.length ||
+    !crypto.timingSafeEqual(expBuf, gotBuf)
+  ) {
+    bad(403, 'This unsubscribe link is invalid or was changed.');
+    return;
+  }
+  try {
+    await admin
+      .firestore()
+      .collection('volunteer_onboarding')
+      .doc(email)
+      .set(
+        {
+          dailyDigestOptOut: true,
+          dailyDigestOptOutAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    const vq = await admin.firestore().collection('volunteers').where('email', '==', email).get();
+    await Promise.all(
+      vq.docs.map((d) =>
+        d.ref.set({ dailyDigestOptOut: true }, { merge: true })
+      )
+    );
+  } catch (e) {
+    console.error('volunteerDigestUnsubscribe', e);
+    bad(500, 'Something went wrong. Please try again later.');
+    return;
+  }
+  const pid = admin.app().options.projectId || process.env.GCLOUD_PROJECT || '';
+  const resubBase = pid
+    ? `https://us-central1-${pid}.cloudfunctions.net/volunteerDigestResubscribe`
+    : '';
+  const resubTok = volunteerDailyDigest.digestResubscribeToken(email, selfServeMailSecret.value());
+  const resubUrl = resubBase
+    ? `${resubBase}?email=${encodeURIComponent(email)}&t=${encodeURIComponent(resubTok)}`
+    : '';
+  const resubBlock = resubUrl
+    ? `<p style="margin-top:1.25rem;"><a href="${htmlEscapeAttr(resubUrl)}">Resubscribe to daily emails</a> (one click)</p>`
+    : '<p style="margin-top:1.25rem;">To receive emails again, contact your Prayer City organizer.</p>';
+  res
+    .set('Content-Type', 'text/html; charset=utf-8')
+    .send(
+      `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Unsubscribed</title></head><body style="font-family:system-ui;padding:2rem;max-width:32rem"><h1>You’re unsubscribed</h1><p>You won’t receive more daily volunteer task emails from Houston Prayer City.</p><p>Changed your mind?</p>${resubBlock}<p><a href="https://prayercityhtx.com/">Return to Prayer City</a></p></body></html>`
+    );
+}
+digestUnsubApp.get(['/', '/volunteerDigestUnsubscribe'], digestUnsubHandler);
+
+const digestResubApp = express();
+async function digestResubHandler(req, res) {
+  const email = normalizeEmail(req.query.email);
+  const t = String(req.query.t || '');
+  const bad = (code, msg) => {
+    res
+      .status(code)
+      .set('Content-Type', 'text/html; charset=utf-8')
+      .send(
+        `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Resubscribe</title></head><body style="font-family:system-ui;padding:2rem;max-width:32rem"><h1>Could not update preferences</h1><p>${htmlEscapeAttr(msg)}</p><p><a href="https://prayercityhtx.com/">Prayer City</a></p></body></html>`
+      );
+  };
+  if (!email || !t) {
+    bad(400, 'This link is incomplete. Use the link from your email or the unsubscribe confirmation page.');
+    return;
+  }
+  const secret = selfServeMailSecret.value();
+  const expected = volunteerDailyDigest.digestResubscribeToken(email, secret);
+  const expBuf = Buffer.from(expected, 'utf8');
+  const gotBuf = Buffer.from(t, 'utf8');
+  if (
+    expected.length === 0 ||
+    expBuf.length !== gotBuf.length ||
+    !crypto.timingSafeEqual(expBuf, gotBuf)
+  ) {
+    bad(403, 'This link is invalid or was changed.');
+    return;
+  }
+  try {
+    await admin
+      .firestore()
+      .collection('volunteer_onboarding')
+      .doc(email)
+      .set(
+        {
+          dailyDigestOptOut: false,
+          dailyDigestOptOutAt: admin.firestore.FieldValue.delete(),
+        },
+        { merge: true }
+      );
+    const vq = await admin.firestore().collection('volunteers').where('email', '==', email).get();
+    await Promise.all(
+      vq.docs.map((d) =>
+        d.ref.set(
+          {
+            dailyDigestOptOut: false,
+            dailyDigestOptOutAt: admin.firestore.FieldValue.delete(),
+          },
+          { merge: true }
+        )
+      )
+    );
+  } catch (e) {
+    console.error('volunteerDigestResubscribe', e);
+    bad(500, 'Something went wrong. Please try again later.');
+    return;
+  }
+  res
+    .set('Content-Type', 'text/html; charset=utf-8')
+    .send(
+      `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Resubscribed</title></head><body style="font-family:system-ui;padding:2rem;max-width:32rem"><h1>You’re resubscribed</h1><p>You’ll receive daily volunteer task emails again from Houston Prayer City (when the next digest runs).</p><p><a href="https://prayercityhtx.com/">Return to Prayer City</a></p></body></html>`
+    );
+}
+digestResubApp.get(['/', '/volunteerDigestResubscribe'], digestResubHandler);
+
+/** One-click resubscribe to daily digest (signed link). */
+exports.volunteerDigestResubscribe = onRequest(
+  {
+    cors: true,
+    secrets: [selfServeMailSecret],
+    invoker: 'public',
+  },
+  digestResubApp
+);
+
+/** One-click unsubscribe from daily digest (signed link in email). */
+exports.volunteerDigestUnsubscribe = onRequest(
+  {
+    cors: true,
+    secrets: [selfServeMailSecret],
+    invoker: 'public',
+  },
+  digestUnsubApp
 );
 
 /** Callable: copy volunteer_onboarding → volunteers/{uid} after first sign-in */
@@ -532,3 +697,257 @@ exports.getLogisticsNewsTip = onCall({ cors: true }, async (request) => {
     return fallback;
   }
 });
+
+/**
+ * Daily (America/Chicago 7:00): role-based task email for volunteers in
+ * `volunteer_onboarding`, using shifts merged from `volunteers/{uid}` when present.
+ *
+ * Enable in Firestore: document `settings/volunteer_daily_digest` with `{ "enabled": true }`.
+ * Optional: `dryRun` (bool) — log only, no mail. `siteBase` (string) — volunteer hub URL.
+ * Opt-out per person: field `dailyDigestOptOut: true` on onboarding doc or merged volunteer doc.
+ *
+ * Mail delivery uses the same Apps Script webhook as self-serve sign-in
+ * (APPS_SCRIPT_SELF_SERVE_MAIL_URL + SELF_SERVE_MAIL_SECRET); add handler
+ * `daily_volunteer_digest` in PrayerCityFormPipeline.gs.
+ */
+exports.sendDailyVolunteerRoleDigests = onSchedule(
+  {
+    schedule: '0 7 * * *',
+    timeZone: 'America/Chicago',
+    timeoutSeconds: 540,
+    memory: '512MiB',
+    secrets: [selfServeMailSecret, appsScriptSelfServeMailUrl],
+  },
+  async () => {
+    const settingsSnap = await admin.firestore().doc('settings/volunteer_daily_digest').get();
+    const settings = settingsSnap.data() || {};
+    if (!settings.enabled) {
+      console.log(
+        '[sendDailyVolunteerRoleDigests] skipped: create Firestore settings/volunteer_daily_digest with enabled: true'
+      );
+      return;
+    }
+
+    const scriptUrl = appsScriptSelfServeMailUrl.value();
+    const secret = selfServeMailSecret.value();
+    if (!String(scriptUrl || '').trim() || !String(secret || '').trim()) {
+      console.error('[sendDailyVolunteerRoleDigests] mail not configured (secrets)');
+      return;
+    }
+
+    const ymd = volunteerDailyDigest.todayYmdChicago();
+    const siteBase = String(settings.siteBase || volunteerDailyDigest.SITE_DEFAULT).replace(/\/?$/, '');
+    const dryRun = settings.dryRun === true;
+    const projectId = admin.app().options.projectId || process.env.GCLOUD_PROJECT || '';
+    const digestUnsubBase = projectId
+      ? `https://us-central1-${projectId}.cloudfunctions.net/volunteerDigestUnsubscribe`
+      : '';
+    const digestResubBase = projectId
+      ? `https://us-central1-${projectId}.cloudfunctions.net/volunteerDigestResubscribe`
+      : '';
+    const unsubSecret = selfServeMailSecret.value();
+    if (!digestUnsubBase) {
+      console.warn('[sendDailyVolunteerRoleDigests] GCLOUD_PROJECT missing; unsubscribe/resubscribe links omitted from emails.');
+    }
+
+    const onboardSnap = await admin.firestore().collection('volunteer_onboarding').get();
+    let sent = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    for (const doc of onboardSnap.docs) {
+      const email = doc.id;
+      if (!email || !email.includes('@')) {
+        skipped++;
+        continue;
+      }
+
+      const onboard = doc.data() || {};
+      if (onboard.dailyDigestOptOut === true) {
+        skipped++;
+        continue;
+      }
+
+      const sentRef = admin.firestore().collection('volunteer_daily_digest_sent').doc(email);
+      const sentSnap = await sentRef.get();
+      if (!dryRun && sentSnap.exists && sentSnap.data().lastYmd === ymd) {
+        skipped++;
+        continue;
+      }
+
+      let volSnap;
+      try {
+        volSnap = await admin.firestore().collection('volunteers').where('email', '==', email).limit(1).get();
+      } catch (e) {
+        console.error('[sendDailyVolunteerRoleDigests] volunteers query', email, e);
+        failed++;
+        continue;
+      }
+
+      const merged = { ...onboard, email, name: onboard.name || '' };
+      if (!volSnap.empty) {
+        const v = volSnap.docs[0].data();
+        if (String(v.name || '').trim()) merged.name = v.name;
+        if (String(v.shifts || '').trim()) merged.shifts = v.shifts;
+        if (String(v.position || '').trim()) merged.position = v.position;
+        if (String(v.timeslot || '').trim()) merged.timeslot = v.timeslot;
+        if (String(v.tent || '').trim()) merged.tent = v.tent;
+        if (v.dailyDigestOptOut === true) {
+          skipped++;
+          continue;
+        }
+      }
+
+      merged.siteBase = siteBase;
+      merged.digestUnsubscribeSecret = unsubSecret;
+      merged.digestUnsubscribeBaseUrl = digestUnsubBase;
+      merged.digestResubscribeBaseUrl = digestResubBase;
+
+      let content;
+      try {
+        content = await volunteerDailyDigest.buildDailyVolunteerDigest(merged);
+      } catch (e) {
+        console.error('[sendDailyVolunteerRoleDigests] build digest', email, e);
+        failed++;
+        continue;
+      }
+
+      if (!content) {
+        skipped++;
+        continue;
+      }
+
+      if (dryRun) {
+        console.log('[sendDailyVolunteerRoleDigests] dryRun', email, content.subject, content.roleIds);
+        continue;
+      }
+
+      let mailRes;
+      try {
+        mailRes = await fetch(scriptUrl, {
+          method: 'POST',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'daily_volunteer_digest',
+            secret,
+            email,
+            subject: content.subject,
+            plainBody: content.plainBody,
+            htmlBody: content.htmlBody,
+          }),
+        });
+      } catch (e) {
+        console.error('[sendDailyVolunteerRoleDigests] fetch mail', email, e);
+        failed++;
+        continue;
+      }
+
+      const text = await mailRes.text();
+      let parsed = null;
+      try {
+        parsed = text ? JSON.parse(text) : null;
+      } catch (_) {}
+
+      if (!mailRes.ok || !parsed || !parsed.ok) {
+        console.error('[sendDailyVolunteerRoleDigests] mail failed', email, mailRes.status, text.slice(0, 400));
+        failed++;
+        continue;
+      }
+
+      await sentRef.set({
+        lastYmd: ymd,
+        lastSentAt: admin.firestore.FieldValue.serverTimestamp(),
+        roleIds: content.roleIds,
+      });
+      sent++;
+      await new Promise((r) => setTimeout(r, 150));
+    }
+
+    console.log(
+      `[sendDailyVolunteerRoleDigests] done ymd=${ymd} sent=${sent} skipped=${skipped} failed=${failed} dryRun=${dryRun}`
+    );
+  }
+);
+
+const TSHIRT_SIZES = new Set(['S', 'M', 'L', 'XL', '2XL', '3XL']);
+
+/**
+ * Callable: after volunteer saves shirtSize on dashboard — email team + sheet col K.
+ */
+exports.notifyVolunteerTshirtSize = onCall(
+  { cors: true, secrets: [selfServeMailSecret, appsScriptSelfServeMailUrl] },
+  async (request) => {
+    if (!request.auth?.token?.email) {
+      throw new HttpsError('unauthenticated', 'Sign in required.');
+    }
+
+    const shirtSize = String(request.data?.shirtSize || '')
+      .trim()
+      .toUpperCase();
+    if (!TSHIRT_SIZES.has(shirtSize)) {
+      throw new HttpsError('invalid-argument', 'Choose a valid T-shirt size.');
+    }
+
+    const email = normalizeEmail(request.auth.token.email);
+    const uid = request.auth.uid;
+    const volSnap = await admin.firestore().collection('volunteers').doc(uid).get();
+    const vol = volSnap.exists ? volSnap.data() : {};
+    const name = String(vol.name || '').trim();
+
+    const scriptUrl = appsScriptSelfServeMailUrl.value();
+    const secret = selfServeMailSecret.value();
+    if (!String(scriptUrl || '').trim() || !String(secret || '').trim()) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Team email notification is not configured.'
+      );
+    }
+
+    let res;
+    try {
+      res = await fetch(scriptUrl, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'volunteer_tshirt_size',
+          secret,
+          email,
+          name,
+          shirtSize,
+        }),
+      });
+    } catch (e) {
+      console.error('notifyVolunteerTshirtSize fetch', e);
+      throw new HttpsError('unavailable', 'Could not reach Google Apps Script.');
+    }
+
+    const text = await res.text();
+    let parsed = null;
+    try {
+      parsed = text ? JSON.parse(text) : {};
+    } catch (_) {}
+
+    if (!res.ok || !parsed?.ok) {
+      throw new HttpsError(
+        'internal',
+        parsed?.error || 'Could not notify team about T-shirt size.'
+      );
+    }
+
+    await admin
+      .firestore()
+      .collection('volunteers')
+      .doc(uid)
+      .set(
+        {
+          shirtSizeNotifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+          shirtSizeNotifiedValue: shirtSize,
+        },
+        { merge: true }
+      );
+
+    return { ok: true, emailed: parsed.emailed !== false, sheetRow: parsed.sheetRow || 0 };
+  }
+);

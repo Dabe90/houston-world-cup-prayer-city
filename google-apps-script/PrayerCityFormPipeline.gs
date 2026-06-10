@@ -36,6 +36,11 @@ const CONFIG = {
   /** Legacy / optional; timeslot + role live in column F (SHIFTS_COLUMN). Leave blank when inviting. */
   TIMESLOT_COLUMN: 9,
   POSITION_COLUMN: 10,
+  /** Column K: T-shirt size from dashboard (S, M, L, XL, 2XL, 3XL). */
+  TSHIRT_SIZE_COLUMN: 11,
+
+  /** Notified when a volunteer saves a T-shirt size on the dashboard. */
+  TEAM_NOTIFY_EMAIL: "ddbs.htx@gmail.com",
 
   /** Gmail invites (sheet + dashboard self-serve). Firebase’s own “Email me a link” is separate — change that in Firebase Console → Auth → Templates / project name. */
   EMAIL_SUBJECT_DASHBOARD: "Your volunteer dashboard link — Daughter Team",
@@ -384,10 +389,33 @@ function sendDashboardInvite(name, email, phone, notes, shifts, sheetRowId, tent
 // 3. MENU + automatic Gmail sync (time-driven trigger)
 // =============================================
 function onOpen() {
+  buildPrayerCitySpreadsheetMenu_();
+}
+
+/** Single sheet menu (only one onOpen allowed per Apps Script project). */
+function buildPrayerCitySpreadsheetMenu_() {
   SpreadsheetApp.getUi()
     .createMenu("🙏 Prayer City")
     .addItem("Sync Gmail & send new invites", "extractLeadEmailsToSheet")
     .addItem("Send pending dashboard invites", "sendPendingInvites")
+    .addSeparator()
+    .addItem("Past contacts — send first outreach now", "sendPastContactsOutreach")
+    .addItem("Past contacts — Turn ON daily first (7am)", "installPastOutreachFirstBatchDailyTrigger")
+    .addItem("Past contacts — Turn OFF daily first", "removePastOutreachFirstBatchDailyTrigger")
+    .addItem("Past contacts — Turn ON daily follow-up (9am)", "installPastOutreachDailyTrigger")
+    .addItem("Past contacts — Turn OFF daily follow-up", "removePastOutreachDailyTrigger")
+    .addItem("Past contacts — Turn ON ALL daily (7am + 9am)", "installPastOutreachAllDailyTriggers")
+    .addItem("Past contacts — Turn OFF ALL daily", "removePastOutreachAllDailyTriggers")
+    .addItem("Past contacts — restore wrongly skipped", "restoreMisclassifiedUndeliverableLeads")
+    .addSeparator()
+    .addItem("SMS — Twilio setup instructions", "showTwilioSetupInstructions")
+    .addItem("SMS — send test to my phone", "sendSmsTestToMyPhone")
+    .addItem("SMS — send to members now", "sendSmsMembersNow")
+    .addItem("SMS — send to invite list now", "sendSmsInviteNow")
+    .addItem("SMS — Turn ON daily members (10am)", "installSmsMembersDailyTrigger")
+    .addItem("SMS — Turn OFF daily members", "removeSmsMembersDailyTrigger")
+    .addItem("SMS — Turn ON daily invite list (11am)", "installSmsInviteDailyTrigger")
+    .addItem("SMS — Turn OFF daily invite list", "removeSmsInviteDailyTrigger")
     .addSeparator()
     .addItem("Rebalance all tents (column H)", "rebalanceAllTents")
     .addSeparator()
@@ -609,6 +637,84 @@ function handleVolunteerSheetUpdate_(data) {
   return jsonResponse({ ok: true, row: rowNum });
 }
 
+/**
+ * POST JSON from Cloud Function sendDailyVolunteerRoleDigests:
+ * { type: "daily_volunteer_digest", secret, email, subject, plainBody, htmlBody? }
+ */
+function handleDailyVolunteerDigest_(data) {
+  if (data.secret !== CONFIG.SELF_SERVE_MAIL_SECRET) {
+    return jsonResponse({ ok: false, error: "unauthorized" });
+  }
+  var email = String(data.email || "")
+    .trim()
+    .toLowerCase();
+  var subject = String(data.subject || "").trim();
+  var plainBody = String(data.plainBody || "").trim();
+  var htmlBody = String(data.htmlBody || "").trim();
+  if (!email || !subject || !plainBody) {
+    return jsonResponse({ ok: false, error: "missing_fields" });
+  }
+  try {
+    var opts = {};
+    if (htmlBody) opts.htmlBody = htmlBody;
+    GmailApp.sendEmail(email, subject, plainBody, opts);
+  } catch (err) {
+    return jsonResponse({ ok: false, error: String(err) });
+  }
+  return jsonResponse({ ok: true });
+}
+
+/**
+ * POST JSON from Firebase Callable notifyVolunteerTshirtSize:
+ * { type: "volunteer_tshirt_size", secret, email, name?, shirtSize }
+ */
+function handleVolunteerTshirtSize_(data) {
+  if (data.secret !== CONFIG.SELF_SERVE_MAIL_SECRET) {
+    return jsonResponse({ ok: false, error: "unauthorized" });
+  }
+  var email = String(data.email || "")
+    .trim()
+    .toLowerCase();
+  var name = String(data.name || "").trim();
+  var shirtSize = String(data.shirtSize || "").trim().toUpperCase();
+  var allowed = { S: 1, M: 1, L: 1, XL: 1, "2XL": 1, "3XL": 1 };
+  if (!email || !shirtSize || !allowed[shirtSize]) {
+    return jsonResponse({ ok: false, error: "missing_fields" });
+  }
+
+  var sheet = getVolunteerSheet_();
+  var rowNum = findRowByEmail_(sheet, email);
+  if (rowNum) {
+    sheet.getRange(rowNum, CONFIG.TSHIRT_SIZE_COLUMN).setValue(shirtSize);
+  }
+
+  var notifyTo = String(CONFIG.TEAM_NOTIFY_EMAIL || "").trim();
+  if (!notifyTo) {
+    return jsonResponse({ ok: true, sheetRow: rowNum || 0, emailed: false });
+  }
+
+  var displayName = name || email.split("@")[0] || "Volunteer";
+  var subject = "T-shirt size: " + displayName + " — " + shirtSize;
+  var plain =
+    "A volunteer saved their Prayer City T-shirt size on the dashboard.\n\n" +
+    "Name: " +
+    displayName +
+    "\nEmail: " +
+    email +
+    "\nSize: " +
+    shirtSize +
+    (rowNum ? "\nSheet row: " + rowNum : "\n(Sheet row not found — size not written to column K)") +
+    "\n\n— Prayer City dashboard";
+
+  try {
+    GmailApp.sendEmail(notifyTo, subject, plain);
+  } catch (err) {
+    return jsonResponse({ ok: false, error: String(err) });
+  }
+
+  return jsonResponse({ ok: true, sheetRow: rowNum || 0, emailed: true });
+}
+
 function doPost(e) {
   var data = {};
   try {
@@ -619,6 +725,14 @@ function doPost(e) {
 
   if (data.type === "volunteer_sheet_update") {
     return handleVolunteerSheetUpdate_(data);
+  }
+
+  if (data.type === "daily_volunteer_digest") {
+    return handleDailyVolunteerDigest_(data);
+  }
+
+  if (data.type === "volunteer_tshirt_size") {
+    return handleVolunteerTshirtSize_(data);
   }
 
   if (data.type !== "self_serve_signin") {
