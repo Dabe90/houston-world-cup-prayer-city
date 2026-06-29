@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f3d5c" />
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="apple-touch-icon" href="images/favicon.png" />
+  <title>Gallery — Houston World Cup Prayer City</title>
+  <meta name="description" content="Photos and videos from Prayer City serve days — Houston World Cup 2026." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: '#0f3d5c', light: '#1a5f8a', soft: '#e8f4fc', accent: '#c9a227' },
+          },
+          boxShadow: { card: '0 4px 24px rgba(15, 61, 92, 0.08)' },
+        },
+      },
+    };
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="css/mobile.css" />
+  <style>
+    body { font-family: system-ui, sans-serif; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-800 overflow-x-hidden">
+
+  <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 min-h-14 py-2 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+        <a href="/" class="w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light text-white text-xs font-bold flex items-center justify-center shrink-0 hover:opacity-90 transition" title="Home">PC</a>
+        <a href="/" class="font-semibold text-slate-900 text-sm hover:text-brand transition">Prayer City</a>
+        <span class="text-slate-300 hidden sm:inline">|</span>
+        <a href="volunteer-hub.html" class="text-sm font-medium text-slate-600 hover:text-brand transition">Volunteer hub</a>
+        <span class="text-slate-300 hidden sm:inline">|</span>
+        <a href="faq.html" class="text-sm font-medium text-slate-600 hover:text-brand transition">FAQ</a>
+        <span class="text-slate-300 hidden sm:inline">|</span>
+        <span class="text-sm font-semibold text-brand px-2 py-1 rounded-lg bg-brand-soft">Gallery</span>
+      </div>
+      <a href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-xs sm:text-sm font-bold text-brand shadow-sm hover:bg-amber-300 transition">
+        <i class="fas fa-heart" aria-hidden="true"></i> Donate
+      </a>
+    </div>
+  </nav>
+
+  <header class="bg-gradient-to-br from-brand to-brand-light text-white">
+    <div class="max-w-6xl mx-auto px-4 py-10 sm:py-14">
+      <p class="text-brand-soft/90 text-sm font-medium uppercase tracking-wide mb-2">Serve day memories</p>
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Prayer City gallery</h1>
+      <p class="mt-3 text-white/90 max-w-2xl text-sm sm:text-base leading-relaxed">
+        Photos and videos from our serve days — prayer tents, volunteers, and guests across Houston.
+        Tap any photo to enlarge. Press play on videos right here.
+      </p>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8 sm:py-10 space-y-8">
+    <section class="bg-white rounded-2xl shadow-card border border-slate-100 p-5 sm:p-6">
+      <div id="gallery-loading" class="text-center py-16 text-slate-500 text-sm">
+        <i class="fas fa-spinner fa-spin text-2xl text-brand mb-3" aria-hidden="true"></i>
+        <p>Loading gallery…</p>
+      </div>
+      <div id="gallery-mount" class="hidden"></div>
+      <div id="gallery-error" class="hidden text-center py-12 text-slate-600 text-sm">
+        <p class="font-medium text-slate-800">Gallery is not available yet.</p>
+        <p class="mt-2">Please check back shortly.</p>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-brand/20 bg-brand-soft/50 p-5 sm:p-6 text-sm text-slate-700">
+      <p class="font-semibold text-brand mb-1">Serving with us?</p>
+      <p>
+        More serve days are ahead. Sign up on the
+        <a href="volunteer/" class="text-brand font-semibold underline">volunteer page</a>
+        or visit the
+        <a href="volunteer-hub.html" class="text-brand font-semibold underline">volunteer hub</a>.
+      </p>
+    </section>
+  </main>
+
+  <footer class="py-8 px-4 border-t border-slate-200 bg-white text-center text-sm text-slate-600">
+    <p>Houston World Cup Prayer City · <a href="contact.html" class="text-brand font-medium hover:underline">Contact</a></p>
+  </footer>
+
+  <script src="js/gallery-day1-manifest.js"></script>
+  <script src="js/gallery-day2-manifest.js"></script>
+  <script src="js/gallery-day3-manifest.js"></script>
+  <script src="js/gallery-day4-manifest.js"></script>
+  <script src="js/gallery.js"></script>
+  <script>
+    (function () {
+      var loading = document.getElementById('gallery-loading');
+      var mount = document.getElementById('gallery-mount');
+      var err = document.getElementById('gallery-error');
+
+      var days = (window.PrayerCityGallery && window.PrayerCityGallery.collectDays())
+        || [];
+
+      if (!days.length) {
+        if (loading) loading.classList.add('hidden');
+        if (err) err.classList.remove('hidden');
+        return;
+      }
+
+      var ok = window.PrayerCityGallery.renderDays(mount, days);
+      if (loading) loading.classList.add('hidden');
+      if (ok) {
+        mount.classList.remove('hidden');
+      } else if (err) {
+        err.classList.remove('hidden');
+      }
+    })();
+  </script>
+</body>
+</html>
