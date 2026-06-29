@@ -2,7 +2,7 @@
  * Houston Prayer City — outreach to past contacts (not yet signed up).
  *
  * PastLeads columns:
- *   A Email | B First Name | C Last Name | D Greeting | E OutreachSent | F LastOutreach
+ *   A Email | B First Name | C Last Name | D Greeting | E OutreachSent | F LastOutreach | G FailStreak
  *
  * 1. Import outreach/past-contacts-to-email.csv into tab "PastLeads".
  * 2. Menu: Send past-contact outreach (first invite).
@@ -21,6 +21,9 @@ var OUTREACH_CONFIG = {
   COL_GREETING: 4,
   COL_OUTREACH_SENT: 5,
   COL_LAST_OUTREACH: 6,
+  /** Consecutive send failures (cleared on success). At MAX_CONSECUTIVE_SEND_FAILURES → Skip — undeliverable. */
+  COL_FAIL_STREAK: 7,
+  MAX_CONSECUTIVE_SEND_FAILURES: 3,
   VIDEO_URL: 'https://youtu.be/3Sn8ysMi1Lk',
   SIGNUP_URL: 'https://prayercityhtx.com/volunteer/',
   MAX_SEND_PER_RUN: 80,
@@ -35,6 +38,8 @@ var OUTREACH_CONFIG = {
   FOLLOWUP_TRIGGER_HOUR: 9,
   /** Virtual volunteer info session (replaces in-person training in emails). */
   VIRTUAL_SESSION_DATE_LABEL: 'Thursday, June 11, 2026',
+  /** Last day (Chicago) to include Zoom / virtual session in outreach emails. */
+  VIRTUAL_SESSION_LAST_YMD: '2026-06-11',
   VIRTUAL_SESSION_TIME: '6:00 PM',
   VIRTUAL_SESSION_TIMEZONE: 'Central Time (Houston)',
   ZOOM_URL:
@@ -46,7 +51,16 @@ var OUTREACH_CONFIG = {
   /** First serve Sunday (countdown target). */
   FIRST_SERVE_SUNDAY_DATE: '2026-06-14',
   EMAIL_SUBJECT: 'Thu Jun 11 virtual session (6pm). All You Need to Know about Sunday.',
+  EMAIL_SUBJECT_AFTER_VIRTUAL: 'Prayer City serve day — sign up & what you need',
+  /** Never send outreach / follow-up to these addresses (lowercase). */
+  EMAIL_BLOCKLIST: ['marykaarto@gmail.com', 'emcocke@gmail.com'],
 };
+
+/** Virtual session block only through Thu Jun 11; omitted from Fri Jun 12 onward. */
+function shouldShowVirtualSessionInEmail_() {
+  var today = Utilities.formatDate(new Date(), 'America/Chicago', 'yyyy-MM-dd');
+  return today <= OUTREACH_CONFIG.VIRTUAL_SESSION_LAST_YMD;
+}
 
 var PAST_OUTREACH_FIRST_BATCH_DAILY_FN = 'sendPastContactsOutreachDaily';
 var PAST_OUTREACH_DAILY_FN = 'sendPastContactsFollowUpDaily';
@@ -67,6 +81,32 @@ function alertOrLog_(msg) {
   } catch (e) {
     Logger.log(msg);
   }
+}
+
+/**
+ * Seed the shared do-not-send registry from PastLeads rows that already bounced
+ * or are undeliverable. Deliberately excludes "registered" / "do not email"
+ * rows so this never blocks a registered volunteer's other mail. Returns count.
+ */
+function seedUndeliverableRegistryFromPastLeads_() {
+  if (typeof addUndeliverableEmails_ !== 'function') return 0;
+  var sh = getPastLeadsSheet_();
+  var data = sh.getDataRange().getValues();
+  var emails = [];
+  for (var r = 1; r < data.length; r++) {
+    var status = String(data[r][OUTREACH_CONFIG.COL_OUTREACH_SENT - 1] || '').trim();
+    var email = normalizeEmail_(data[r][OUTREACH_CONFIG.COL_EMAIL - 1]);
+    if (!email || email.indexOf('@') < 1) continue;
+    // Only truly undeliverable/bad/failed addresses — NOT "registered"/"do not email".
+    if (!/undeliver|bad address/i.test(status) && !/^failed/i.test(status)) continue;
+    if (/retry/i.test(status)) continue;
+    emails.push(email);
+  }
+  var added = addUndeliverableEmails_(emails);
+  if (emails.length && typeof syncUndeliverableToFirestore_ === 'function') {
+    syncUndeliverableToFirestore_(emails, 'seed from past leads', 'registry_seed');
+  }
+  return added;
 }
 
 function getPastLeadsSheet_() {
@@ -105,6 +145,20 @@ function normalizeEmail_(email) {
   return String(email || '')
     .trim()
     .toLowerCase();
+}
+
+function isEmailBlocked_(email) {
+  var e = normalizeEmail_(email);
+  if (!e) return false;
+  var list = OUTREACH_CONFIG.EMAIL_BLOCKLIST || [];
+  for (var i = 0; i < list.length; i++) {
+    if (normalizeEmail_(list[i]) === e) return true;
+  }
+  return false;
+}
+
+function markSkipDoNotEmail_(sh, rowIndex) {
+  sh.getRange(rowIndex, OUTREACH_CONFIG.COL_OUTREACH_SENT).setValue('Skip — do not email');
 }
 
 function loadRegisteredEmails_() {
@@ -219,10 +273,49 @@ function markSkipUndeliverable_(sh, rowIndex, detail) {
   sh.getRange(rowIndex, OUTREACH_CONFIG.COL_OUTREACH_SENT).setValue(
     'Skip — undeliverable' + (note ? ' (' + note + ')' : '')
   );
+  try {
+    var email = normalizeEmail_(sh.getRange(rowIndex, OUTREACH_CONFIG.COL_EMAIL).getValue());
+    if (email && typeof syncUndeliverableToFirestore_ === 'function') {
+      syncUndeliverableToFirestore_([email], note || 'undeliverable', 'past_outreach');
+    }
+  } catch (e) {
+    Logger.log('markSkipUndeliverable_ firestore sync: ' + e);
+  }
+}
+
+function getFailStreak_(row) {
+  var n = parseInt(row[OUTREACH_CONFIG.COL_FAIL_STREAK - 1], 10);
+  return isNaN(n) || n < 0 ? 0 : n;
+}
+
+function clearFailStreak_(sh, rowIndex) {
+  sh.getRange(rowIndex, OUTREACH_CONFIG.COL_FAIL_STREAK).setValue(0);
+}
+
+/**
+ * Increment fail streak; after MAX_CONSECUTIVE_SEND_FAILURES mark undeliverable (no more mail).
+ * @returns {number} new streak
+ */
+function recordSendFailure_(sh, rowIndex, detail) {
+  var row = sh.getRange(rowIndex, 1, 1, OUTREACH_CONFIG.COL_FAIL_STREAK).getValues()[0];
+  var streak = getFailStreak_(row) + 1;
+  sh.getRange(rowIndex, OUTREACH_CONFIG.COL_FAIL_STREAK).setValue(streak);
+  if (streak >= OUTREACH_CONFIG.MAX_CONSECUTIVE_SEND_FAILURES) {
+    markSkipUndeliverable_(
+      sh,
+      rowIndex,
+      detail || streak + ' failed sends'
+    );
+    return streak;
+  }
+  sh.getRange(rowIndex, OUTREACH_CONFIG.COL_OUTREACH_SENT).setValue(
+    'Failed — retry (' + streak + '/' + OUTREACH_CONFIG.MAX_CONSECUTIVE_SEND_FAILURES + ')'
+  );
+  return streak;
 }
 
 function markFailedRetry_(sh, rowIndex) {
-  sh.getRange(rowIndex, OUTREACH_CONFIG.COL_OUTREACH_SENT).setValue('Failed — retry');
+  recordSendFailure_(sh, rowIndex, '');
 }
 
 function sleepBetweenSends_() {
@@ -233,7 +326,9 @@ function sleepBetweenSends_() {
 
 function buildOutreachSubject_(row) {
   var fn = firstNameFromRow_(row);
-  var base = OUTREACH_CONFIG.EMAIL_SUBJECT;
+  var base = shouldShowVirtualSessionInEmail_()
+    ? OUTREACH_CONFIG.EMAIL_SUBJECT
+    : OUTREACH_CONFIG.EMAIL_SUBJECT_AFTER_VIRTUAL;
   if (fn) {
     return fn + ' — ' + base;
   }
@@ -253,7 +348,7 @@ function buildVirtualSessionPlain_() {
     ' ' +
     OUTREACH_CONFIG.VIRTUAL_SESSION_TIMEZONE +
     '\n\n' +
-    'This session is important — we will share prayer tent locations, parking and shuttle arrangements to NRG Stadium, team assignments, and other key details before our first serve day this Sunday.\n\n' +
+    'This session is important — we will share prayer tent locations, free street parking near 1325 La Concha Lane, team assignments, and other key details before our first serve day this Sunday.\n\n' +
     'Join on Zoom:\n' +
     OUTREACH_CONFIG.ZOOM_URL
   );
@@ -262,7 +357,7 @@ function buildVirtualSessionPlain_() {
 function buildTshirtPlain_() {
   return (
     'PRAYER CITY T-SHIRTS\n' +
-    'We are printing Houston Prayer City volunteer T-shirts. Please reply to this email with your shirt size (S, M, L, XL, 2XL, or 3XL).\n\n' +
+    'We are printing Houston Prayer City volunteer T-shirts. Please reply to this email with your shirt size (S, M, L, or X).\n\n' +
     'If you are able to make a donation toward your shirt, that would be wonderful — and deeply appreciated. 100% goes to the movement via Zeffy:\n' +
     OUTREACH_CONFIG.DONATION_URL
   );
@@ -277,8 +372,7 @@ function buildOutreachBodies_(greeting) {
     '\n\n' +
     'Something beautiful is unfolding in Houston — and you were part of our story before. We would love for you to walk with us again during World Cup season.\n\n' +
     'The Houston World Cup Prayer City Movement is prayer, worship, and Gospel welcome as the nations come to our city for FIFA World Cup 2026.\n\n' +
-    buildVirtualSessionPlain_() +
-    '\n\n' +
+    (shouldShowVirtualSessionInEmail_() ? buildVirtualSessionPlain_() + '\n\n' : '') +
     buildTshirtPlain_() +
     '\n\n' +
     'Sign up to volunteer (choose your shifts):\n' +
@@ -301,9 +395,11 @@ function buildFollowUpBodies_(greeting, followNum) {
     greeting +
     '\n\n' +
     'Thank you to everyone who joined us for Prayer City training — your presence and prayers meant so much. We are grateful for you.\n\n' +
-    'If you were not able to attend in person, we warmly invite you to our virtual information session this week. It is important that you join us so you will know prayer tent locations, parking and shuttle plans to NRG Stadium, and other key arrangements before serve days begin.\n\n' +
-    buildVirtualSessionPlain_() +
-    '\n\n' +
+    (shouldShowVirtualSessionInEmail_()
+      ? 'If you were not able to attend in person, we warmly invite you to our virtual information session this week. It is important that you join us so you will know prayer tent locations, free street parking near the tents, and other key arrangements before serve days begin.\n\n' +
+        buildVirtualSessionPlain_() +
+        '\n\n'
+      : 'Serve days are approaching — sign up below for prayer tent locations, parking near 1325 La Concha Lane, and everything you need before your shift.\n\n') +
     buildTshirtPlain_() +
     '\n\n' +
     'If you have not completed volunteer registration yet, you can sign up here:\n' +
@@ -352,7 +448,7 @@ function buildTshirtHtml_() {
     img +
     '" alt="Houston Prayer City volunteer T-shirt" width="600" style="width:100%;max-width:100%;height:auto;border-radius:12px;border:1px solid #e2e8f0;display:block;margin:0 0 14px;" />' +
     '<p style="margin:0 0 10px;font-size:14px;color:#334155;line-height:1.65;">' +
-    'We are printing <strong>Houston Prayer City</strong> shirts for our volunteer family. Please <strong>reply to this email</strong> with your size: <strong>S, M, L, XL, 2XL, or 3XL</strong>.' +
+    'We are printing <strong>Houston Prayer City</strong> shirts for our volunteer family. Please <strong>reply to this email</strong> with your size: <strong>S, M, L, or X</strong>.' +
     '</p>' +
     '<p style="margin:0 0 14px;font-size:14px;color:#334155;line-height:1.65;">' +
     'If you are able to make a donation toward your shirt, that would be wonderful — much appreciated. Gifts are processed through Zeffy (100% to the movement).' +
@@ -375,7 +471,7 @@ function buildFirstOutreachHtml_(greeting) {
     safeGreeting +
     '</p>' +
     '<p style="font-size:15px;color:#334155;">You were part of our story before — and Houston is becoming a <strong style="color:#0f3d5c;">Prayer City</strong> as the world arrives for World Cup 2026. We would love for you to serve with us again.</p>' +
-    buildVirtualSessionHtml_() +
+    (shouldShowVirtualSessionInEmail_() ? buildVirtualSessionHtml_() : '') +
     buildTshirtHtml_() +
     '<p style="text-align:center;margin:24px 0;"><a href="' +
     signup +
@@ -405,10 +501,14 @@ function buildFollowUpHtml_(greeting) {
     '<p style="font-size:15px;color:#334155;line-height:1.65;">' +
     'Thank you to everyone who joined us for <strong>Prayer City training</strong> — your presence and prayers blessed our city. We are truly grateful for you.' +
     '</p>' +
-    '<p style="font-size:15px;color:#334155;line-height:1.65;">' +
-    'If you were not able to attend in person, please join us virtually this week. <strong>Your attendance matters</strong> — we will cover prayer tent locations, parking and shuttle plans to NRG Stadium, and other essential details before serve days begin.' +
-    '</p>' +
-    buildVirtualSessionHtml_() +
+    (shouldShowVirtualSessionInEmail_()
+      ? '<p style="font-size:15px;color:#334155;line-height:1.65;">' +
+        'If you were not able to attend in person, please join us virtually this week. <strong>Your attendance matters</strong> — we will cover prayer tent locations, parking and shuttle plans to NRG Stadium, and other essential details before serve days begin.' +
+        '</p>' +
+        buildVirtualSessionHtml_()
+      : '<p style="font-size:15px;color:#334155;line-height:1.65;">' +
+        'Serve days are approaching — complete sign-up for shuttle pick-up, prayer tents near NRG, and key details before your shift.' +
+        '</p>') +
     buildTshirtHtml_() +
     '<p style="text-align:center;margin:24px 0;"><a href="' +
     signup +
@@ -422,6 +522,13 @@ function markRegisteredSkip_(sh, rowIndex) {
 }
 
 function sendOutreachEmail_(email, subject, bodies) {
+  if (isEmailBlocked_(email)) {
+    throw new Error('blocked: do not email ' + normalizeEmail_(email));
+  }
+  // Never email an address that previously bounced (shared do-not-send registry).
+  if (typeof isInUndeliverableRegistry_ === 'function' && isInUndeliverableRegistry_(email)) {
+    throw new Error('undeliverable: previously bounced ' + normalizeEmail_(email));
+  }
   GmailApp.sendEmail(email, subject, bodies.plain, {
     htmlBody: bodies.html,
     name: 'Houston Prayer City',
@@ -431,6 +538,7 @@ function sendOutreachEmail_(email, subject, bodies) {
 function recordOutreachSent_(sh, rowIndex, statusLabel, todayYmd) {
   sh.getRange(rowIndex, OUTREACH_CONFIG.COL_OUTREACH_SENT).setValue(statusLabel);
   sh.getRange(rowIndex, OUTREACH_CONFIG.COL_LAST_OUTREACH).setValue(todayYmd);
+  clearFailStreak_(sh, rowIndex);
 }
 
 function getRemainingEmailQuota_() {
@@ -618,6 +726,12 @@ function sendPastContactsOutreachCore_(opts) {
       continue;
     }
 
+    if (getFailStreak_(row) >= OUTREACH_CONFIG.MAX_CONSECUTIVE_SEND_FAILURES) {
+      markSkipUndeliverable_(sh, r + 1, 'max failures');
+      skippedUndeliverable++;
+      continue;
+    }
+
     var v = validateEmailForOutreach_(row[OUTREACH_CONFIG.COL_EMAIL - 1]);
     if (!v.ok) {
       markSkipBadAddress_(sh, r + 1, v.reason);
@@ -625,6 +739,12 @@ function sendPastContactsOutreachCore_(opts) {
       continue;
     }
     var email = v.email;
+
+    if (isEmailBlocked_(email)) {
+      markSkipDoNotEmail_(sh, r + 1);
+      skippedSent++;
+      continue;
+    }
 
     if (registered[email]) {
       markRegisteredSkip_(sh, r + 1);
@@ -650,8 +770,11 @@ function sendPastContactsOutreachCore_(opts) {
         markSkipUndeliverable_(sh, r + 1, e.message || e);
         skippedUndeliverable++;
       } else {
-        markFailedRetry_(sh, r + 1);
+        var streak = recordSendFailure_(sh, r + 1, e.message || e);
         failedTemp++;
+        if (streak >= OUTREACH_CONFIG.MAX_CONSECUTIVE_SEND_FAILURES) {
+          skippedUndeliverable++;
+        }
         break;
       }
     }
@@ -754,12 +877,24 @@ function sendPastContactsFollowUpDaily() {
       continue;
     }
 
+    if (getFailStreak_(row) >= OUTREACH_CONFIG.MAX_CONSECUTIVE_SEND_FAILURES) {
+      markSkipUndeliverable_(sh, r + 1, 'max failures');
+      skippedUndeliverable++;
+      continue;
+    }
+
     var v = validateEmailForOutreach_(row[OUTREACH_CONFIG.COL_EMAIL - 1]);
     if (!v.ok) {
       markSkipBadAddress_(sh, r + 1, v.reason);
       continue;
     }
     var email = v.email;
+
+    if (isEmailBlocked_(email)) {
+      markSkipDoNotEmail_(sh, r + 1);
+      skippedNever++;
+      continue;
+    }
 
     if (registered[email]) {
       if (!/^skip/i.test(status)) {
@@ -798,7 +933,11 @@ function sendPastContactsFollowUpDaily() {
         markSkipUndeliverable_(sh, r + 1, e.message || e);
         skippedUndeliverable++;
       } else {
+        var streak = recordSendFailure_(sh, r + 1, e.message || e);
         failedTemp++;
+        if (streak >= OUTREACH_CONFIG.MAX_CONSECUTIVE_SEND_FAILURES) {
+          skippedUndeliverable++;
+        }
         break;
       }
     }
@@ -1032,5 +1171,73 @@ function refreshPastContactsMenu() {
   }
   alertOrLog_(
     'Paste the updated PrayerCityFormPipeline.gs (buildPrayerCitySpreadsheetMenu_) and reload the sheet.'
+  );
+}
+
+/** Menu: mark blocklisted emails on PastLeads (e.g. Mary Kaarto). */
+function applyEmailBlocklistToPastLeads() {
+  var sh = getPastLeadsSheet_();
+  var data = sh.getDataRange().getValues();
+  var n = 0;
+  for (var r = 1; r < data.length; r++) {
+    if (isEmailBlocked_(data[r][OUTREACH_CONFIG.COL_EMAIL - 1])) {
+      markSkipDoNotEmail_(sh, r + 1);
+      n++;
+    }
+  }
+  alertOrLog_(
+    'Email blocklist applied to ' +
+      n +
+      ' row(s) on PastLeads (status → Skip — do not email).'
+  );
+}
+
+/**
+ * Menu: stop chronic delivery failures — blocklist + 3-strike undeliverable + old Failed — retry rows.
+ */
+function stopChronicDeliveryFailuresOnPastLeads() {
+  var sh = getPastLeadsSheet_();
+  var data = sh.getDataRange().getValues();
+  var blocked = 0;
+  var threeStrike = 0;
+  var failedRetry = 0;
+  var max = OUTREACH_CONFIG.MAX_CONSECUTIVE_SEND_FAILURES;
+
+  for (var r = 1; r < data.length; r++) {
+    var row = data[r];
+    var email = row[OUTREACH_CONFIG.COL_EMAIL - 1];
+    var status = outreachStatus_(row);
+    var streak = getFailStreak_(row);
+
+    if (isEmailBlocked_(email)) {
+      if (!/^skip\s*[—\-]\s*do not email/i.test(status)) {
+        markSkipDoNotEmail_(sh, r + 1);
+        blocked++;
+      }
+      continue;
+    }
+
+    if (streak >= max && !isForeverSkipStatus_(status)) {
+      markSkipUndeliverable_(sh, r + 1, streak + ' failed sends');
+      threeStrike++;
+      continue;
+    }
+
+    if (/^failed/i.test(status) && !isForeverSkipStatus_(status)) {
+      sh.getRange(r + 1, OUTREACH_CONFIG.COL_FAIL_STREAK).setValue(max);
+      markSkipUndeliverable_(sh, r + 1, 'repeat delivery failure');
+      failedRetry++;
+    }
+  }
+
+  alertOrLog_(
+    'Stopped repeat outreach for chronic failures.\n\n' +
+      'Blocklist (do not email): ' +
+      blocked +
+      '\n3+ fail streak → undeliverable: ' +
+      threeStrike +
+      '\nFailed — retry → undeliverable: ' +
+      failedRetry +
+      '\n\nMary Kaarto and blocklisted addresses will not be emailed again.'
   );
 }
