@@ -86,34 +86,57 @@
     <p>Houston World Cup Prayer City · <a href="contact.html" class="text-brand font-medium hover:underline">Contact</a></p>
   </footer>
 
-  <script src="js/gallery-day1-manifest.js"></script>
-  <script src="js/gallery-day2-manifest.js"></script>
-  <script src="js/gallery-day3-manifest.js"></script>
-  <script src="js/gallery-day4-manifest.js"></script>
-  <script src="js/gallery-day5-manifest.js"></script>
   <script src="js/gallery.js"></script>
   <script>
     (function () {
-      var loading = document.getElementById('gallery-loading');
-      var mount = document.getElementById('gallery-mount');
-      var err = document.getElementById('gallery-error');
+      var manifests = [
+        'js/gallery-day1-manifest.js',
+        'js/gallery-day2-manifest.js',
+        'js/gallery-day3-manifest.js',
+        'js/gallery-day4-manifest.js',
+        'js/gallery-day5-manifest.js',
+      ];
 
-      var days = (window.PrayerCityGallery && window.PrayerCityGallery.collectDays())
-        || [];
+      function loadScript(src) {
+        return new Promise(function (resolve) {
+          var s = document.createElement('script');
+          s.src = src;
+          s.async = false;
+          s.onload = function () {
+            resolve(true);
+          };
+          s.onerror = function () {
+            console.warn('Gallery manifest missing:', src);
+            resolve(false);
+          };
+          document.body.appendChild(s);
+        });
+      }
 
-      if (!days.length) {
+      function boot() {
+        var loading = document.getElementById('gallery-loading');
+        var mount = document.getElementById('gallery-mount');
+        var err = document.getElementById('gallery-error');
+
+        var days =
+          (window.PrayerCityGallery && window.PrayerCityGallery.collectDays()) || [];
+
+        if (!days.length) {
+          if (loading) loading.classList.add('hidden');
+          if (err) err.classList.remove('hidden');
+          return;
+        }
+
+        var ok = window.PrayerCityGallery.renderDays(mount, days);
         if (loading) loading.classList.add('hidden');
-        if (err) err.classList.remove('hidden');
-        return;
+        if (ok) {
+          mount.classList.remove('hidden');
+        } else if (err) {
+          err.classList.remove('hidden');
+        }
       }
 
-      var ok = window.PrayerCityGallery.renderDays(mount, days);
-      if (loading) loading.classList.add('hidden');
-      if (ok) {
-        mount.classList.remove('hidden');
-      } else if (err) {
-        err.classList.remove('hidden');
-      }
+      Promise.all(manifests.map(loadScript)).then(boot);
     })();
   </script>
 </body>
