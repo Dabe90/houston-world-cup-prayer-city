@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Digest Intelligence — Ops Console</title>
+  <meta name="robots" content="noindex" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: '#0f3d5c', light: '#1a5f8a', soft: '#e8f4fc' },
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; }
+    .mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
+    @keyframes pulseStep { 0%,100%{opacity:.45} 50%{opacity:1} }
+    .step-active { animation: pulseStep 1.2s ease-in-out infinite; color: #0f3d5c; font-weight: 700; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+  <nav class="bg-white border-b border-slate-200">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="w-8 h-8 rounded-lg bg-brand text-white text-xs font-bold flex items-center justify-center">AI</span>
+        <span class="font-semibold text-sm">Digest Intelligence Ops</span>
+      </div>
+      <div class="flex items-center gap-2 text-xs">
+        <a href="digest-intelligence-demo.html" class="text-brand font-medium underline">Static demo</a>
+        <span id="auth-chip" class="rounded-full bg-slate-100 px-3 py-1 text-slate-600">Checking sign-in…</span>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-5xl mx-auto px-4 py-8 space-y-6">
+    <section class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+      <h1 class="text-xl font-bold">Run agent</h1>
+      <p class="mt-2 text-sm text-slate-600">Calls Cloud Function <code class="mono bg-slate-100 px-1 rounded">runDigestIntelligenceNow</code> with Firebase Auth. Dry-run only — no volunteer emails.</p>
+      <div class="mt-4 flex flex-wrap gap-3">
+        <button id="btn-run" disabled class="rounded-xl bg-brand text-white px-5 py-2.5 text-sm font-bold disabled:opacity-40">Run dry analysis</button>
+        <button id="btn-signin" class="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold">Sign in with email link</button>
+      </div>
+      <p id="gate-msg" class="mt-3 text-sm text-amber-800 hidden">Admin access required (ddbs.htx@gmail.com or abuxberkeley@gmail.com).</p>
+    </section>
+
+    <section class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+      <h2 class="text-sm font-bold uppercase tracking-wide text-slate-500">Pipeline progress</h2>
+      <ol class="mt-4 space-y-2 text-sm" id="steps">
+        <li id="step-1">1. readDailyDigest</li>
+        <li id="step-2">2. analyzeDigestWithAI (Gemini)</li>
+        <li id="step-3">3. suggestVolunteerActions</li>
+        <li id="step-4">4. updateVolunteerFirestore</li>
+        <li id="step-5">5. sendSmartNotifications (dryRun)</li>
+      </ol>
+    </section>
+
+    <section id="result-panel" class="hidden bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+      <div class="flex flex-wrap justify-between gap-2">
+        <h2 class="text-lg font-bold">Output</h2>
+        <span id="result-meta" class="text-xs mono text-slate-500"></span>
+      </div>
+      <p id="result-summary" class="mt-3 text-sm leading-relaxed text-slate-700"></p>
+      <div class="mt-4 grid sm:grid-cols-3 gap-3 text-center text-sm" id="result-metrics"></div>
+      <div class="mt-6">
+        <h3 class="font-bold text-sm">Actions</h3>
+        <div id="result-actions" class="mt-2 space-y-2"></div>
+      </div>
+      <details class="mt-6">
+        <summary class="text-sm font-semibold cursor-pointer text-brand">Raw JSON</summary>
+        <pre id="result-json" class="mt-2 text-xs mono bg-slate-900 text-slate-100 p-4 rounded-xl overflow-x-auto"></pre>
+      </details>
+    </section>
+
+    <section id="error-panel" class="hidden rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900"></section>
+  </main>
+
+  <script>
+    (function () {
+      var ADMIN = { 'ddbs.htx@gmail.com': true, 'abuxberkeley@gmail.com': true };
+      var cfg = window.__FIREBASE_CONFIG__;
+      if (!cfg || !cfg.apiKey) {
+        document.getElementById('auth-chip').textContent = 'Firebase not configured';
+        return;
+      }
+      firebase.initializeApp(cfg);
+      var auth = firebase.auth();
+      var functions = firebase.app().functions('us-central1');
+      var btnRun = document.getElementById('btn-run');
+      var btnSignin = document.getElementById('btn-signin');
+      var gateMsg = document.getElementById('gate-msg');
+
+      function setStep(n) {
+        for (var i = 1; i <= 5; i++) {
+          var el = document.getElementById('step-' + i);
+          el.classList.toggle('step-active', i === n);
+        }
+      }
+
+      function clearSteps() {
+        for (var i = 1; i <= 5; i++) {
+          document.getElementById('step-' + i).classList.remove('step-active');
+        }
+      }
+
+      function renderResult(data) {
+        document.getElementById('result-panel').classList.remove('hidden');
+        document.getElementById('error-panel').classList.add('hidden');
+        document.getElementById('result-meta').textContent =
+          (data.runId || '') + ' · ' + (data.ymd || '') + ' · sent ' + (data.sentCount || 0);
+        document.getElementById('result-summary').textContent = data.summary || '';
+        var t = data.totals || {};
+        document.getElementById('result-metrics').innerHTML = [
+          ['Volunteers', t.volunteers],
+          ['Unscheduled', t.unscheduled],
+          ['Blocked', t.blocked],
+        ].map(function (row) {
+          return '<div class="rounded-lg bg-brand-soft p-3"><div class="text-xl font-bold text-brand">' + (row[1] || '—') + '</div><div class="text-xs text-slate-600">' + row[0] + '</div></div>';
+        }).join('');
+        var actions = data.sendResult && data.sendResult.skipped
+          ? data.sendResult.skipped.map(function (s) { return s.action; })
+          : (data.actions || []);
+        document.getElementById('result-actions').innerHTML = (actions || []).slice(0, 6).map(function (a) {
+          if (!a) return '';
+          return '<div class="rounded-lg border border-slate-200 p-3 text-sm"><span class="font-bold mono text-xs">' + a.type + '</span> — ' + (a.reason || '') + '</div>';
+        }).join('');
+        document.getElementById('result-json').textContent = JSON.stringify(data, null, 2);
+      }
+
+      function updateAuth(user) {
+        var chip = document.getElementById('auth-chip');
+        if (!user) {
+          chip.textContent = 'Signed out';
+          btnRun.disabled = true;
+          gateMsg.classList.add('hidden');
+          return;
+        }
+        var email = (user.email || '').toLowerCase();
+        chip.textContent = email;
+        if (ADMIN[email]) {
+          btnRun.disabled = false;
+          gateMsg.classList.add('hidden');
+        } else {
+          btnRun.disabled = true;
+          gateMsg.classList.remove('hidden');
+        }
+      }
+
+      auth.onAuthStateChanged(updateAuth);
+
+      btnSignin.addEventListener('click', function () {
+        var email = prompt('Admin email for magic link:');
+        if (!email) return;
+        auth.sendSignInLinkToEmail(email.trim(), {
+          url: window.location.href,
+          handleCodeInApp: true,
+        }).then(function () {
+          window.localStorage.setItem('digestOpsEmail', email.trim());
+          alert('Check your email for the sign-in link, then return here.');
+        }).catch(function (e) {
+          alert(e.message || e);
+        });
+      });
+
+      if (auth.isSignInWithEmailLink(window.location.href)) {
+        var stored = window.localStorage.getItem('digestOpsEmail') || '';
+        auth.signInWithEmailLink(stored, window.location.href).then(function () {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        });
+      }
+
+      btnRun.addEventListener('click', function () {
+        btnRun.disabled = true;
+        btnRun.textContent = 'Running…';
+        document.getElementById('error-panel').classList.add('hidden');
+        var step = 1;
+        setStep(step);
+        var timer = setInterval(function () {
+          step = Math.min(5, step + 1);
+          setStep(step);
+        }, 18000);
+
+        functions.httpsCallable('runDigestIntelligenceNow')({ dryRun: true })
+          .then(function (res) {
+            clearInterval(timer);
+            clearSteps();
+            renderResult(res.data || {});
+          })
+          .catch(function (e) {
+            clearInterval(timer);
+            clearSteps();
+            var err = document.getElementById('error-panel');
+            err.textContent = e.message || String(e);
+            err.classList.remove('hidden');
+          })
+          .finally(function () {
+            btnRun.disabled = false;
+            btnRun.textContent = 'Run dry analysis';
+            updateAuth(auth.currentUser);
+          });
+      });
+    })();
+  </script>
+</body>
+</html>
