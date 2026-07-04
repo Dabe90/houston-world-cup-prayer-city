@@ -47,6 +47,7 @@
     <section class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
       <h1 class="text-xl font-bold">Run agent</h1>
       <p class="mt-2 text-sm text-slate-600">Calls Cloud Function <code class="mono bg-slate-100 px-1 rounded">runDigestIntelligenceNow</code> with Firebase Auth. Dry-run only — no volunteer emails.</p>
+      <p class="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">Takes about <strong>2–4 minutes</strong> (reads 54 volunteers + 3 Gemini calls). Do not close this tab.</p>
       <div class="mt-4 flex flex-wrap gap-3">
         <button id="btn-run" disabled class="rounded-xl bg-brand text-white px-5 py-2.5 text-sm font-bold disabled:opacity-40">Run dry analysis</button>
         <button id="btn-signin" class="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold">Sign in with email link</button>
@@ -63,6 +64,22 @@
         <li id="step-4">4. updateVolunteerFirestore</li>
         <li id="step-5">5. sendSmartNotifications (dryRun)</li>
       </ol>
+    </section>
+
+    <section class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+      <h2 class="text-sm font-bold uppercase tracking-wide text-slate-500">Firestore log (for screen recording)</h2>
+      <p class="mt-2 text-sm text-slate-600">Open Firebase Console in another tab. When you click <strong>Run dry analysis</strong>, a <em>new</em> document appears with <code class="mono text-xs">status: running</code>, then updates to <code class="mono text-xs">completed</code>.</p>
+      <ul class="mt-3 space-y-2 text-sm">
+        <li>
+          <a class="text-brand font-semibold underline" href="https://console.firebase.google.com/project/bible-study-dashboard-99f2d/firestore/databases/-default-/data/~2Fdigest_intelligence_runs" target="_blank" rel="noopener">Open runs collection</a>
+          — watch new runs appear (best for live recording)
+        </li>
+        <li>
+          <a class="text-brand font-semibold underline" href="https://console.firebase.google.com/project/bible-study-dashboard-99f2d/firestore/databases/-default-/data/~2Fdigest_intelligence_runs~2Fdir_1783175363329_gkda7or" target="_blank" rel="noopener">Open sample run dir_1783175363329_gkda7or</a>
+          — your successful July 4 dry-run (static replay)
+        </li>
+      </ul>
+      <p class="mt-3 text-xs text-slate-500">Sign in to Firebase with the same Google account that owns the project (ddbs.htx@gmail.com).</p>
     </section>
 
     <section id="result-panel" class="hidden bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
@@ -179,28 +196,44 @@
         });
       }
 
+      var runFn = functions.httpsCallable('runDigestIntelligenceNow', { timeout: 540000 });
+
       btnRun.addEventListener('click', function () {
         btnRun.disabled = true;
-        btnRun.textContent = 'Running…';
+        btnRun.textContent = 'Running… (2–4 min)';
         document.getElementById('error-panel').classList.add('hidden');
+        document.getElementById('error-panel').innerHTML = '';
         var step = 1;
         setStep(step);
         var timer = setInterval(function () {
           step = Math.min(5, step + 1);
           setStep(step);
-        }, 18000);
+        }, 45000);
 
-        functions.httpsCallable('runDigestIntelligenceNow')({ dryRun: true })
+        runFn({ dryRun: true })
           .then(function (res) {
             clearInterval(timer);
             clearSteps();
-            renderResult(res.data || {});
+            var data = res.data || {};
+            renderResult(data);
+            if (data.runId) {
+              var link =
+                'https://console.firebase.google.com/project/bible-study-dashboard-99f2d/firestore/databases/-default-/data/~2Fdigest_intelligence_runs~2F' +
+                encodeURIComponent(data.runId);
+              document.getElementById('result-meta').innerHTML =
+                (data.runId || '') + ' · ' + (data.ymd || '') + ' · sent ' + (data.sentCount || 0) +
+                ' · <a class="text-brand underline" href="' + link + '" target="_blank" rel="noopener">Firestore log</a>';
+            }
           })
           .catch(function (e) {
             clearInterval(timer);
             clearSteps();
             var err = document.getElementById('error-panel');
-            err.textContent = e.message || String(e);
+            var msg = e.message || String(e);
+            if (/deadline/i.test(msg)) {
+              msg += ' The run may still finish in the background — check the Firestore runs collection for a new document with status completed.';
+            }
+            err.textContent = msg;
             err.classList.remove('hidden');
           })
           .finally(function () {
