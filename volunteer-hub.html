@@ -51,6 +51,10 @@
             <span class="text-slate-300 hidden sm:inline">|</span>
             <a href="faq.html" class="text-sm font-medium text-slate-600 hover:text-brand transition">FAQ</a>
             <span class="text-slate-300 hidden sm:inline">|</span>
+            <a href="gallery.html" class="text-sm font-medium text-slate-600 hover:text-brand transition">Gallery</a>
+            <span class="text-slate-300 hidden sm:inline">|</span>
+            <a href="monthly-report.html" class="text-sm font-medium text-slate-600 hover:text-brand transition">Monthly report</a>
+            <span class="text-slate-300 hidden sm:inline">|</span>
             <span class="text-sm font-semibold text-brand px-2 py-1 rounded-lg bg-brand-soft">Volunteer hub</span>
           </div>
         </div>
@@ -464,6 +468,18 @@
         }
       }
 
+      function isHiddenRosterVolunteer(name, email) {
+        var n = String(name || '')
+          .trim()
+          .toLowerCase();
+        var e = String(email || '')
+          .trim()
+          .toLowerCase();
+        if (n === 'ellen wright' || /^ellen\s+wright\b/.test(n)) return true;
+        if (e === 'ellenwright051084@gmail.com') return true;
+        return false;
+      }
+
       function isPublicRosterName(name) {
         var first = String(name || '')
           .trim()
@@ -486,6 +502,7 @@
         });
         list = list.filter(function (x) {
           var r = x.r;
+          if (isHiddenRosterVolunteer(r.name, r.email)) return false;
           if (q) {
             var hay = (
               (r.name || '') +

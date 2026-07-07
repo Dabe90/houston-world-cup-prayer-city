@@ -205,6 +205,18 @@
                 class="touch-manipulation text-xs sm:text-sm font-medium text-slate-600 hover:text-brand px-1.5 sm:px-2 py-1 rounded-lg hover:bg-slate-50 transition"
                 >FAQ</a
               >
+              <span class="text-slate-300" aria-hidden="true">|</span>
+              <a
+                href="gallery.html"
+                class="touch-manipulation text-xs sm:text-sm font-medium text-slate-600 hover:text-brand px-1.5 sm:px-2 py-1 rounded-lg hover:bg-slate-50 transition"
+                >Gallery</a
+              >
+              <span class="text-slate-300" aria-hidden="true">|</span>
+              <a
+                href="monthly-report.html"
+                class="touch-manipulation text-xs sm:text-sm font-medium text-slate-600 hover:text-brand px-1.5 sm:px-2 py-1 rounded-lg hover:bg-slate-50 transition"
+                >Monthly report</a
+              >
             </div>
           </div>
           <div
@@ -491,7 +503,7 @@
                       id="fv-tent"
                       class="text-sm font-medium text-slate-800 break-words max-w-full"
                     >
-                      —
+                      1325 La Concha Lane, Houston, TX
                     </dd>
                   </div>
                   <div class="mt-4 min-w-0 max-w-full">
@@ -2225,9 +2237,15 @@
               els.fvNotes.textContent = d.notes || "—";
               var tentEl = document.getElementById("fv-tent");
               if (tentEl) {
-                tentEl.textContent =
-                  (d.tent || "").trim() ||
-                  "Not assigned yet — check back before serve day";
+                var tentAddr =
+                  (window.PrayerCityServeDay &&
+                    window.PrayerCityServeDay.CFG &&
+                    window.PrayerCityServeDay.CFG.tentAddress) ||
+                  "1325 La Concha Lane, Houston, TX";
+                var tentNum = (d.tent || "").trim();
+                tentEl.textContent = tentNum
+                  ? tentNum + " · " + tentAddr
+                  : tentAddr;
               }
               lastVolunteerData = d;
               var checklistSection = document.getElementById(
@@ -2312,13 +2330,9 @@
                         return syncVolunteerDirectory(uid, lastVolunteerData);
                       })
                       .then(function () {
-                        return functions
-                          .httpsCallable("notifyVolunteerTshirtSize")({
-                            shirtSize: size,
-                          })
-                          .catch(function (e) {
-                            console.warn("notifyVolunteerTshirtSize", e);
-                          });
+                        return functions.httpsCallable(
+                          "notifyVolunteerTshirtSize",
+                        )({ shirtSize: size });
                       });
                   },
                 });

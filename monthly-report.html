@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f3d5c" />
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="apple-touch-icon" href="images/favicon.png" />
+  <title>Monthly unit report — Prayer City</title>
+  <meta name="description" content="Submit your monthly ministry unit report — Prayer City serve teams, DDBS Groups 1–6, Bible study, comms, hospitality, workers training, and state & regional reports." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: '#0f3d5c', light: '#1a5f8a', soft: '#e8f4fc', accent: '#c9a227' },
+          },
+          boxShadow: { card: '0 4px 24px rgba(15, 61, 92, 0.08)' },
+        },
+      },
+    };
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="css/mobile.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; }
+    .hero-pattern {
+      background-image:
+        radial-gradient(circle at 20% 80%, rgba(201, 162, 39, 0.25) 0%, transparent 45%),
+        radial-gradient(circle at 80% 20%, rgba(26, 95, 138, 0.35) 0%, transparent 40%),
+        linear-gradient(135deg, #0f3d5c 0%, #1a5f8a 45%, #7c3aed 100%);
+    }
+    .stained-glass {
+      background: linear-gradient(90deg, #c9a227, #e11d48, #7c3aed, #0284c7, #059669);
+      height: 5px;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-800 overflow-x-hidden">
+
+  <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm no-print">
+    <div class="max-w-6xl mx-auto px-4 min-h-14 py-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
+      <div class="flex items-center gap-2 sm:gap-3">
+        <a href="/" class="w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light text-white text-xs font-bold flex items-center justify-center shrink-0 hover:opacity-90 transition" title="Home">PC</a>
+        <div class="flex items-center gap-1 sm:gap-2 flex-wrap">
+          <a href="/" class="font-semibold text-slate-900 text-sm hover:text-brand transition">Prayer City</a>
+          <span class="text-slate-300 hidden sm:inline">|</span>
+          <a href="volunteer-hub.html" class="text-sm font-medium text-slate-600 hover:text-brand transition">Volunteer hub</a>
+          <span class="text-slate-300 hidden sm:inline">|</span>
+          <span class="text-sm font-semibold text-brand px-2 py-1 rounded-lg bg-brand-soft">Monthly report</span>
+        </div>
+      </div>
+      <a href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-xs sm:text-sm font-bold text-brand shadow-sm hover:bg-amber-300 transition">
+        <i class="fas fa-heart" aria-hidden="true"></i> Donate
+      </a>
+    </div>
+  </nav>
+
+  <header class="hero-pattern text-white py-10 sm:py-14 px-4 relative overflow-hidden">
+    <div class="stained-glass absolute bottom-0 left-0 right-0" aria-hidden="true"></div>
+    <div class="max-w-4xl mx-auto text-center relative z-10">
+      <p class="text-amber-200/90 text-xs sm:text-sm font-semibold uppercase tracking-[0.2em] mb-3">Dear Daughter Bible Study · Ministry units</p>
+      <h1 class="text-3xl sm:text-4xl font-bold font-[Georgia,Cambria,serif] tracking-tight">Monthly Unit Report</h1>
+      <p class="mt-4 text-blue-100 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+        Share what God did through your team this month — Prayer City serve teams, DDBS Groups 1–6,
+        Bible study, growth & retention, comms, welcome & hospitality, workers training, and state & regional reports.
+        Download a PDF or email a copy to yourself and leadership.
+      </p>
+      <div class="mt-6 flex flex-wrap justify-center gap-2 text-xs sm:text-sm">
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur"><i class="fas fa-hands-praying text-violet-200"></i> Serve teams</span>
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur"><i class="fas fa-users text-indigo-200"></i> Groups 1–6</span>
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur"><i class="fas fa-book-bible text-amber-200"></i> Bible study</span>
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur"><i class="fas fa-bullhorn text-sky-200"></i> Comms</span>
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur"><i class="fas fa-door-open text-yellow-200"></i> Hospitality</span>
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur"><i class="fas fa-map-location-dot text-rose-200"></i> State & regional</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8 sm:py-10">
+    <div id="report-status" class="hidden mb-6 no-print" role="status"></div>
+
+    <div class="grid lg:grid-cols-5 gap-8">
+      <!-- Form -->
+      <div class="lg:col-span-3 space-y-6 no-print">
+
+        <section class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+          <div class="bg-gradient-to-r from-brand to-brand-light px-5 py-3 text-white">
+            <h2 class="font-semibold flex items-center gap-2"><i class="fas fa-user-circle"></i> Your information</h2>
+          </div>
+          <div class="p-5 sm:p-6 space-y-4">
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label for="reporter-name" class="block text-sm font-medium text-slate-700 mb-1">Your name <span class="text-red-500">*</span></label>
+                <input type="text" id="reporter-name" required autocomplete="name" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-brand focus:border-brand outline-none" placeholder="Unit leader or reporter" />
+              </div>
+              <div>
+                <label for="reporter-email" class="block text-sm font-medium text-slate-700 mb-1">Your email <span class="text-red-500">*</span></label>
+                <input type="email" id="reporter-email" required autocomplete="email" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-brand focus:border-brand outline-none" placeholder="For your copy of the report" />
+              </div>
+            </div>
+            <div>
+              <label for="reporter-phone" class="block text-sm font-medium text-slate-700 mb-1">Phone <span class="text-slate-400 font-normal">(optional)</span></label>
+              <input type="tel" id="reporter-phone" autocomplete="tel" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-brand focus:border-brand outline-none" placeholder="If leadership should call you" />
+            </div>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+          <div class="bg-gradient-to-r from-violet-600 to-purple-700 px-5 py-3 text-white">
+            <h2 class="font-semibold flex items-center gap-2"><i class="fas fa-layer-group"></i> Select your ministry unit</h2>
+            <p class="text-violet-100 text-xs sm:text-sm mt-1 font-normal">Prayer City teams · DDBS Groups 1–6 · leadership & regional</p>
+          </div>
+          <div class="p-5 sm:p-6">
+            <div id="unit-cards"></div>
+            <div id="other-unit-wrap" class="hidden mt-4">
+              <label for="unit-other-name" class="block text-sm font-medium text-slate-700 mb-1">Unit name <span class="text-red-500">*</span></label>
+              <input type="text" id="unit-other-name" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-brand outline-none" placeholder="e.g. Ushering, Media, Youth" />
+            </div>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+          <div class="bg-gradient-to-r from-amber-500 to-orange-600 px-5 py-3 text-white">
+            <h2 class="font-semibold flex items-center gap-2"><i class="fas fa-calendar-days"></i> Reporting period</h2>
+          </div>
+          <div class="p-5 sm:p-6 grid sm:grid-cols-2 gap-4">
+            <div>
+              <label for="report-month" class="block text-sm font-medium text-slate-700 mb-1">Month <span class="text-red-500">*</span></label>
+              <select id="report-month" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-brand outline-none bg-white"></select>
+            </div>
+            <div>
+              <label for="report-year" class="block text-sm font-medium text-slate-700 mb-1">Year <span class="text-red-500">*</span></label>
+              <select id="report-year" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-brand outline-none bg-white"></select>
+            </div>
+            <div>
+              <label for="meetings-held" class="block text-sm font-medium text-slate-700 mb-1">Meetings / gatherings held</label>
+              <input type="text" id="meetings-held" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-brand outline-none" placeholder="e.g. 4 prayer calls, 2 rehearsals" />
+            </div>
+            <div>
+              <label for="attendance" class="block text-sm font-medium text-slate-700 mb-1">Attendance (avg or total)</label>
+              <input type="text" id="attendance" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-brand outline-none" placeholder="e.g. 12–15 per week" />
+            </div>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+          <div class="bg-gradient-to-r from-rose-500 to-pink-600 px-5 py-3 text-white">
+            <h2 class="font-semibold flex items-center gap-2"><i class="fas fa-scroll"></i> Ministry report</h2>
+          </div>
+          <div class="p-5 sm:p-6 space-y-4">
+            <div>
+              <label for="activities" class="block text-sm font-medium text-slate-700 mb-1">Activities & ministry this month <span class="text-red-500">*</span></label>
+              <textarea id="activities" required rows="4" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-brand outline-none resize-y min-h-[100px]" placeholder="What did your unit do? Serve days, rehearsals, posts published, prayer coverage, outreach…"></textarea>
+            </div>
+            <div>
+              <label for="highlights" class="block text-sm font-medium text-slate-700 mb-1">Highlights & wins</label>
+              <textarea id="highlights" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-brand outline-none resize-y" placeholder="Celebrations, milestones, answered prayer…"></textarea>
+            </div>
+            <div>
+              <label for="testimonies" class="block text-sm font-medium text-slate-700 mb-1">Testimonies</label>
+              <textarea id="testimonies" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-brand outline-none resize-y" placeholder="Stories of lives touched through your unit (share only what you have permission to share)"></textarea>
+            </div>
+            <div>
+              <label for="challenges" class="block text-sm font-medium text-slate-700 mb-1">Challenges & needs</label>
+              <textarea id="challenges" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-brand outline-none resize-y" placeholder="Volunteer gaps, equipment, scheduling, training needs…"></textarea>
+            </div>
+            <div>
+              <label for="prayer-requests" class="block text-sm font-medium text-slate-700 mb-1">Prayer requests</label>
+              <textarea id="prayer-requests" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-brand outline-none resize-y" placeholder="How can the church family pray for your unit?"></textarea>
+            </div>
+            <div>
+              <label for="next-month" class="block text-sm font-medium text-slate-700 mb-1">Plans for next month</label>
+              <textarea id="next-month" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-brand outline-none resize-y" placeholder="Goals, events, recruitment, special projects…"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-2xl shadow-card border border-slate-100 p-5 sm:p-6 space-y-3">
+          <h2 class="font-semibold text-slate-900 flex items-center gap-2"><i class="fas fa-paper-plane text-brand"></i> Send or save your report</h2>
+          <p class="text-sm text-slate-600">Fill in the form, preview on the right, then download or email. Submitting also sends a copy to Prayer City leadership.</p>
+          <div class="grid sm:grid-cols-1 gap-3 pt-2">
+            <button type="button" id="btn-download-pdf" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-brand hover:bg-brand-light text-white font-semibold py-3.5 px-6 transition focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2">
+              <i class="fas fa-file-pdf"></i> Download report as PDF
+            </button>
+            <button type="button" id="btn-email-report" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-semibold py-3.5 px-6 transition focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2">
+              <i class="fas fa-envelope"></i> Send to my email
+            </button>
+            <button type="button" id="btn-submit-coordinator" class="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-brand text-brand hover:bg-brand-soft font-semibold py-3.5 px-6 transition focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2">
+              <i class="fas fa-church"></i> Submit to Prayer City leadership
+            </button>
+          </div>
+          <p class="text-xs text-slate-500 text-center pt-1">First-time email may require a one-time FormSubmit confirmation. Questions? <a href="mailto:ddbs.htx@gmail.com" class="text-brand font-medium hover:underline">ddbs.htx@gmail.com</a></p>
+        </section>
+      </div>
+
+      <!-- Live preview -->
+      <aside class="lg:col-span-2">
+        <div class="lg:sticky lg:top-20">
+          <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between gap-2">
+              <h2 class="font-semibold text-slate-800 text-sm flex items-center gap-2"><i class="fas fa-eye text-brand"></i> Live preview</h2>
+              <span class="text-xs text-slate-500 hidden sm:inline">Updates as you type</span>
+            </div>
+            <div id="report-preview" class="p-4 sm:p-5 max-h-[70vh] overflow-y-auto text-sm">
+              <p class="text-slate-500 text-sm text-center py-12">Select your unit and month to see a live preview.</p>
+            </div>
+          </div>
+          <p class="mt-4 text-xs text-slate-500 text-center no-print">
+            <i class="fas fa-quote-left text-amber-500/80 mr-1"></i>
+            “Let the one who serves serve as if serving the Lord.” — Romans 12:11
+          </p>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="mt-8 py-8 px-4 border-t border-slate-200 bg-white text-center text-slate-500 text-sm no-print">
+    <p>Houston World Cup Prayer City Movement · Dear Daughter Bible Study Group</p>
+    <p class="mt-2">
+      <a href="volunteer-hub.html" class="text-brand hover:underline">Volunteer hub</a>
+      · <a href="faq.html" class="text-brand hover:underline">FAQ</a>
+      · <a href="/" class="text-brand hover:underline">Dashboard</a>
+    </p>
+  </footer>
+
+  <script src="js/monthly-unit-report.js"></script>
+</body>
+</html>
