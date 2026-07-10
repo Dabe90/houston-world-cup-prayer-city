@@ -5,6 +5,10 @@
 (function (global) {
   var mounted = false;
   var lastSummaryKey = '';
+  var draftListener = null;
+  var draftDirty = false;
+  var dashboardCtx = null;
+  var runtimeOpts = null;
 
   function $(id) {
     return document.getElementById(id);
@@ -29,13 +33,16 @@
       '<div><label for="reporter-phone" class="block text-sm font-medium text-slate-700 mb-1">Phone <span class="text-slate-400 font-normal">(optional)</span></label>' +
       '<input type="tel" id="reporter-phone" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-ng-green outline-none" /></div>' +
       '</div></section>' +
-      '<section class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">' +
-      '<div class="bg-gradient-to-r from-violet-600 to-purple-700 px-5 py-3 text-white">' +
-      '<h2 class="font-semibold text-sm flex items-center gap-2"><i class="fas fa-layer-group"></i> Select your ministry unit</h2>' +
-      '<p class="text-violet-100 text-xs mt-1">Prayer City teams · DDBS Groups · Nigeria leadership units</p></div>' +
+      '<section class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden" id="unit-picker-section">' +
+      '<button type="button" id="unit-section-toggle" class="w-full text-left bg-gradient-to-r from-violet-600 to-purple-700 px-5 py-3 text-white flex items-center justify-between gap-3">' +
+      '<div><h2 class="font-semibold text-sm flex items-center gap-2"><i class="fas fa-layer-group"></i> Select your ministry unit</h2>' +
+      '<p id="unit-section-summary" class="text-violet-100 text-xs mt-1">Tap to expand unit list</p></div>' +
+      '<i id="unit-section-chevron" class="fas fa-chevron-down text-sm transition-transform"></i></button>' +
+      '<div id="unit-section-body" class="hidden border-t border-violet-100">' +
       '<div class="p-5"><div id="unit-cards"></div>' +
       '<div id="other-unit-wrap" class="hidden mt-4"><label for="unit-other-name" class="block text-sm font-medium text-slate-700 mb-1">Unit name <span class="text-red-500">*</span></label>' +
-      '<input type="text" id="unit-other-name" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none" /></div></div></section>' +
+      '<input type="text" id="unit-other-name" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none" /></div></div></div></section>' +
+      '<div id="report-collab-banner" class="hidden rounded-xl border px-4 py-3 text-sm"></div>' +
       '<section class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">' +
       '<div class="bg-gradient-to-r from-amber-500 to-orange-600 px-5 py-3 text-white">' +
       '<h2 class="font-semibold text-sm flex items-center gap-2"><i class="fas fa-calendar-days"></i> Reporting period</h2></div>' +
@@ -77,13 +84,20 @@
       '</div></section>' +
       '<section class="bg-white rounded-2xl shadow-card border border-slate-100 p-5 space-y-3">' +
       '<h2 class="font-semibold text-slate-900 text-sm flex items-center gap-2"><i class="fas fa-paper-plane text-brand"></i> Send or save your report</h2>' +
-      '<p class="text-sm text-slate-600">Preview on the right, then download PDF or email leadership.</p>' +
+      '<p id="report-action-hint" class="text-sm text-slate-600">Share with teammates to collaborate, then leader approves and submits.</p>' +
+      '<button type="button" id="btn-share-team" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-ng-green hover:bg-emerald-700 text-white font-semibold py-3.5 transition">' +
+      '<i class="fas fa-users"></i> Share report with teammates</button>' +
+      '<button type="button" id="btn-save-contribution" class="hidden w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-ng-green text-ng-green hover:bg-emerald-50 font-semibold py-3.5 transition">' +
+      '<i class="fas fa-pen"></i> Save my additions</button>' +
+      '<button type="button" id="btn-approve-report" class="hidden w-full inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3.5 transition">' +
+      '<i class="fas fa-check-double"></i> Approve report</button>' +
       '<button type="button" id="btn-download-pdf" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-brand hover:bg-brand-light text-white font-semibold py-3.5 transition">' +
       '<i class="fas fa-file-pdf"></i> Download report as PDF</button>' +
       '<button type="button" id="btn-email-report" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold py-3.5 transition">' +
       '<i class="fas fa-envelope"></i> Send to my email</button>' +
-      '<button type="button" id="btn-submit-coordinator" class="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-brand text-brand hover:bg-brand-soft font-semibold py-3.5 transition">' +
-      '<i class="fas fa-church"></i> Submit to Prayer City leadership</button>' +
+      '<button type="button" id="btn-submit-coordinator" class="hidden w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-brand text-brand hover:bg-brand-soft font-semibold py-3.5 transition">' +
+      '<i class="fas fa-paper-plane"></i> Submit</button>' +
+      '<div id="report-contributions" class="hidden text-xs text-slate-500 border-t border-slate-100 pt-3 space-y-1"></div>' +
       '</section></div>' +
       '<aside class="lg:col-span-2"><div class="lg:sticky lg:top-20">' +
       '<div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">' +
@@ -368,6 +382,403 @@
       });
   }
 
+  function readFormPayload() {
+    if (!window.MonthlyUnitReport || !MonthlyUnitReport.readForm) return null;
+    var data = MonthlyUnitReport.readForm();
+    return {
+      reporterName: data.reporterName,
+      reporterEmail: data.reporterEmail,
+      reporterPhone: data.reporterPhone,
+      reportYear: data.reportYear,
+      reportMonth: data.reportMonth,
+      unitId: data.unitId,
+      unitDisplay: data.unitDisplay,
+      meetingsHeld: data.meetingsHeld,
+      attendance: data.attendance,
+      meetingNotesSummary: data.meetingNotesSummary,
+      activities: data.activities,
+      highlights: data.highlights,
+      testimonies: data.testimonies,
+      challenges: data.challenges,
+      prayerRequests: data.prayerRequests,
+      nextMonth: data.nextMonth,
+    };
+  }
+
+  function applyFormPayload(form) {
+    if (!form) return;
+    var map = {
+      'reporter-name': form.reporterName,
+      'reporter-email': form.reporterEmail,
+      'reporter-phone': form.reporterPhone,
+      'meetings-held': form.meetingsHeld,
+      attendance: form.attendance,
+      'meeting-notes-summary': form.meetingNotesSummary,
+      activities: form.activities,
+      highlights: form.highlights,
+      testimonies: form.testimonies,
+      challenges: form.challenges,
+      'prayer-requests': form.prayerRequests,
+      'next-month': form.nextMonth,
+    };
+    Object.keys(map).forEach(function (id) {
+      var el = $(id);
+      if (el && map[id] != null && map[id] !== undefined) el.value = map[id];
+    });
+    if (form.reportYear && $('report-year')) $('report-year').value = String(form.reportYear);
+    if (form.reportMonth && $('report-month')) $('report-month').value = String(form.reportMonth);
+    if (form.unitId) {
+      var radio = document.querySelector('input[name="unit"][value="' + form.unitId + '"]');
+      if (radio) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+    updateUnitSectionSummary();
+    if (window.MonthlyUnitReport && MonthlyUnitReport.updatePreview) MonthlyUnitReport.updatePreview();
+  }
+
+  function draftDocId(unitId, year, month) {
+    return unitId + '_' + year + '_' + String(month).padStart(2, '0');
+  }
+
+  function roleForUnit(unitId) {
+    var ctx = (dashboardCtx && dashboardCtx.unitContexts) || [];
+    var row = ctx.find(function (c) {
+      return c.unitId === unitId;
+    });
+    if (row) return row.role;
+    if (dashboardCtx && dashboardCtx.isSuperUser) return 'leader';
+    return 'member';
+  }
+
+  function showReportStatus(msg, type) {
+    var el = $('report-status');
+    if (!el) return;
+    el.textContent = msg;
+    el.className =
+      'rounded-xl border px-4 py-3 text-sm ' +
+      (type === 'error'
+        ? 'border-red-200 bg-red-50 text-red-900'
+        : type === 'success'
+          ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+          : 'border-sky-200 bg-sky-50 text-sky-900');
+    el.classList.remove('hidden');
+  }
+
+  function updateUnitSectionSummary() {
+    var summary = $('unit-section-summary');
+    if (!summary) return;
+    var unitId = selectedUnitId();
+    summary.textContent = unitId
+      ? 'Selected: ' + unitLabelFor(unitId)
+      : 'Tap to expand unit list';
+  }
+
+  function setUnitSectionOpen(open) {
+    var body = $('unit-section-body');
+    var chevron = $('unit-section-chevron');
+    if (body) body.classList.toggle('hidden', !open);
+    if (chevron) chevron.classList.toggle('rotate-180', open);
+  }
+
+  function bindCollapsibleUnit() {
+    var toggle = $('unit-section-toggle');
+    if (!toggle || toggle.dataset.bound) return;
+    toggle.dataset.bound = '1';
+    toggle.addEventListener('click', function () {
+      var body = $('unit-section-body');
+      setUnitSectionOpen(body && body.classList.contains('hidden'));
+    });
+    document.addEventListener('change', function (e) {
+      if (e.target && e.target.name === 'unit') {
+        updateUnitSectionSummary();
+        if (selectedUnitId()) setUnitSectionOpen(false);
+      }
+    });
+  }
+
+  function renderContributions(list) {
+    var wrap = $('report-contributions');
+    if (!wrap) return;
+    if (!list || !list.length) {
+      wrap.classList.add('hidden');
+      wrap.innerHTML = '';
+      return;
+    }
+    wrap.classList.remove('hidden');
+    wrap.innerHTML =
+      '<p class="font-semibold text-slate-700">Team activity</p>' +
+      list
+        .slice(-6)
+        .reverse()
+        .map(function (c) {
+          return (
+            '<p><span class="font-medium text-slate-800">' +
+            (c.name || 'Member') +
+            ':</span> ' +
+            (c.message || 'Updated report') +
+            '</p>'
+          );
+        })
+        .join('');
+  }
+
+  function updateCollabUi(draft) {
+    var unitId = selectedUnitId();
+    var role = roleForUnit(unitId);
+    var isLeader = role === 'leader';
+    var status = (draft && draft.status) || '';
+    var banner = $('report-collab-banner');
+    var shareBtn = $('btn-share-team');
+    var saveBtn = $('btn-save-contribution');
+    var approveBtn = $('btn-approve-report');
+    var submitBtn = $('btn-submit-coordinator');
+    var hint = $('report-action-hint');
+
+    if (banner) {
+      if (status === 'shared') {
+        banner.className =
+          'rounded-xl border border-sky-200 bg-sky-50 text-sky-900 px-4 py-3 text-sm';
+        banner.innerHTML =
+          '<strong>Shared with unit</strong> — teammates can review and add. Leader approves when ready.';
+        banner.classList.remove('hidden');
+      } else if (status === 'approved') {
+        banner.className =
+          'rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 px-4 py-3 text-sm';
+        banner.innerHTML =
+          '<strong>Approved</strong>' +
+          (draft.approvedByName ? ' by ' + draft.approvedByName : '') +
+          ' — leader can submit the final report.';
+        banner.classList.remove('hidden');
+      } else if (status === 'submitted') {
+        banner.className =
+          'rounded-xl border border-slate-200 bg-slate-50 text-slate-800 px-4 py-3 text-sm';
+        banner.innerHTML = '<strong>Submitted</strong> — this month\'s report is on file.';
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    if (shareBtn) shareBtn.classList.toggle('hidden', status === 'submitted');
+    if (saveBtn) saveBtn.classList.toggle('hidden', status !== 'shared');
+    if (approveBtn) approveBtn.classList.toggle('hidden', !isLeader || status !== 'shared');
+    if (submitBtn) {
+      var canSubmit = false;
+      if (status !== 'submitted' && isLeader) {
+        if (status === 'approved') canSubmit = true;
+        else if (dashboardCtx && dashboardCtx.isSuperUser && status !== 'shared') canSubmit = true;
+      }
+      submitBtn.classList.toggle('hidden', !canSubmit);
+    }
+
+    if (hint) {
+      if (status === 'shared' && isLeader) {
+        hint.textContent = 'Teammates are adding input. Approve when ready, then submit.';
+      } else if (status === 'shared') {
+        hint.textContent = 'Add your input and tap Save my additions.';
+      } else if (status === 'approved' && isLeader) {
+        hint.textContent = 'Report approved — submit when you are ready.';
+      } else if (isLeader) {
+        hint.textContent = 'Share with teammates to collaborate, then approve and submit.';
+      } else {
+        hint.textContent = 'Your leader will share the report when it is ready for input.';
+      }
+    }
+
+    renderContributions(draft && draft.contributions);
+  }
+
+  function detachDraftListener() {
+    if (draftListener) {
+      draftListener();
+      draftListener = null;
+    }
+  }
+
+  function watchDraft(opts) {
+    detachDraftListener();
+    var unitId = selectedUnitId();
+    var year = parseInt(($('report-year') && $('report-year').value) || '', 10);
+    var month = parseInt(($('report-month') && $('report-month').value) || '', 10);
+    if (!opts.db || !unitId || !year || !month) {
+      updateCollabUi(null);
+      return;
+    }
+    draftListener = opts.db
+      .collection('nigeria_unit_report_drafts')
+      .doc(draftDocId(unitId, year, month))
+      .onSnapshot(
+        function (snap) {
+          var draft = snap.exists ? snap.data() : null;
+          updateCollabUi(draft);
+          if (!draft || !draft.form || draftDirty) return;
+          if (document.activeElement && document.activeElement.closest('#ng-report-root')) return;
+          applyFormPayload(draft.form);
+        },
+        function () {
+          updateCollabUi(null);
+        }
+      );
+  }
+
+  function shareWithTeammates(opts) {
+    var form = readFormPayload();
+    var unitId = selectedUnitId();
+    var year = parseInt(form && form.reportYear, 10);
+    var month = parseInt(form && form.reportMonth, 10);
+    if (!form || !unitId || !year || !month) {
+      showReportStatus('Select unit and reporting month first.', 'error');
+      return Promise.resolve();
+    }
+    if (!opts.functions) return Promise.resolve();
+    showReportStatus('Sharing with teammates…', 'info');
+    return opts.functions
+      .httpsCallable('shareNigeriaUnitReportDraft')({
+        unitId: unitId,
+        reportYear: year,
+        reportMonth: month,
+        form: form,
+      })
+      .then(function () {
+        showReportStatus('Shared — unit members can review and add.', 'success');
+      })
+      .catch(function (e) {
+        showReportStatus((e && e.message) || 'Could not share report.', 'error');
+      });
+  }
+
+  function saveContribution(opts) {
+    var form = readFormPayload();
+    var unitId = selectedUnitId();
+    var year = parseInt(form && form.reportYear, 10);
+    var month = parseInt(form && form.reportMonth, 10);
+    if (!form || !unitId || !year || !month) {
+      showReportStatus('Select unit and month first.', 'error');
+      return Promise.resolve();
+    }
+    showReportStatus('Saving your additions…', 'info');
+    return opts.functions
+      .httpsCallable('contributeNigeriaUnitReportDraft')({
+        unitId: unitId,
+        reportYear: year,
+        reportMonth: month,
+        form: form,
+        note: 'Added input to the shared report.',
+      })
+      .then(function () {
+        draftDirty = false;
+        showReportStatus('Your additions were saved for the team.', 'success');
+      })
+      .catch(function (e) {
+        showReportStatus((e && e.message) || 'Could not save additions.', 'error');
+      });
+  }
+
+  function approveReport(opts) {
+    var form = readFormPayload();
+    var unitId = selectedUnitId();
+    var year = parseInt(form && form.reportYear, 10);
+    var month = parseInt(form && form.reportMonth, 10);
+    if (!form || !unitId || !year || !month) {
+      showReportStatus('Select unit and month first.', 'error');
+      return Promise.resolve();
+    }
+    showReportStatus('Approving report…', 'info');
+    return opts.functions
+      .httpsCallable('approveNigeriaUnitReportDraft')({
+        unitId: unitId,
+        reportYear: year,
+        reportMonth: month,
+        form: form,
+      })
+      .then(function () {
+        showReportStatus('Report approved — you can submit when ready.', 'success');
+      })
+      .catch(function (e) {
+        showReportStatus((e && e.message) || 'Could not approve report.', 'error');
+      });
+  }
+
+  function submitReport(opts) {
+    if (!window.MonthlyUnitReport) return Promise.resolve();
+    var err = MonthlyUnitReport.validateForm(MonthlyUnitReport.readForm());
+    if (err) {
+      showReportStatus(err, 'error');
+      return Promise.resolve();
+    }
+    var form = readFormPayload();
+    var unitId = selectedUnitId();
+    showReportStatus('Submitting report…', 'info');
+    return opts.functions
+      .httpsCallable('submitNigeriaUnitReport')({
+        unitId: unitId,
+        reportYear: parseInt(form.reportYear, 10),
+        reportMonth: parseInt(form.reportMonth, 10),
+        activities: form.activities,
+        highlights: form.highlights,
+        testimonies: form.testimonies,
+        challenges: form.challenges,
+        prayerRequests: form.prayerRequests,
+        nextMonth: form.nextMonth,
+        meetingNotesSummary: form.meetingNotesSummary,
+      })
+      .then(function () {
+        showReportStatus('Report submitted successfully!', 'success');
+      })
+      .catch(function (e) {
+        showReportStatus((e && e.message) || 'Submit failed — approve the shared report first.', 'error');
+      });
+  }
+
+  function overrideSubmitButton(opts) {
+    var btn = $('btn-submit-coordinator');
+    if (!btn) return;
+    var clone = btn.cloneNode(true);
+    btn.parentNode.replaceChild(clone, btn);
+    clone.addEventListener('click', function () {
+      submitReport(opts);
+    });
+  }
+
+  function bindCollabActions(opts) {
+    var shareBtn = $('btn-share-team');
+    if (shareBtn && !shareBtn.dataset.bound) {
+      shareBtn.dataset.bound = '1';
+      shareBtn.addEventListener('click', function () {
+        shareWithTeammates(opts);
+      });
+    }
+    var saveBtn = $('btn-save-contribution');
+    if (saveBtn && !saveBtn.dataset.bound) {
+      saveBtn.dataset.bound = '1';
+      saveBtn.addEventListener('click', function () {
+        saveContribution(opts);
+      });
+    }
+    var approveBtn = $('btn-approve-report');
+    if (approveBtn && !approveBtn.dataset.bound) {
+      approveBtn.dataset.bound = '1';
+      approveBtn.addEventListener('click', function () {
+        approveReport(opts);
+      });
+    }
+    overrideSubmitButton(opts);
+
+    ['activities', 'highlights', 'testimonies', 'challenges', 'prayer-requests', 'next-month', 'meeting-notes-summary'].forEach(
+      function (id) {
+        var el = $(id);
+        if (el && !el.dataset.draftBound) {
+          el.dataset.draftBound = '1';
+          el.addEventListener('input', function () {
+            draftDirty = true;
+          });
+        }
+      }
+    );
+  }
+
   function loadAttendance(functions, unitId) {
     if (!functions) return Promise.resolve();
     var year = parseInt(($('report-year') && $('report-year').value) || '', 10);
@@ -405,11 +816,12 @@
       if (el && !el.dataset.ngBound) {
         el.dataset.ngBound = '1';
         el.addEventListener('change', function () {
-          lastSummaryKey = '';
-          loadAttendance(opts.functions, selectedUnitId());
-          generateNotesSummary({ db: opts.db, functions: opts.functions });
-        });
-      }
+        lastSummaryKey = '';
+        loadAttendance(opts.functions, selectedUnitId());
+        generateNotesSummary({ db: opts.db, functions: opts.functions });
+        watchDraft(opts);
+      });
+    }
     });
 
     document.querySelectorAll('input[name="unit"]').forEach(function (radio) {
@@ -419,6 +831,8 @@
         lastSummaryKey = '';
         loadAttendance(opts.functions, radio.value);
         generateNotesSummary({ db: opts.db, functions: opts.functions });
+        watchDraft(opts);
+        updateUnitSectionSummary();
       });
     });
   }
@@ -426,9 +840,13 @@
   function mount(container, data, opts) {
     if (!container) return;
     opts = opts || {};
+    runtimeOpts = opts;
+    dashboardCtx = data;
+    detachDraftListener();
     container.innerHTML = reportShellHtml();
     mounted = true;
     lastSummaryKey = '';
+    draftDirty = false;
 
     if (window.MonthlyUnitReport && MonthlyUnitReport.init) {
       if (MonthlyUnitReport.resetInit) MonthlyUnitReport.resetInit();
@@ -437,7 +855,12 @@
 
     prefillReporter(data);
     preselectUnit(data);
+    bindCollapsibleUnit();
+    updateUnitSectionSummary();
+    setUnitSectionOpen(!selectedUnitId());
     bindDashboardHooks(opts);
+    bindCollabActions(opts);
+    watchDraft(opts);
 
     loadAttendance(opts.functions, selectedUnitId()).then(function () {
       return generateNotesSummary({ db: opts.db, functions: opts.functions });
@@ -446,14 +869,18 @@
 
   function refresh(data, opts) {
     if (!mounted) return;
+    dashboardCtx = data;
+    runtimeOpts = opts || runtimeOpts;
     prefillReporter(data);
     loadAttendance(opts.functions, selectedUnitId());
     generateNotesSummary({ db: opts.db, functions: opts.functions });
+    watchDraft(opts);
   }
 
   global.NigeriaDashboardReport = {
     mount: mount,
     refresh: refresh,
     generateNotesSummary: generateNotesSummary,
+    detachDraftListener: detachDraftListener,
   };
 })(typeof window !== 'undefined' ? window : this);

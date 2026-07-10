@@ -625,6 +625,17 @@ const submitNigeriaUnitReport = onCall(async (request) => {
   const month = parseInt(data.reportMonth, 10);
   if (!year || !month) throw new HttpsError('invalid-argument', 'Report year and month required.');
 
+  const draftId = reportDraftId(leaderUnit.unitId, year, month);
+  const draftSnap = await db.collection('nigeria_unit_report_drafts').doc(draftId).get();
+  if (!access.isSuperUser) {
+    if (!draftSnap.exists || draftSnap.data().status !== 'approved') {
+      throw new HttpsError(
+        'failed-precondition',
+        'Leader must approve the shared report before submitting.'
+      );
+    }
+  }
+
   const attendanceAnalytics = await computeUnitAttendanceForReport(
     db,
     leaderUnit.unitId,
@@ -647,6 +658,7 @@ const submitNigeriaUnitReport = onCall(async (request) => {
     challenges: String(data.challenges || '').trim(),
     prayerRequests: String(data.prayerRequests || '').trim(),
     nextMonth: String(data.nextMonth || '').trim(),
+    meetingNotesSummary: String(data.meetingNotesSummary || '').trim(),
     meetingsHeld: attendanceAnalytics.meetingsHeld,
     attendanceSummary: attendanceAnalytics,
     attendanceNarrative: buildAttendanceNarrative(attendanceAnalytics),
@@ -654,7 +666,162 @@ const submitNigeriaUnitReport = onCall(async (request) => {
   };
 
   await db.collection('nigeria_unit_reports').doc(reportId).set(report, { merge: true });
+  await db.collection('nigeria_unit_report_drafts').doc(reportId).set(
+    {
+      status: 'submitted',
+      submittedAt: admin.firestore.FieldValue.serverTimestamp(),
+      submittedByUid: uid,
+      submittedByName: profile.name || '',
+    },
+    { merge: true }
+  );
   return { ok: true, reportId, attendanceAnalytics };
+});
+
+function reportDraftId(unitId, year, month) {
+  return `${unitId}_${year}_${String(month).padStart(2, '0')}`;
+}
+
+function memberHasUnit(profile, unitId) {
+  return normalizeProfileUnits(profile).some((u) => u.unitId === unitId) || profile.unitId === unitId;
+}
+
+function isUnitLeader(profile, unitId, isSuperUser) {
+  if (isSuperUser) return true;
+  return normalizeProfileUnits(profile).some((u) => u.unitId === unitId && u.role === 'leader');
+}
+
+const shareNigeriaUnitReportDraft = onCall(async (request) => {
+  const uid = requireAuth(request);
+  const db = admin.firestore();
+  const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
+  const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+  if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Profile required.');
+  const profile = profileSnap.data();
+  const data = request.data || {};
+  const unitId = String(data.unitId || '').trim();
+  const year = parseInt(data.reportYear, 10);
+  const month = parseInt(data.reportMonth, 10);
+  const form = data.form || {};
+  if (!unitId || !year || !month) throw new HttpsError('invalid-argument', 'unitId, year, and month required.');
+  if (!memberHasUnit(profile, unitId)) {
+    throw new HttpsError('permission-denied', 'You are not a member of that unit.');
+  }
+
+  const draftId = reportDraftId(unitId, year, month);
+  const unit = getUnit(unitId);
+  const contribution = {
+    uid,
+    name: profile.name || 'Member',
+    message: 'Shared the report with the unit for review.',
+    at: new Date().toISOString(),
+  };
+
+  await db.collection('nigeria_unit_report_drafts').doc(draftId).set(
+    {
+      unitId,
+      reportYear: year,
+      reportMonth: month,
+      unitLabel: unit ? unit.label : unitId,
+      status: 'shared',
+      form,
+      sharedAt: admin.firestore.FieldValue.serverTimestamp(),
+      sharedByUid: uid,
+      sharedByName: profile.name || '',
+      approvedAt: null,
+      approvedByUid: null,
+      approvedByName: null,
+      contributions: admin.firestore.FieldValue.arrayUnion(contribution),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastUpdatedByUid: uid,
+      lastUpdatedByName: profile.name || '',
+    },
+    { merge: true }
+  );
+  return { ok: true, draftId, status: 'shared' };
+});
+
+const contributeNigeriaUnitReportDraft = onCall(async (request) => {
+  const uid = requireAuth(request);
+  const db = admin.firestore();
+  await assertNigeriaVolunteerAccess(db, uid, request.auth);
+  const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+  if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Profile required.');
+  const profile = profileSnap.data();
+  const data = request.data || {};
+  const unitId = String(data.unitId || '').trim();
+  const year = parseInt(data.reportYear, 10);
+  const month = parseInt(data.reportMonth, 10);
+  const form = data.form || {};
+  const note = String(data.note || '').trim();
+  if (!unitId || !year || !month) throw new HttpsError('invalid-argument', 'unitId, year, and month required.');
+  if (!memberHasUnit(profile, unitId)) {
+    throw new HttpsError('permission-denied', 'You are not a member of that unit.');
+  }
+
+  const draftId = reportDraftId(unitId, year, month);
+  const draftSnap = await db.collection('nigeria_unit_report_drafts').doc(draftId).get();
+  if (!draftSnap.exists || draftSnap.data().status !== 'shared') {
+    throw new HttpsError('failed-precondition', 'Report is not open for teammate edits.');
+  }
+
+  const contribution = {
+    uid,
+    name: profile.name || 'Member',
+    message: note || 'Updated the shared report.',
+    at: new Date().toISOString(),
+  };
+
+  await db.collection('nigeria_unit_report_drafts').doc(draftId).set(
+    {
+      form,
+      contributions: admin.firestore.FieldValue.arrayUnion(contribution),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastUpdatedByUid: uid,
+      lastUpdatedByName: profile.name || '',
+    },
+    { merge: true }
+  );
+  return { ok: true, draftId };
+});
+
+const approveNigeriaUnitReportDraft = onCall(async (request) => {
+  const uid = requireAuth(request);
+  const db = admin.firestore();
+  const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
+  const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+  if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Profile required.');
+  const profile = profileSnap.data();
+  const data = request.data || {};
+  const unitId = String(data.unitId || '').trim();
+  const year = parseInt(data.reportYear, 10);
+  const month = parseInt(data.reportMonth, 10);
+  const form = data.form || null;
+  if (!unitId || !year || !month) throw new HttpsError('invalid-argument', 'unitId, year, and month required.');
+  if (!isUnitLeader(profile, unitId, access.isSuperUser)) {
+    throw new HttpsError('permission-denied', 'Only the unit leader can approve the report.');
+  }
+
+  const draftId = reportDraftId(unitId, year, month);
+  const draftSnap = await db.collection('nigeria_unit_report_drafts').doc(draftId).get();
+  if (!draftSnap.exists || draftSnap.data().status !== 'shared') {
+    throw new HttpsError('failed-precondition', 'Nothing to approve — share the report with teammates first.');
+  }
+
+  const approvedForm = form || draftSnap.data().form || {};
+  await db.collection('nigeria_unit_report_drafts').doc(draftId).set(
+    {
+      status: 'approved',
+      form: approvedForm,
+      approvedForm,
+      approvedAt: admin.firestore.FieldValue.serverTimestamp(),
+      approvedByUid: uid,
+      approvedByName: profile.name || '',
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+  return { ok: true, draftId, status: 'approved' };
 });
 
 function buildAttendanceNarrative(a) {
@@ -823,6 +990,9 @@ module.exports = {
   recordNigeriaAttendance,
   getNigeriaDashboard,
   submitNigeriaUnitReport,
+  shareNigeriaUnitReportDraft,
+  contributeNigeriaUnitReportDraft,
+  approveNigeriaUnitReportDraft,
   getNigeriaAttendanceForReport,
   summarizeNigeriaMeetingNotesForReport,
   getPrayerCityAccess,

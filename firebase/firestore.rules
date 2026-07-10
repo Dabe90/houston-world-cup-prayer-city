@@ -75,6 +75,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Collaborative monthly report draft — share, contribute, approve via Cloud Functions.
+    match /nigeria_unit_report_drafts/{draftId} {
+      allow read: if request.auth != null && nigeriaCanAccessUnit(resource.data.unitId);
+      allow write: if false;
+    }
+
     // Shared notes for a unit meeting — all members of that unit can read/write.
     match /nigeria_unit_meeting_notes/{noteId} {
       allow read: if request.auth != null && nigeriaCanAccessUnit(resource.data.unitId);

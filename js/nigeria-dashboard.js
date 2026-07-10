@@ -562,23 +562,32 @@
     }
 
     if (!panels.querySelector('#ng-report-root')) {
-      NigeriaDashboardReport.mount(panels, {
-        profile: data.profile,
-        unitContexts: data.unitContexts,
-        authUser: auth.currentUser,
-      }, {
-        db: db,
-        functions: functions,
-      });
+      NigeriaDashboardReport.mount(
+        panels,
+        {
+          profile: data.profile,
+          unitContexts: data.unitContexts,
+          authUser: auth.currentUser,
+          isSuperUser: data.isSuperUser || isClientSuperUser(),
+        },
+        {
+          db: db,
+          functions: functions,
+        }
+      );
     } else {
-      NigeriaDashboardReport.refresh({
-        profile: data.profile,
-        unitContexts: data.unitContexts,
-        authUser: auth.currentUser,
-      }, {
-        db: db,
-        functions: functions,
-      });
+      NigeriaDashboardReport.refresh(
+        {
+          profile: data.profile,
+          unitContexts: data.unitContexts,
+          authUser: auth.currentUser,
+          isSuperUser: data.isSuperUser || isClientSuperUser(),
+        },
+        {
+          db: db,
+          functions: functions,
+        }
+      );
     }
   }
 
