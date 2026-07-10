@@ -257,6 +257,28 @@
     }
   }
 
+  function isProfileComplete(profile) {
+    if (!profile) return false;
+    if (!profile.name || !profile.unitId || !profile.role) return false;
+    if (!window.NigeriaUnits || !NigeriaUnits.getUnit(profile.unitId)) return false;
+    return true;
+  }
+
+  function showDashboardSafely(data) {
+    try {
+      hide($('onboard-panel'));
+      hide($('auth-panel'));
+      hide($('not-eligible-panel'));
+      show($('dash-panel'));
+      renderDashboard(data);
+      return true;
+    } catch (e) {
+      console.error('renderDashboard', e);
+      hide($('dash-panel'));
+      return false;
+    }
+  }
+
   function showOnboarding(volunteer, isSuperUser) {
     hide($('auth-panel'));
     hide($('dash-panel'));
@@ -360,22 +382,18 @@
       showNotEligible(data.message);
       return;
     }
-    if (!data.hasProfile) {
+    if (!data.hasProfile || !isProfileComplete(data.profile)) {
       showOnboarding(
         data.volunteer || coordinatorVolunteer(),
         data.isSuperUser || isClientSuperUser()
       );
       return;
     }
-    hide($('onboard-panel'));
-    hide($('auth-panel'));
-    show($('dash-panel'));
-    try {
-      renderDashboard(data);
-    } catch (e) {
-      console.error('renderDashboard', e);
-      if (isClientSuperUser()) return showSuperUserLanding();
-      setStatus('Could not display dashboard. Try refreshing.', 'error');
+    if (!showDashboardSafely(data)) {
+      showOnboarding(
+        data.volunteer || coordinatorVolunteer(),
+        data.isSuperUser || isClientSuperUser()
+      );
     }
   }
 
@@ -398,19 +416,18 @@
     showSuperUserChrome();
     hide($('auth-panel'));
     hide($('not-eligible-panel'));
+    hide($('dash-panel'));
+    showOnboarding(coordinatorVolunteer(), true);
+
     return loadLocalNigeriaProfile()
       .then(function (snap) {
-        if (snap.exists) {
-          hide($('onboard-panel'));
-          show($('dash-panel'));
-          renderDashboard(buildLocalDashboard(snap.data(), true));
-          return;
+        if (!snap.exists || !isProfileComplete(snap.data())) return;
+        if (!showDashboardSafely(buildLocalDashboard(snap.data(), true))) {
+          showOnboarding(coordinatorVolunteer(), true);
         }
-        showOnboarding(coordinatorVolunteer(), true);
       })
       .catch(function (e) {
         console.warn('loadLocalNigeriaProfile', e);
-        showOnboarding(coordinatorVolunteer(), true);
       });
   }
 
