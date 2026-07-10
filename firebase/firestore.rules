@@ -2,6 +2,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function nigeriaVolunteer() {
+      return get(/databases/$(database)/documents/nigeria_volunteers/$(request.auth.uid)).data;
+    }
+
+    function nigeriaCanAccessUnit(unitId) {
+      let v = nigeriaVolunteer();
+      return (v.unitIds != null && unitId in v.unitIds) || v.unitId == unitId;
+    }
+
     // Populated by Cloud Functions only. Clients never read this directly.
     match /volunteer_onboarding/{docId} {
       allow read, write: if false;
@@ -62,9 +71,17 @@ service cloud.firestore {
     }
 
     match /nigeria_unit_reports/{reportId} {
-      allow read: if request.auth != null
-        && get(/databases/$(database)/documents/nigeria_volunteers/$(request.auth.uid)).data.unitId == resource.data.unitId;
+      allow read: if request.auth != null && nigeriaCanAccessUnit(resource.data.unitId);
       allow write: if false;
+    }
+
+    // Shared notes for a unit meeting — all members of that unit can read/write.
+    match /nigeria_unit_meeting_notes/{noteId} {
+      allow read: if request.auth != null && nigeriaCanAccessUnit(resource.data.unitId);
+      allow create, update: if request.auth != null
+        && request.resource.data.updatedByUid == request.auth.uid
+        && nigeriaCanAccessUnit(request.resource.data.unitId);
+      allow delete: if false;
     }
   }
 }

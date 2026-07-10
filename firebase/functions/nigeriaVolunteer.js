@@ -370,6 +370,7 @@ const saveNigeriaProfile = onCall(async (request) => {
     name: displayName,
     phone: access.phone,
     units: normalizedUnits,
+    unitIds: normalizedUnits.map((u) => u.unitId),
     unitId: primary.unitId,
     unitLabel: primary.unitLabel,
     role: primary.role,

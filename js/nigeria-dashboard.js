@@ -89,6 +89,9 @@
     db = firebase.firestore();
     storage = firebase.storage();
     functions = firebase.app().functions('us-central1');
+    if (window.DDBSNigeriaMeetingNotes) {
+      DDBSNigeriaMeetingNotes.init({ auth: auth, db: db });
+    }
     return auth
       .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
       .catch(function () {})
@@ -247,13 +250,19 @@
 
   function buildLocalDashboard(profile, isSuperUser) {
     var units = normalizeProfileUnits(profile);
+    var unitIds =
+      Array.isArray(profile.unitIds) && profile.unitIds.length
+        ? profile.unitIds
+        : units.map(function (u) {
+            return u.unitId;
+          });
     var unitContexts = buildUnitContextsFromProfile(profile, isSuperUser);
     var primary = unitContexts[0] || null;
     return {
       hasProfile: true,
       eligible: true,
       isSuperUser: isSuperUser,
-      profile: Object.assign({}, profile, { units: units }),
+      profile: Object.assign({}, profile, { units: units, unitIds: unitIds }),
       unitContexts: unitContexts,
       nextMeeting: primary ? primary.nextMeeting : null,
       checkInOpen: primary ? primary.checkInOpen : false,
@@ -311,32 +320,72 @@
     }
   }
 
-  function programCardHtml(ev) {
+  function programTileHtml(ev) {
     var P = window.DDBSNigeriaPrograms;
     if (!P) return '';
+    var enriched = ev.image ? ev : P.enrichEvent(ev);
     var badge =
-      ev.kind === 'midweek'
-        ? 'bg-emerald-100 text-emerald-800'
-        : 'bg-violet-100 text-violet-800';
+      enriched.kind === 'midweek'
+        ? 'bg-emerald-500/90'
+        : 'bg-violet-600/90';
+    var slotLabel =
+      enriched.slot === 'past'
+        ? 'Just ended'
+        : enriched.kind === 'midweek'
+          ? 'Wed Bible Study'
+          : 'Coming up';
+    var slotClass =
+      enriched.slot === 'past' ? 'bg-slate-600/90' : badge;
     return (
-      '<article class="program-card bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">' +
-      '<div class="h-2 ' +
-      (ev.kind === 'midweek' ? 'bg-ng-green' : 'bg-brand') +
-      '"></div>' +
-      '<div class="p-4">' +
-      '<div class="flex flex-wrap items-center gap-2 mb-2">' +
-      '<span class="text-xs font-bold text-slate-500">' +
-      P.formatDateLabel(ev) +
-      '</span>' +
-      '<span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ' +
-      badge +
+      '<article class="program-card group relative rounded-2xl overflow-hidden shadow-card border border-slate-200/80 min-h-[200px] sm:min-h-[220px]">' +
+      '<img src="' +
+      enriched.image +
+      '" alt="" class="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" onerror="this.src=\'' +
+      P.themeForEvent({ title: '', kind: 'special' }).image +
+      '\'" />' +
+      '<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10"></div>' +
+      '<div class="absolute top-3 left-3 flex flex-wrap gap-1.5">' +
+      '<span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full text-white ' +
+      slotClass +
       '">' +
-      P.kindBadge(ev.kind) +
+      slotLabel +
       '</span></div>' +
-      '<h4 class="font-semibold text-slate-900 text-sm leading-snug">' +
-      ev.title +
+      '<div class="absolute bottom-0 left-0 right-0 p-4 text-white">' +
+      '<p class="text-xs font-semibold text-white/80 mb-1">' +
+      P.formatDateLabel(enriched) +
+      '</p>' +
+      '<h4 class="font-bold text-sm sm:text-base leading-snug text-balance">' +
+      enriched.title +
       '</h4></div></article>'
     );
+  }
+
+  function meetingsForUnit(ctx) {
+    var unit = window.NigeriaUnits && NigeriaUnits.getUnit(ctx.unitId);
+    if (!unit || !NigeriaUnits.meetingsForNotes) return [];
+    return NigeriaUnits.meetingsForNotes(unit, 8);
+  }
+
+  function defaultMeetingKey(meetings, ctx) {
+    var meeting = meetingForNotes(ctx);
+    if (meeting && meeting.key) return meeting.key;
+    return meetings.length ? meetings[meetings.length - 1].key : '';
+  }
+
+  function meetingForNotes(ctx) {
+    if (ctx.nextMeeting && ctx.nextMeeting.key) return ctx.nextMeeting;
+    var unit = window.NigeriaUnits && NigeriaUnits.getUnit(ctx.unitId);
+    if (!unit) return { key: ctx.unitId + '_hub', dateYmd: '' };
+    var next = NigeriaUnits.getNextMeeting(unit);
+    if (next) {
+      return {
+        key: next.key,
+        dateYmd: next.dateYmd,
+        startIso: next.start.toISOString(),
+        endIso: next.end.toISOString(),
+      };
+    }
+    return { key: ctx.unitId + '_hub', dateYmd: '' };
   }
 
   function renderProgramsPanel(month) {
@@ -356,10 +405,16 @@
       });
     }
     var val = month || (filter && filter.value) || 'upcoming';
-    var events =
-      val === 'upcoming' ? P.upcoming(24) : P.byMonth(parseInt(val, 10));
+    var events;
+    if (val === 'upcoming') {
+      events = P.featuredTiles();
+    } else {
+      events = P.byMonth(parseInt(val, 10)).map(function (e) {
+        return P.enrichEvent(e);
+      });
+    }
     grid.innerHTML = events.length
-      ? events.map(programCardHtml).join('')
+      ? events.map(programTileHtml).join('')
       : '<p class="text-sm text-slate-500 col-span-full">No programs in this view.</p>';
   }
 
@@ -375,8 +430,10 @@
     var up = $('home-upcoming-programs');
     var meetings = $('home-meetings-list');
     if (up && window.DDBSNigeriaPrograms) {
-      var events = DDBSNigeriaPrograms.upcoming(4);
-      up.innerHTML = events.map(programCardHtml).join('');
+      var events = DDBSNigeriaPrograms.featuredTiles();
+      up.innerHTML = events.length
+        ? events.map(programTileHtml).join('')
+        : '<p class="text-sm text-slate-500">No programs scheduled.</p>';
     }
     if (meetings) {
       var ctx = data.unitContexts || [];
@@ -407,13 +464,25 @@
   function renderUnitsTab(data) {
     var wrap = $('units-cards');
     if (!wrap) return;
+    if (window.DDBSNigeriaMeetingNotes) DDBSNigeriaMeetingNotes.detachAll();
     var ctx = data.unitContexts || [];
+    var notesHtml = window.DDBSNigeriaMeetingNotes
+      ? DDBSNigeriaMeetingNotes.mountHtml
+      : function () {
+          return '';
+        };
+    var profileName = data.profile && data.profile.name;
     wrap.innerHTML = ctx
       .map(function (c) {
         var sched = unitScheduleLabel(c);
         var open = c.checkInOpen;
+        var unitMeetings = meetingsForUnit(c);
+        var defaultKey = defaultMeetingKey(unitMeetings, c);
+        var meeting = meetingForNotes(c);
         return (
-          '<div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">' +
+          '<div class="unit-card bg-white rounded-2xl shadow-card border border-slate-100 p-5" data-unit-id="' +
+          c.unitId +
+          '">' +
           '<div class="flex flex-wrap items-center gap-2 mb-3">' +
           '<h3 class="font-bold text-slate-900 flex-1">' +
           c.unitLabel +
@@ -423,15 +492,14 @@
           '">' +
           (c.role === 'leader' ? 'Leader' : 'Member') +
           '</span></div>' +
-          '<p class="text-sm text-slate-600 mb-3">' +
+          '<p class="text-sm text-slate-600 mb-1">' +
           sched +
           '</p>' +
-          (c.nextMeeting
-            ? '<p class="text-sm mb-3">Next: <strong>' +
-              c.nextMeeting.dateYmd +
-              '</strong> (' +
-              formatCountdown(c.nextMeeting.startIso) +
-              ')</p>'
+          (meeting.dateYmd
+            ? '<p class="text-xs text-brand font-medium mb-3">Next meeting: ' +
+              meeting.dateYmd +
+              (meeting.startIso ? ' · in ' + formatCountdown(meeting.startIso) : '') +
+              '</p>'
             : '') +
           '<button type="button" class="btn-unit-checkin w-full rounded-xl py-3 font-semibold text-white ' +
           (open ? 'bg-ng-green hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed') +
@@ -440,7 +508,9 @@
           '" ' +
           (open ? '' : 'disabled') +
           '>Check in</button>' +
-          '<p class="text-xs text-slate-500 mt-2 text-center">Opens 20 min before · closes 45 min after</p></div>'
+          '<p class="text-xs text-slate-500 mt-2 text-center">Opens 20 min before · closes 45 min after</p>' +
+          notesHtml(unitMeetings, defaultKey) +
+          '</div>'
         );
       })
       .join('');
@@ -450,6 +520,27 @@
         checkIn(btn.getAttribute('data-unit-id'));
       });
     });
+
+    if (window.DDBSNigeriaMeetingNotes) {
+      ctx.forEach(function (c) {
+        var card = wrap.querySelector('.unit-card[data-unit-id="' + c.unitId + '"]');
+        var notesRoot = card && card.querySelector('.meeting-notes');
+        var unitMeetings = meetingsForUnit(c);
+        var meetingKey = defaultMeetingKey(unitMeetings, c);
+        var meeting = unitMeetings.find(function (m) {
+          return m.key === meetingKey;
+        }) || meetingForNotes(c);
+        if (notesRoot && meetingKey) {
+          DDBSNigeriaMeetingNotes.attach(notesRoot, {
+            unitId: c.unitId,
+            unitLabel: c.unitLabel,
+            meetingKey: meetingKey,
+            meetingDateYmd: meeting.dateYmd || '',
+            profileName: profileName,
+          });
+        }
+      });
+    }
   }
 
   function renderReportsTab(data) {
@@ -608,6 +699,9 @@
       name: name,
       phone: isClientSuperUser() ? 'Coordinator preview' : '',
       units: units,
+      unitIds: units.map(function (u) {
+        return u.unitId;
+      }),
       unitId: units[0].unitId,
       unitLabel: units[0].unitLabel,
       role: units[0].role,

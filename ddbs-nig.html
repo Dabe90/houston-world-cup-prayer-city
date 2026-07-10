@@ -175,7 +175,11 @@
           </nav>
 
           <div id="tab-home" class="tab-panel space-y-4">
-            <div id="home-upcoming-programs" class="grid sm:grid-cols-2 gap-4"></div>
+            <div>
+              <h3 class="font-semibold text-slate-900 mb-1">Ministry spotlight</h3>
+              <p class="text-xs text-slate-500 mb-3">Last program + next four · themed tiles</p>
+              <div id="home-upcoming-programs" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+            </div>
             <div id="home-unit-snapshot" class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
               <h3 class="font-semibold text-slate-900 mb-3"><i class="fas fa-calendar-check text-ng-green mr-2"></i>Next unit meetings</h3>
               <div id="home-meetings-list" class="space-y-3 text-sm"></div>
@@ -187,11 +191,12 @@
               <h3 class="font-semibold text-slate-900 text-lg">2026 ministry calendar</h3>
               <select id="programs-month-filter" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"></select>
             </div>
-            <p class="text-sm text-slate-600">Mid-week Bible Study every <strong>Wednesday</strong> · times in WAT (Nigeria).</p>
+            <p class="text-sm text-slate-600">Mid-week Bible Study every <strong>Wednesday</strong> · full year below.</p>
             <div id="programs-grid" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
           </div>
 
           <div id="tab-units" class="tab-panel hidden space-y-4">
+            <p class="text-sm text-slate-600">Check in during your meeting window and capture shared notes with your unit.</p>
             <div id="units-cards" class="space-y-4"></div>
           </div>
 
@@ -211,6 +216,7 @@
 
   <script src="js/nigeria-units.js"></script>
   <script src="js/ddbs-nigeria-programs.js"></script>
+  <script src="js/ddbs-nigeria-meeting-notes.js"></script>
   <script src="js/prayer-city-super-user.js"></script>
   <script src="js/nigeria-dashboard.js"></script>
 </body>

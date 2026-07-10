@@ -240,6 +240,43 @@
     return null;
   }
 
+  /** Recent + upcoming occurrences for shared meeting notes picker */
+  function meetingsForNotes(unit, windowSize) {
+    windowSize = windowSize || 8;
+    var now = new Date();
+    var parts = lagosParts(now);
+    var year = parseInt(parts.year, 10);
+    var month = parseInt(parts.month, 10);
+    var meetings = [];
+    var m;
+    for (m = month - 2; m <= month + 2; m++) {
+      var y = year;
+      var mo = m;
+      if (mo < 1) {
+        mo += 12;
+        y -= 1;
+      } else if (mo > 12) {
+        mo -= 12;
+        y += 1;
+      }
+      meetings = meetings.concat(meetingsInMonth(unit, y, mo));
+    }
+    meetings.sort(function (a, b) {
+      return a.start - b.start;
+    });
+    var nowMs = now.getTime();
+    var pivot = 0;
+    for (var i = 0; i < meetings.length; i++) {
+      if (meetings[i].end >= nowMs) {
+        pivot = i;
+        break;
+      }
+      pivot = i + 1;
+    }
+    var start = Math.max(0, pivot - 3);
+    return meetings.slice(start, start + windowSize);
+  }
+
   global.NigeriaUnits = {
     TZ: TZ,
     NIGERIA_UNITS: NIGERIA_UNITS,
@@ -248,6 +285,7 @@
     meetingScheduleLabel: meetingScheduleLabel,
     meetingKey: meetingKey,
     getNextMeeting: getNextMeeting,
+    meetingsForNotes: meetingsForNotes,
     isWithinCheckInWindow: isWithinCheckInWindow,
     meetingsInMonth: meetingsInMonth,
     ymdInLagos: ymdInLagos,

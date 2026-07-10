@@ -214,12 +214,117 @@
     return kind === 'midweek' ? 'Wed Bible Study' : 'Special program';
   }
 
+  var THEME_IMAGES = {
+    prayer:
+      'https://images.unsplash.com/photo-1507692049790-de58290a4334?w=800&q=80&auto=format&fit=crop',
+    bible:
+      'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800&q=80&auto=format&fit=crop',
+    marriage:
+      'https://images.unsplash.com/photo-1518191107773-3e7d0d1b3b2a?w=800&q=80&auto=format&fit=crop',
+    love:
+      'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=800&q=80&auto=format&fit=crop',
+    movie:
+      'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&q=80&auto=format&fit=crop',
+    choir:
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80&auto=format&fit=crop',
+    baptism:
+      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&q=80&auto=format&fit=crop',
+    conference:
+      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80&auto=format&fit=crop',
+    moderators:
+      'https://images.unsplash.com/photo-1478737270239-2f02ca77fc08?w=800&q=80&auto=format&fit=crop',
+    financial:
+      'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80&auto=format&fit=crop',
+    testimony:
+      'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80&auto=format&fit=crop',
+    christmas:
+      'https://images.unsplash.com/photo-1512389142860-9c449e58b814?w=800&q=80&auto=format&fit=crop',
+    women:
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&q=80&auto=format&fit=crop',
+    tech:
+      'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80&auto=format&fit=crop',
+    medical:
+      'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80&auto=format&fit=crop',
+    default:
+      'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=800&q=80&auto=format&fit=crop',
+  };
+
+  function themeForEvent(ev) {
+    var t = String(ev.title || '').toLowerCase();
+    if (ev.kind === 'midweek') return { key: 'bible', image: THEME_IMAGES.bible };
+    if (t.indexOf('prayer') >= 0 || t.indexOf('fasting') >= 0 || t.indexOf('marathon') >= 0) {
+      return { key: 'prayer', image: THEME_IMAGES.prayer };
+    }
+    if (t.indexOf('marriage') >= 0 || t.indexOf('couple') >= 0 || t.indexOf('husband') >= 0) {
+      return { key: 'marriage', image: THEME_IMAGES.marriage };
+    }
+    if (t.indexOf('love') >= 0 || t.indexOf('jeje') >= 0) {
+      return { key: 'love', image: THEME_IMAGES.love };
+    }
+    if (t.indexOf('movie') >= 0) return { key: 'movie', image: THEME_IMAGES.movie };
+    if (t.indexOf('choir') >= 0 || t.indexOf('carol') >= 0) {
+      return { key: 'choir', image: THEME_IMAGES.choir };
+    }
+    if (t.indexOf('baptism') >= 0) return { key: 'baptism', image: THEME_IMAGES.baptism };
+    if (t.indexOf('conference') >= 0 || t.indexOf('leadership') >= 0) {
+      return { key: 'conference', image: THEME_IMAGES.conference };
+    }
+    if (t.indexOf('moderator') >= 0) {
+      return { key: 'moderators', image: THEME_IMAGES.moderators };
+    }
+    if (t.indexOf('financial') >= 0 || t.indexOf('poverty') >= 0) {
+      return { key: 'financial', image: THEME_IMAGES.financial };
+    }
+    if (t.indexOf('testimony') >= 0 || t.indexOf('thanksgiving') >= 0) {
+      return { key: 'testimony', image: THEME_IMAGES.testimony };
+    }
+    if (t.indexOf('christmas') >= 0) return { key: 'christmas', image: THEME_IMAGES.christmas };
+    if (t.indexOf('women') >= 0) return { key: 'women', image: THEME_IMAGES.women };
+    if (t.indexOf('tech') >= 0) return { key: 'tech', image: THEME_IMAGES.tech };
+    if (t.indexOf('medical') >= 0) return { key: 'medical', image: THEME_IMAGES.medical };
+    if (t.indexOf('bible study') >= 0 || t.indexOf('heroes of faith') >= 0) {
+      return { key: 'bible', image: THEME_IMAGES.bible };
+    }
+    if (t.indexOf('holy ghost') >= 0) return { key: 'prayer', image: THEME_IMAGES.prayer };
+    return { key: 'default', image: THEME_IMAGES.default };
+  }
+
+  function enrichEvent(ev) {
+    var theme = themeForEvent(ev);
+    return Object.assign({}, ev, { themeKey: theme.key, image: theme.image });
+  }
+
+  /** Immediate past + next 4 upcoming (picture tile row). */
+  function featuredTiles() {
+    var today = lagosTodayYmd();
+    var sorted = sortEvents(EVENTS);
+    var past = sorted.filter(function (e) {
+      return e.dateKey < today;
+    });
+    var immediatePast = past.length ? enrichEvent(Object.assign({}, past[past.length - 1], { slot: 'past' })) : null;
+    var upcoming = sortEvents(
+      EVENTS.filter(function (e) {
+        return e.dateKey >= today;
+      })
+    )
+      .slice(0, 4)
+      .map(function (e) {
+        return enrichEvent(Object.assign({}, e, { slot: 'upcoming' }));
+      });
+    var out = [];
+    if (immediatePast) out.push(immediatePast);
+    return out.concat(upcoming);
+  }
+
   global.DDBSNigeriaPrograms = {
     YEAR: YEAR,
     EVENTS: EVENTS,
     MONTH_NAMES: MONTH_NAMES,
     upcoming: upcoming,
     byMonth: byMonth,
+    featuredTiles: featuredTiles,
+    enrichEvent: enrichEvent,
+    themeForEvent: themeForEvent,
     formatDateLabel: formatDateLabel,
     kindBadge: kindBadge,
     lagosTodayYmd: lagosTodayYmd,
