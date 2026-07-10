@@ -1,21 +1,24 @@
 /**
- * Nigeria volunteer dashboard — email sign-in; access by +234 on volunteer registration.
+ * DDBS Nigeria dashboard — sidebar profile, tabbed layout, multi-unit, programs.
  */
 (function () {
-  var auth, db, functions;
+  var auth, db, storage, functions;
   var dashboardData = null;
   var profileSaveInFlight = false;
   var superUserInitDone = false;
+  var activeTab = 'home';
   var PREVIEW_PROFILE_KEY = 'ddbsNigeriaPreviewProfile';
-  var EMAIL_LINK_CONTINUE_URL =
-    window.location.origin + window.location.pathname;
+  var EMAIL_LINK_CONTINUE_URL = window.location.origin + window.location.pathname;
   var SELF_SERVE_SIGNIN_URL =
     'https://us-central1-bible-study-dashboard-99f2d.cloudfunctions.net/volunteerSelfServeSignInMail';
+  var SUPER_USER_EMAILS = {
+    'abuxberkeley@gmail.com': true,
+    'ddbs.htx@gmail.com': true,
+  };
 
   function $(id) {
     return document.getElementById(id);
   }
-
   function show(el) {
     if (el) el.classList.remove('hidden');
   }
@@ -28,13 +31,50 @@
     if (!el) return;
     el.textContent = msg;
     el.className =
-      'rounded-xl border px-4 py-3 text-sm mb-4 ' +
+      'rounded-xl border px-4 py-3 text-sm ' +
       (type === 'error'
         ? 'border-red-200 bg-red-50 text-red-900'
         : type === 'success'
           ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
           : 'border-sky-200 bg-sky-50 text-sky-900');
     show(el);
+  }
+
+  function normalizeProfileUnits(profile) {
+    if (!profile) return [];
+    if (Array.isArray(profile.units) && profile.units.length) {
+      return profile.units.filter(function (u) {
+        return u && u.unitId && (u.role === 'leader' || u.role === 'member');
+      });
+    }
+    if (profile.unitId) {
+      return [
+        {
+          unitId: profile.unitId,
+          unitLabel: profile.unitLabel || profile.unitId,
+          role: profile.role === 'leader' ? 'leader' : 'member',
+        },
+      ];
+    }
+    return [];
+  }
+
+  function isProfileComplete(profile) {
+    var units = normalizeProfileUnits(profile);
+    if (!profile || !profile.name || !units.length) return false;
+    return units.every(function (u) {
+      return window.NigeriaUnits && NigeriaUnits.getUnit(u.unitId);
+    });
+  }
+
+  function isClientSuperUser() {
+    var email = String((auth.currentUser && auth.currentUser.email) || '')
+      .trim()
+      .toLowerCase();
+    if (!email) return false;
+    if (SUPER_USER_EMAILS[email]) return true;
+    if (window.PrayerCitySuperUser && PrayerCitySuperUser.isSuperUser(email)) return true;
+    return false;
   }
 
   function initFirebase() {
@@ -47,12 +87,11 @@
     if (!firebase.apps.length) firebase.initializeApp(cfg);
     auth = firebase.auth();
     db = firebase.firestore();
+    storage = firebase.storage();
     functions = firebase.app().functions('us-central1');
     return auth
       .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-      .catch(function (e) {
-        console.warn('setPersistence', e);
-      })
+      .catch(function () {})
       .then(function () {
         return true;
       });
@@ -68,18 +107,15 @@
         PrayerCitySuperUser.init({ auth: auth, functions: functions });
       }
     }
-    var superBanner = $('super-user-banner');
-    if (superBanner) superBanner.classList.remove('hidden');
+    var banner = $('super-user-banner');
+    if (banner) banner.classList.remove('hidden');
   }
 
   function savePreviewProfile(profile) {
     try {
       sessionStorage.setItem(PREVIEW_PROFILE_KEY, JSON.stringify(profile));
-    } catch (e) {
-      console.warn('savePreviewProfile', e);
-    }
+    } catch (e) {}
   }
-
   function loadPreviewProfile() {
     try {
       var raw = sessionStorage.getItem(PREVIEW_PROFILE_KEY);
@@ -89,38 +125,16 @@
     }
   }
 
-  function isDashboardVisible() {
-    var dash = $('dash-panel');
-    return dash && !dash.classList.contains('hidden');
-  }
-
-  function completeEmailLinkIfNeeded() {
-    if (!firebase.auth().isSignInWithEmailLink(window.location.href)) {
-      return Promise.resolve(false);
-    }
-    if (auth.currentUser) {
-      window.history.replaceState({}, document.title, window.location.pathname);
-      return Promise.resolve(false);
-    }
-    var email = window.localStorage.getItem('emailForSignIn');
-    if (!email) {
-      email = window.prompt('Enter the same email you used to volunteer:');
-    }
-    if (!email) {
-      setStatus('Email required to finish sign-in.', 'error');
-      return Promise.resolve(false);
-    }
-    return auth
-      .signInWithEmailLink(email, window.location.href)
-      .then(function () {
-        window.localStorage.removeItem('emailForSignIn');
-        window.history.replaceState({}, document.title, window.location.pathname);
-        return true;
-      })
-      .catch(function (e) {
-        setStatus(e.message || 'Sign-in failed', 'error');
-        return false;
-      });
+  function switchTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+    });
+    ['home', 'programs', 'units', 'reports'].forEach(function (name) {
+      var panel = $('tab-' + name);
+      if (panel) panel.classList.toggle('hidden', name !== tab);
+    });
+    if (tab === 'programs') renderProgramsPanel();
   }
 
   function renderUnitOptions() {
@@ -128,20 +142,67 @@
     if (!wrap || !window.NigeriaUnits) return;
     wrap.innerHTML = window.NigeriaUnits.NIGERIA_UNITS.map(function (u) {
       return (
-        '<label class="flex items-start gap-3 p-3 rounded-xl border-2 border-transparent cursor-pointer hover:bg-slate-50 unit-pick bg-white border-slate-100" data-unit="' +
+        '<div class="unit-row flex flex-col sm:flex-row sm:items-center gap-2 p-3 rounded-xl border border-slate-100 bg-slate-50/50" data-unit="' +
         u.id +
         '">' +
-        '<input type="radio" name="onboard-unit" value="' +
+        '<label class="flex items-start gap-3 flex-1 cursor-pointer min-w-0">' +
+        '<input type="checkbox" class="unit-check mt-1" value="' +
         u.id +
-        '" class="mt-1" />' +
-        '<div class="min-w-0"><span class="font-semibold text-slate-900 block">' +
+        '" data-unit="' +
+        u.id +
+        '" />' +
+        '<span class="min-w-0"><span class="font-semibold text-slate-900 block">' +
         u.label +
-        '</span>' +
-        '<span class="text-xs text-slate-500">' +
-        window.NigeriaUnits.meetingScheduleLabel(u) +
-        '</span></div></label>'
+        '</span><span class="text-xs text-slate-500">' +
+        NigeriaUnits.meetingScheduleLabel(u) +
+        '</span></span></label>' +
+        '<select class="unit-role rounded-lg border border-slate-200 text-sm px-2 py-1.5 disabled:opacity-40" data-unit="' +
+        u.id +
+        '" disabled>' +
+        '<option value="member">Member</option>' +
+        '<option value="leader">Leader</option>' +
+        '</select></div>'
       );
     }).join('');
+
+    wrap.querySelectorAll('.unit-check').forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        var row = cb.closest('.unit-row');
+        var sel = row && row.querySelector('.unit-role');
+        if (sel) sel.disabled = !cb.checked;
+      });
+    });
+  }
+
+  function collectUnitsFromForm() {
+    var units = [];
+    document.querySelectorAll('.unit-check:checked').forEach(function (cb) {
+      var id = cb.value;
+      var sel = document.querySelector('.unit-role[data-unit="' + id + '"]');
+      var role = (sel && sel.value) || 'member';
+      var unit = window.NigeriaUnits.getUnit(id);
+      units.push({
+        unitId: id,
+        unitLabel: unit ? unit.label : id,
+        role: role,
+      });
+    });
+    return units;
+  }
+
+  function applyUnitsToForm(units) {
+    if (!units || !units.length) return;
+    units.forEach(function (u) {
+      var cb = document.querySelector('.unit-check[value="' + u.unitId + '"]');
+      var sel = document.querySelector('.unit-role[data-unit="' + u.unitId + '"]');
+      if (cb) {
+        cb.checked = true;
+        if (sel) {
+          sel.disabled = false;
+          sel.value = u.role === 'leader' ? 'leader' : 'member';
+        }
+      }
+    });
   }
 
   function formatCountdown(targetIso) {
@@ -150,184 +211,309 @@
     var d = Math.floor(t / 86400000);
     var h = Math.floor((t % 86400000) / 3600000);
     var m = Math.floor((t % 3600000) / 60000);
-    if (d > 0) return d + 'd ' + h + 'h ' + m + 'm';
+    if (d > 0) return d + 'd ' + h + 'h';
     if (h > 0) return h + 'h ' + m + 'm';
     return m + 'm';
   }
 
-  function insightCard(stats) {
-    if (!stats || stats.attendanceRate == null) {
-      return '<p class="text-slate-600 text-sm">Attendance insights appear after your first meetings this month.</p>';
-    }
-    var ins = stats.insight || {};
-    var colors = {
-      excellent: 'from-emerald-500 to-teal-600',
-      good: 'from-sky-500 to-blue-600',
-      fair: 'from-amber-400 to-orange-500',
-      low: 'from-rose-400 to-red-500',
+  function buildUnitContextsFromProfile(profile, isSuperUser) {
+    return normalizeProfileUnits(profile).map(function (m) {
+      var unit = window.NigeriaUnits.getUnit(m.unitId);
+      var nextMeeting = unit ? window.NigeriaUnits.getNextMeeting(unit) : null;
+      var checkInOpen = false;
+      if (nextMeeting && window.NigeriaUnits.isWithinCheckInWindow(nextMeeting)) {
+        checkInOpen = true;
+      }
+      return {
+        unitId: m.unitId,
+        unitLabel: m.unitLabel,
+        role: m.role,
+        unit: unit,
+        nextMeeting: nextMeeting
+          ? {
+              key: nextMeeting.key,
+              dateYmd: nextMeeting.dateYmd,
+              startIso: nextMeeting.start.toISOString(),
+              endIso: nextMeeting.end.toISOString(),
+            }
+          : null,
+        checkInOpen: checkInOpen,
+        attendanceStats: profile.attendanceStats || null,
+        latestReport: null,
+        canSubmitReport: m.role === 'leader' || isSuperUser,
+      };
+    });
+  }
+
+  function buildLocalDashboard(profile, isSuperUser) {
+    var units = normalizeProfileUnits(profile);
+    var unitContexts = buildUnitContextsFromProfile(profile, isSuperUser);
+    var primary = unitContexts[0] || null;
+    return {
+      hasProfile: true,
+      eligible: true,
+      isSuperUser: isSuperUser,
+      profile: Object.assign({}, profile, { units: units }),
+      unitContexts: unitContexts,
+      nextMeeting: primary ? primary.nextMeeting : null,
+      checkInOpen: primary ? primary.checkInOpen : false,
+      attendanceStats: primary ? primary.attendanceStats : null,
+      latestReport: null,
+      recentAttendance: [],
     };
-    var grad = colors[ins.level] || colors.fair;
+  }
+
+  function setSidebarAvatar(name, photoURL) {
+    var initial = (name || '?').charAt(0).toUpperCase();
+    var img = $('sidebar-avatar-img');
+    var initEl = $('sidebar-avatar-initial');
+    if (photoURL && img) {
+      img.src = photoURL;
+      show(img);
+      if (initEl) hide(initEl);
+    } else if (initEl) {
+      initEl.textContent = initial;
+      show(initEl);
+      if (img) hide(img);
+    }
+  }
+
+  function renderSidebar(data) {
+    var profile = data.profile || {};
+    if ($('sidebar-name')) $('sidebar-name').textContent = profile.name || '—';
+    if ($('sidebar-email')) {
+      $('sidebar-email').textContent =
+        profile.email || (auth.currentUser && auth.currentUser.email) || '—';
+    }
+    if ($('sidebar-phone')) $('sidebar-phone').textContent = profile.phone || '—';
+    setSidebarAvatar(profile.name, profile.photoURL);
+
+    var list = $('sidebar-units');
+    if (list) {
+      var units = normalizeProfileUnits(profile);
+      list.innerHTML = units.length
+        ? units
+            .map(function (u) {
+              return (
+                '<li class="flex justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2">' +
+                '<span class="font-medium text-slate-800">' +
+                u.unitLabel +
+                '</span>' +
+                '<span class="text-xs font-semibold ' +
+                (u.role === 'leader' ? 'text-amber-700' : 'text-emerald-700') +
+                '">' +
+                (u.role === 'leader' ? 'Leader' : 'Member') +
+                '</span></li>'
+              );
+            })
+            .join('')
+        : '<li class="text-slate-500 text-xs">No units yet</li>';
+    }
+  }
+
+  function programCardHtml(ev) {
+    var P = window.DDBSNigeriaPrograms;
+    if (!P) return '';
+    var badge =
+      ev.kind === 'midweek'
+        ? 'bg-emerald-100 text-emerald-800'
+        : 'bg-violet-100 text-violet-800';
     return (
-      '<div class="rounded-2xl bg-gradient-to-br ' +
-      grad +
-      ' text-white p-5 shadow-md">' +
-      '<p class="text-white/80 text-xs uppercase tracking-wider font-semibold">Your attendance this month</p>' +
-      '<p class="text-4xl font-bold mt-1">' +
-      stats.attendanceRate +
-      '%</p>' +
-      '<p class="text-sm mt-2 text-white/95">' +
-      (ins.message || '') +
-      '</p>' +
-      '<div class="mt-4 grid grid-cols-3 gap-2 text-center text-xs">' +
-      '<div class="bg-white/15 rounded-lg py-2"><div class="font-bold text-lg">' +
-      stats.attendedCount +
-      '</div>Present</div>' +
-      '<div class="bg-white/15 rounded-lg py-2"><div class="font-bold text-lg">' +
-      stats.missedCount +
-      '</div>Missed</div>' +
-      '<div class="bg-white/15 rounded-lg py-2"><div class="font-bold text-lg">' +
-      (stats.currentStreak || 0) +
-      '</div>Streak</div></div></div>'
+      '<article class="program-card bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">' +
+      '<div class="h-2 ' +
+      (ev.kind === 'midweek' ? 'bg-ng-green' : 'bg-brand') +
+      '"></div>' +
+      '<div class="p-4">' +
+      '<div class="flex flex-wrap items-center gap-2 mb-2">' +
+      '<span class="text-xs font-bold text-slate-500">' +
+      P.formatDateLabel(ev) +
+      '</span>' +
+      '<span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ' +
+      badge +
+      '">' +
+      P.kindBadge(ev.kind) +
+      '</span></div>' +
+      '<h4 class="font-semibold text-slate-900 text-sm leading-snug">' +
+      ev.title +
+      '</h4></div></article>'
     );
+  }
+
+  function renderProgramsPanel(month) {
+    var grid = $('programs-grid');
+    var filter = $('programs-month-filter');
+    if (!grid || !window.DDBSNigeriaPrograms) return;
+    var P = DDBSNigeriaPrograms;
+    if (filter && !filter.dataset.ready) {
+      filter.innerHTML = '<option value="upcoming">Upcoming</option>';
+      for (var m = 1; m <= 12; m++) {
+        filter.innerHTML +=
+          '<option value="' + m + '">' + P.MONTH_NAMES[m] + ' ' + P.YEAR + '</option>';
+      }
+      filter.dataset.ready = '1';
+      filter.addEventListener('change', function () {
+        renderProgramsPanel(filter.value);
+      });
+    }
+    var val = month || (filter && filter.value) || 'upcoming';
+    var events =
+      val === 'upcoming' ? P.upcoming(24) : P.byMonth(parseInt(val, 10));
+    grid.innerHTML = events.length
+      ? events.map(programCardHtml).join('')
+      : '<p class="text-sm text-slate-500 col-span-full">No programs in this view.</p>';
+  }
+
+  function unitScheduleLabel(ctx) {
+    var unit = (window.NigeriaUnits && NigeriaUnits.getUnit(ctx.unitId)) || ctx.unit;
+    if (unit && unit.start && window.NigeriaUnits) {
+      return NigeriaUnits.meetingScheduleLabel(unit);
+    }
+    return ctx.unitLabel || '';
+  }
+
+  function renderHomeTab(data) {
+    var up = $('home-upcoming-programs');
+    var meetings = $('home-meetings-list');
+    if (up && window.DDBSNigeriaPrograms) {
+      var events = DDBSNigeriaPrograms.upcoming(4);
+      up.innerHTML = events.map(programCardHtml).join('');
+    }
+    if (meetings) {
+      var ctx = data.unitContexts || [];
+      meetings.innerHTML = ctx.length
+        ? ctx
+            .map(function (c) {
+              var sched = unitScheduleLabel(c);
+              var next = c.nextMeeting
+                ? c.nextMeeting.dateYmd + ' · in ' + formatCountdown(c.nextMeeting.startIso)
+                : 'No upcoming meeting';
+              return (
+                '<div class="rounded-xl border border-slate-100 p-3 flex justify-between gap-3">' +
+                '<div><p class="font-semibold text-slate-900">' +
+                c.unitLabel +
+                '</p><p class="text-xs text-slate-500">' +
+                sched +
+                '</p></div>' +
+                '<p class="text-xs text-brand font-medium text-right shrink-0">' +
+                next +
+                '</p></div>'
+              );
+            })
+            .join('')
+        : '<p class="text-slate-500 text-sm">Add units in your profile.</p>';
+    }
+  }
+
+  function renderUnitsTab(data) {
+    var wrap = $('units-cards');
+    if (!wrap) return;
+    var ctx = data.unitContexts || [];
+    wrap.innerHTML = ctx
+      .map(function (c) {
+        var sched = unitScheduleLabel(c);
+        var open = c.checkInOpen;
+        return (
+          '<div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">' +
+          '<div class="flex flex-wrap items-center gap-2 mb-3">' +
+          '<h3 class="font-bold text-slate-900 flex-1">' +
+          c.unitLabel +
+          '</h3>' +
+          '<span class="text-xs font-semibold rounded-full px-2 py-1 ' +
+          (c.role === 'leader' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800') +
+          '">' +
+          (c.role === 'leader' ? 'Leader' : 'Member') +
+          '</span></div>' +
+          '<p class="text-sm text-slate-600 mb-3">' +
+          sched +
+          '</p>' +
+          (c.nextMeeting
+            ? '<p class="text-sm mb-3">Next: <strong>' +
+              c.nextMeeting.dateYmd +
+              '</strong> (' +
+              formatCountdown(c.nextMeeting.startIso) +
+              ')</p>'
+            : '') +
+          '<button type="button" class="btn-unit-checkin w-full rounded-xl py-3 font-semibold text-white ' +
+          (open ? 'bg-ng-green hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed') +
+          '" data-unit-id="' +
+          c.unitId +
+          '" ' +
+          (open ? '' : 'disabled') +
+          '>Check in</button>' +
+          '<p class="text-xs text-slate-500 mt-2 text-center">Opens 20 min before · closes 45 min after</p></div>'
+        );
+      })
+      .join('');
+
+    wrap.querySelectorAll('.btn-unit-checkin').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        checkIn(btn.getAttribute('data-unit-id'));
+      });
+    });
+  }
+
+  function renderReportsTab(data) {
+    var panels = $('reports-panels');
+    var note = $('reports-member-note');
+    if (!panels) return;
+    var leaderUnits = (data.unitContexts || []).filter(function (c) {
+      return c.canSubmitReport;
+    });
+    if (!leaderUnits.length) {
+      panels.innerHTML = '';
+      if (note) show(note);
+      return;
+    }
+    if (note) hide(note);
+    panels.innerHTML = leaderUnits
+      .map(function (c, i) {
+        var suffix = c.unitId.replace(/[^a-z0-9]/gi, '-');
+        return (
+          '<div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">' +
+          '<div class="bg-amber-500/10 px-5 py-3 border-b"><h3 class="font-semibold text-amber-900">Monthly report — ' +
+          c.unitLabel +
+          '</h3></div>' +
+          '<div class="p-5 space-y-3">' +
+          (c.latestReport
+            ? '<p class="text-sm text-slate-600 whitespace-pre-wrap border border-slate-100 rounded-lg p-3 bg-slate-50">' +
+              (c.latestReport.activities || 'Report on file').slice(0, 300) +
+              '</p>'
+            : '<p class="text-sm text-slate-500">No report submitted this month yet.</p>') +
+          '<textarea class="report-activities w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" rows="3" placeholder="Activities this month *" data-unit-id="' +
+          c.unitId +
+          '"></textarea>' +
+          '<button type="button" class="btn-submit-report w-full rounded-xl bg-amber-500 text-white font-semibold py-3" data-unit-id="' +
+          c.unitId +
+          '">Submit report</button></div></div>'
+        );
+      })
+      .join('');
+
+    panels.querySelectorAll('.btn-submit-report').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        submitLeaderReport(btn.getAttribute('data-unit-id'));
+      });
+    });
   }
 
   function renderDashboard(data) {
     dashboardData = data;
-    var profile = data.profile;
-    if (!profile) throw new Error('Missing profile');
-    var unit = window.NigeriaUnits && NigeriaUnits.getUnit(profile.unitId);
-    var superBanner = $('super-user-banner');
-    if (superBanner) {
-      if (data.isSuperUser) {
-        superBanner.classList.remove('hidden');
-      } else {
-        superBanner.classList.add('hidden');
-      }
-    }
-    if ($('dash-greeting')) {
-      $('dash-greeting').textContent = 'Welcome, ' + profile.name;
-    }
-    if ($('dash-unit-badge')) {
-      $('dash-unit-badge').textContent = profile.unitLabel || profile.unitId || '';
-    }
-    if ($('dash-role-badge')) {
-      $('dash-role-badge').textContent =
-        profile.role === 'leader' ? 'Unit leader' : 'Member';
-    }
-    if ($('dash-phone')) $('dash-phone').textContent = profile.phone || '';
-
-    if (unit && $('dash-schedule')) {
-      $('dash-schedule').textContent = window.NigeriaUnits.meetingScheduleLabel(unit);
-    }
-
-    if (data.nextMeeting) {
-      $('next-meeting-date').textContent = data.nextMeeting.dateYmd;
-      $('next-meeting-countdown').textContent = formatCountdown(data.nextMeeting.startIso);
-      show($('next-meeting-card'));
-    } else {
-      hide($('next-meeting-card'));
-    }
-
-    var checkBtn = $('btn-check-in');
-    if (checkBtn) {
-      if (data.checkInOpen) {
-        checkBtn.disabled = false;
-        checkBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        if ($('check-in-hint')) {
-          $('check-in-hint').textContent = 'Check-in is open for your meeting window.';
-        }
-      } else {
-        checkBtn.disabled = true;
-        checkBtn.classList.add('opacity-50', 'cursor-not-allowed');
-        if ($('check-in-hint')) {
-          $('check-in-hint').textContent =
-            'Opens 20 min before meeting · closes 45 min after.';
-        }
-      }
-    }
-
-    if ($('attendance-insight')) {
-      $('attendance-insight').innerHTML = insightCard(data.attendanceStats);
-    }
-
-    var reportEl = $('leader-report-card');
-    if (data.latestReport) {
-      var r = data.latestReport;
-      $('report-summary').innerHTML =
-        '<p class="text-sm text-slate-600 mb-2">Submitted by <strong>' +
-        (r.leaderName || 'Leader') +
-        '</strong></p>' +
-        '<p class="text-sm text-slate-800 whitespace-pre-wrap">' +
-        (r.activities || '').slice(0, 400) +
-        (r.activities && r.activities.length > 400 ? '…' : '') +
-        '</p>' +
-        (r.attendanceNarrative
-          ? '<pre class="mt-3 text-xs bg-slate-50 border border-slate-100 rounded-lg p-3 whitespace-pre-wrap text-slate-600">' +
-            r.attendanceNarrative +
-            '</pre>'
-          : '');
-      show(reportEl);
-    } else {
-      $('report-summary').innerHTML =
-        '<p class="text-sm text-slate-500">No leader report for this month yet.</p>';
-      show(reportEl);
-    }
-
-    if (profile.role === 'leader' || data.isSuperUser) {
-      show($('leader-tools'));
-      hide($('member-report-note'));
-    } else {
-      hide($('leader-tools'));
-      show($('member-report-note'));
-    }
-
-    var recent = $('recent-attendance');
-    if (data.recentAttendance && data.recentAttendance.length) {
-      recent.innerHTML = data.recentAttendance
-        .map(function (a) {
-          var ts = a.checkedInAt && a.checkedInAt.toDate ? a.checkedInAt.toDate() : null;
-          return (
-            '<li class="flex justify-between gap-2 text-sm py-2 border-b border-slate-100 last:border-0">' +
-            '<span>' +
-            a.meetingDateYmd +
-            '</span>' +
-            '<span class="text-slate-500 text-xs">' +
-            (ts ? ts.toLocaleString('en-NG', { timeZone: 'Africa/Lagos' }) : '—') +
-            '</span></li>'
-          );
-        })
-        .join('');
-    } else {
-      recent.innerHTML = '<li class="text-sm text-slate-500 py-2">No check-ins yet.</li>';
-    }
-  }
-
-  function isProfileComplete(profile) {
-    if (!profile) return false;
-    if (!profile.name || !profile.unitId || !profile.role) return false;
-    if (!window.NigeriaUnits || !NigeriaUnits.getUnit(profile.unitId)) return false;
-    return true;
-  }
-
-  function showDashboardSafely(data) {
-    try {
-      hide($('onboard-panel'));
-      hide($('auth-panel'));
-      hide($('not-eligible-panel'));
-      show($('dash-panel'));
-      renderDashboard(data);
-      return true;
-    } catch (e) {
-      console.error('renderDashboard', e);
-      hide($('dash-panel'));
-      return false;
-    }
+    hide($('onboard-panel'));
+    hide($('auth-panel'));
+    hide($('not-eligible-panel'));
+    show($('dash-shell'));
+    showSuperUserChrome();
+    renderSidebar(data);
+    renderHomeTab(data);
+    renderUnitsTab(data);
+    renderReportsTab(data);
+    renderProgramsPanel('upcoming');
+    switchTab(activeTab);
   }
 
   function showOnboarding(volunteer, isSuperUser) {
+    hide($('dash-shell'));
     hide($('auth-panel'));
-    hide($('dash-panel'));
-    hide($('not-eligible-panel'));
     show($('onboard-panel'));
     var hint = $('onboard-super-hint');
     if (hint) hint.classList.toggle('hidden', !isSuperUser);
@@ -337,304 +523,106 @@
     if ($('onboard-phone') && volunteer && volunteer.phone) {
       $('onboard-phone').textContent = volunteer.phone;
     }
+    var preview = loadPreviewProfile();
+    if (preview) applyUnitsToForm(normalizeProfileUnits(preview));
   }
 
-  function showNotEligible(message) {
-    if (isClientSuperUser()) {
-      return showSuperUserLanding();
-    }
-    hide($('auth-panel'));
-    hide($('dash-panel'));
-    hide($('onboard-panel'));
-    show($('not-eligible-panel'));
-    if ($('not-eligible-msg')) $('not-eligible-msg').textContent = message || '';
-  }
-
-  var SUPER_USER_EMAILS = {
-    'abuxberkeley@gmail.com': true,
-    'ddbs.htx@gmail.com': true,
-  };
-
-  function isClientSuperUser() {
-    var email = String(
-      (auth.currentUser && auth.currentUser.email) || ''
-    )
-      .trim()
-      .toLowerCase();
-    if (!email) return false;
-    if (SUPER_USER_EMAILS[email]) return true;
-    if (window.PrayerCitySuperUser && PrayerCitySuperUser.isSuperUser(email)) {
+  function showDashboardSafely(data) {
+    try {
+      renderDashboard(data);
       return true;
+    } catch (e) {
+      console.error('renderDashboard', e);
+      return false;
     }
-    return false;
   }
 
-  function loadVolunteerPreview() {
-    var uid = auth.currentUser.uid;
-    var email = auth.currentUser.email || '';
-    return db
-      .collection('volunteers')
-      .doc(uid)
-      .get()
-      .then(function (snap) {
-        var d = snap.exists ? snap.data() : {};
-        return {
-          name: d.name || auth.currentUser.displayName || 'Coordinator',
-          email: email,
-          phone: d.phone || '(coordinator preview)',
-        };
-      });
+  function coordinatorVolunteer() {
+    return {
+      name: (auth.currentUser && auth.currentUser.displayName) || 'Coordinator',
+      email: (auth.currentUser && auth.currentUser.email) || '',
+      phone: 'Coordinator preview',
+    };
+  }
+
+  function showSuperUserLanding() {
+    if (profileSaveInFlight || $('dash-shell') && !$('dash-shell').classList.contains('hidden')) {
+      return Promise.resolve();
+    }
+    showSuperUserChrome();
+    hide($('auth-panel'));
+    var preview = loadPreviewProfile();
+    if (preview && isProfileComplete(preview)) {
+      showDashboardSafely(buildLocalDashboard(preview, true));
+      return Promise.resolve();
+    }
+    showOnboarding(coordinatorVolunteer(), true);
+    return loadLocalNigeriaProfile().then(function (snap) {
+      if (snap.exists && isProfileComplete(snap.data())) {
+        showDashboardSafely(buildLocalDashboard(snap.data(), true));
+      }
+    });
+  }
+
+  function processDashboardResponse(data) {
+    if (!data || data.eligible === false) {
+      if (isClientSuperUser()) return showSuperUserLanding();
+      showNotEligible(data && data.message);
+      return;
+    }
+    if (!data.hasProfile || !isProfileComplete(data.profile)) {
+      showOnboarding(data.volunteer || coordinatorVolunteer(), data.isSuperUser || isClientSuperUser());
+      return;
+    }
+    if (!data.unitContexts || !data.unitContexts.length) {
+      data = buildLocalDashboard(data.profile, data.isSuperUser);
+    }
+    showDashboardSafely(data);
   }
 
   function loadLocalNigeriaProfile() {
     return db.collection('nigeria_volunteers').doc(auth.currentUser.uid).get();
   }
 
-  function buildLocalDashboard(profile, isSuperUser) {
-    var unit = window.NigeriaUnits.getUnit(profile.unitId);
-    var nextMeeting = unit ? window.NigeriaUnits.getNextMeeting(unit) : null;
-    var checkInOpen = false;
-    if (nextMeeting && window.NigeriaUnits.isWithinCheckInWindow(nextMeeting)) {
-      checkInOpen = true;
-    }
-    return {
-      hasProfile: true,
-      eligible: true,
-      isSuperUser: isSuperUser,
-      profile: profile,
-      nextMeeting: nextMeeting
-        ? {
-            key: nextMeeting.key,
-            dateYmd: nextMeeting.dateYmd,
-            startIso: nextMeeting.start.toISOString(),
-            endIso: nextMeeting.end.toISOString(),
-          }
-        : null,
-      checkInOpen: checkInOpen,
-      attendanceStats: profile.attendanceStats || null,
-      latestReport: null,
-      recentAttendance: [],
-    };
-  }
-
-  function processDashboardResponse(data) {
-    if (!data) return showSuperUserLanding();
-    hide($('not-eligible-panel'));
-    if (data.eligible === false) {
-      if (isClientSuperUser()) {
-        return showSuperUserLanding();
-      }
-      showNotEligible(data.message);
-      return;
-    }
-    if (!data.hasProfile || !isProfileComplete(data.profile)) {
-      showOnboarding(
-        data.volunteer || coordinatorVolunteer(),
-        data.isSuperUser || isClientSuperUser()
-      );
-      return;
-    }
-    if (!showDashboardSafely(data)) {
-      showOnboarding(
-        data.volunteer || coordinatorVolunteer(),
-        data.isSuperUser || isClientSuperUser()
-      );
-    }
-  }
-
-  function mergeProfile() {
-    return functions.httpsCallable('mergeVolunteerProfile')().catch(function (e) {
-      console.warn('mergeVolunteerProfile', e);
-    });
-  }
-
-  function coordinatorVolunteer() {
-    var user = auth.currentUser;
-    return {
-      name: (user && user.displayName) || 'Coordinator',
-      email: (user && user.email) || '',
-      phone: 'Coordinator access — all dashboards',
-    };
-  }
-
-  function showSuperUserLanding() {
-    if (profileSaveInFlight || isDashboardVisible()) {
-      return Promise.resolve();
-    }
-
-    showSuperUserChrome();
-    hide($('auth-panel'));
-    hide($('not-eligible-panel'));
-
-    var preview = loadPreviewProfile();
-    if (preview && isProfileComplete(preview)) {
-      showDashboardSafely(buildLocalDashboard(preview, true));
-      return Promise.resolve();
-    }
-
-    hide($('dash-panel'));
-    showOnboarding(coordinatorVolunteer(), true);
-
-    return loadLocalNigeriaProfile()
-      .then(function (snap) {
-        if (profileSaveInFlight || isDashboardVisible()) return;
-        if (!snap.exists || !isProfileComplete(snap.data())) return;
-        if (!showDashboardSafely(buildLocalDashboard(snap.data(), true))) {
-          showOnboarding(coordinatorVolunteer(), true);
-        }
-      })
-      .catch(function (e) {
-        console.warn('loadLocalNigeriaProfile', e);
-      });
-  }
-
-  function refreshDashboardFromCloud() {
-    if (profileSaveInFlight || !auth.currentUser) return Promise.resolve();
-    return functions
-      .httpsCallable('getNigeriaDashboard')()
-      .then(function (res) {
-        if (profileSaveInFlight || !res || !res.data) return;
-        if (!res.data.hasProfile || !isProfileComplete(res.data.profile)) return;
-        showDashboardSafely(res.data);
-      })
-      .catch(function (err) {
-        console.warn('getNigeriaDashboard', err);
-      });
-  }
-
   function loadDashboard() {
     if (isClientSuperUser()) {
       showSuperUserLanding();
-      mergeProfile()
-        .then(refreshDashboardFromCloud)
-        .catch(refreshDashboardFromCloud);
-      return Promise.resolve();
-    }
-
-    showSuperUserChrome();
-    return mergeProfile()
-      .then(function () {
-        return functions.httpsCallable('getNigeriaDashboard')();
-      })
-      .then(function (res) {
-        hideAuthChecking();
-        return processDashboardResponse(res.data);
-      })
-      .catch(function (err) {
-        hideAuthChecking();
-        throw err;
-      });
-  }
-
-  function signInWithPassword() {
-    var email = ($('auth-email').value || '').trim();
-    var pw = $('auth-password').value || '';
-    if (!email || !pw) {
-      setStatus('Enter email and password.', 'error');
-      return;
-    }
-    setStatus('Signing in…', 'info');
-    auth.signInWithEmailAndPassword(email, pw).catch(function (e) {
-      setStatus(e.message || 'Sign-in failed', 'error');
-    });
-  }
-
-  function sendEmailLink() {
-    var email = ($('auth-email').value || '').trim();
-    if (!email) {
-      setStatus('Enter your volunteer email first.', 'error');
-      return;
-    }
-    setStatus('Sending sign-in link…', 'info');
-
-    function sendViaFirebase() {
-      return auth
-        .sendSignInLinkToEmail(email, {
-          url: EMAIL_LINK_CONTINUE_URL,
-          handleCodeInApp: true,
+      return functions
+        .httpsCallable('getNigeriaDashboard')()
+        .then(function (res) {
+          if (res && res.data) processDashboardResponse(res.data);
         })
-        .then(function () {
-          window.localStorage.setItem('emailForSignIn', email);
-          setStatus('Check your inbox for the sign-in link (allow 1–2 minutes).', 'success');
-        });
+        .catch(function () {});
     }
-
-    if (!SELF_SERVE_SIGNIN_URL) {
-      sendViaFirebase().catch(function (e) {
-        setStatus(e.message || 'Could not send link', 'error');
-      });
-      return;
-    }
-
-    fetch(SELF_SERVE_SIGNIN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email }),
-    })
-      .then(function (r) {
-        return r.json().then(function (j) {
-          return { ok: r.ok, body: j };
-        });
-      })
-      .then(function (result) {
-        if (result.body && result.body.ok) {
-          window.localStorage.setItem('emailForSignIn', email);
-          setStatus('Check your inbox for the sign-in link from our team.', 'success');
-          return;
-        }
-        return sendViaFirebase();
-      })
-      .catch(function () {
-        sendViaFirebase().catch(function (e) {
-          setStatus(e.message || 'Could not send link', 'error');
-        });
+    return functions
+      .httpsCallable('getNigeriaDashboard')()
+      .then(function (res) {
+        processDashboardResponse(res.data);
       });
   }
 
-  function callableErrorMessage(err) {
-    if (!err) return 'Request failed.';
-    if (err.message) return err.message;
-    if (err.details) return String(err.details);
-    if (err.code) return err.code;
-    return 'Request failed.';
-  }
-
-  function buildSavedProfile(name, unitRadio, roleRadio) {
-    var unit = window.NigeriaUnits.getUnit(unitRadio.value);
+  function buildSavedProfile(name, units) {
     return {
       uid: auth.currentUser.uid,
       email: auth.currentUser.email,
       name: name,
       phone: isClientSuperUser() ? 'Coordinator preview' : '',
-      unitId: unitRadio.value,
-      unitLabel: unit ? unit.label : unitRadio.value,
-      role: roleRadio.value,
+      units: units,
+      unitId: units[0].unitId,
+      unitLabel: units[0].unitLabel,
+      role: units[0].role,
       region: 'nigeria',
       isSuperUser: isClientSuperUser(),
+      photoURL: (dashboardData && dashboardData.profile && dashboardData.profile.photoURL) || '',
     };
   }
 
   function finishProfileSave(profile) {
     profileSaveInFlight = true;
+    savePreviewProfile(profile);
     setStatus('Profile saved!', 'success');
-    showSuperUserChrome();
-    var dash = buildLocalDashboard(profile, isClientSuperUser());
-    if (!showDashboardSafely(dash)) {
-      profileSaveInFlight = false;
-      setStatus('Could not open dashboard. Refresh the page.', 'error');
-      return;
-    }
+    showDashboardSafely(buildLocalDashboard(profile, isClientSuperUser()));
     profileSaveInFlight = false;
-    refreshDashboardFromCloud();
-  }
-
-  function syncProfileToCloud(payload, profile) {
-    writeProfileToFirestore(profile).catch(function (err) {
-      console.warn('writeProfileToFirestore', err);
-    });
-    functions.httpsCallable('saveNigeriaProfile')(payload).catch(function (err) {
-      console.warn('saveNigeriaProfile cloud sync', err);
-    });
   }
 
   function writeProfileToFirestore(profile) {
@@ -650,224 +638,229 @@
   }
 
   function saveProfile() {
-    if (!auth || !auth.currentUser) {
-      setStatus(
-        'Sign in first on prayercityhtx.com, then return to this page.',
-        'error'
-      );
+    if (!auth.currentUser) {
+      setStatus('Sign in on prayercityhtx.com first.', 'error');
       return;
     }
-
     var name = ($('onboard-name') && $('onboard-name').value || '').trim();
-    var unitRadio = document.querySelector('input[name="onboard-unit"]:checked');
-    var roleRadio = document.querySelector('input[name="onboard-role"]:checked');
-    var saveBtn = $('btn-save-profile');
-
+    var units = collectUnitsFromForm();
     if (!name) {
       setStatus('Enter your name.', 'error');
       return;
     }
-    if (!unitRadio) {
-      setStatus('Select your unit.', 'error');
+    if (!units.length) {
+      setStatus('Select at least one unit.', 'error');
       return;
     }
-    if (!roleRadio) {
-      setStatus('Select leader or member.', 'error');
-      return;
-    }
-    if (!window.NigeriaUnits || !NigeriaUnits.getUnit(unitRadio.value)) {
-      setStatus('Unit list did not load. Hard-refresh the page (Ctrl+Shift+R).', 'error');
-      return;
-    }
-
-    setStatus('Saving profile…', 'info');
-    if (saveBtn) saveBtn.disabled = true;
-
-    var payload = {
-      name: name,
-      unitId: unitRadio.value,
-      role: roleRadio.value,
-    };
-    var profile = buildSavedProfile(name, unitRadio, roleRadio);
-
-    function releaseSaveBtn() {
-      if (saveBtn) saveBtn.disabled = false;
-    }
+    setStatus('Saving…', 'info');
+    var profile = buildSavedProfile(name, units);
+    var payload = { name: name, units: units };
 
     if (isClientSuperUser()) {
-      savePreviewProfile(profile);
       finishProfileSave(profile);
-      releaseSaveBtn();
-      syncProfileToCloud(payload, profile);
+      writeProfileToFirestore(profile).catch(console.warn);
+      functions.httpsCallable('saveNigeriaProfile')(payload).catch(console.warn);
       return;
     }
 
     functions
       .httpsCallable('saveNigeriaProfile')(payload)
       .then(function () {
-        savePreviewProfile(profile);
         finishProfileSave(profile);
       })
       .catch(function (err) {
-        setStatus(callableErrorMessage(err), 'error');
-      })
-      .finally(releaseSaveBtn);
+        setStatus((err && err.message) || 'Could not save.', 'error');
+      });
   }
 
-  function checkIn() {
+  function checkIn(unitId) {
     setStatus('Recording attendance…', 'info');
     functions
-      .httpsCallable('recordNigeriaAttendance')()
+      .httpsCallable('recordNigeriaAttendance')({ unitId: unitId })
       .then(function (res) {
-        if (res.data.alreadyCheckedIn) {
-          setStatus('You already checked in for this meeting.', 'success');
-        } else {
-          setStatus('Attendance recorded — thank you for showing up!', 'success');
-        }
+        setStatus(
+          res.data.alreadyCheckedIn ? 'Already checked in.' : 'Attendance recorded!',
+          'success'
+        );
         return loadDashboard();
       })
       .catch(function (err) {
-        setStatus(err.message || 'Check-in failed.', 'error');
+        setStatus((err && err.message) || 'Check-in failed.', 'error');
       });
   }
 
-  function submitLeaderReport() {
+  function submitLeaderReport(unitId) {
+    var panel = document.querySelector('.report-activities[data-unit-id="' + unitId + '"]');
+    var activities = panel ? panel.value.trim() : '';
+    if (!activities) {
+      setStatus('Enter activities for the report.', 'error');
+      return;
+    }
     var now = new Date();
-    var y = now.getFullYear();
-    var m = now.getMonth() + 1;
-    setStatus('Submitting report with attendance analytics…', 'info');
     functions
       .httpsCallable('submitNigeriaUnitReport')({
-        reportYear: y,
-        reportMonth: m,
-        activities: ($('leader-activities').value || '').trim(),
-        highlights: ($('leader-highlights').value || '').trim(),
-        testimonies: ($('leader-testimonies').value || '').trim(),
-        challenges: ($('leader-challenges').value || '').trim(),
-        prayerRequests: ($('leader-prayer').value || '').trim(),
-        nextMonth: ($('leader-next').value || '').trim(),
+        unitId: unitId,
+        reportYear: now.getFullYear(),
+        reportMonth: now.getMonth() + 1,
+        activities: activities,
+        highlights: '',
+        testimonies: '',
+        challenges: '',
+        prayerRequests: '',
+        nextMonth: '',
       })
-      .then(function (res) {
-        var a = res.data.attendanceAnalytics;
-        var msg = 'Report submitted!';
-        if (a && a.highestAttendance) {
-          msg +=
-            ' Highest attendance: ' +
-            a.highestAttendance.date +
-            ' (' +
-            a.highestAttendance.count +
-            ').';
-        }
-        setStatus(msg, 'success');
+      .then(function () {
+        setStatus('Report submitted!', 'success');
         return loadDashboard();
       })
       .catch(function (err) {
-        setStatus(err.message || 'Report failed.', 'error');
+        setStatus((err && err.message) || 'Report failed.', 'error');
       });
   }
 
-  function hideAuthChecking() {
-    hide($('auth-checking'));
+  function uploadSidebarPhoto(file) {
+    if (!file || !file.type.match(/^image\//)) return;
+    if (file.size > 3 * 1024 * 1024) {
+      if ($('sidebar-upload-status')) $('sidebar-upload-status').textContent = 'Max 3 MB.';
+      return;
+    }
+    var user = auth.currentUser;
+    if (!user) return;
+    var status = $('sidebar-upload-status');
+    if (status) status.textContent = 'Uploading…';
+    var path = 'volunteer_photos/' + user.uid + '/avatar.jpg';
+    storage
+      .ref(path)
+      .put(file, { contentType: file.type })
+      .then(function () {
+        return storage.ref(path).getDownloadURL();
+      })
+      .then(function (url) {
+        return db.collection('nigeria_volunteers').doc(user.uid).set({ photoURL: url }, { merge: true });
+      })
+      .then(function () {
+        if (status) status.textContent = 'Photo saved.';
+        if (dashboardData && dashboardData.profile) {
+          dashboardData.profile.photoURL = url;
+          setSidebarAvatar(dashboardData.profile.name, url);
+        }
+      })
+      .catch(function (e) {
+        if (status) status.textContent = (e && e.message) || 'Upload failed.';
+      });
   }
 
-  function showAuthChecking() {
-    show($('auth-checking'));
-    hide($('auth-panel'));
+  function showNotEligible(message) {
+    if (isClientSuperUser()) return showSuperUserLanding();
+    hide($('dash-shell'));
+    show($('not-eligible-panel'));
+    if ($('not-eligible-msg')) $('not-eligible-msg').textContent = message || '';
   }
 
-  function signOut() {
-    auth.signOut().then(function () {
-      dashboardData = null;
-      showAuthChecking();
-      hide($('dash-panel'));
-      hide($('onboard-panel'));
-      hide($('not-eligible-panel'));
-    });
+  function completeEmailLinkIfNeeded() {
+    if (!firebase.auth().isSignInWithEmailLink(window.location.href)) {
+      return Promise.resolve(false);
+    }
+    var email = window.localStorage.getItem('emailForSignIn') || window.prompt('Your email:');
+    if (!email) return Promise.resolve(false);
+    return auth
+      .signInWithEmailLink(email, window.location.href)
+      .then(function () {
+        window.localStorage.removeItem('emailForSignIn');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      })
+      .catch(function (e) {
+        setStatus(e.message, 'error');
+      });
   }
 
   function handleAuthUser(user) {
-    hideAuthChecking();
-    var signOutBtn = $('btn-signout');
+    hide($('auth-checking'));
     if (user) {
-      if (signOutBtn) signOutBtn.classList.remove('hidden');
+      if ($('btn-signout')) $('btn-signout').classList.remove('hidden');
       hide($('auth-panel'));
-      if (profileSaveInFlight || isDashboardVisible()) return;
-      loadDashboard().catch(function (err) {
-        console.error('loadDashboard', err);
-        if (isClientSuperUser()) {
-          showSuperUserLanding();
-          return;
-        }
-        setStatus(err.message || 'Could not load dashboard.', 'error');
-        show($('auth-panel'));
-      });
+      if (profileSaveInFlight) return;
+      if ($('dash-shell') && !$('dash-shell').classList.contains('hidden')) return;
+      loadDashboard();
       return;
     }
-    dashboardData = null;
+    hide($('btn-signout'));
+    hide($('dash-shell'));
+    hide($('onboard-panel'));
+    show($('auth-panel'));
     try {
       sessionStorage.removeItem(PREVIEW_PROFILE_KEY);
-    } catch (ignore) {}
-    if (signOutBtn) signOutBtn.classList.add('hidden');
-    hide($('dash-panel'));
-    hide($('onboard-panel'));
-    hide($('not-eligible-panel'));
-    hide($('super-user-panel'));
-    show($('auth-panel'));
-  }
-
-  function startAuth() {
-    var settled = false;
-    function finishBootstrap() {
-      if (settled) return;
-      settled = true;
-      hideAuthChecking();
-      auth.onAuthStateChanged(handleAuthUser);
-    }
-
-    window.setTimeout(function () {
-      if (!settled) finishBootstrap();
-    }, 4000);
-
-    completeEmailLinkIfNeeded().finally(finishBootstrap);
+    } catch (e) {}
   }
 
   function bind() {
-    var saveBtn = $('btn-save-profile');
-    if ($('btn-password-signin')) {
-      $('btn-password-signin').addEventListener('click', signInWithPassword);
-    }
-    if ($('btn-email-link')) {
-      $('btn-email-link').addEventListener('click', sendEmailLink);
-    }
-    if (saveBtn) {
-      saveBtn.addEventListener('click', saveProfile);
-    }
-    if ($('btn-check-in')) {
-      $('btn-check-in').addEventListener('click', checkIn);
-    }
-    if ($('btn-submit-report')) {
-      $('btn-submit-report').addEventListener('click', submitLeaderReport);
-    }
-    if ($('btn-signout')) {
-      $('btn-signout').addEventListener('click', signOut);
-    }
-    var signOutNe = $('btn-signout-ne');
-    if (signOutNe) signOutNe.addEventListener('click', signOut);
-
     renderUnitOptions();
-    startAuth();
+    document.querySelectorAll('.tab-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        switchTab(btn.getAttribute('data-tab'));
+      });
+    });
+    if ($('btn-save-profile')) $('btn-save-profile').addEventListener('click', saveProfile);
+    if ($('btn-email-link')) $('btn-email-link').addEventListener('click', sendEmailLink);
+    if ($('btn-password-signin')) $('btn-password-signin').addEventListener('click', signInPassword);
+    if ($('btn-signout')) $('btn-signout').addEventListener('click', function () {
+      auth.signOut();
+    });
+    if ($('btn-edit-profile')) {
+      $('btn-edit-profile').addEventListener('click', function () {
+        hide($('dash-shell'));
+        var p = dashboardData && dashboardData.profile;
+        showOnboarding(p || coordinatorVolunteer(), isClientSuperUser());
+        if (p) {
+          if ($('onboard-name')) $('onboard-name').value = p.name || '';
+          applyUnitsToForm(normalizeProfileUnits(p));
+        }
+      });
+    }
+    if ($('sidebar-avatar-input')) {
+      $('sidebar-avatar-input').addEventListener('change', function (ev) {
+        var f = ev.target.files && ev.target.files[0];
+        ev.target.value = '';
+        if (f) uploadSidebarPhoto(f);
+      });
+    }
+    completeEmailLinkIfNeeded().finally(function () {
+      auth.onAuthStateChanged(handleAuthUser);
+    });
+  }
 
-    setInterval(function () {
-      if (dashboardData && dashboardData.nextMeeting) {
-        $('next-meeting-countdown').textContent = formatCountdown(dashboardData.nextMeeting.startIso);
-      }
-    }, 60000);
+  function sendEmailLink() {
+    var email = ($('auth-email') && $('auth-email').value || '').trim();
+    if (!email) {
+      setStatus('Enter email.', 'error');
+      return;
+    }
+    auth
+      .sendSignInLinkToEmail(email, { url: EMAIL_LINK_CONTINUE_URL, handleCodeInApp: true })
+      .then(function () {
+        window.localStorage.setItem('emailForSignIn', email);
+        setStatus('Check your inbox for the sign-in link.', 'success');
+      })
+      .catch(function (e) {
+        setStatus(e.message, 'error');
+      });
+  }
+
+  function signInPassword() {
+    var email = ($('auth-email') && $('auth-email').value || '').trim();
+    var pw = $('auth-password') && $('auth-password').value;
+    if (!email || !pw) {
+      setStatus('Enter email and password.', 'error');
+      return;
+    }
+    auth.signInWithEmailAndPassword(email, pw).catch(function (e) {
+      setStatus(e.message, 'error');
+    });
   }
 
   document.addEventListener('DOMContentLoaded', function () {
     initFirebase().then(function (ok) {
-      if (!ok) return;
-      bind();
+      if (ok) bind();
     });
   });
 })();

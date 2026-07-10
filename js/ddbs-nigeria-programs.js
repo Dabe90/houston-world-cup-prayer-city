@@ -1,0 +1,227 @@
+/**
+ * DDBS Nigeria 2026 ministry calendar (WAT). Mid-week Bible Study is every Wednesday.
+ */
+(function (global) {
+  var YEAR = 2026;
+
+  function ev(month, day, endDay, title, kind) {
+    return {
+      year: YEAR,
+      month: month,
+      day: day,
+      endDay: endDay || null,
+      title: title,
+      kind: kind || 'special',
+      dateKey: YEAR + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0'),
+    };
+  }
+
+  function mid(month, day, title) {
+    return ev(month, day, null, title, 'midweek');
+  }
+
+  var EVENTS = [
+    // January
+    ev(1, 5, 10, 'Fasting and Prayer'),
+    ev(1, 5, 31, 'Jesus March Pre-Prayer'),
+    ev(1, 29, null, '9th Year Anniversary: Bring Forth'),
+    ev(1, 31, null, 'Jesus March Nigeria'),
+    mid(1, 7, 'Harvest of Thanks'),
+    mid(1, 14, 'Go Forth'),
+    mid(1, 21, 'The Commanding Soldier'),
+    mid(1, 28, 'Prep for 9th Year Anniversary'),
+    ev(2, 1, null, '9th Year Anniversary (continued)'),
+
+    // February
+    ev(2, 9, 14, 'Workers Fasting and Prayer'),
+    ev(2, 9, null, 'Baptismal Class begins'),
+    ev(2, 11, 14, 'Jeje Love: Abe Damilola and Moderators'),
+    ev(2, 11, null, 'Love can repair all things'),
+    ev(2, 12, null, 'Movie Night'),
+    ev(2, 13, null, 'Marriage Power Night – The Beautiful Marriage'),
+    ev(2, 14, null, 'Wisdom for successful Marriage'),
+    ev(2, 18, null, 'Moderators Special Program'),
+    ev(2, 27, null, 'Holy Ghost Special Service – The Spirit of God'),
+    ev(2, 28, null, 'Special Monthly Bible Study: Five Red flag Questions'),
+    mid(2, 4, 'Good love or Bad love?'),
+    mid(2, 11, 'Moderators: Jeje Love'),
+    mid(2, 18, 'Moderators Special Program'),
+    mid(2, 25, 'Why church brothers go for outside sister?'),
+
+    // March
+    ev(3, 9, 14, 'Workers Fasting and Prayer'),
+    ev(3, 12, 14, 'Marathon Prayer'),
+    ev(3, 27, null, 'Holy Ghost Special Service – The Spirit of Might'),
+    ev(3, 28, null, 'Special Monthly Bible Study: How to Find a Good Partner'),
+    mid(3, 4, 'Heroes of Faith: Lucy F. Farrow'),
+    mid(3, 11, 'How to kill depression'),
+    mid(3, 19, 'Moderators: How to get out of financial poverty'),
+    mid(3, 25, 'There is Hope for You'),
+
+    // April
+    ev(4, 6, 11, 'Workers Fasting and Prayer'),
+    ev(4, 24, null, 'Holy Ghost Special Service – Joy Unlimited'),
+    ev(4, 25, null, 'Special Monthly Bible Study: How to lose a Good Partner'),
+    ev(4, 29, null, 'Choir Special Program'),
+    mid(4, 1, 'The Hope of Glory'),
+    mid(4, 8, 'Movie Night'),
+    mid(4, 15, 'Moderators: In-laws from Philistine'),
+    mid(4, 22, 'Saviour of sinners'),
+    mid(4, 29, 'Choir Special Program'),
+
+    // May
+    ev(5, 4, 9, 'Workers Fasting and Prayer'),
+    ev(5, 16, null, 'Baptismal Class Graduation'),
+    ev(5, 16, null, 'Bible Study Group Special program'),
+    ev(5, 29, null, 'Holy Ghost Special Service – Victory Assured'),
+    ev(5, 30, null, 'Special Monthly Bible Study: How to keep a Good Partner'),
+    mid(5, 6, 'Heroes of Faith: Prophet Samson Akande – Baba Abiye'),
+    mid(5, 13, 'Healer of the righteous'),
+    mid(5, 20, 'Moderators: How to find Mrs Right'),
+    mid(5, 27, "Don't Give up!"),
+
+    // June
+    ev(6, 8, 13, 'Workers Fasting and Prayer'),
+    ev(6, 13, null, 'Dear Daughter Alive Hangout'),
+    ev(6, 26, null, 'Holy Ghost Special Service – A New Beginning'),
+    ev(6, 27, null, 'Special Monthly Bible Study: Dy/Dx of Relationship'),
+    mid(6, 3, 'Helper of the Helpless'),
+    mid(6, 10, 'Movie Night'),
+    mid(6, 17, "Women's Conference: Women Unleashed"),
+    mid(6, 24, 'Testimony Night'),
+
+    // July
+    ev(7, 6, 11, 'Recharge Leadership Conference'),
+    ev(7, 18, null, 'COD Graduation'),
+    ev(7, 24, null, 'Special Prayer: Unstoppable Generation'),
+    ev(7, 25, null, 'Special Bible Study: Five Wines of Marriage'),
+    mid(7, 1, 'A New Beginning'),
+    mid(7, 8, 'Common Marriage Quarrels and Resolution (Husband and wife teaching)'),
+    mid(7, 15, 'Moderators: Couples Game: How much do you know'),
+    mid(7, 22, 'Movie Night (Couple related)'),
+    mid(7, 29, 'Tech Conference/Biblical Financial Literacy'),
+
+    // August
+    ev(8, 3, 8, 'Workers Prayer and Fasting'),
+    ev(8, 15, null, 'Alive 4.0 Awards'),
+    ev(8, 28, null, 'Holy Ghost Special Service – A Man of War'),
+    ev(8, 29, null, 'Special Monthly Bible Study – Five Wines of Marriage – Part 2'),
+    mid(8, 5, "Don't Quit!"),
+    mid(8, 12, 'Saviour of the addict'),
+    mid(8, 19, 'Moderators: Is falling for Temptation the end?'),
+    mid(8, 26, 'Can I marry him without having feelings for her?'),
+
+    // September
+    ev(9, 7, 12, 'Workers Prayer and Fasting'),
+    ev(9, 25, null, 'Holy Ghost Special Service: Rejoice'),
+    ev(9, 26, null, 'Special Monthly Bible Study: Five Wines of Marriage – Part 3'),
+    ev(9, 26, null, 'Fit for Christ [All States]'),
+    mid(9, 2, 'Heroes of Faith: Charles Parham'),
+    mid(9, 9, 'International Medical Conference'),
+    mid(9, 16, 'Moderators: How to approach a girl?'),
+    mid(9, 23, 'Fit for Christ'),
+    mid(9, 30, 'Ultimate Solution: Thanksgiving'),
+
+    // October
+    ev(10, 5, 10, 'Workers Prayer and Fasting'),
+    ev(10, 8, 10, 'Marathon Prayers'),
+    ev(10, 30, null, "Holy Ghost Special Service: On Eagles' Wings"),
+    ev(10, 31, null, 'Special Monthly Bible Study: How Rahab got her Man'),
+    mid(10, 7, 'Thanksgiving Unlimited - Choir'),
+    mid(10, 14, 'Faith-Unlimited'),
+    mid(10, 21, 'Moderators: What to do when you like a brother'),
+    mid(10, 28, 'Faith-Healing'),
+
+    // November
+    ev(11, 9, 14, 'Workers Prayer and Fasting'),
+    ev(11, 27, null, 'Holy Ghost Special Service: The Ever-Present Help'),
+    ev(11, 28, null, 'Special Monthly Bible Study: How to avoid a Bed of thorns'),
+    mid(11, 4, 'Raptured in His Word 1'),
+    mid(11, 11, 'Movie Night'),
+    mid(11, 18, 'Moderators: How to tell your Christian Parents about your relationship'),
+    mid(11, 25, 'Raptured in His Word 2'),
+
+    // December
+    ev(12, 7, 12, 'Dear Daughter Leadership Conference'),
+    ev(12, 23, null, 'Christmas Carol: Jesus, our Joy!'),
+    ev(12, 25, null, 'Holy Ghost Special Service: Open Doors'),
+    ev(12, 26, null, 'Special Monthly Bible Study: Ask Dad'),
+    mid(12, 2, 'Heroes of Faith: Reverend Uma Ukpai'),
+    mid(12, 9, 'Faith-Possible'),
+    mid(12, 16, "Moderators: What to do when your parents don't accept him/her"),
+    mid(12, 23, 'Carol - Tentative'),
+  ];
+
+  var MONTH_NAMES = [
+    '',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+
+  function lagosTodayYmd() {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Africa/Lagos',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+  }
+
+  function formatDateLabel(e) {
+    var start = MONTH_NAMES[e.month] + ' ' + e.day + ', ' + e.year;
+    if (e.endDay && e.endDay !== e.day) {
+      return MONTH_NAMES[e.month] + ' ' + e.day + '–' + e.endDay + ', ' + e.year;
+    }
+    return start;
+  }
+
+  function sortEvents(list) {
+    return list.slice().sort(function (a, b) {
+      if (a.month !== b.month) return a.month - b.month;
+      if (a.day !== b.day) return a.day - b.day;
+      if (a.kind === b.kind) return a.title.localeCompare(b.title);
+      return a.kind === 'midweek' ? -1 : 1;
+    });
+  }
+
+  function upcoming(limit) {
+    var today = lagosTodayYmd();
+    var max = limit || 12;
+    return sortEvents(
+      EVENTS.filter(function (e) {
+        return e.dateKey >= today;
+      })
+    ).slice(0, max);
+  }
+
+  function byMonth(month) {
+    return sortEvents(EVENTS.filter(function (e) {
+      return e.month === month;
+    }));
+  }
+
+  function kindBadge(kind) {
+    return kind === 'midweek' ? 'Wed Bible Study' : 'Special program';
+  }
+
+  global.DDBSNigeriaPrograms = {
+    YEAR: YEAR,
+    EVENTS: EVENTS,
+    MONTH_NAMES: MONTH_NAMES,
+    upcoming: upcoming,
+    byMonth: byMonth,
+    formatDateLabel: formatDateLabel,
+    kindBadge: kindBadge,
+    lagosTodayYmd: lagosTodayYmd,
+  };
+})(typeof window !== 'undefined' ? window : this);

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#008751" />
   <link rel="icon" type="image/png" href="images/favicon.png" />
   <title>DDBS Nigeria — Dear Daughter Bible Study Group</title>
-  <meta name="description" content="Dear Daughter Bible Study Group Nigeria — unit meetings, attendance, and monthly reports for volunteers with a +234 registration number." />
+  <meta name="description" content="Dear Daughter Bible Study Group Nigeria — unit hub, programs, and attendance." />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -26,14 +26,22 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
   <script src="js/firebase-config.js"></script>
   <style>
     body { font-family: system-ui, sans-serif; }
     .ng-hero {
-      background: linear-gradient(135deg, #008751 0%, #0f3d5c 55%, #1a5f8a 100%);
+      background: linear-gradient(135deg, #008751 0%, #0f3d5c 60%, #1a5f8a 100%);
     }
-    .ng-stripe { height: 4px; background: linear-gradient(90deg, #008751 33%, #fff 33%, #fff 66%, #008751 66%); }
+    .ng-stripe { height: 3px; background: linear-gradient(90deg, #008751 33%, #fff 33%, #fff 66%, #008751 66%); }
+    .app-shell { min-height: calc(100vh - 4rem); }
+    .sidebar-sticky { position: sticky; top: 3.75rem; max-height: calc(100vh - 4.5rem); overflow-y: auto; }
+    .tab-btn.active { background: #008751; color: #fff; border-color: #008751; }
+    .program-card:hover { transform: translateY(-2px); transition: transform 0.15s ease; }
+    @media (max-width: 1023px) {
+      .sidebar-sticky { position: static; max-height: none; }
+    }
   </style>
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800 overflow-x-hidden">
@@ -44,15 +52,15 @@
 
   <div id="app-main">
     <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
-      <div class="max-w-3xl mx-auto px-4 min-h-14 flex items-center justify-between gap-2">
+      <div class="max-w-7xl mx-auto px-4 min-h-14 flex items-center justify-between gap-2">
         <div class="flex items-center gap-2">
           <span class="w-9 h-9 rounded-lg bg-ng-green text-white text-[10px] font-bold flex items-center justify-center leading-tight text-center">DDBS<br>Nig</span>
           <div>
-            <span class="font-semibold text-slate-900 text-sm block">DDBS Nigeria</span>
-            <span class="text-xs text-slate-500">Unit hub</span>
+            <span class="font-semibold text-slate-900 text-sm block">Dear Daughter Bible Study</span>
+            <span class="text-xs text-slate-500">Nigeria</span>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-3">
           <a href="monthly-report.html?region=nigeria" class="text-xs font-medium text-brand hover:underline hidden sm:inline">Monthly report</a>
           <button type="button" id="btn-signout" class="text-xs text-slate-600 hover:text-red-600 px-2 hidden">Sign out</button>
         </div>
@@ -60,161 +68,149 @@
       <div class="ng-stripe" aria-hidden="true"></div>
     </nav>
 
-    <header class="ng-hero text-white px-4 py-10 sm:py-14">
-      <div class="max-w-3xl mx-auto text-center">
-        <p class="text-emerald-200/90 text-xs sm:text-sm uppercase tracking-[0.15em] font-semibold mb-3">Houston World Cup Prayer City Movement</p>
-        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold font-[Georgia,Cambria,serif] leading-tight text-balance">
+    <header class="ng-hero text-white px-4 py-8 sm:py-10">
+      <div class="max-w-7xl mx-auto">
+        <h1 class="text-2xl sm:text-3xl font-bold font-[Georgia,Cambria,serif] leading-tight">
           Dear Daughter Bible Study Group Nigeria
         </h1>
-        <p class="text-emerald-50 text-sm sm:text-base mt-4 max-w-xl mx-auto leading-relaxed">
-          Your unit meetings, attendance, and monthly reports — sign in with the <strong>same email</strong> you used to volunteer
-          (verified by the <strong>+234</strong> number on your registration).
+        <p class="text-emerald-50/90 text-sm sm:text-base mt-2 max-w-2xl">
+          Your unit hub — meetings, mid-week Bible Study, and ministry programs across Nigeria (WAT).
         </p>
       </div>
     </header>
 
-    <main class="max-w-3xl mx-auto px-4 py-6 sm:py-8 space-y-6">
-      <div id="ng-status" class="hidden" role="status"></div>
+    <div id="ng-status" class="hidden max-w-7xl mx-auto px-4 pt-4" role="status"></div>
 
-      <div id="super-user-panel" class="hidden rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50 p-4 sm:p-5 shadow-sm">
+    <div id="super-user-panel" class="hidden max-w-7xl mx-auto px-4 pt-4">
+      <div class="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50 p-4 shadow-sm">
         <p class="text-xs font-bold uppercase tracking-wider text-violet-700 mb-2"><i class="fas fa-shield-halved mr-1"></i> Coordinator access</p>
         <div id="super-user-links" class="flex flex-wrap gap-2"></div>
       </div>
+    </div>
 
-      <div id="super-user-banner" class="hidden rounded-xl border border-violet-200 bg-violet-50 text-violet-900 px-4 py-3 text-sm">
-        <strong>Super-user preview</strong> — you can explore all DDBS Nigeria features without a +234 registration number.
+    <section id="auth-checking" class="hidden max-w-lg mx-auto px-4 py-12 text-center">
+      <p class="text-sm text-slate-600"><i class="fas fa-spinner fa-spin mr-2 text-ng-green"></i>Loading…</p>
+    </section>
+
+    <section id="auth-panel" class="hidden max-w-lg mx-auto px-4 py-8">
+      <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+        <div class="bg-ng-green/10 px-5 py-3 border-b"><h2 class="font-semibold text-ng-green"><i class="fas fa-envelope mr-2"></i>Sign in</h2></div>
+        <div class="p-5 space-y-4">
+          <p class="text-sm text-slate-600">Use the same email from your volunteer sign-up.</p>
+          <input type="email" id="auth-email" autocomplete="email" class="w-full rounded-xl border border-slate-200 px-4 py-2.5" placeholder="you@example.com" />
+          <input type="password" id="auth-password" autocomplete="current-password" class="w-full rounded-xl border border-slate-200 px-4 py-2.5" placeholder="Password (if set)" />
+          <button type="button" id="btn-email-link" class="w-full rounded-xl bg-ng-green text-white font-semibold py-3">Email me a sign-in link</button>
+          <button type="button" id="btn-password-signin" class="w-full rounded-xl border-2 border-slate-200 font-semibold py-3">Sign in with password</button>
+        </div>
       </div>
+    </section>
 
-      <section id="auth-checking" class="hidden bg-white rounded-2xl shadow-card border border-slate-100 p-8 text-center">
-        <p class="text-sm text-slate-600"><i class="fas fa-spinner fa-spin mr-2 text-ng-green"></i>Loading your dashboard…</p>
-      </section>
+    <section id="not-eligible-panel" class="hidden max-w-lg mx-auto px-4 py-8">
+      <div class="bg-white rounded-2xl border border-amber-200 p-6 text-sm">
+        <p id="not-eligible-msg" class="text-amber-900 font-medium"></p>
+        <p class="mt-3"><a href="/?stay=us" class="text-brand underline">US dashboard</a></p>
+      </div>
+    </section>
 
-      <section id="auth-panel" class="hidden bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
-        <div class="bg-ng-green/10 px-5 py-3 border-b border-slate-100">
-          <h2 class="font-semibold text-ng-green flex items-center gap-2"><i class="fas fa-envelope"></i> Sign in with your volunteer email</h2>
-        </div>
-        <div class="p-5 sm:p-6 space-y-4">
-          <p class="text-sm text-slate-600">Use the email from your Prayer City volunteer sign-up. Access is verified by the <strong>+234 phone number</strong> on your registration.</p>
-          <p class="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">Already signed in on the main dashboard? This page uses the same account — try <a href="/" class="font-semibold underline">prayercityhtx.com</a> first, or use the email link below.</p>
-          <div>
-            <label for="auth-email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
-            <input type="email" id="auth-email" autocomplete="email" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-ng-green outline-none" placeholder="you@example.com" />
-          </div>
-          <div>
-            <label for="auth-password" class="block text-sm font-medium text-slate-700 mb-1">Password <span class="text-slate-400 font-normal">(if you set one)</span></label>
-            <input type="password" id="auth-password" autocomplete="current-password" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-ng-green outline-none" placeholder="Optional" />
-          </div>
-          <button type="button" id="btn-email-link" class="w-full rounded-xl bg-ng-green text-white font-semibold py-3.5 hover:bg-emerald-700 transition">Email me a sign-in link</button>
-          <button type="button" id="btn-password-signin" class="w-full rounded-xl border-2 border-slate-200 text-slate-700 font-semibold py-3.5 hover:bg-slate-50 transition">Sign in with password <span class="font-normal text-slate-400">(only if you set one)</span></button>
-          <p class="text-xs text-slate-500 text-center">Not registered yet? <a href="volunteer/" class="text-brand font-medium underline">Volunteer sign-up</a> — choose Nigeria (+234) for your phone.</p>
-        </div>
-      </section>
-
-      <section id="not-eligible-panel" class="hidden bg-white rounded-2xl shadow-card border border-amber-200 overflow-hidden">
-        <div class="bg-amber-50 px-5 py-4 border-b border-amber-100">
-          <h2 class="font-semibold text-amber-900"><i class="fas fa-circle-info mr-2"></i>DDBS Nigeria hub</h2>
-        </div>
-        <div class="p-5 sm:p-6 space-y-3 text-sm text-slate-700">
-          <p id="not-eligible-msg">This hub is for volunteers who registered with a Nigeria (+234) phone number.</p>
-          <p>If you serve from Nigeria, <a href="volunteer/" class="text-brand font-semibold underline">sign up</a> or ask an organizer to update your phone on the volunteer sheet to include <strong>+234</strong>.</p>
-          <p><a href="/?stay=us" class="text-brand underline">US volunteer dashboard</a> · <button type="button" id="btn-signout-ne" class="text-red-600 underline">Sign out</button></p>
-        </div>
-      </section>
-
-      <section id="onboard-panel" class="hidden bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+    <section id="onboard-panel" class="hidden max-w-2xl mx-auto px-4 py-8">
+      <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
         <div class="bg-gradient-to-r from-violet-600 to-indigo-700 px-5 py-3 text-white">
           <h2 class="font-semibold"><i class="fas fa-user-plus mr-2"></i>Complete your profile</h2>
         </div>
         <div class="p-5 sm:p-6 space-y-5">
-          <p id="onboard-super-hint" class="hidden text-sm text-violet-800 rounded-lg bg-violet-50 border border-violet-100 px-3 py-2">Coordinator mode: pick any unit to preview the Nigeria experience.</p>
-          <p class="text-sm text-slate-600 rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2">Registered as <strong id="onboard-phone">—</strong> (from your volunteer sign-up)</p>
+          <p id="onboard-super-hint" class="hidden text-sm text-violet-800 bg-violet-50 border border-violet-100 rounded-lg px-3 py-2">Coordinator preview — pick any unit(s) to explore.</p>
+          <p class="text-sm text-slate-600 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">Phone on file: <strong id="onboard-phone">—</strong></p>
           <div>
-            <label for="onboard-name" class="block text-sm font-medium text-slate-700 mb-1">Full name</label>
-            <input type="text" id="onboard-name" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-brand outline-none" placeholder="Your name" />
-          </div>
-          <div>
-            <p class="text-sm font-medium text-slate-700 mb-2">Your role</p>
-            <div class="grid grid-cols-2 gap-3">
-              <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50">
-                <input type="radio" name="onboard-role" value="leader" /> <span class="text-sm font-medium">Unit leader</span>
-              </label>
-              <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50">
-                <input type="radio" name="onboard-role" value="member" checked /> <span class="text-sm font-medium">Member</span>
-              </label>
-            </div>
+            <label for="onboard-name" class="block text-sm font-medium mb-1">Full name</label>
+            <input type="text" id="onboard-name" class="w-full rounded-xl border border-slate-200 px-4 py-2.5" placeholder="Your name" />
           </div>
           <div>
-            <p class="text-sm font-medium text-slate-700 mb-2">Your unit & meeting time</p>
-            <div id="onboard-units" class="space-y-2 max-h-64 overflow-y-auto"></div>
+            <p class="text-sm font-medium mb-2">Your unit(s) — choose all that apply</p>
+            <p class="text-xs text-slate-500 mb-3">You can be a <strong>member</strong> in one unit and a <strong>leader</strong> in another.</p>
+            <div id="onboard-units" class="space-y-2 max-h-80 overflow-y-auto"></div>
           </div>
-          <button type="button" id="btn-save-profile" class="w-full rounded-xl bg-ng-green text-white font-semibold py-3.5 disabled:opacity-50 disabled:cursor-not-allowed">Save & go to dashboard</button>
-          <p id="onboard-save-hint" class="text-xs text-slate-500 text-center">Coordinator preview saves instantly in your browser — no password needed.</p>
-        </div>
-      </section>
-
-      <div id="dash-panel" class="hidden space-y-6">
-        <div class="flex flex-wrap items-center gap-2">
-          <h2 id="dash-greeting" class="text-xl font-bold text-slate-900 flex-1">Welcome</h2>
-          <span id="dash-unit-badge" class="text-xs font-semibold rounded-full bg-brand-soft text-brand px-3 py-1"></span>
-          <span id="dash-role-badge" class="text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 px-3 py-1"></span>
-        </div>
-        <p id="dash-schedule" class="text-sm text-slate-600 -mt-4"></p>
-        <p id="dash-phone" class="text-xs text-slate-500 -mt-2"></p>
-
-        <div id="next-meeting-card" class="rounded-2xl bg-gradient-to-br from-brand to-brand-light text-white p-5 shadow-md">
-          <p class="text-xs uppercase tracking-wider text-white/80 font-semibold">Next meeting</p>
-          <p id="next-meeting-date" class="text-2xl font-bold mt-1"></p>
-          <p class="text-sm text-white/90 mt-1">Starts in <span id="next-meeting-countdown" class="font-semibold">—</span></p>
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
-          <h3 class="font-semibold text-slate-900 mb-1"><i class="fas fa-clipboard-check text-ng-green mr-2"></i>Meeting attendance</h3>
-          <p id="check-in-hint" class="text-xs text-slate-500 mb-3"></p>
-          <button type="button" id="btn-check-in" class="w-full rounded-xl bg-ng-green hover:bg-emerald-700 text-white font-semibold py-3.5 transition">
-            <i class="fas fa-check-circle mr-2"></i>Check in to today's meeting
-          </button>
-        </div>
-
-        <div id="attendance-insight"></div>
-
-        <div id="leader-report-card" class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
-          <h3 class="font-semibold text-slate-900 mb-3"><i class="fas fa-file-lines text-brand mr-2"></i>Leader report this month</h3>
-          <div id="report-summary"></div>
-        </div>
-
-        <p id="member-report-note" class="hidden text-sm text-slate-500 text-center">When your leader submits the monthly report, it will appear above.</p>
-
-        <div id="leader-tools" class="hidden bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
-          <div class="bg-amber-500/10 px-5 py-3 border-b border-slate-100">
-            <h3 class="font-semibold text-amber-900"><i class="fas fa-pen-to-square mr-2"></i>Submit monthly report (leader)</h3>
-            <p class="text-xs text-amber-800/80 mt-1">Attendance stats are added automatically from check-ins.</p>
-          </div>
-          <div class="p-5 space-y-3">
-            <textarea id="leader-activities" rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Activities & ministry this month *"></textarea>
-            <textarea id="leader-highlights" rows="2" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Highlights"></textarea>
-            <textarea id="leader-testimonies" rows="2" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Testimonies"></textarea>
-            <textarea id="leader-challenges" rows="2" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Challenges"></textarea>
-            <textarea id="leader-prayer" rows="2" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Prayer requests"></textarea>
-            <textarea id="leader-next" rows="2" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Plans for next month"></textarea>
-            <button type="button" id="btn-submit-report" class="w-full rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3">Submit report to unit</button>
-            <a href="monthly-report.html?region=nigeria" class="block text-center text-sm text-brand hover:underline">Full monthly report form (PDF & email)</a>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
-          <h3 class="font-semibold text-slate-900 mb-2"><i class="fas fa-history text-slate-400 mr-2"></i>Recent check-ins</h3>
-          <ul id="recent-attendance" class="divide-y divide-slate-100"></ul>
+          <button type="button" id="btn-save-profile" class="w-full rounded-xl bg-ng-green text-white font-semibold py-3.5 disabled:opacity-50">Save & go to dashboard</button>
         </div>
       </div>
-    </main>
+    </section>
 
-    <footer class="py-8 text-center text-xs text-slate-500">
-      <p>Dear Daughter Bible Study Group Nigeria · Prayer City</p>
+    <div id="dash-shell" class="hidden max-w-7xl mx-auto px-4 py-6 lg:py-8">
+      <div class="app-shell flex flex-col lg:flex-row gap-6 lg:gap-8">
+        <aside id="profile-sidebar" class="w-full lg:w-72 shrink-0 sidebar-sticky">
+          <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5 space-y-4">
+            <div class="text-center">
+              <div class="relative inline-block">
+                <img id="sidebar-avatar-img" class="hidden w-24 h-24 rounded-full object-cover border-4 border-ng-green/20 mx-auto" alt="" />
+                <div id="sidebar-avatar-initial" class="w-24 h-24 rounded-full bg-ng-green text-white text-3xl font-bold flex items-center justify-center mx-auto border-4 border-ng-green/20">?</div>
+                <label class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center cursor-pointer shadow-md" title="Upload photo">
+                  <i class="fas fa-camera text-xs"></i>
+                  <input type="file" id="sidebar-avatar-input" accept="image/*" class="hidden" />
+                </label>
+              </div>
+              <p id="sidebar-upload-status" class="text-xs text-slate-500 mt-2 min-h-[1rem]"></p>
+            </div>
+            <div class="text-center border-b border-slate-100 pb-4">
+              <h2 id="sidebar-name" class="font-bold text-slate-900 text-lg">—</h2>
+              <p id="sidebar-email" class="text-xs text-slate-500 mt-1 break-all">—</p>
+              <p id="sidebar-phone" class="text-xs text-slate-500 mt-1">—</p>
+            </div>
+            <div>
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">My units</p>
+              <ul id="sidebar-units" class="space-y-2 text-sm"></ul>
+            </div>
+            <button type="button" id="btn-edit-profile" class="w-full text-sm rounded-xl border border-slate-200 py-2 hover:bg-slate-50">Edit profile</button>
+          </div>
+        </aside>
+
+        <main class="flex-1 min-w-0 space-y-4">
+          <div id="super-user-banner" class="hidden rounded-xl border border-violet-200 bg-violet-50 text-violet-900 px-4 py-3 text-sm">
+            <strong>Coordinator preview</strong> — explore all features without a +234 number.
+          </div>
+
+          <nav id="dash-tabs" class="flex flex-wrap gap-2" aria-label="Dashboard sections">
+            <button type="button" class="tab-btn active text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="home">Home</button>
+            <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="programs">Programs</button>
+            <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="units">My units</button>
+            <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="reports">Reports</button>
+          </nav>
+
+          <div id="tab-home" class="tab-panel space-y-4">
+            <div id="home-upcoming-programs" class="grid sm:grid-cols-2 gap-4"></div>
+            <div id="home-unit-snapshot" class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
+              <h3 class="font-semibold text-slate-900 mb-3"><i class="fas fa-calendar-check text-ng-green mr-2"></i>Next unit meetings</h3>
+              <div id="home-meetings-list" class="space-y-3 text-sm"></div>
+            </div>
+          </div>
+
+          <div id="tab-programs" class="tab-panel hidden space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <h3 class="font-semibold text-slate-900 text-lg">2026 ministry calendar</h3>
+              <select id="programs-month-filter" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"></select>
+            </div>
+            <p class="text-sm text-slate-600">Mid-week Bible Study every <strong>Wednesday</strong> · times in WAT (Nigeria).</p>
+            <div id="programs-grid" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+          </div>
+
+          <div id="tab-units" class="tab-panel hidden space-y-4">
+            <div id="units-cards" class="space-y-4"></div>
+          </div>
+
+          <div id="tab-reports" class="tab-panel hidden space-y-4">
+            <div id="reports-panels" class="space-y-4"></div>
+            <p id="reports-member-note" class="hidden text-sm text-slate-500 text-center">Leader reports appear here when your unit leader submits.</p>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <footer class="py-8 text-center text-xs text-slate-500 border-t border-slate-200 mt-8 bg-white">
+      <p>Dear Daughter Bible Study Group Nigeria</p>
       <p class="mt-2"><a href="/?stay=us" class="text-brand hover:underline">US volunteer dashboard</a> · <a href="monthly-report.html" class="text-brand hover:underline">Monthly report</a></p>
     </footer>
   </div>
 
   <script src="js/nigeria-units.js"></script>
+  <script src="js/ddbs-nigeria-programs.js"></script>
   <script src="js/prayer-city-super-user.js"></script>
   <script src="js/nigeria-dashboard.js"></script>
 </body>

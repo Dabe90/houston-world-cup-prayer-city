@@ -20,6 +20,38 @@ function getUnit(id) {
   return NIGERIA_UNITS.find((u) => u.id === id);
 }
 
+function normalizeProfileUnits(profile) {
+  if (!profile) return [];
+  if (Array.isArray(profile.units) && profile.units.length) {
+    return profile.units
+      .filter((u) => u && u.unitId && (u.role === 'leader' || u.role === 'member'))
+      .map((u) => {
+        const unit = getUnit(u.unitId);
+        return {
+          unitId: u.unitId,
+          unitLabel: u.unitLabel || (unit ? unit.label : u.unitId),
+          role: u.role,
+        };
+      });
+  }
+  if (profile.unitId) {
+    const unit = getUnit(profile.unitId);
+    return [
+      {
+        unitId: profile.unitId,
+        unitLabel: profile.unitLabel || (unit ? unit.label : profile.unitId),
+        role: profile.role === 'leader' ? 'leader' : 'member',
+      },
+    ];
+  }
+  return [];
+}
+
+function isLeaderOfUnit(profile, unitId, isSuperUser) {
+  if (isSuperUser) return true;
+  return normalizeProfileUnits(profile).some((u) => u.unitId === unitId && u.role === 'leader');
+}
+
 function parseHm(hm) {
   const p = String(hm).split(':');
   return { h: parseInt(p[0], 10), m: parseInt(p[1], 10) };
@@ -295,41 +327,62 @@ function requireAuth(request) {
 
 const saveNigeriaProfile = onCall(async (request) => {
   const uid = requireAuth(request);
-  const { name, unitId, role } = request.data || {};
+  const { name, units, unitId, role, photoURL } = request.data || {};
   const db = admin.firestore();
   const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
 
-  const unit = getUnit(unitId);
-  if (!unit) throw new HttpsError('invalid-argument', 'Invalid unit.');
-  if (role !== 'leader' && role !== 'member') {
-    throw new HttpsError('invalid-argument', 'Role must be leader or member.');
+  let normalizedUnits = [];
+  if (Array.isArray(units) && units.length) {
+    for (const entry of units) {
+      const unit = getUnit(entry.unitId);
+      if (!unit) throw new HttpsError('invalid-argument', 'Invalid unit: ' + entry.unitId);
+      if (entry.role !== 'leader' && entry.role !== 'member') {
+        throw new HttpsError('invalid-argument', 'Role must be leader or member.');
+      }
+      normalizedUnits.push({
+        unitId: entry.unitId,
+        unitLabel: unit.label,
+        role: entry.role,
+      });
+    }
+  } else if (unitId) {
+    const unit = getUnit(unitId);
+    if (!unit) throw new HttpsError('invalid-argument', 'Invalid unit.');
+    if (role !== 'leader' && role !== 'member') {
+      throw new HttpsError('invalid-argument', 'Role must be leader or member.');
+    }
+    normalizedUnits.push({ unitId, unitLabel: unit.label, role });
   }
+
+  if (!normalizedUnits.length) {
+    throw new HttpsError('invalid-argument', 'Select at least one unit.');
+  }
+
   const displayName = String(name || access.volunteer.name || '').trim();
   if (!displayName) {
     throw new HttpsError('invalid-argument', 'Name required.');
   }
 
-  await db
-    .collection('nigeria_volunteers')
-    .doc(uid)
-    .set(
-      {
-        uid,
-        email: access.email,
-        name: displayName,
-        phone: access.phone,
-        unitId,
-        unitLabel: unit.label,
-        role,
-        region: 'nigeria',
-        isSuperUser: access.isSuperUser === true,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
+  const primary = normalizedUnits[0];
+  const patch = {
+    uid,
+    email: access.email,
+    name: displayName,
+    phone: access.phone,
+    units: normalizedUnits,
+    unitId: primary.unitId,
+    unitLabel: primary.unitLabel,
+    role: primary.role,
+    region: 'nigeria',
+    isSuperUser: access.isSuperUser === true,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+  if (photoURL) patch.photoURL = String(photoURL).trim();
 
-  return { ok: true, phone: access.phone, unitId, role };
+  await db.collection('nigeria_volunteers').doc(uid).set(patch, { merge: true });
+
+  return { ok: true, units: normalizedUnits };
 });
 
 const recordNigeriaAttendance = onCall(async (request) => {
@@ -342,7 +395,14 @@ const recordNigeriaAttendance = onCall(async (request) => {
     throw new HttpsError('failed-precondition', 'Complete your profile first.');
   }
   const profile = profileSnap.data();
-  const unit = getUnit(profile.unitId);
+  const profileUnits = normalizeProfileUnits(profile);
+  if (!profileUnits.length) {
+    throw new HttpsError('failed-precondition', 'Add at least one unit to your profile.');
+  }
+
+  const reqUnitId = String(request.data?.unitId || profile.unitId || profileUnits[0].unitId || '');
+  const membership = profileUnits.find((u) => u.unitId === reqUnitId) || profileUnits[0];
+  const unit = getUnit(membership.unitId);
   if (!unit) throw new HttpsError('failed-precondition', 'Invalid unit on profile.');
 
   const next = getNextMeeting(unit);
@@ -372,16 +432,17 @@ const recordNigeriaAttendance = onCall(async (request) => {
       alreadyCheckedIn: true,
       checkedInAt: existing.data().checkedInAt,
       meetingKey: meeting.key,
+      unitId: membership.unitId,
     };
   }
 
   const record = {
     uid,
-    unitId: profile.unitId,
-    unitLabel: profile.unitLabel,
+    unitId: membership.unitId,
+    unitLabel: membership.unitLabel,
     name: profile.name,
     phone: profile.phone,
-    role: profile.role,
+    role: membership.role,
     meetingKey: meeting.key,
     meetingDateYmd: meeting.dateYmd,
     checkedInAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -391,10 +452,16 @@ const recordNigeriaAttendance = onCall(async (request) => {
 
   const year = parseInt(ymdInLagos(now).slice(0, 4), 10);
   const month = parseInt(ymdInLagos(now).slice(5, 7), 10);
-  const stats = await computeUserAttendanceStats(db, uid, profile.unitId, year, month);
+  const stats = await computeUserAttendanceStats(db, uid, membership.unitId, year, month);
   await profileRef.set({ lastAttendanceAt: record.checkedInAt, attendanceStats: stats }, { merge: true });
 
-  return { ok: true, alreadyCheckedIn: false, meetingKey: meeting.key, stats };
+  return {
+    ok: true,
+    alreadyCheckedIn: false,
+    meetingKey: meeting.key,
+    stats,
+    unitId: membership.unitId,
+  };
 });
 
 const getNigeriaDashboard = onCall(async (request) => {
@@ -430,32 +497,65 @@ const getNigeriaDashboard = onCall(async (request) => {
   }
 
   const profile = profileSnap.data();
-  const unit = getUnit(profile.unitId);
-  if (!unit) throw new HttpsError('failed-precondition', 'Unknown unit.');
+  const profileUnits = normalizeProfileUnits(profile);
+  if (!profileUnits.length) {
+    throw new HttpsError('failed-precondition', 'Profile units missing.');
+  }
 
   const now = new Date();
   const year = parseInt(ymdInLagos(now).slice(0, 4), 10);
   const month = parseInt(ymdInLagos(now).slice(5, 7), 10);
+  const isSuperUser = access.isSuperUser === true || profile.isSuperUser === true;
 
-  const nextMeeting = getNextMeeting(unit, now);
-  const stats = await computeUserAttendanceStats(db, uid, profile.unitId, year, month);
+  const unitContexts = [];
+  for (const membership of profileUnits) {
+    const unit = getUnit(membership.unitId);
+    if (!unit) continue;
 
-  const reportId = profile.unitId + '_' + year + '_' + String(month).padStart(2, '0');
-  const reportSnap = await db.collection('nigeria_unit_reports').doc(reportId).get();
-  const latestReport = reportSnap.exists ? reportSnap.data() : null;
+    const nextMeeting = getNextMeeting(unit, now);
+    const stats = await computeUserAttendanceStats(db, uid, membership.unitId, year, month);
 
-  let unitRoster = null;
-  if (profile.role === 'leader') {
-    const rosterSnap = await db
-      .collection('nigeria_volunteers')
-      .where('unitId', '==', profile.unitId)
-      .get();
-    unitRoster = rosterSnap.docs.map((d) => {
-      const v = d.data();
-      return { uid: d.id, name: v.name, role: v.role, phone: v.phone };
+    const reportId =
+      membership.unitId + '_' + year + '_' + String(month).padStart(2, '0');
+    const reportSnap = await db.collection('nigeria_unit_reports').doc(reportId).get();
+    const latestReport = reportSnap.exists ? reportSnap.data() : null;
+
+    let checkInOpen = false;
+    if (nextMeeting) {
+      checkInOpen = isWithinCheckInWindow(nextMeeting, now);
+      if (!checkInOpen) {
+        const prev = getNextMeeting(unit, new Date(nextMeeting.start.getTime() - 86400000));
+        if (prev && isWithinCheckInWindow(prev, now)) checkInOpen = true;
+      }
+    }
+
+    unitContexts.push({
+      unitId: membership.unitId,
+      unitLabel: membership.unitLabel,
+      role: membership.role,
+      unit: {
+        id: unit.id,
+        label: unit.label,
+        day: DAY_NAMES[unit.day],
+        start: unit.start,
+        end: unit.end,
+      },
+      nextMeeting: nextMeeting
+        ? {
+            key: nextMeeting.key,
+            dateYmd: nextMeeting.dateYmd,
+            startIso: nextMeeting.start.toISOString(),
+            endIso: nextMeeting.end.toISOString(),
+          }
+        : null,
+      checkInOpen,
+      attendanceStats: stats,
+      latestReport,
+      canSubmitReport: membership.role === 'leader' || isSuperUser,
     });
   }
 
+  const primary = unitContexts[0];
   const recentAttSnap = await db
     .collection('nigeria_attendance')
     .where('uid', '==', uid)
@@ -468,38 +568,27 @@ const getNigeriaDashboard = onCall(async (request) => {
     return {
       meetingKey: v.meetingKey,
       meetingDateYmd: v.meetingDateYmd,
+      unitId: v.unitId,
+      unitLabel: v.unitLabel,
       checkedInAt: v.checkedInAt,
     };
   });
 
-  let checkInOpen = false;
-  if (nextMeeting) {
-    checkInOpen = isWithinCheckInWindow(nextMeeting, now);
-    if (!checkInOpen) {
-      const prev = getNextMeeting(unit, new Date(nextMeeting.start.getTime() - 86400000));
-      if (prev && isWithinCheckInWindow(prev, now)) checkInOpen = true;
-    }
-  }
-
   return {
     hasProfile: true,
     eligible: true,
-    isSuperUser: access.isSuperUser === true || profile.isSuperUser === true,
-    profile,
-    unit: { id: unit.id, label: unit.label, day: DAY_NAMES[unit.day], start: unit.start, end: unit.end },
-    nextMeeting: nextMeeting
-      ? {
-          key: nextMeeting.key,
-          dateYmd: nextMeeting.dateYmd,
-          startIso: nextMeeting.start.toISOString(),
-          endIso: nextMeeting.end.toISOString(),
-        }
-      : null,
-    checkInOpen,
-    attendanceStats: stats,
-    latestReport,
+    isSuperUser,
+    profile: {
+      ...profile,
+      units: profileUnits,
+    },
+    unitContexts,
+    unit: primary ? primary.unit : null,
+    nextMeeting: primary ? primary.nextMeeting : null,
+    checkInOpen: primary ? primary.checkInOpen : false,
+    attendanceStats: primary ? primary.attendanceStats : null,
+    latestReport: primary ? primary.latestReport : null,
     recentAttendance,
-    unitRoster,
   };
 });
 
@@ -510,21 +599,30 @@ const submitNigeriaUnitReport = onCall(async (request) => {
   const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
   if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Profile required.');
   const profile = profileSnap.data();
-  if (profile.role !== 'leader' && !access.isSuperUser) {
-    throw new HttpsError('permission-denied', 'Only unit leaders can submit reports.');
+  const data = request.data || {};
+  const reqUnitId = String(data.unitId || profile.unitId || '').trim();
+  const profileUnits = normalizeProfileUnits(profile);
+  const leaderUnit = profileUnits.find((u) => u.unitId === reqUnitId) || profileUnits[0];
+  if (!leaderUnit) throw new HttpsError('failed-precondition', 'Profile units missing.');
+  if (leaderUnit.role !== 'leader' && !access.isSuperUser) {
+    throw new HttpsError('permission-denied', 'Only unit leaders can submit reports for that unit.');
   }
 
-  const data = request.data || {};
   const year = parseInt(data.reportYear, 10);
   const month = parseInt(data.reportMonth, 10);
   if (!year || !month) throw new HttpsError('invalid-argument', 'Report year and month required.');
 
-  const attendanceAnalytics = await computeUnitAttendanceForReport(db, profile.unitId, year, month);
+  const attendanceAnalytics = await computeUnitAttendanceForReport(
+    db,
+    leaderUnit.unitId,
+    year,
+    month
+  );
 
-  const reportId = profile.unitId + '_' + year + '_' + String(month).padStart(2, '0');
+  const reportId = leaderUnit.unitId + '_' + year + '_' + String(month).padStart(2, '0');
   const report = {
-    unitId: profile.unitId,
-    unitLabel: profile.unitLabel,
+    unitId: leaderUnit.unitId,
+    unitLabel: leaderUnit.unitLabel,
     reportYear: year,
     reportMonth: month,
     leaderUid: uid,
@@ -576,18 +674,22 @@ const getNigeriaAttendanceForReport = onCall(async (request) => {
   const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
   if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Profile required.');
   const profile = profileSnap.data();
+  const profileUnits = normalizeProfileUnits(profile);
+  const reqUnitId = String(request.data?.unitId || profile.unitId || '').trim();
+  const membership = profileUnits.find((u) => u.unitId === reqUnitId) || profileUnits[0];
+  if (!membership) throw new HttpsError('failed-precondition', 'Profile units missing.');
 
   const year = parseInt(request.data?.reportYear, 10);
   const month = parseInt(request.data?.reportMonth, 10);
   if (!year || !month) throw new HttpsError('invalid-argument', 'Year and month required.');
 
-  if (profile.role === 'leader' || access.isSuperUser) {
-    const unitStats = await computeUnitAttendanceForReport(db, profile.unitId, year, month);
-    return { role: 'leader', unitStats, personalStats: null };
+  if (membership.role === 'leader' || access.isSuperUser) {
+    const unitStats = await computeUnitAttendanceForReport(db, membership.unitId, year, month);
+    return { role: 'leader', unitStats, personalStats: null, unitId: membership.unitId };
   }
 
-  const personalStats = await computeUserAttendanceStats(db, uid, profile.unitId, year, month);
-  return { role: 'member', unitStats: null, personalStats };
+  const personalStats = await computeUserAttendanceStats(db, uid, membership.unitId, year, month);
+  return { role: 'member', unitStats: null, personalStats, unitId: membership.unitId };
 });
 
 const getPrayerCityAccess = onCall(async (request) => {
