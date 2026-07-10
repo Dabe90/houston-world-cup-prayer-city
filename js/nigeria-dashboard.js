@@ -138,6 +138,12 @@
       if (panel) panel.classList.toggle('hidden', name !== tab);
     });
     if (tab === 'programs') renderProgramsPanel();
+    if (tab === 'reports' && dashboardData) renderReportsTab(dashboardData);
+    try {
+      var path = window.location.pathname;
+      var hash = tab === 'home' ? '' : '#' + tab;
+      window.history.replaceState(null, '', path + hash);
+    } catch (e) {}
   }
 
   function renderUnitOptions() {
@@ -547,44 +553,33 @@
     var panels = $('reports-panels');
     var note = $('reports-member-note');
     if (!panels) return;
-    var leaderUnits = (data.unitContexts || []).filter(function (c) {
-      return c.canSubmitReport;
-    });
-    if (!leaderUnits.length) {
-      panels.innerHTML = '';
-      if (note) show(note);
+    if (note) hide(note);
+
+    if (!window.NigeriaDashboardReport) {
+      panels.innerHTML =
+        '<p class="text-sm text-slate-500">Monthly report module failed to load. Refresh the page.</p>';
       return;
     }
-    if (note) hide(note);
-    panels.innerHTML = leaderUnits
-      .map(function (c, i) {
-        var suffix = c.unitId.replace(/[^a-z0-9]/gi, '-');
-        return (
-          '<div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">' +
-          '<div class="bg-amber-500/10 px-5 py-3 border-b"><h3 class="font-semibold text-amber-900">Monthly report — ' +
-          c.unitLabel +
-          '</h3></div>' +
-          '<div class="p-5 space-y-3">' +
-          (c.latestReport
-            ? '<p class="text-sm text-slate-600 whitespace-pre-wrap border border-slate-100 rounded-lg p-3 bg-slate-50">' +
-              (c.latestReport.activities || 'Report on file').slice(0, 300) +
-              '</p>'
-            : '<p class="text-sm text-slate-500">No report submitted this month yet.</p>') +
-          '<textarea class="report-activities w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" rows="3" placeholder="Activities this month *" data-unit-id="' +
-          c.unitId +
-          '"></textarea>' +
-          '<button type="button" class="btn-submit-report w-full rounded-xl bg-amber-500 text-white font-semibold py-3" data-unit-id="' +
-          c.unitId +
-          '">Submit report</button></div></div>'
-        );
-      })
-      .join('');
 
-    panels.querySelectorAll('.btn-submit-report').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        submitLeaderReport(btn.getAttribute('data-unit-id'));
+    if (!panels.querySelector('#ng-report-root')) {
+      NigeriaDashboardReport.mount(panels, {
+        profile: data.profile,
+        unitContexts: data.unitContexts,
+        authUser: auth.currentUser,
+      }, {
+        db: db,
+        functions: functions,
       });
-    });
+    } else {
+      NigeriaDashboardReport.refresh({
+        profile: data.profile,
+        unitContexts: data.unitContexts,
+        authUser: auth.currentUser,
+      }, {
+        db: db,
+        functions: functions,
+      });
+    }
   }
 
   function renderDashboard(data) {
@@ -783,35 +778,6 @@
       });
   }
 
-  function submitLeaderReport(unitId) {
-    var panel = document.querySelector('.report-activities[data-unit-id="' + unitId + '"]');
-    var activities = panel ? panel.value.trim() : '';
-    if (!activities) {
-      setStatus('Enter activities for the report.', 'error');
-      return;
-    }
-    var now = new Date();
-    functions
-      .httpsCallable('submitNigeriaUnitReport')({
-        unitId: unitId,
-        reportYear: now.getFullYear(),
-        reportMonth: now.getMonth() + 1,
-        activities: activities,
-        highlights: '',
-        testimonies: '',
-        challenges: '',
-        prayerRequests: '',
-        nextMonth: '',
-      })
-      .then(function () {
-        setStatus('Report submitted!', 'success');
-        return loadDashboard();
-      })
-      .catch(function (err) {
-        setStatus((err && err.message) || 'Report failed.', 'error');
-      });
-  }
-
   function uploadSidebarPhoto(file) {
     if (!file || !file.type.match(/^image\//)) return;
     if (file.size > 3 * 1024 * 1024) {
@@ -889,6 +855,10 @@
 
   function bind() {
     renderUnitOptions();
+    var hashTab = (window.location.hash || '').replace('#', '');
+    if (['home', 'programs', 'units', 'reports'].indexOf(hashTab) >= 0) {
+      activeTab = hashTab;
+    }
     document.querySelectorAll('.tab-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         switchTab(btn.getAttribute('data-tab'));

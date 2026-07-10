@@ -61,7 +61,7 @@
           </div>
         </div>
         <div class="flex items-center gap-3">
-          <a href="monthly-report.html?region=nigeria" class="text-xs font-medium text-brand hover:underline hidden sm:inline">Monthly report</a>
+          <a href="ddbs-nig.html#reports" class="text-xs font-medium text-brand hover:underline hidden sm:inline">Monthly report</a>
           <button type="button" id="btn-signout" class="text-xs text-slate-600 hover:text-red-600 px-2 hidden">Sign out</button>
         </div>
       </div>
@@ -201,7 +201,8 @@
           </div>
 
           <div id="tab-reports" class="tab-panel hidden space-y-4">
-            <div id="reports-panels" class="space-y-4"></div>
+            <p class="text-sm text-slate-600">Full monthly unit report — same as the main Prayer City form, with attendance and meeting notes built in.</p>
+            <div id="reports-panels"></div>
             <p id="reports-member-note" class="hidden text-sm text-slate-500 text-center">Leader reports appear here when your unit leader submits.</p>
           </div>
         </main>
@@ -214,9 +215,12 @@
     </footer>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="js/nigeria-units.js"></script>
   <script src="js/ddbs-nigeria-programs.js"></script>
   <script src="js/ddbs-nigeria-meeting-notes.js"></script>
+  <script src="js/monthly-unit-report.js"></script>
+  <script src="js/nigeria-dashboard-report.js"></script>
   <script src="js/prayer-city-super-user.js"></script>
   <script src="js/nigeria-dashboard.js"></script>
 </body>

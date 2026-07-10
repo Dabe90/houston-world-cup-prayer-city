@@ -1704,4 +1704,5 @@ exports.recordNigeriaAttendance = nigeriaVolunteer.recordNigeriaAttendance;
 exports.getNigeriaDashboard = nigeriaVolunteer.getNigeriaDashboard;
 exports.submitNigeriaUnitReport = nigeriaVolunteer.submitNigeriaUnitReport;
 exports.getNigeriaAttendanceForReport = nigeriaVolunteer.getNigeriaAttendanceForReport;
+exports.summarizeNigeriaMeetingNotesForReport = nigeriaVolunteer.summarizeNigeriaMeetingNotesForReport;
 exports.getPrayerCityAccess = nigeriaVolunteer.getPrayerCityAccess;

@@ -274,6 +274,7 @@
       unit: unit,
       meetingsHeld: ($('meetings-held') && $('meetings-held').value.trim()) || '',
       attendance: ($('attendance') && $('attendance').value.trim()) || '',
+      meetingNotesSummary: ($('meeting-notes-summary') && $('meeting-notes-summary').value.trim()) || '',
       activities: ($('activities') && $('activities').value.trim()) || '',
       highlights: ($('highlights') && $('highlights').value.trim()) || '',
       challenges: ($('challenges') && $('challenges').value.trim()) || '',
@@ -369,6 +370,7 @@
       (data.reporterPhone ? '<br><strong>Phone:</strong> ' + escapeHtml(data.reporterPhone) : '') +
       '</div>' +
       stats +
+      section('Meeting notes summary', data.meetingNotesSummary, '📝') +
       section('Activities & ministry this month', data.activities, '✦') +
       section('Highlights & wins', data.highlights, '★') +
       section('Testimonies', data.testimonies, '♥') +
@@ -399,6 +401,7 @@
     if (data.reporterPhone) lines.push('Phone: ' + data.reporterPhone);
     lines.push('', 'Meetings / gatherings: ' + (data.meetingsHeld || '—'));
     lines.push('Attendance: ' + (data.attendance || '—'));
+    if (data.meetingNotesSummary) lines.push('', '--- Meeting notes summary ---', data.meetingNotesSummary);
     lines.push('', '--- Activities ---', data.activities);
     if (data.highlights) lines.push('', '--- Highlights ---', data.highlights);
     if (data.testimonies) lines.push('', '--- Testimonies ---', data.testimonies);
@@ -624,6 +627,7 @@
     if (data.reporterPhone) fd.append('Phone', data.reporterPhone);
     fd.append('Meetings / gatherings', data.meetingsHeld || '—');
     fd.append('Attendance', data.attendance || '—');
+    if (data.meetingNotesSummary) fd.append('Meeting notes summary', data.meetingNotesSummary);
     fd.append('Activities', data.activities);
     if (data.highlights) fd.append('Highlights', data.highlights);
     if (data.testimonies) fd.append('Testimonies', data.testimonies);
@@ -722,7 +726,7 @@
       if (el) el.addEventListener('input', updatePreview);
       if (el) el.addEventListener('change', updatePreview);
     });
-    ['activities', 'highlights', 'testimonies', 'challenges', 'prayer-requests', 'next-month', 'meetings-held', 'attendance'].forEach(
+    ['activities', 'highlights', 'testimonies', 'challenges', 'prayer-requests', 'next-month', 'meetings-held', 'attendance', 'meeting-notes-summary'].forEach(
       function (id) {
         var el = $(id);
         if (el) el.addEventListener('input', updatePreview);
@@ -739,10 +743,25 @@
     updatePreview();
   }
 
+  var initialized = false;
+
+  function resetInit() {
+    initialized = false;
+  }
+
+  function init() {
+    if (!$('report-month') && !$('unit-cards')) return;
+    if (!initialized) {
+      bind();
+      initialized = true;
+    }
+    updatePreview();
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bind);
+    document.addEventListener('DOMContentLoaded', init);
   } else {
-    bind();
+    init();
   }
 
   global.MonthlyUnitReport = {
@@ -750,5 +769,12 @@
     UNIT_CATEGORIES: UNIT_CATEGORIES,
     readForm: readForm,
     buildReportHtml: buildReportHtml,
+    updatePreview: updatePreview,
+    init: init,
+    resetInit: resetInit,
+    validateForm: validateForm,
+    downloadPdf: downloadPdf,
+    emailReport: emailReport,
+    submitToCoordinator: submitToCoordinator,
   };
 })(typeof window !== 'undefined' ? window : this);

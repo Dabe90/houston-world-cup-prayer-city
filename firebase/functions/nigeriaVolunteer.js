@@ -1,8 +1,20 @@
 'use strict';
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { defineSecret } = require('firebase-functions/params');
+const { z } = require('zod');
 const admin = require('firebase-admin');
 const { isSuperUserEmail, normalizeEmail } = require('./lib/adminAuth');
+const { generateStructured } = require('./genkit/generateWithRetry');
+
+const googleGenaiApiKey = defineSecret('GOOGLE_GENAI_API_KEY');
+
+const notesSummarySchema = z.object({
+  executiveSummary: z.string(),
+  keyTopics: z.array(z.string()).max(8),
+  actionItems: z.array(z.string()).max(12),
+  prayerAndFollowUps: z.array(z.string()).max(8),
+});
 
 const TZ = 'Africa/Lagos';
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -693,6 +705,107 @@ const getNigeriaAttendanceForReport = onCall(async (request) => {
   return { role: 'member', unitStats: null, personalStats, unitId: membership.unitId };
 });
 
+function formatNotesSummaryOutput(output) {
+  if (!output) return '';
+  const lines = [];
+  if (output.executiveSummary) lines.push(output.executiveSummary);
+  if (output.keyTopics?.length) {
+    lines.push('', 'Key topics:', ...output.keyTopics.map((t) => `• ${t}`));
+  }
+  if (output.actionItems?.length) {
+    lines.push('', 'Action items:', ...output.actionItems.map((t) => `☐ ${t}`));
+  }
+  if (output.prayerAndFollowUps?.length) {
+    lines.push('', 'Prayer & follow-ups:', ...output.prayerAndFollowUps.map((t) => `• ${t}`));
+  }
+  return lines.join('\n').trim();
+}
+
+function buildSimpleNotesSummary(notes, unitLabel, period) {
+  if (!notes.length) return `No shared meeting notes for ${unitLabel} in ${period}.`;
+  const bullets = [];
+  notes.forEach((n) => {
+    String(n.content || '')
+      .split('\n')
+      .forEach((line) => {
+        const t = line.trim();
+        if (t && t !== '---') bullets.push(t.replace(/^[-•☐]\s*/, ''));
+      });
+  });
+  return [
+    `Summary from ${notes.length} meeting note(s) — ${unitLabel} (${period})`,
+    '',
+    ...bullets.slice(0, 10).map((b) => `• ${b}`),
+  ].join('\n');
+}
+
+const summarizeNigeriaMeetingNotesForReport = onCall(
+  { cors: true, timeoutSeconds: 120, secrets: [googleGenaiApiKey] },
+  async (request) => {
+    const uid = requireAuth(request);
+    const db = admin.firestore();
+    await assertNigeriaVolunteerAccess(db, uid, request.auth);
+    const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+    if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Profile required.');
+    const profile = profileSnap.data();
+    const unitId = String(request.data?.unitId || '').trim();
+    const year = parseInt(request.data?.reportYear, 10);
+    const month = parseInt(request.data?.reportMonth, 10);
+    const notes = Array.isArray(request.data?.notes) ? request.data.notes : [];
+    if (!unitId || !year || !month) {
+      throw new HttpsError('invalid-argument', 'unitId, year, and month required.');
+    }
+    const profileUnits = normalizeProfileUnits(profile);
+    const isMember =
+      profileUnits.some((u) => u.unitId === unitId) || profile.unitId === unitId;
+    if (!isMember) throw new HttpsError('permission-denied', 'Not a member of that unit.');
+
+    const unit = getUnit(unitId);
+    const unitLabel = unit ? unit.label : unitId;
+    const period = new Date(year, month - 1, 1).toLocaleDateString('en-US', {
+      month: 'long',
+      year: 'numeric',
+    });
+
+    if (!notes.length) {
+      return { summaryText: `No shared meeting notes for ${unitLabel} in ${period}.`, aiUsed: false };
+    }
+
+    const notesBlock = notes
+      .map(
+        (n) =>
+          `Meeting ${n.meetingDateYmd || n.meetingKey} (by ${n.updatedByName || 'member'}):\n${String(n.content || '').slice(0, 4000)}`
+      )
+      .join('\n\n');
+
+    try {
+      process.env.GOOGLE_GENAI_API_KEY = googleGenaiApiKey.value();
+      const { output } = await generateStructured({
+        prompt: `You are summarizing DDBS Nigeria unit meeting notes into a concise monthly report section for church leadership.
+Unit: ${unitLabel}
+Period: ${period}
+
+Be factual, warm, and organized. Merge duplicate points. Extract clear action items and prayer/follow-up points when present.
+
+Meeting notes:
+${notesBlock}`,
+        schema: notesSummarySchema,
+      });
+      return {
+        summary: output,
+        summaryText: formatNotesSummaryOutput(output),
+        aiUsed: true,
+      };
+    } catch (e) {
+      console.warn('[summarizeNigeriaMeetingNotesForReport]', e);
+      return {
+        summaryText: buildSimpleNotesSummary(notes, unitLabel, period),
+        aiUsed: false,
+      };
+    }
+  }
+);
+
 const getPrayerCityAccess = onCall(async (request) => {
   const email = normalizeEmail(request.auth?.token?.email);
   if (!request.auth?.uid || !email) {
@@ -711,6 +824,7 @@ module.exports = {
   getNigeriaDashboard,
   submitNigeriaUnitReport,
   getNigeriaAttendanceForReport,
+  summarizeNigeriaMeetingNotesForReport,
   getPrayerCityAccess,
   computeUnitAttendanceForReport,
   computeUserAttendanceStats,
