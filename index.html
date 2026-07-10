@@ -552,7 +552,7 @@
                     id="btn-open-password-modal"
                     class="mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50 transition"
                   >
-                    <i class="fas fa-key" aria-hidden="true"></i> Update
+                    <i class="fas fa-key" aria-hidden="true"></i> Set
                     password
                   </button>
                 </div>
@@ -1416,7 +1416,7 @@
           <div
             class="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100 bg-slate-50 shrink-0"
           >
-            <h2 class="text-lg font-bold text-slate-900">Update password</h2>
+            <h2 id="password-modal-title" class="text-lg font-bold text-slate-900">Set a password</h2>
             <button
               type="button"
               id="btn-close-password-modal"
@@ -1427,9 +1427,9 @@
             </button>
           </div>
           <div class="overflow-y-auto flex-1 px-4 py-4 space-y-4">
-            <p class="text-sm text-slate-600">
-              Sign in next time with email + password, or keep using the email
-              link on the login screen.
+            <p id="password-modal-help" class="text-sm text-slate-600">
+              First time? Choose a new password below — no current password needed.
+              Or use the email link on the login screen anytime.
             </p>
             <div id="current-pass-wrap" class="hidden">
               <label class="block text-sm font-medium text-slate-700 mb-1"
@@ -1442,7 +1442,7 @@
                 autocomplete="current-password"
               />
               <p class="text-xs text-slate-500 mt-1">
-                Required when updating after a long session.
+                Only if you have signed in with a password before.
               </p>
             </div>
             <div>
@@ -1474,7 +1474,14 @@
               id="btn-link-password"
               class="w-full px-6 py-3 rounded-xl bg-brand hover:bg-brand-light text-white font-semibold transition"
             >
-              Save
+              Save password
+            </button>
+            <button
+              type="button"
+              id="btn-password-reset-email"
+              class="w-full px-6 py-3 rounded-xl border-2 border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition text-sm"
+            >
+              Email me a password reset link (no old password)
             </button>
             <p
               id="pass-status"
@@ -1570,7 +1577,10 @@
           newPass: document.getElementById("new-pass"),
           newPass2: document.getElementById("new-pass2"),
           btnLinkPassword: document.getElementById("btn-link-password"),
+          btnPasswordResetEmail: document.getElementById("btn-password-reset-email"),
           passStatus: document.getElementById("pass-status"),
+          passwordModalTitle: document.getElementById("password-modal-title"),
+          passwordModalHelp: document.getElementById("password-modal-help"),
           passwordModal: document.getElementById("password-modal"),
           passwordModalBackdrop: document.getElementById(
             "password-modal-backdrop",
@@ -1804,6 +1814,17 @@
           if (els.newPass2) els.newPass2.value = "";
           if (els.currentPass) els.currentPass.value = "";
           if (els.currentPassWrap) els.currentPassWrap.classList.add("hidden");
+          if (els.passwordModalTitle) {
+            els.passwordModalTitle.textContent = "Set a password";
+          }
+          if (els.passwordModalHelp) {
+            els.passwordModalHelp.textContent =
+              "First time? Choose a new password below — no current password needed. Or use the email link on the login screen anytime.";
+          }
+          if (els.btnOpenPasswordModal) {
+            els.btnOpenPasswordModal.innerHTML =
+              '<i class="fas fa-key" aria-hidden="true"></i> Set password';
+          }
           els.passwordModal.classList.remove("hidden");
           document.body.style.overflow = "hidden";
         }
@@ -2674,6 +2695,50 @@
             });
         });
 
+        function sendPasswordResetLink(email) {
+          return auth.sendPasswordResetEmail(email, {
+            url: EMAIL_LINK_CONTINUE_URL,
+            handleCodeInApp: false,
+          });
+        }
+
+        function offerPasswordReset(email, intoPassStatus) {
+          if (intoPassStatus && els.passStatus) {
+            els.passStatus.className =
+              "text-sm text-amber-800 min-h-[1.25rem] pt-1";
+            els.passStatus.textContent = "Sending password reset link…";
+          }
+          return sendPasswordResetLink(email).then(function () {
+            if (els.passStatus) {
+              els.passStatus.className =
+                "text-sm text-emerald-700 min-h-[1.25rem] pt-1";
+              els.passStatus.textContent =
+                "Check your email for a link to set your password (no old password needed).";
+            }
+          });
+        }
+
+        if (els.btnPasswordResetEmail) {
+          els.btnPasswordResetEmail.addEventListener("click", function () {
+            var user = auth.currentUser;
+            var email = user && user.email;
+            if (!email) {
+              if (els.passStatus) {
+                els.passStatus.textContent = "Sign in first.";
+              }
+              return;
+            }
+            offerPasswordReset(email, true).catch(function (e) {
+              if (els.passStatus) {
+                els.passStatus.className =
+                  "text-sm text-red-600 min-h-[1.25rem] pt-1";
+                els.passStatus.textContent =
+                  e.message || "Could not send reset email.";
+              }
+            });
+          });
+        }
+
         els.btnLinkPassword.addEventListener("click", function () {
           var p1 = els.newPass.value;
           var p2 = els.newPass2.value;
@@ -2699,41 +2764,53 @@
             if (els.currentPass) els.currentPass.value = "";
             if (els.currentPassWrap)
               els.currentPassWrap.classList.add("hidden");
+            if (els.passwordModalTitle) {
+              els.passwordModalTitle.textContent = "Update password";
+            }
+            if (els.btnOpenPasswordModal) {
+              els.btnOpenPasswordModal.innerHTML =
+                '<i class="fas fa-key" aria-hidden="true"></i> Update password';
+            }
             window.setTimeout(function () {
               closePasswordModal();
             }, 2200);
           }
 
-          function tryUpdatePassword() {
-            return user.updatePassword(p1).then(afterPasswordSuccess);
-          }
-
-          var curPw = els.currentPass ? els.currentPass.value : "";
-          if (curPw) {
+          function handleRequiresRecentLogin() {
+            var curPw = els.currentPass ? els.currentPass.value : "";
+            if (curPw) {
+              els.passStatus.className =
+                "text-sm text-slate-600 min-h-[1.25rem] pt-1";
+              els.passStatus.textContent = "Verifying current password…";
+              var reCred = firebase.auth.EmailAuthProvider.credential(
+                email,
+                curPw,
+              );
+              return user
+                .reauthenticateWithCredential(reCred)
+                .then(function () {
+                  return user.updatePassword(p1);
+                })
+                .then(afterPasswordSuccess)
+                .catch(function (e) {
+                  els.passStatus.className =
+                    "text-sm text-red-600 min-h-[1.25rem] pt-1";
+                  els.passStatus.textContent =
+                    e.message ||
+                    "Current password incorrect. Try “Email me a password reset link” instead.";
+                });
+            }
             els.passStatus.className =
-              "text-sm text-slate-600 min-h-[1.25rem] pt-1";
-            els.passStatus.textContent = "Verifying…";
-            var reCred = firebase.auth.EmailAuthProvider.credential(
-              email,
-              curPw,
-            );
-            user
-              .reauthenticateWithCredential(reCred)
-              .then(function () {
-                return tryUpdatePassword();
-              })
-              .catch(function (e) {
-                els.passStatus.className =
-                  "text-sm text-red-600 min-h-[1.25rem] pt-1";
-                els.passStatus.textContent =
-                  e.message || "Current password incorrect.";
-              });
-            return;
+              "text-sm text-amber-800 min-h-[1.25rem] pt-1";
+            els.passStatus.textContent =
+              "No old password needed — click “Email me a password reset link” below, or sign out and use a fresh sign-in link, then set your password again.";
+            if (els.currentPassWrap) els.currentPassWrap.classList.add("hidden");
           }
 
           els.passStatus.className =
             "text-sm text-slate-600 min-h-[1.25rem] pt-1";
           els.passStatus.textContent = "Saving…";
+
           var cred = firebase.auth.EmailAuthProvider.credential(email, p1);
           user
             .linkWithCredential(cred)
@@ -2741,28 +2818,44 @@
             .catch(function (e) {
               var code = e && e.code;
               if (code === "auth/provider-already-linked") {
-                return tryUpdatePassword().catch(function (e2) {
-                  var c2 = e2 && e2.code;
-                  if (c2 === "auth/requires-recent-login") {
-                    els.passStatus.className =
-                      "text-sm text-amber-800 min-h-[1.25rem] pt-1";
-                    els.passStatus.textContent =
-                      "Enter your current password above, then click Save again.";
-                    if (els.currentPassWrap)
-                      els.currentPassWrap.classList.remove("hidden");
-                    if (els.currentPass) els.currentPass.focus();
-                  } else {
+                return user
+                  .updatePassword(p1)
+                  .then(afterPasswordSuccess)
+                  .catch(function (e2) {
+                    if (e2 && e2.code === "auth/requires-recent-login") {
+                      return handleRequiresRecentLogin();
+                    }
                     els.passStatus.className =
                       "text-sm text-red-600 min-h-[1.25rem] pt-1";
                     els.passStatus.textContent =
-                      e2.message || "Could not update password.";
-                  }
-                });
+                      (e2 && e2.message) ||
+                      "Could not update password. Try the reset link below.";
+                  });
+              }
+              if (code === "auth/requires-recent-login") {
+                return handleRequiresRecentLogin();
+              }
+              if (code === "auth/weak-password") {
+                els.passStatus.className =
+                  "text-sm text-red-600 min-h-[1.25rem] pt-1";
+                els.passStatus.textContent = "Use a stronger password (at least 6 characters).";
+                return;
               }
               els.passStatus.className =
                 "text-sm text-red-600 min-h-[1.25rem] pt-1";
               els.passStatus.textContent =
-                e.message || "Could not save password";
+                (e.message || "Could not save password.") +
+                " Try “Email me a password reset link” below.";
+            })
+            .catch(function (e) {
+              var code = e && e.code;
+              if (code === "auth/requires-recent-login") {
+                return handleRequiresRecentLogin();
+              }
+              els.passStatus.className =
+                "text-sm text-red-600 min-h-[1.25rem] pt-1";
+              els.passStatus.textContent =
+                e.message || "Could not save password.";
             });
         });
 
