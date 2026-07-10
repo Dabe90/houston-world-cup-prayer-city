@@ -81,6 +81,10 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /nigeria_meeting_reminder_sent/{sentId} {
+      allow read, write: if false;
+    }
+
     // Shared notes for a unit meeting — all members of that unit can read/write.
     match /nigeria_unit_meeting_notes/{noteId} {
       allow read: if request.auth != null && nigeriaCanAccessUnit(resource.data.unitId);

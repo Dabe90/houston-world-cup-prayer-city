@@ -19,6 +19,7 @@ const {
   isPermanentDeliveryError,
 } = require('./emailUndeliverable');
 const nigeriaVolunteer = require('./nigeriaVolunteer');
+const { runNigeriaMeetingRemindersJob } = require('./nigeriaMeetingReminders');
 
 const inviteSecret = defineSecret('INVITE_SECRET');
 const selfServeMailSecret = defineSecret('SELF_SERVE_MAIL_SECRET');
@@ -1709,3 +1710,61 @@ exports.approveNigeriaUnitReportDraft = nigeriaVolunteer.approveNigeriaUnitRepor
 exports.getNigeriaAttendanceForReport = nigeriaVolunteer.getNigeriaAttendanceForReport;
 exports.summarizeNigeriaMeetingNotesForReport = nigeriaVolunteer.summarizeNigeriaMeetingNotesForReport;
 exports.getPrayerCityAccess = nigeriaVolunteer.getPrayerCityAccess;
+
+/**
+ * Every 5 minutes (Africa/Lagos): email Nigeria unit members meeting reminders
+ * at 2 days, 1 day, 2 hours, and 15 minutes before their next unit meeting.
+ *
+ * Enable: Firestore `settings/nigeria_meeting_reminders` → `{ "enabled": true }`.
+ * Opt-out per volunteer: `meetingReminderOptOut: true` on `nigeria_volunteers/{uid}`.
+ */
+exports.scheduledNigeriaMeetingReminders = onSchedule(
+  {
+    schedule: '*/5 * * * *',
+    timeZone: 'Africa/Lagos',
+    timeoutSeconds: 300,
+    memory: '512MiB',
+    secrets: [selfServeMailSecret, appsScriptSelfServeMailUrl],
+  },
+  async () => {
+    await runNigeriaMeetingRemindersJob(admin, {
+      scriptUrl: appsScriptSelfServeMailUrl.value(),
+      secret: selfServeMailSecret.value(),
+    });
+  }
+);
+
+/**
+ * Callable (digest admins): run Nigeria meeting reminders now (optional dryRun).
+ */
+exports.runNigeriaMeetingRemindersNow = onCall(
+  {
+    cors: true,
+    timeoutSeconds: 300,
+    memory: '512MiB',
+    secrets: [selfServeMailSecret, appsScriptSelfServeMailUrl],
+  },
+  async (request) => {
+    if (!request.auth?.token?.email) {
+      throw new HttpsError('unauthenticated', 'Sign in required.');
+    }
+    const caller = normalizeEmail(request.auth.token.email);
+    if (!DIGEST_ADMIN_EMAILS.has(caller)) {
+      throw new HttpsError('permission-denied', 'Admin access required.');
+    }
+    const data = request.data || {};
+    const stats = await runNigeriaMeetingRemindersJob(
+      admin,
+      {
+        scriptUrl: appsScriptSelfServeMailUrl.value(),
+        secret: selfServeMailSecret.value(),
+      },
+      {
+        force: data.force === true,
+        dryRun: data.dryRun === true,
+        siteBase: data.siteBase,
+      }
+    );
+    return stats;
+  }
+);
