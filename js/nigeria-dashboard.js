@@ -436,7 +436,8 @@
       .httpsCallable('getNigeriaDashboard')()
       .then(function (res) {
         if (!res || !res.data) return;
-        return processDashboardResponse(res.data);
+        if (!res.data.hasProfile || !isProfileComplete(res.data.profile)) return;
+        showDashboardSafely(res.data);
       })
       .catch(function (err) {
         console.warn('getNigeriaDashboard', err);
@@ -532,10 +533,56 @@
       });
   }
 
+  function callableErrorMessage(err) {
+    if (!err) return 'Request failed.';
+    if (err.message) return err.message;
+    if (err.details) return String(err.details);
+    if (err.code) return err.code;
+    return 'Request failed.';
+  }
+
+  function buildSavedProfile(name, unitRadio, roleRadio) {
+    var unit = window.NigeriaUnits.getUnit(unitRadio.value);
+    return {
+      uid: auth.currentUser.uid,
+      email: auth.currentUser.email,
+      name: name,
+      phone: isClientSuperUser() ? 'Coordinator preview' : '',
+      unitId: unitRadio.value,
+      unitLabel: unit ? unit.label : unitRadio.value,
+      role: roleRadio.value,
+      region: 'nigeria',
+      isSuperUser: isClientSuperUser(),
+    };
+  }
+
+  function finishProfileSave(profile) {
+    setStatus('Profile saved!', 'success');
+    showSuperUserChrome();
+    if (!showDashboardSafely(buildLocalDashboard(profile, isClientSuperUser()))) {
+      setStatus('Profile saved but could not open dashboard. Refresh the page.', 'error');
+      return;
+    }
+    refreshDashboardFromCloud();
+  }
+
+  function writeProfileToFirestore(profile) {
+    return db
+      .collection('nigeria_volunteers')
+      .doc(auth.currentUser.uid)
+      .set(
+        Object.assign({}, profile, {
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        }),
+        { merge: true }
+      );
+  }
+
   function saveProfile() {
     var name = ($('onboard-name').value || '').trim();
     var unitRadio = document.querySelector('input[name="onboard-unit"]:checked');
     var roleRadio = document.querySelector('input[name="onboard-role"]:checked');
+    var saveBtn = $('btn-save-profile');
     if (!name) {
       setStatus('Enter your name.', 'error');
       return;
@@ -549,49 +596,43 @@
       return;
     }
     setStatus('Saving profile…', 'info');
+    if (saveBtn) saveBtn.disabled = true;
+
     var payload = {
       name: name,
       unitId: unitRadio.value,
       role: roleRadio.value,
     };
+    var profile = buildSavedProfile(name, unitRadio, roleRadio);
 
-    function afterSave() {
-      setStatus('Profile saved!', 'success');
-      return loadDashboard();
+    function releaseSaveBtn() {
+      if (saveBtn) saveBtn.disabled = false;
+    }
+
+    if (isClientSuperUser()) {
+      writeProfileToFirestore(profile)
+        .then(function () {
+          finishProfileSave(profile);
+          functions.httpsCallable('saveNigeriaProfile')(payload).catch(function (err) {
+            console.warn('saveNigeriaProfile cloud sync', err);
+          });
+        })
+        .catch(function (err) {
+          setStatus(callableErrorMessage(err), 'error');
+        })
+        .finally(releaseSaveBtn);
+      return;
     }
 
     functions
       .httpsCallable('saveNigeriaProfile')(payload)
-      .then(afterSave)
+      .then(function () {
+        finishProfileSave(profile);
+      })
       .catch(function (err) {
-        if (!isClientSuperUser()) {
-          setStatus(err.message || 'Could not save profile.', 'error');
-          return;
-        }
-        var unit = window.NigeriaUnits.getUnit(unitRadio.value);
-        return db
-          .collection('nigeria_volunteers')
-          .doc(auth.currentUser.uid)
-          .set(
-            {
-              uid: auth.currentUser.uid,
-              email: auth.currentUser.email,
-              name: name,
-              phone: '+2348000000000',
-              unitId: unitRadio.value,
-              unitLabel: unit ? unit.label : unitRadio.value,
-              role: roleRadio.value,
-              region: 'nigeria',
-              isSuperUser: true,
-              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            },
-            { merge: true }
-          )
-          .then(afterSave)
-          .catch(function (e2) {
-            setStatus(e2.message || 'Could not save profile.', 'error');
-          });
-      });
+        setStatus(callableErrorMessage(err), 'error');
+      })
+      .finally(releaseSaveBtn);
   }
 
   function checkIn() {
@@ -707,12 +748,25 @@
   }
 
   function bind() {
-    $('btn-password-signin').addEventListener('click', signInWithPassword);
-    $('btn-email-link').addEventListener('click', sendEmailLink);
-    $('btn-save-profile').addEventListener('click', saveProfile);
-    $('btn-check-in').addEventListener('click', checkIn);
-    $('btn-submit-report').addEventListener('click', submitLeaderReport);
-    $('btn-signout').addEventListener('click', signOut);
+    var saveBtn = $('btn-save-profile');
+    if ($('btn-password-signin')) {
+      $('btn-password-signin').addEventListener('click', signInWithPassword);
+    }
+    if ($('btn-email-link')) {
+      $('btn-email-link').addEventListener('click', sendEmailLink);
+    }
+    if (saveBtn) {
+      saveBtn.addEventListener('click', saveProfile);
+    }
+    if ($('btn-check-in')) {
+      $('btn-check-in').addEventListener('click', checkIn);
+    }
+    if ($('btn-submit-report')) {
+      $('btn-submit-report').addEventListener('click', submitLeaderReport);
+    }
+    if ($('btn-signout')) {
+      $('btn-signout').addEventListener('click', signOut);
+    }
     var signOutNe = $('btn-signout-ne');
     if (signOutNe) signOutNe.addEventListener('click', signOut);
 
