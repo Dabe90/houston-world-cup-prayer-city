@@ -39,24 +39,41 @@
     if (!cfg || !cfg.apiKey) {
       show($('setup-banner'));
       hide($('app-main'));
-      return false;
+      return Promise.resolve(false);
     }
     if (!firebase.apps.length) firebase.initializeApp(cfg);
     auth = firebase.auth();
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     db = firebase.firestore();
     functions = firebase.app().functions('us-central1');
-    return true;
+    return auth
+      .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+      .catch(function (e) {
+        console.warn('setPersistence', e);
+      })
+      .then(function () {
+        return true;
+      });
   }
 
-  function mergeProfile() {
-    return functions.httpsCallable('mergeVolunteerProfile')().catch(function (e) {
-      console.warn('mergeVolunteerProfile', e);
-    });
+  function showSuperUserChrome() {
+    if (!isClientSuperUser()) return;
+    if (global.PrayerCitySuperUser) {
+      PrayerCitySuperUser.init({ auth: auth, functions: functions });
+      show($('super-user-panel'));
+      if ($('super-user-links')) {
+        PrayerCitySuperUser.renderLinks($('super-user-links'));
+      }
+    }
+    var superBanner = $('super-user-banner');
+    if (superBanner) superBanner.classList.remove('hidden');
   }
 
   function completeEmailLinkIfNeeded() {
     if (!firebase.auth().isSignInWithEmailLink(window.location.href)) {
+      return Promise.resolve(false);
+    }
+    if (auth.currentUser) {
+      window.history.replaceState({}, document.title, window.location.pathname);
       return Promise.resolve(false);
     }
     var email = window.localStorage.getItem('emailForSignIn');
@@ -339,33 +356,54 @@
     renderDashboard(data);
   }
 
+  function mergeProfile() {
+    return functions.httpsCallable('mergeVolunteerProfile')().catch(function (e) {
+      console.warn('mergeVolunteerProfile', e);
+    });
+  }
+
+  function loadSuperUserFallback(err) {
+    console.warn('getNigeriaDashboard', err);
+    return loadLocalNigeriaProfile().then(function (snap) {
+      hideAuthChecking();
+      if (snap.exists) {
+        hide($('onboard-panel'));
+        hide($('not-eligible-panel'));
+        hide($('auth-panel'));
+        show($('dash-panel'));
+        renderDashboard(buildLocalDashboard(snap.data(), true));
+        return;
+      }
+      return loadVolunteerPreview().then(function (volunteer) {
+        showOnboarding(volunteer, true);
+      });
+    });
+  }
+
   function loadDashboard() {
-    return mergeProfile()
-      .then(function () {
-        if (global.PrayerCitySuperUser) {
-          PrayerCitySuperUser.init({ auth: auth, functions: functions });
-        }
-        return functions.httpsCallable('getNigeriaDashboard')();
-      })
+    showSuperUserChrome();
+
+    var dashPromise = mergeProfile().then(function () {
+      return functions.httpsCallable('getNigeriaDashboard')();
+    });
+
+    if (isClientSuperUser()) {
+      return dashPromise
+        .then(function (res) {
+          hideAuthChecking();
+          return processDashboardResponse(res.data);
+        })
+        .catch(loadSuperUserFallback);
+    }
+
+    return dashPromise
       .then(function (res) {
+        hideAuthChecking();
         return processDashboardResponse(res.data);
       })
       .catch(function (err) {
-        if (!isClientSuperUser()) throw err;
-        return loadLocalNigeriaProfile().then(function (snap) {
-          if (snap.exists) {
-            hide($('onboard-panel'));
-            hide($('not-eligible-panel'));
-            hide($('auth-panel'));
-            show($('dash-panel'));
-            renderDashboard(buildLocalDashboard(snap.data(), true));
-            setStatus('Coordinator preview (local). Deploy Firebase functions for full sync.', 'info');
-            return;
-          }
-          return loadVolunteerPreview().then(function (volunteer) {
-            showOnboarding(volunteer, true);
-          });
-        });
+        hideAuthChecking();
+        throw err;
       });
   }
 
@@ -567,6 +605,46 @@
     });
   }
 
+  function handleAuthUser(user) {
+    hideAuthChecking();
+    var signOutBtn = $('btn-signout');
+    if (user) {
+      if (signOutBtn) signOutBtn.classList.remove('hidden');
+      hide($('auth-panel'));
+      loadDashboard().catch(function (err) {
+        if (!isClientSuperUser()) {
+          setStatus(err.message || 'Could not load dashboard.', 'error');
+          show($('auth-panel'));
+          return;
+        }
+        loadSuperUserFallback(err);
+      });
+      return;
+    }
+    if (signOutBtn) signOutBtn.classList.add('hidden');
+    hide($('dash-panel'));
+    hide($('onboard-panel'));
+    hide($('not-eligible-panel'));
+    hide($('super-user-panel'));
+    show($('auth-panel'));
+  }
+
+  function startAuth() {
+    var settled = false;
+    function finishBootstrap() {
+      if (settled) return;
+      settled = true;
+      hideAuthChecking();
+      auth.onAuthStateChanged(handleAuthUser);
+    }
+
+    window.setTimeout(function () {
+      if (!settled) finishBootstrap();
+    }, 4000);
+
+    completeEmailLinkIfNeeded().finally(finishBootstrap);
+  }
+
   function bind() {
     $('btn-password-signin').addEventListener('click', signInWithPassword);
     $('btn-email-link').addEventListener('click', sendEmailLink);
@@ -577,34 +655,8 @@
     var signOutNe = $('btn-signout-ne');
     if (signOutNe) signOutNe.addEventListener('click', signOut);
 
-    if (global.PrayerCitySuperUser) {
-      PrayerCitySuperUser.init({ auth: auth, functions: functions });
-    }
-
     renderUnitOptions();
-
-    completeEmailLinkIfNeeded().then(function () {
-      var authReady = false;
-      auth.onAuthStateChanged(function (user) {
-        hideAuthChecking();
-        if (!authReady) authReady = true;
-        var signOutBtn = $('btn-signout');
-        if (user) {
-          if (signOutBtn) signOutBtn.classList.remove('hidden');
-          hide($('auth-panel'));
-          loadDashboard().catch(function (err) {
-            setStatus(err.message || 'Could not load dashboard.', 'error');
-            show($('auth-panel'));
-          });
-        } else {
-          if (signOutBtn) signOutBtn.classList.add('hidden');
-          show($('auth-panel'));
-          hide($('dash-panel'));
-          hide($('onboard-panel'));
-          hide($('not-eligible-panel'));
-        }
-      });
-    });
+    startAuth();
 
     setInterval(function () {
       if (dashboardData && dashboardData.nextMeeting) {
@@ -614,7 +666,9 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    if (!initFirebase()) return;
-    bind();
+    initFirebase().then(function (ok) {
+      if (!ok) return;
+      bind();
+    });
   });
 })();
