@@ -2,6 +2,7 @@
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
+const { isSuperUserEmail, normalizeEmail } = require('./lib/adminAuth');
 
 const TZ = 'Africa/Lagos';
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -123,7 +124,20 @@ function phoneFromRegistration(phone) {
   return null;
 }
 
-async function assertNigeriaVolunteerAccess(db, uid) {
+async function assertNigeriaVolunteerAccess(db, uid, authToken) {
+  const email = normalizeEmail(authToken?.email);
+  if (email && isSuperUserEmail(email)) {
+    const vSnap = await db.collection('volunteers').doc(uid).get();
+    const volunteer = vSnap.exists ? { ...vSnap.data() } : { email, name: 'Coordinator' };
+    const phone = phoneFromRegistration(volunteer.phone) || '+2348000000000';
+    return {
+      volunteer,
+      phone,
+      email: email || volunteer.email || '',
+      isSuperUser: true,
+    };
+  }
+
   const vSnap = await db.collection('volunteers').doc(uid).get();
   if (!vSnap.exists) {
     throw new HttpsError(
@@ -143,6 +157,7 @@ async function assertNigeriaVolunteerAccess(db, uid) {
     volunteer,
     phone: phoneFromRegistration(phone),
     email: volunteer.email || '',
+    isSuperUser: false,
   };
 }
 
@@ -282,7 +297,7 @@ const saveNigeriaProfile = onCall(async (request) => {
   const uid = requireAuth(request);
   const { name, unitId, role } = request.data || {};
   const db = admin.firestore();
-  const access = await assertNigeriaVolunteerAccess(db, uid);
+  const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
 
   const unit = getUnit(unitId);
   if (!unit) throw new HttpsError('invalid-argument', 'Invalid unit.');
@@ -307,6 +322,7 @@ const saveNigeriaProfile = onCall(async (request) => {
         unitLabel: unit.label,
         role,
         region: 'nigeria',
+        isSuperUser: access.isSuperUser === true,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       },
@@ -319,7 +335,7 @@ const saveNigeriaProfile = onCall(async (request) => {
 const recordNigeriaAttendance = onCall(async (request) => {
   const uid = requireAuth(request);
   const db = admin.firestore();
-  await assertNigeriaVolunteerAccess(db, uid);
+  await assertNigeriaVolunteerAccess(db, uid, request.auth);
   const profileRef = db.collection('nigeria_volunteers').doc(uid);
   const profileSnap = await profileRef.get();
   if (!profileSnap.exists) {
@@ -387,7 +403,7 @@ const getNigeriaDashboard = onCall(async (request) => {
 
   let access;
   try {
-    access = await assertNigeriaVolunteerAccess(db, uid);
+    access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
   } catch (e) {
     if (e.code === 'permission-denied' || e.code === 'failed-precondition') {
       return {
@@ -404,6 +420,7 @@ const getNigeriaDashboard = onCall(async (request) => {
     return {
       hasProfile: false,
       eligible: true,
+      isSuperUser: access.isSuperUser === true,
       volunteer: {
         name: access.volunteer.name || '',
         email: access.email,
@@ -467,6 +484,7 @@ const getNigeriaDashboard = onCall(async (request) => {
   return {
     hasProfile: true,
     eligible: true,
+    isSuperUser: access.isSuperUser === true || profile.isSuperUser === true,
     profile,
     unit: { id: unit.id, label: unit.label, day: DAY_NAMES[unit.day], start: unit.start, end: unit.end },
     nextMeeting: nextMeeting
@@ -488,11 +506,11 @@ const getNigeriaDashboard = onCall(async (request) => {
 const submitNigeriaUnitReport = onCall(async (request) => {
   const uid = requireAuth(request);
   const db = admin.firestore();
-  await assertNigeriaVolunteerAccess(db, uid);
+  const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
   const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
   if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Profile required.');
   const profile = profileSnap.data();
-  if (profile.role !== 'leader') {
+  if (profile.role !== 'leader' && !access.isSuperUser) {
     throw new HttpsError('permission-denied', 'Only unit leaders can submit reports.');
   }
 
@@ -554,7 +572,7 @@ function buildAttendanceNarrative(a) {
 const getNigeriaAttendanceForReport = onCall(async (request) => {
   const uid = requireAuth(request);
   const db = admin.firestore();
-  await assertNigeriaVolunteerAccess(db, uid);
+  const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
   const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
   if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Profile required.');
   const profile = profileSnap.data();
@@ -563,7 +581,7 @@ const getNigeriaAttendanceForReport = onCall(async (request) => {
   const month = parseInt(request.data?.reportMonth, 10);
   if (!year || !month) throw new HttpsError('invalid-argument', 'Year and month required.');
 
-  if (profile.role === 'leader') {
+  if (profile.role === 'leader' || access.isSuperUser) {
     const unitStats = await computeUnitAttendanceForReport(db, profile.unitId, year, month);
     return { role: 'leader', unitStats, personalStats: null };
   }
@@ -572,12 +590,25 @@ const getNigeriaAttendanceForReport = onCall(async (request) => {
   return { role: 'member', unitStats: null, personalStats };
 });
 
+const getPrayerCityAccess = onCall(async (request) => {
+  const email = normalizeEmail(request.auth?.token?.email);
+  if (!request.auth?.uid || !email) {
+    throw new HttpsError('unauthenticated', 'Sign in required.');
+  }
+  return {
+    email,
+    isSuperUser: isSuperUserEmail(email),
+    isDigestAdmin: isSuperUserEmail(email),
+  };
+});
+
 module.exports = {
   saveNigeriaProfile,
   recordNigeriaAttendance,
   getNigeriaDashboard,
   submitNigeriaUnitReport,
   getNigeriaAttendanceForReport,
+  getPrayerCityAccess,
   computeUnitAttendanceForReport,
   computeUserAttendanceStats,
 };

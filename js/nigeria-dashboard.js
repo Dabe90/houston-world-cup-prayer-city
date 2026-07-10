@@ -151,6 +151,14 @@
     dashboardData = data;
     var profile = data.profile;
     var unit = window.NigeriaUnits.getUnit(profile.unitId);
+    var superBanner = $('super-user-banner');
+    if (superBanner) {
+      if (data.isSuperUser) {
+        superBanner.classList.remove('hidden');
+      } else {
+        superBanner.classList.add('hidden');
+      }
+    }
     $('dash-greeting').textContent = 'Welcome, ' + profile.name;
     $('dash-unit-badge').textContent = profile.unitLabel;
     $('dash-role-badge').textContent = profile.role === 'leader' ? 'Unit leader' : 'Member';
@@ -204,7 +212,7 @@
       show(reportEl);
     }
 
-    if (profile.role === 'leader') {
+    if (profile.role === 'leader' || data.isSuperUser) {
       show($('leader-tools'));
       hide($('member-report-note'));
     } else {
@@ -233,11 +241,13 @@
     }
   }
 
-  function showOnboarding(volunteer) {
+  function showOnboarding(volunteer, isSuperUser) {
     hide($('auth-panel'));
     hide($('dash-panel'));
     hide($('not-eligible-panel'));
     show($('onboard-panel'));
+    var hint = $('onboard-super-hint');
+    if (hint) hint.classList.toggle('hidden', !isSuperUser);
     if (volunteer && volunteer.name && $('onboard-name')) {
       $('onboard-name').value = volunteer.name;
     }
@@ -264,7 +274,7 @@
         return;
       }
       if (!data.hasProfile) {
-        showOnboarding(data.volunteer);
+        showOnboarding(data.volunteer, data.isSuperUser);
         return;
       }
       hide($('onboard-panel'));
@@ -443,6 +453,10 @@
     $('btn-signout').addEventListener('click', signOut);
     var signOutNe = $('btn-signout-ne');
     if (signOutNe) signOutNe.addEventListener('click', signOut);
+
+    if (global.PrayerCitySuperUser) {
+      PrayerCitySuperUser.init({ auth: auth, functions: functions });
+    }
 
     renderUnitOptions();
 

@@ -76,6 +76,15 @@
     <main class="max-w-3xl mx-auto px-4 py-6 sm:py-8 space-y-6">
       <div id="ng-status" class="hidden" role="status"></div>
 
+      <div id="super-user-panel" class="hidden rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50 p-4 sm:p-5 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-violet-700 mb-2"><i class="fas fa-shield-halved mr-1"></i> Coordinator access</p>
+        <div id="super-user-links" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <div id="super-user-banner" class="hidden rounded-xl border border-violet-200 bg-violet-50 text-violet-900 px-4 py-3 text-sm">
+        <strong>Super-user preview</strong> — you can explore all DDBS Nigeria features without a +234 registration number.
+      </div>
+
       <section id="auth-panel" class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
         <div class="bg-ng-green/10 px-5 py-3 border-b border-slate-100">
           <h2 class="font-semibold text-ng-green flex items-center gap-2"><i class="fas fa-envelope"></i> Sign in with your volunteer email</h2>
@@ -112,6 +121,7 @@
           <h2 class="font-semibold"><i class="fas fa-user-plus mr-2"></i>Complete your profile</h2>
         </div>
         <div class="p-5 sm:p-6 space-y-5">
+          <p id="onboard-super-hint" class="hidden text-sm text-violet-800 rounded-lg bg-violet-50 border border-violet-100 px-3 py-2">Coordinator mode: pick any unit to preview the Nigeria experience.</p>
           <p class="text-sm text-slate-600 rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2">Registered as <strong id="onboard-phone">—</strong> (from your volunteer sign-up)</p>
           <div>
             <label for="onboard-name" class="block text-sm font-medium text-slate-700 mb-1">Full name</label>
@@ -199,6 +209,7 @@
   </div>
 
   <script src="js/nigeria-units.js"></script>
+  <script src="js/prayer-city-super-user.js"></script>
   <script src="js/nigeria-dashboard.js"></script>
 </body>
 </html>
