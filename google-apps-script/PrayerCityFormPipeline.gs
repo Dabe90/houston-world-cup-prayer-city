@@ -1061,6 +1061,8 @@ function buildPrayerCitySpreadsheetMenu_() {
     .addItem("Past contacts — Turn OFF daily follow-up", "removePastOutreachDailyTrigger")
     .addItem("Past contacts — Turn ON ALL daily (7am + 9am)", "installPastOutreachAllDailyTriggers")
     .addItem("Past contacts — Turn OFF ALL daily", "removePastOutreachAllDailyTriggers")
+    .addItem("Past contacts — STOP all email (campaign ended)", "pausePastOutreachCampaignEnded")
+    .addItem("Past contacts — Resume outreach (manual only)", "resumePastOutreachCampaign")
     .addItem("Past contacts — restore wrongly skipped", "restoreMisclassifiedUndeliverableLeads")
     .addItem("Past contacts — apply email blocklist", "applyEmailBlocklistToPastLeads")
     .addItem("Past contacts — stop repeat failures (Mary + 3-day)", "stopChronicDeliveryFailuresOnPastLeads")
@@ -1723,6 +1725,10 @@ function doPost(e) {
     return handleVolunteerTshirtSize_(data);
   }
 
+  if (data.type === "self_serve_password_reset") {
+    return handleSelfServePasswordReset_(data);
+  }
+
   if (data.type !== "self_serve_signin") {
     return jsonResponse({ ok: false, error: "bad_type" });
   }
@@ -1774,6 +1780,64 @@ function doPost(e) {
     var permanent = classifySendError_(err) === "permanent";
     if (permanent) {
       stopMailToUndeliverableAddress_(email, errMsg, "self_serve_signin");
+    }
+    return jsonResponse({ ok: false, error: errMsg, permanent: permanent });
+  }
+
+  return jsonResponse({ ok: true });
+}
+
+function handleSelfServePasswordReset_(data) {
+  if (data.secret !== CONFIG.SELF_SERVE_MAIL_SECRET) {
+    return jsonResponse({ ok: false, error: "unauthorized" });
+  }
+
+  var email = String(data.email || "")
+    .trim()
+    .toLowerCase();
+  var resetLink = String(data.resetLink || "").trim();
+  if (!email || !resetLink) {
+    return jsonResponse({ ok: false, error: "missing_fields" });
+  }
+  if (isUndeliverableEmail_(email)) {
+    return jsonResponse({ ok: false, error: "undeliverable", permanent: true });
+  }
+
+  var subject = "Set your Prayer City dashboard password — Daughter Team";
+  var plain =
+    CONFIG.EMAIL_OPENING +
+    "Use this link to set or reset your volunteer dashboard password:\n\n" +
+    resetLink +
+    "\n\nIf the site asks you to confirm your email, type exactly:\n" +
+    email +
+    "\n\nIf the link does not open, copy the whole URL into your browser.\n" +
+    "If you do not see this message in your inbox within a few minutes, check your spam or junk folder and mark it as Not spam.\n\n" +
+    CONFIG.EMAIL_SIGNOFF;
+
+  var safeHref = resetLink.replace(/"/g, "&quot;");
+  var openLine =
+    "<p>" + CONFIG.EMAIL_OPENING.split("\n").join(" ").trim() + "</p>";
+  var htmlBody =
+    openLine +
+    "<p>Use this link to set or reset your volunteer dashboard password:</p>" +
+    "<p><a href=\"" +
+    safeHref +
+    '">Set my password</a></p><p>If asked for your email, use exactly: ' +
+    email.replace(/</g, "") +
+    "</p>" +
+    "<p>If the link does not open, copy the whole URL into your browser.</p>" +
+    "<p><strong>If you do not see this in your inbox within a few minutes, check your spam or junk folder and mark it as Not spam.</strong></p>" +
+    "<p>" +
+    CONFIG.EMAIL_SIGNOFF.replace(/\n/g, "<br>") +
+    "</p>";
+
+  try {
+    GmailApp.sendEmail(email, subject, plain, { htmlBody: htmlBody });
+  } catch (err) {
+    var errMsg = String(err);
+    var permanent = classifySendError_(err) === "permanent";
+    if (permanent) {
+      stopMailToUndeliverableAddress_(email, errMsg, "self_serve_password_reset");
     }
     return jsonResponse({ ok: false, error: errMsg, permanent: permanent });
   }

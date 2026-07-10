@@ -1430,6 +1430,7 @@
             <p id="password-modal-help" class="text-sm text-slate-600">
               First time? Choose a new password below — no current password needed.
               Or use the email link on the login screen anytime.
+              If we email you a link, check spam/junk if it does not arrive in a few minutes.
             </p>
             <div id="current-pass-wrap" class="hidden">
               <label class="block text-sm font-medium text-slate-700 mb-1"
@@ -1526,6 +1527,12 @@
 
         var SELF_SERVE_SIGNIN_URL =
           "https://us-central1-bible-study-dashboard-99f2d.cloudfunctions.net/volunteerSelfServeSignInMail";
+
+        var SELF_SERVE_PASSWORD_RESET_URL =
+          "https://us-central1-bible-study-dashboard-99f2d.cloudfunctions.net/volunteerSelfServePasswordResetMail";
+
+        var EMAIL_INBOX_HINT =
+          " Allow 1–2 minutes. If you do not see it, check your spam or junk folder (from ddbs.htx@gmail.com) and mark as Not spam.";
 
         var cfg = window.__FIREBASE_CONFIG__ || {};
         var invalid = !cfg.apiKey || cfg.apiKey === "REPLACE_ME";
@@ -2608,7 +2615,7 @@
           return auth.sendSignInLinkToEmail(email, settings).then(function () {
             window.localStorage.setItem("emailForSignIn", email);
             setGateStatus(
-              'If mail does not arrive in ~2 minutes, check spam for sender from Firebase or "noreply".',
+              "Check your inbox for the sign-in link." + EMAIL_INBOX_HINT,
             );
           });
         }
@@ -2650,7 +2657,8 @@
               if (result.status === 200 && result.body && result.body.ok) {
                 window.localStorage.setItem("emailForSignIn", email);
                 setGateStatus(
-                  "Check your inbox for the sign-in link (sent from our Gmail). Allow 1–2 minutes; check spam if needed.",
+                  "Check your inbox for the sign-in link (sent from ddbs.htx@gmail.com)." +
+                    EMAIL_INBOX_HINT,
                 );
                 return;
               }
@@ -2696,10 +2704,57 @@
         });
 
         function sendPasswordResetLink(email) {
-          return auth.sendPasswordResetEmail(email, {
-            url: EMAIL_LINK_CONTINUE_URL,
-            handleCodeInApp: false,
-          });
+          function sendViaFirebaseClient() {
+            return auth.sendPasswordResetEmail(email, {
+              url: EMAIL_LINK_CONTINUE_URL,
+              handleCodeInApp: false,
+            });
+          }
+
+          if (!SELF_SERVE_PASSWORD_RESET_URL) {
+            return sendViaFirebaseClient();
+          }
+
+          return fetch(SELF_SERVE_PASSWORD_RESET_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email }),
+          })
+            .then(function (r) {
+              return r.text().then(function (t) {
+                var j = {};
+                try {
+                  j = t ? JSON.parse(t) : {};
+                } catch (ignore) {}
+                return { status: r.status, body: j };
+              });
+            })
+            .then(function (result) {
+              if (result.status === 200 && result.body && result.body.ok) {
+                return;
+              }
+              if (result.status === 429) {
+                throw new Error(
+                  (result.body && result.body.message) ||
+                    "Wait about a minute before requesting another reset link.",
+                );
+              }
+              if (result.status === 503 || result.status === 502) {
+                return sendViaFirebaseClient();
+              }
+              var msg =
+                (result.body && result.body.message) ||
+                (result.body && result.body.detail) ||
+                (result.body && result.body.error) ||
+                "Could not send reset email.";
+              throw new Error(msg);
+            })
+            .catch(function (e) {
+              if (e && e.message && e.message.indexOf("Wait about") === 0) {
+                throw e;
+              }
+              return sendViaFirebaseClient();
+            });
         }
 
         function offerPasswordReset(email, intoPassStatus) {
@@ -2713,7 +2768,8 @@
               els.passStatus.className =
                 "text-sm text-emerald-700 min-h-[1.25rem] pt-1";
               els.passStatus.textContent =
-                "Check your email for a link to set your password (no old password needed).";
+                "Check your inbox for a link to set your password (no old password needed)." +
+                EMAIL_INBOX_HINT;
             }
           });
         }

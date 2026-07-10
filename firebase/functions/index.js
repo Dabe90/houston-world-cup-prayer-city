@@ -293,6 +293,148 @@ exports.volunteerSelfServeSignInMail = onRequest(
   selfServeApp
 );
 
+/**
+ * POST JSON { email } from dashboard password modal. Generates a Firebase
+ * password-reset link and delivers via Gmail (Apps Script) — same path as
+ * self-serve sign-in, which lands in inbox more reliably than Firebase noreply.
+ */
+const selfServePasswordResetApp = express();
+selfServePasswordResetApp.use(express.json({ limit: '32kb' }));
+
+selfServePasswordResetApp.post('/', async (req, res) => {
+  const email = normalizeEmail(req.body?.email);
+  if (!email) {
+    res.status(400).json({ error: 'email required' });
+    return;
+  }
+  if (isEmailBlocked(email)) {
+    res.status(403).json({
+      error: 'blocked',
+      message: 'This address is not eligible for mail.',
+    });
+    return;
+  }
+  if (await isEmailUndeliverable(admin, email)) {
+    res.status(403).json({
+      error: 'undeliverable',
+      message: 'This address cannot receive mail (delivery failed).',
+    });
+    return;
+  }
+
+  let authUser;
+  try {
+    authUser = await admin.auth().getUserByEmail(email);
+  } catch (e) {
+    if (e && e.code === 'auth/user-not-found') {
+      res.status(404).json({
+        error: 'not_found',
+        message: 'No account for this email yet.',
+      });
+      return;
+    }
+    console.error(e);
+    res.status(500).json({ error: e.message || 'lookup_failed' });
+    return;
+  }
+  if (!authUser || authUser.disabled) {
+    res.status(404).json({
+      error: 'not_found',
+      message: 'No account for this email yet.',
+    });
+    return;
+  }
+
+  const rateRef = admin
+    .firestore()
+    .collection('self_serve_password_reset_rate')
+    .doc(email);
+  const rateSnap = await rateRef.get();
+  if (rateSnap.exists && rateSnap.data().lastAt) {
+    const ms = rateSnap.data().lastAt.toMillis();
+    if (Date.now() - ms < 60000) {
+      res.status(429).json({
+        error: 'too_fast',
+        message: 'Wait about a minute before requesting another reset link.',
+      });
+      return;
+    }
+  }
+
+  const actionCodeSettings = {
+    url: SIGNIN_CONTINUE_URL,
+    handleCodeInApp: false,
+  };
+
+  let resetLink;
+  try {
+    resetLink = await admin.auth().generatePasswordResetLink(email, actionCodeSettings);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e.message || 'link_failed' });
+    return;
+  }
+
+  const scriptUrl = appsScriptSelfServeMailUrl.value();
+  const secret = selfServeMailSecret.value();
+  if (!scriptUrl?.trim() || !secret?.trim()) {
+    res.status(503).json({ error: 'mail_not_configured' });
+    return;
+  }
+
+  let mailRes;
+  try {
+    mailRes = await fetch(scriptUrl, {
+      method: 'POST',
+      redirect: 'follow',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'self_serve_password_reset',
+        secret,
+        email,
+        resetLink,
+      }),
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(502).json({ error: 'mail_upstream_failed' });
+    return;
+  }
+
+  const text = await mailRes.text();
+  let parsed = null;
+  try {
+    parsed = JSON.parse(text);
+  } catch (_) {}
+
+  if (!mailRes.ok || !parsed || !parsed.ok) {
+    const errMsg =
+      parsed && parsed.error ? String(parsed.error).slice(0, 300) : text.slice(0, 200);
+    console.error('Apps Script password reset mail failed', mailRes.status, errMsg);
+    if (parsed && parsed.permanent === true) {
+      await markEmailUndeliverable(admin, email, errMsg, 'self_serve_password_reset');
+    }
+    res.status(502).json({
+      error: 'mail_failed',
+      detail: errMsg,
+    });
+    return;
+  }
+
+  await rateRef.set({ lastAt: admin.firestore.FieldValue.serverTimestamp() });
+
+  res.json({ ok: true });
+});
+
+exports.volunteerSelfServePasswordResetMail = onRequest(
+  {
+    cors: true,
+    secrets: [selfServeMailSecret, appsScriptSelfServeMailUrl],
+    invoker: 'public',
+  },
+  selfServePasswordResetApp
+);
+
 function htmlEscapeAttr(s) {
   return String(s || '')
     .replace(/&/g, '&amp;')
