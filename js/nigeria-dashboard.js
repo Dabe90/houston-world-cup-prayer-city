@@ -57,7 +57,7 @@
 
   function showSuperUserChrome() {
     if (!isClientSuperUser()) return;
-    if (global.PrayerCitySuperUser) {
+    if (window.PrayerCitySuperUser) {
       PrayerCitySuperUser.init({ auth: auth, functions: functions });
       show($('super-user-panel'));
       if ($('super-user-links')) {
@@ -275,6 +275,9 @@
   }
 
   function showNotEligible(message) {
+    if (isClientSuperUser()) {
+      return loadSuperUserFallback(null);
+    }
     hide($('auth-panel'));
     hide($('dash-panel'));
     hide($('onboard-panel'));
@@ -282,9 +285,23 @@
     if ($('not-eligible-msg')) $('not-eligible-msg').textContent = message || '';
   }
 
+  var SUPER_USER_EMAILS = {
+    'abuxberkeley@gmail.com': true,
+    'ddbs.htx@gmail.com': true,
+  };
+
   function isClientSuperUser() {
-    var email = auth.currentUser && auth.currentUser.email;
-    return global.PrayerCitySuperUser && PrayerCitySuperUser.isSuperUser(email);
+    var email = String(
+      (auth.currentUser && auth.currentUser.email) || ''
+    )
+      .trim()
+      .toLowerCase();
+    if (!email) return false;
+    if (SUPER_USER_EMAILS[email]) return true;
+    if (window.PrayerCitySuperUser && PrayerCitySuperUser.isSuperUser(email)) {
+      return true;
+    }
+    return false;
   }
 
   function loadVolunteerPreview() {
@@ -336,21 +353,19 @@
   }
 
   function processDashboardResponse(data) {
+    hide($('not-eligible-panel'));
     if (data.eligible === false) {
       if (isClientSuperUser()) {
-        return loadVolunteerPreview().then(function (volunteer) {
-          showOnboarding(volunteer, true);
-        });
+        return loadSuperUserFallback(null);
       }
       showNotEligible(data.message);
       return;
     }
     if (!data.hasProfile) {
-      showOnboarding(data.volunteer, data.isSuperUser);
+      showOnboarding(data.volunteer, data.isSuperUser || isClientSuperUser());
       return;
     }
     hide($('onboard-panel'));
-    hide($('not-eligible-panel'));
     hide($('auth-panel'));
     show($('dash-panel'));
     renderDashboard(data);
