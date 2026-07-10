@@ -59,6 +59,7 @@
     <script src="js/volunteer-shift-picker.js"></script>
     <script src="js/upcoming-programs-board.js"></script>
     <script src="js/prayer-city-super-user.js"></script>
+    <script src="js/prayer-city-routing.js"></script>
 
     <style>
       body {
@@ -1534,6 +1535,10 @@
         var EMAIL_INBOX_HINT =
           " Allow 1–2 minutes. If you do not see it, check your spam or junk folder (from ddbs.htx@gmail.com) and mark as Not spam.";
 
+        if (window.PrayerCityRouting) {
+          PrayerCityRouting.parseStayQuery();
+        }
+
         var cfg = window.__FIREBASE_CONFIG__ || {};
         var invalid = !cfg.apiKey || cfg.apiKey === "REPLACE_ME";
 
@@ -1547,6 +1552,7 @@
 
         firebase.initializeApp(cfg);
         var auth = firebase.auth();
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
         var db = firebase.firestore();
         var storage = firebase.storage();
         var functions = firebase.app().functions("us-central1");
@@ -2285,6 +2291,15 @@
             .get({ source: "server" })
             .then(function (snap) {
               var d = snap.exists ? snap.data() : {};
+              if (
+                window.PrayerCityRouting &&
+                PrayerCityRouting.maybeRedirectToNigeriaHub(
+                  d,
+                  (auth.currentUser && auth.currentUser.email) || d.email,
+                )
+              ) {
+                return;
+              }
               els.fvEmail.textContent =
                 d.email || auth.currentUser.email || "—";
               els.fvPhone.textContent = d.phone || "—";

@@ -85,12 +85,17 @@
         <strong>Super-user preview</strong> — you can explore all DDBS Nigeria features without a +234 registration number.
       </div>
 
-      <section id="auth-panel" class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+      <section id="auth-checking" class="bg-white rounded-2xl shadow-card border border-slate-100 p-8 text-center">
+        <p class="text-sm text-slate-600"><i class="fas fa-spinner fa-spin mr-2 text-ng-green"></i>Checking your sign-in…</p>
+      </section>
+
+      <section id="auth-panel" class="hidden bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
         <div class="bg-ng-green/10 px-5 py-3 border-b border-slate-100">
           <h2 class="font-semibold text-ng-green flex items-center gap-2"><i class="fas fa-envelope"></i> Sign in with your volunteer email</h2>
         </div>
         <div class="p-5 sm:p-6 space-y-4">
           <p class="text-sm text-slate-600">Use the email from your Prayer City volunteer sign-up. Access is verified by the <strong>+234 phone number</strong> on your registration.</p>
+          <p class="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">Already signed in on the main dashboard? This page uses the same account — try <a href="/" class="font-semibold underline">prayercityhtx.com</a> first, or use the email link below.</p>
           <div>
             <label for="auth-email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
             <input type="email" id="auth-email" autocomplete="email" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-ng-green outline-none" placeholder="you@example.com" />
@@ -99,8 +104,8 @@
             <label for="auth-password" class="block text-sm font-medium text-slate-700 mb-1">Password <span class="text-slate-400 font-normal">(if you set one)</span></label>
             <input type="password" id="auth-password" autocomplete="current-password" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:ring-2 focus:ring-ng-green outline-none" placeholder="Optional" />
           </div>
-          <button type="button" id="btn-password-signin" class="w-full rounded-xl bg-brand text-white font-semibold py-3.5">Sign in with password</button>
-          <button type="button" id="btn-email-link" class="w-full rounded-xl border-2 border-ng-green text-ng-green font-semibold py-3.5 hover:bg-emerald-50 transition">Email me a sign-in link</button>
+          <button type="button" id="btn-email-link" class="w-full rounded-xl bg-ng-green text-white font-semibold py-3.5 hover:bg-emerald-700 transition">Email me a sign-in link</button>
+          <button type="button" id="btn-password-signin" class="w-full rounded-xl border-2 border-slate-200 text-slate-700 font-semibold py-3.5 hover:bg-slate-50 transition">Sign in with password <span class="font-normal text-slate-400">(only if you set one)</span></button>
           <p class="text-xs text-slate-500 text-center">Not registered yet? <a href="volunteer/" class="text-brand font-medium underline">Volunteer sign-up</a> — choose Nigeria (+234) for your phone.</p>
         </div>
       </section>
@@ -112,7 +117,7 @@
         <div class="p-5 sm:p-6 space-y-3 text-sm text-slate-700">
           <p id="not-eligible-msg">This hub is for volunteers who registered with a Nigeria (+234) phone number.</p>
           <p>If you serve from Nigeria, <a href="volunteer/" class="text-brand font-semibold underline">sign up</a> or ask an organizer to update your phone on the volunteer sheet to include <strong>+234</strong>.</p>
-          <p><a href="/" class="text-brand underline">US volunteer dashboard</a> · <button type="button" id="btn-signout-ne" class="text-red-600 underline">Sign out</button></p>
+          <p><a href="/?stay=us" class="text-brand underline">US volunteer dashboard</a> · <button type="button" id="btn-signout-ne" class="text-red-600 underline">Sign out</button></p>
         </div>
       </section>
 
@@ -204,7 +209,7 @@
 
     <footer class="py-8 text-center text-xs text-slate-500">
       <p>Dear Daughter Bible Study Group Nigeria · Prayer City</p>
-      <p class="mt-2"><a href="/" class="text-brand hover:underline">US volunteer dashboard</a> · <a href="monthly-report.html" class="text-brand hover:underline">Monthly report</a></p>
+      <p class="mt-2"><a href="/?stay=us" class="text-brand hover:underline">US volunteer dashboard</a> · <a href="monthly-report.html" class="text-brand hover:underline">Monthly report</a></p>
     </footer>
   </div>
 

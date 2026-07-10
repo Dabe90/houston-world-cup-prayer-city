@@ -43,6 +43,7 @@
     }
     if (!firebase.apps.length) firebase.initializeApp(cfg);
     auth = firebase.auth();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     db = firebase.firestore();
     functions = firebase.app().functions('us-central1');
     return true;
@@ -547,10 +548,19 @@
       });
   }
 
+  function hideAuthChecking() {
+    hide($('auth-checking'));
+  }
+
+  function showAuthChecking() {
+    show($('auth-checking'));
+    hide($('auth-panel'));
+  }
+
   function signOut() {
     auth.signOut().then(function () {
       dashboardData = null;
-      show($('auth-panel'));
+      showAuthChecking();
       hide($('dash-panel'));
       hide($('onboard-panel'));
       hide($('not-eligible-panel'));
@@ -574,13 +584,17 @@
     renderUnitOptions();
 
     completeEmailLinkIfNeeded().then(function () {
+      var authReady = false;
       auth.onAuthStateChanged(function (user) {
+        hideAuthChecking();
+        if (!authReady) authReady = true;
         var signOutBtn = $('btn-signout');
         if (user) {
           if (signOutBtn) signOutBtn.classList.remove('hidden');
           hide($('auth-panel'));
           loadDashboard().catch(function (err) {
             setStatus(err.message || 'Could not load dashboard.', 'error');
+            show($('auth-panel'));
           });
         } else {
           if (signOutBtn) signOutBtn.classList.add('hidden');
