@@ -264,25 +264,108 @@
     if ($('not-eligible-msg')) $('not-eligible-msg').textContent = message || '';
   }
 
+  function isClientSuperUser() {
+    var email = auth.currentUser && auth.currentUser.email;
+    return global.PrayerCitySuperUser && PrayerCitySuperUser.isSuperUser(email);
+  }
+
+  function loadVolunteerPreview() {
+    var uid = auth.currentUser.uid;
+    var email = auth.currentUser.email || '';
+    return db
+      .collection('volunteers')
+      .doc(uid)
+      .get()
+      .then(function (snap) {
+        var d = snap.exists ? snap.data() : {};
+        return {
+          name: d.name || auth.currentUser.displayName || 'Coordinator',
+          email: email,
+          phone: d.phone || '(coordinator preview)',
+        };
+      });
+  }
+
+  function loadLocalNigeriaProfile() {
+    return db.collection('nigeria_volunteers').doc(auth.currentUser.uid).get();
+  }
+
+  function buildLocalDashboard(profile, isSuperUser) {
+    var unit = window.NigeriaUnits.getUnit(profile.unitId);
+    var nextMeeting = unit ? window.NigeriaUnits.getNextMeeting(unit) : null;
+    var checkInOpen = false;
+    if (nextMeeting && window.NigeriaUnits.isWithinCheckInWindow(nextMeeting)) {
+      checkInOpen = true;
+    }
+    return {
+      hasProfile: true,
+      eligible: true,
+      isSuperUser: isSuperUser,
+      profile: profile,
+      nextMeeting: nextMeeting
+        ? {
+            key: nextMeeting.key,
+            dateYmd: nextMeeting.dateYmd,
+            startIso: nextMeeting.start.toISOString(),
+            endIso: nextMeeting.end.toISOString(),
+          }
+        : null,
+      checkInOpen: checkInOpen,
+      attendanceStats: profile.attendanceStats || null,
+      latestReport: null,
+      recentAttendance: [],
+    };
+  }
+
+  function processDashboardResponse(data) {
+    if (data.eligible === false) {
+      if (isClientSuperUser()) {
+        return loadVolunteerPreview().then(function (volunteer) {
+          showOnboarding(volunteer, true);
+        });
+      }
+      showNotEligible(data.message);
+      return;
+    }
+    if (!data.hasProfile) {
+      showOnboarding(data.volunteer, data.isSuperUser);
+      return;
+    }
+    hide($('onboard-panel'));
+    hide($('not-eligible-panel'));
+    hide($('auth-panel'));
+    show($('dash-panel'));
+    renderDashboard(data);
+  }
+
   function loadDashboard() {
-    return mergeProfile().then(function () {
-      return functions.httpsCallable('getNigeriaDashboard')();
-    }).then(function (res) {
-      var data = res.data;
-      if (data.eligible === false) {
-        showNotEligible(data.message);
-        return;
-      }
-      if (!data.hasProfile) {
-        showOnboarding(data.volunteer, data.isSuperUser);
-        return;
-      }
-      hide($('onboard-panel'));
-      hide($('not-eligible-panel'));
-      hide($('auth-panel'));
-      show($('dash-panel'));
-      renderDashboard(data);
-    });
+    return mergeProfile()
+      .then(function () {
+        if (global.PrayerCitySuperUser) {
+          PrayerCitySuperUser.init({ auth: auth, functions: functions });
+        }
+        return functions.httpsCallable('getNigeriaDashboard')();
+      })
+      .then(function (res) {
+        return processDashboardResponse(res.data);
+      })
+      .catch(function (err) {
+        if (!isClientSuperUser()) throw err;
+        return loadLocalNigeriaProfile().then(function (snap) {
+          if (snap.exists) {
+            hide($('onboard-panel'));
+            hide($('not-eligible-panel'));
+            hide($('auth-panel'));
+            show($('dash-panel'));
+            renderDashboard(buildLocalDashboard(snap.data(), true));
+            setStatus('Coordinator preview (local). Deploy Firebase functions for full sync.', 'info');
+            return;
+          }
+          return loadVolunteerPreview().then(function (volunteer) {
+            showOnboarding(volunteer, true);
+          });
+        });
+      });
   }
 
   function signInWithPassword() {
@@ -367,18 +450,48 @@
       return;
     }
     setStatus('Saving profile…', 'info');
+    var payload = {
+      name: name,
+      unitId: unitRadio.value,
+      role: roleRadio.value,
+    };
+
+    function afterSave() {
+      setStatus('Profile saved!', 'success');
+      return loadDashboard();
+    }
+
     functions
-      .httpsCallable('saveNigeriaProfile')({
-        name: name,
-        unitId: unitRadio.value,
-        role: roleRadio.value,
-      })
-      .then(function () {
-        setStatus('Profile saved!', 'success');
-        return loadDashboard();
-      })
+      .httpsCallable('saveNigeriaProfile')(payload)
+      .then(afterSave)
       .catch(function (err) {
-        setStatus(err.message || 'Could not save profile.', 'error');
+        if (!isClientSuperUser()) {
+          setStatus(err.message || 'Could not save profile.', 'error');
+          return;
+        }
+        var unit = window.NigeriaUnits.getUnit(unitRadio.value);
+        return db
+          .collection('nigeria_volunteers')
+          .doc(auth.currentUser.uid)
+          .set(
+            {
+              uid: auth.currentUser.uid,
+              email: auth.currentUser.email,
+              name: name,
+              phone: '+2348000000000',
+              unitId: unitRadio.value,
+              unitLabel: unit ? unit.label : unitRadio.value,
+              role: roleRadio.value,
+              region: 'nigeria',
+              isSuperUser: true,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          )
+          .then(afterSave)
+          .catch(function (e2) {
+            setStatus(e2.message || 'Could not save profile.', 'error');
+          });
       });
   }
 

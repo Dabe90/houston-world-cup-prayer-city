@@ -13,6 +13,15 @@
     { href: 'faq.html', label: 'FAQ', icon: 'fa-circle-question' },
   ];
 
+  var SUPER_USER_EMAILS = {
+    'ddbs.htx@gmail.com': true,
+    'abuxberkeley@gmail.com': true,
+  };
+
+  function isSuperUser(email) {
+    return !!SUPER_USER_EMAILS[String(email || '').trim().toLowerCase()];
+  }
+
   function renderLinks(container) {
     if (!container) return;
     container.innerHTML = LINKS.map(function (l) {
@@ -51,6 +60,10 @@
         hidePanel(panel);
         return;
       }
+      if (isSuperUser(user.email)) {
+        showPanel(panel);
+        return;
+      }
       opts.functions
         .httpsCallable('getPrayerCityAccess')()
         .then(function (res) {
@@ -68,6 +81,8 @@
 
   global.PrayerCitySuperUser = {
     LINKS: LINKS,
+    SUPER_USER_EMAILS: SUPER_USER_EMAILS,
+    isSuperUser: isSuperUser,
     init: init,
     renderLinks: renderLinks,
   };
