@@ -4,6 +4,9 @@
 (function () {
   var auth, db, functions;
   var dashboardData = null;
+  var profileSaveInFlight = false;
+  var superUserInitDone = false;
+  var PREVIEW_PROFILE_KEY = 'ddbsNigeriaPreviewProfile';
   var EMAIL_LINK_CONTINUE_URL =
     window.location.origin + window.location.pathname;
   var SELF_SERVE_SIGNIN_URL =
@@ -60,10 +63,35 @@
     show($('super-user-panel'));
     if ($('super-user-links') && window.PrayerCitySuperUser) {
       PrayerCitySuperUser.renderLinks($('super-user-links'));
-      PrayerCitySuperUser.init({ auth: auth, functions: functions });
+      if (!superUserInitDone) {
+        superUserInitDone = true;
+        PrayerCitySuperUser.init({ auth: auth, functions: functions });
+      }
     }
     var superBanner = $('super-user-banner');
     if (superBanner) superBanner.classList.remove('hidden');
+  }
+
+  function savePreviewProfile(profile) {
+    try {
+      sessionStorage.setItem(PREVIEW_PROFILE_KEY, JSON.stringify(profile));
+    } catch (e) {
+      console.warn('savePreviewProfile', e);
+    }
+  }
+
+  function loadPreviewProfile() {
+    try {
+      var raw = sessionStorage.getItem(PREVIEW_PROFILE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function isDashboardVisible() {
+    var dash = $('dash-panel');
+    return dash && !dash.classList.contains('hidden');
   }
 
   function completeEmailLinkIfNeeded() {
@@ -166,7 +194,8 @@
   function renderDashboard(data) {
     dashboardData = data;
     var profile = data.profile;
-    var unit = window.NigeriaUnits.getUnit(profile.unitId);
+    if (!profile) throw new Error('Missing profile');
+    var unit = window.NigeriaUnits && NigeriaUnits.getUnit(profile.unitId);
     var superBanner = $('super-user-banner');
     if (superBanner) {
       if (data.isSuperUser) {
@@ -175,12 +204,19 @@
         superBanner.classList.add('hidden');
       }
     }
-    $('dash-greeting').textContent = 'Welcome, ' + profile.name;
-    $('dash-unit-badge').textContent = profile.unitLabel;
-    $('dash-role-badge').textContent = profile.role === 'leader' ? 'Unit leader' : 'Member';
+    if ($('dash-greeting')) {
+      $('dash-greeting').textContent = 'Welcome, ' + profile.name;
+    }
+    if ($('dash-unit-badge')) {
+      $('dash-unit-badge').textContent = profile.unitLabel || profile.unitId || '';
+    }
+    if ($('dash-role-badge')) {
+      $('dash-role-badge').textContent =
+        profile.role === 'leader' ? 'Unit leader' : 'Member';
+    }
     if ($('dash-phone')) $('dash-phone').textContent = profile.phone || '';
 
-    if (unit) {
+    if (unit && $('dash-schedule')) {
       $('dash-schedule').textContent = window.NigeriaUnits.meetingScheduleLabel(unit);
     }
 
@@ -193,17 +229,26 @@
     }
 
     var checkBtn = $('btn-check-in');
-    if (data.checkInOpen) {
-      checkBtn.disabled = false;
-      checkBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-      $('check-in-hint').textContent = 'Check-in is open for your meeting window.';
-    } else {
-      checkBtn.disabled = true;
-      checkBtn.classList.add('opacity-50', 'cursor-not-allowed');
-      $('check-in-hint').textContent = 'Opens 20 min before meeting · closes 45 min after.';
+    if (checkBtn) {
+      if (data.checkInOpen) {
+        checkBtn.disabled = false;
+        checkBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        if ($('check-in-hint')) {
+          $('check-in-hint').textContent = 'Check-in is open for your meeting window.';
+        }
+      } else {
+        checkBtn.disabled = true;
+        checkBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        if ($('check-in-hint')) {
+          $('check-in-hint').textContent =
+            'Opens 20 min before meeting · closes 45 min after.';
+        }
+      }
     }
 
-    $('attendance-insight').innerHTML = insightCard(data.attendanceStats);
+    if ($('attendance-insight')) {
+      $('attendance-insight').innerHTML = insightCard(data.attendanceStats);
+    }
 
     var reportEl = $('leader-report-card');
     if (data.latestReport) {
@@ -413,14 +458,26 @@
   }
 
   function showSuperUserLanding() {
+    if (profileSaveInFlight || isDashboardVisible()) {
+      return Promise.resolve();
+    }
+
     showSuperUserChrome();
     hide($('auth-panel'));
     hide($('not-eligible-panel'));
+
+    var preview = loadPreviewProfile();
+    if (preview && isProfileComplete(preview)) {
+      showDashboardSafely(buildLocalDashboard(preview, true));
+      return Promise.resolve();
+    }
+
     hide($('dash-panel'));
     showOnboarding(coordinatorVolunteer(), true);
 
     return loadLocalNigeriaProfile()
       .then(function (snap) {
+        if (profileSaveInFlight || isDashboardVisible()) return;
         if (!snap.exists || !isProfileComplete(snap.data())) return;
         if (!showDashboardSafely(buildLocalDashboard(snap.data(), true))) {
           showOnboarding(coordinatorVolunteer(), true);
@@ -432,10 +489,11 @@
   }
 
   function refreshDashboardFromCloud() {
+    if (profileSaveInFlight || !auth.currentUser) return Promise.resolve();
     return functions
       .httpsCallable('getNigeriaDashboard')()
       .then(function (res) {
-        if (!res || !res.data) return;
+        if (profileSaveInFlight || !res || !res.data) return;
         if (!res.data.hasProfile || !isProfileComplete(res.data.profile)) return;
         showDashboardSafely(res.data);
       })
@@ -557,13 +615,26 @@
   }
 
   function finishProfileSave(profile) {
+    profileSaveInFlight = true;
     setStatus('Profile saved!', 'success');
     showSuperUserChrome();
-    if (!showDashboardSafely(buildLocalDashboard(profile, isClientSuperUser()))) {
-      setStatus('Profile saved but could not open dashboard. Refresh the page.', 'error');
+    var dash = buildLocalDashboard(profile, isClientSuperUser());
+    if (!showDashboardSafely(dash)) {
+      profileSaveInFlight = false;
+      setStatus('Could not open dashboard. Refresh the page.', 'error');
       return;
     }
+    profileSaveInFlight = false;
     refreshDashboardFromCloud();
+  }
+
+  function syncProfileToCloud(payload, profile) {
+    writeProfileToFirestore(profile).catch(function (err) {
+      console.warn('writeProfileToFirestore', err);
+    });
+    functions.httpsCallable('saveNigeriaProfile')(payload).catch(function (err) {
+      console.warn('saveNigeriaProfile cloud sync', err);
+    });
   }
 
   function writeProfileToFirestore(profile) {
@@ -579,10 +650,19 @@
   }
 
   function saveProfile() {
-    var name = ($('onboard-name').value || '').trim();
+    if (!auth || !auth.currentUser) {
+      setStatus(
+        'Sign in first on prayercityhtx.com, then return to this page.',
+        'error'
+      );
+      return;
+    }
+
+    var name = ($('onboard-name') && $('onboard-name').value || '').trim();
     var unitRadio = document.querySelector('input[name="onboard-unit"]:checked');
     var roleRadio = document.querySelector('input[name="onboard-role"]:checked');
     var saveBtn = $('btn-save-profile');
+
     if (!name) {
       setStatus('Enter your name.', 'error');
       return;
@@ -595,6 +675,11 @@
       setStatus('Select leader or member.', 'error');
       return;
     }
+    if (!window.NigeriaUnits || !NigeriaUnits.getUnit(unitRadio.value)) {
+      setStatus('Unit list did not load. Hard-refresh the page (Ctrl+Shift+R).', 'error');
+      return;
+    }
+
     setStatus('Saving profile…', 'info');
     if (saveBtn) saveBtn.disabled = true;
 
@@ -610,23 +695,17 @@
     }
 
     if (isClientSuperUser()) {
-      writeProfileToFirestore(profile)
-        .then(function () {
-          finishProfileSave(profile);
-          functions.httpsCallable('saveNigeriaProfile')(payload).catch(function (err) {
-            console.warn('saveNigeriaProfile cloud sync', err);
-          });
-        })
-        .catch(function (err) {
-          setStatus(callableErrorMessage(err), 'error');
-        })
-        .finally(releaseSaveBtn);
+      savePreviewProfile(profile);
+      finishProfileSave(profile);
+      releaseSaveBtn();
+      syncProfileToCloud(payload, profile);
       return;
     }
 
     functions
       .httpsCallable('saveNigeriaProfile')(payload)
       .then(function () {
+        savePreviewProfile(profile);
         finishProfileSave(profile);
       })
       .catch(function (err) {
@@ -712,6 +791,7 @@
     if (user) {
       if (signOutBtn) signOutBtn.classList.remove('hidden');
       hide($('auth-panel'));
+      if (profileSaveInFlight || isDashboardVisible()) return;
       loadDashboard().catch(function (err) {
         console.error('loadDashboard', err);
         if (isClientSuperUser()) {
@@ -723,6 +803,10 @@
       });
       return;
     }
+    dashboardData = null;
+    try {
+      sessionStorage.removeItem(PREVIEW_PROFILE_KEY);
+    } catch (ignore) {}
     if (signOutBtn) signOutBtn.classList.add('hidden');
     hide($('dash-panel'));
     hide($('onboard-panel'));
