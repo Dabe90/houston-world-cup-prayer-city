@@ -49,6 +49,8 @@
           <span class="text-slate-300 hidden sm:inline">|</span>
           <a href="volunteer-hub.html" class="text-sm font-medium text-slate-600 hover:text-brand transition">Volunteer hub</a>
           <span class="text-slate-300 hidden sm:inline">|</span>
+          <a href="ddbs-nig.html" class="text-sm font-medium text-emerald-700 hover:text-emerald-900 transition">DDBS Nig</a>
+          <span class="text-slate-300 hidden sm:inline">|</span>
           <span class="text-sm font-semibold text-brand px-2 py-1 rounded-lg bg-brand-soft">Monthly report</span>
         </div>
       </div>
@@ -221,11 +223,29 @@
     <p>Houston World Cup Prayer City Movement · Dear Daughter Bible Study Group</p>
     <p class="mt-2">
       <a href="volunteer-hub.html" class="text-brand hover:underline">Volunteer hub</a>
+      · <a href="ddbs-nig.html" class="text-emerald-700 hover:underline">DDBS Nigeria</a>
       · <a href="faq.html" class="text-brand hover:underline">FAQ</a>
       · <a href="/" class="text-brand hover:underline">Dashboard</a>
     </p>
   </footer>
 
   <script src="js/monthly-unit-report.js"></script>
+  <script>
+    (function () {
+      if (new URLSearchParams(location.search).get('region') !== 'nigeria') return;
+      var s = [
+        'https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js',
+        'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js',
+        'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js',
+        'js/firebase-config.js',
+        'js/nigeria-monthly-report-bridge.js',
+      ];
+      s.forEach(function (src) {
+        var el = document.createElement('script');
+        el.src = src;
+        document.body.appendChild(el);
+      });
+    })();
+  </script>
 </body>
 </html>

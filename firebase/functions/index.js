@@ -9,6 +9,16 @@ const { setGlobalOptions } = require('firebase-functions/v2');
 const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
 const volunteerDailyDigest = require('./volunteerDailyDigest');
+const { runCampaignThankYouJob } = require('./campaignThankYouJob');
+const { buildScheduleGrid, buildScheduleEmail } = require('./volunteerScheduleReport');
+const { isEmailBlocked } = require('./emailBlocklist');
+const {
+  markEmailUndeliverable,
+  isEmailUndeliverable,
+  loadUndeliverableEmailSet,
+  isPermanentDeliveryError,
+} = require('./emailUndeliverable');
+const nigeriaVolunteer = require('./nigeriaVolunteer');
 
 const inviteSecret = defineSecret('INVITE_SECRET');
 const selfServeMailSecret = defineSecret('SELF_SERVE_MAIL_SECRET');
@@ -48,6 +58,17 @@ inviteApp.post('/', async (req, res) => {
   const email = normalizeEmail(body.email);
   if (!email) {
     res.status(400).json({ error: 'email required' });
+    return;
+  }
+  if (isEmailBlocked(email)) {
+    res.status(403).json({ error: 'blocked', message: 'This address is not eligible for mail.' });
+    return;
+  }
+  if (await isEmailUndeliverable(admin, email)) {
+    res.status(403).json({
+      error: 'undeliverable',
+      message: 'This address cannot receive mail (delivery failed).',
+    });
     return;
   }
 
@@ -97,6 +118,46 @@ exports.invVolunteer = onRequest(
   inviteApp
 );
 
+/** POST from Apps Script when Gmail reports a bounce / bad address. */
+const undeliverableApp = express();
+undeliverableApp.use(express.json({ limit: '64kb' }));
+
+undeliverableApp.post('/', async (req, res) => {
+  const body = req.body || {};
+  const secret = String(body.secret || req.get('x-mail-secret') || '');
+  if (!secret || secret !== selfServeMailSecret.value()) {
+    res.status(401).json({ ok: false, error: 'unauthorized' });
+    return;
+  }
+
+  const emails = Array.isArray(body.emails) ? body.emails : [body.email];
+  const reason = String(body.reason || 'gmail bounce').slice(0, 500);
+  const source = String(body.source || 'apps_script').slice(0, 120);
+  let marked = 0;
+
+  for (const raw of emails) {
+    const email = normalizeEmail(raw);
+    if (!email || !email.includes('@')) continue;
+    try {
+      await markEmailUndeliverable(admin, email, reason, source);
+      marked++;
+    } catch (e) {
+      console.error('[markEmailUndeliverable]', email, e);
+    }
+  }
+
+  res.json({ ok: true, marked });
+});
+
+exports.markEmailUndeliverable = onRequest(
+  {
+    cors: true,
+    secrets: [selfServeMailSecret],
+    invoker: 'public',
+  },
+  undeliverableApp
+);
+
 /**
  * POST JSON { email } from dashboard (CORS). For *onboarded* volunteers only
  * (Firestore volunteer_onboarding/{email} must exist). Generates the same
@@ -111,6 +172,20 @@ selfServeApp.post('/', async (req, res) => {
   const email = normalizeEmail(req.body?.email);
   if (!email) {
     res.status(400).json({ error: 'email required' });
+    return;
+  }
+  if (isEmailBlocked(email)) {
+    res.status(403).json({
+      error: 'blocked',
+      message: 'This address is not eligible for mail.',
+    });
+    return;
+  }
+  if (await isEmailUndeliverable(admin, email)) {
+    res.status(403).json({
+      error: 'undeliverable',
+      message: 'This address cannot receive mail (delivery failed).',
+    });
     return;
   }
 
@@ -191,13 +266,15 @@ selfServeApp.post('/', async (req, res) => {
   } catch (_) {}
 
   if (!mailRes.ok || !parsed || !parsed.ok) {
-    console.error('Apps Script mail failed', mailRes.status, text);
+    const errMsg =
+      parsed && parsed.error ? String(parsed.error).slice(0, 300) : text.slice(0, 200);
+    console.error('Apps Script mail failed', mailRes.status, errMsg);
+    if (parsed && parsed.permanent === true) {
+      await markEmailUndeliverable(admin, email, errMsg, 'self_serve_signin');
+    }
     res.status(502).json({
       error: 'mail_failed',
-      detail:
-        parsed && parsed.error
-          ? String(parsed.error).slice(0, 300)
-          : text.slice(0, 200),
+      detail: errMsg,
     });
     return;
   }
@@ -698,41 +775,76 @@ exports.getLogisticsNewsTip = onCall({ cors: true }, async (request) => {
   }
 });
 
+const DIGEST_MAX_CONSECUTIVE_FAILURES = 3;
+const DIGEST_ADMIN_EMAILS = new Set([
+  'ddbs.htx@gmail.com',
+  'abuxberkeley@gmail.com',
+]);
+
 /**
- * Daily (America/Chicago 7:00): role-based task email for volunteers in
- * `volunteer_onboarding`, using shifts merged from `volunteers/{uid}` when present.
- *
- * Enable in Firestore: document `settings/volunteer_daily_digest` with `{ "enabled": true }`.
- * Optional: `dryRun` (bool) — log only, no mail. `siteBase` (string) — volunteer hub URL.
- * Opt-out per person: field `dailyDigestOptOut: true` on onboarding doc or merged volunteer doc.
- *
- * Mail delivery uses the same Apps Script webhook as self-serve sign-in
- * (APPS_SCRIPT_SELF_SERVE_MAIL_URL + SELF_SERVE_MAIL_SECRET); add handler
- * `daily_volunteer_digest` in PrayerCityFormPipeline.gs.
+ * @param {string} email
+ * @param {string} ymd
+ * @param {{ errorMessage?: string, permanent?: boolean }} [opts]
  */
-exports.sendDailyVolunteerRoleDigests = onSchedule(
-  {
-    schedule: '0 7 * * *',
-    timeZone: 'America/Chicago',
-    timeoutSeconds: 540,
-    memory: '512MiB',
-    secrets: [selfServeMailSecret, appsScriptSelfServeMailUrl],
-  },
-  async () => {
+async function recordDigestDeliveryFailure(email, ymd, opts = {}) {
+  const errMsg = String(opts.errorMessage || '');
+  const permanent =
+    opts.permanent === true || (errMsg && isPermanentDeliveryError(errMsg));
+
+  if (permanent) {
+    await markEmailUndeliverable(
+      admin,
+      email,
+      errMsg || 'permanent delivery failure',
+      'digest_send'
+    );
+    return DIGEST_MAX_CONSECUTIVE_FAILURES;
+  }
+
+  const sentRef = admin.firestore().collection('volunteer_daily_digest_sent').doc(email);
+  const sentSnap = await sentRef.get();
+  const prev = sentSnap.exists ? sentSnap.data() : {};
+  const lastFailYmd = String(prev.lastFailYmd || '');
+  let failStreak = Number(prev.failStreak) || 0;
+  if (lastFailYmd !== ymd) {
+    failStreak += 1;
+  }
+  await sentRef.set(
+    {
+      lastFailYmd: ymd,
+      failStreak,
+      lastFailAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+  if (failStreak >= DIGEST_MAX_CONSECUTIVE_FAILURES) {
+    await markEmailUndeliverable(
+      admin,
+      email,
+      errMsg || failStreak + ' consecutive digest send failures',
+      'digest_send_repeated'
+    );
+  }
+  return failStreak;
+}
+
+/** @param {{ forceResend?: boolean }} opts */
+async function runDailyVolunteerRoleDigestsJob(opts = {}) {
+  const forceResend = opts.forceResend === true;
     const settingsSnap = await admin.firestore().doc('settings/volunteer_daily_digest').get();
     const settings = settingsSnap.data() || {};
     if (!settings.enabled) {
       console.log(
         '[sendDailyVolunteerRoleDigests] skipped: create Firestore settings/volunteer_daily_digest with enabled: true'
       );
-      return;
+      return { sent: 0, skipped: 0, failed: 0, aborted: 'disabled' };
     }
 
     const scriptUrl = appsScriptSelfServeMailUrl.value();
     const secret = selfServeMailSecret.value();
     if (!String(scriptUrl || '').trim() || !String(secret || '').trim()) {
       console.error('[sendDailyVolunteerRoleDigests] mail not configured (secrets)');
-      return;
+      return { sent: 0, skipped: 0, failed: 0, aborted: 'mail_not_configured' };
     }
 
     const ymd = volunteerDailyDigest.todayYmdChicago();
@@ -751,6 +863,7 @@ exports.sendDailyVolunteerRoleDigests = onSchedule(
     }
 
     const onboardSnap = await admin.firestore().collection('volunteer_onboarding').get();
+    const undeliverableSet = await loadUndeliverableEmailSet(admin);
     let sent = 0;
     let skipped = 0;
     let failed = 0;
@@ -763,14 +876,26 @@ exports.sendDailyVolunteerRoleDigests = onSchedule(
       }
 
       const onboard = doc.data() || {};
-      if (onboard.dailyDigestOptOut === true) {
+      if (onboard.dailyDigestOptOut === true || onboard.emailUndeliverable === true) {
+        skipped++;
+        continue;
+      }
+      if (isEmailBlocked(email) || undeliverableSet.has(email)) {
         skipped++;
         continue;
       }
 
       const sentRef = admin.firestore().collection('volunteer_daily_digest_sent').doc(email);
       const sentSnap = await sentRef.get();
-      if (!dryRun && sentSnap.exists && sentSnap.data().lastYmd === ymd) {
+      const sentMeta = sentSnap.exists ? sentSnap.data() : {};
+      if (
+        !dryRun &&
+        Number(sentMeta.failStreak) >= DIGEST_MAX_CONSECUTIVE_FAILURES
+      ) {
+        skipped++;
+        continue;
+      }
+      if (!dryRun && !forceResend && sentSnap.exists && sentMeta.lastYmd === ymd) {
         skipped++;
         continue;
       }
@@ -839,6 +964,7 @@ exports.sendDailyVolunteerRoleDigests = onSchedule(
         });
       } catch (e) {
         console.error('[sendDailyVolunteerRoleDigests] fetch mail', email, e);
+        await recordDigestDeliveryFailure(email, ymd, { errorMessage: String(e) });
         failed++;
         continue;
       }
@@ -850,27 +976,359 @@ exports.sendDailyVolunteerRoleDigests = onSchedule(
       } catch (_) {}
 
       if (!mailRes.ok || !parsed || !parsed.ok) {
-        console.error('[sendDailyVolunteerRoleDigests] mail failed', email, mailRes.status, text.slice(0, 400));
+        const errMsg = (parsed && (parsed.error || parsed.message)) || text.slice(0, 400);
+        console.error('[sendDailyVolunteerRoleDigests] mail failed', email, mailRes.status, errMsg);
+        const streak = await recordDigestDeliveryFailure(email, ymd, {
+          errorMessage: errMsg,
+          permanent: parsed && parsed.permanent === true,
+        });
+        if (streak >= DIGEST_MAX_CONSECUTIVE_FAILURES) {
+          console.warn('[sendDailyVolunteerRoleDigests] stopped — undeliverable', email);
+        }
         failed++;
         continue;
       }
 
-      await sentRef.set({
-        lastYmd: ymd,
-        lastSentAt: admin.firestore.FieldValue.serverTimestamp(),
-        roleIds: content.roleIds,
-      });
+      await sentRef.set(
+        {
+          lastYmd: ymd,
+          lastSentAt: admin.firestore.FieldValue.serverTimestamp(),
+          roleIds: content.roleIds,
+          failStreak: 0,
+          lastFailYmd: admin.firestore.FieldValue.delete(),
+        },
+        { merge: true }
+      );
       sent++;
       await new Promise((r) => setTimeout(r, 150));
     }
 
-    console.log(
-      `[sendDailyVolunteerRoleDigests] done ymd=${ymd} sent=${sent} skipped=${skipped} failed=${failed} dryRun=${dryRun}`
-    );
+  console.log(
+    `[sendDailyVolunteerRoleDigests] done ymd=${ymd} sent=${sent} skipped=${skipped} failed=${failed} dryRun=${dryRun} forceResend=${forceResend}`
+  );
+  return { ymd, sent, skipped, failed, dryRun, forceResend };
+}
+
+/**
+ * Daily (America/Chicago 7:00): role-based task email for volunteers in
+ * `volunteer_onboarding`, using shifts merged from `volunteers/{uid}` when present.
+ *
+ * Enable in Firestore: document `settings/volunteer_daily_digest` with `{ "enabled": true }`.
+ * Optional: `dryRun` (bool) — log only, no mail. `siteBase` (string) — volunteer hub URL.
+ * Opt-out per person: field `dailyDigestOptOut: true` on onboarding doc or merged volunteer doc.
+ *
+ * Mail delivery uses the same Apps Script webhook as self-serve sign-in
+ * (APPS_SCRIPT_SELF_SERVE_MAIL_URL + SELF_SERVE_MAIL_SECRET); add handler
+ * `daily_volunteer_digest` in PrayerCityFormPipeline.gs.
+ */
+exports.sendDailyVolunteerRoleDigests = onSchedule(
+  {
+    schedule: '0 7 * * *',
+    timeZone: 'America/Chicago',
+    timeoutSeconds: 540,
+    memory: '512MiB',
+    secrets: [selfServeMailSecret, appsScriptSelfServeMailUrl],
+  },
+  async () => {
+    await runDailyVolunteerRoleDigestsJob();
   }
 );
 
-const TSHIRT_SIZES = new Set(['S', 'M', 'L', 'XL', '2XL', '3XL']);
+/**
+ * Callable (admins only): send today's digest now (e.g. after a failed 7am run).
+ */
+exports.runVolunteerDigestNow = onCall(
+  {
+    cors: true,
+    timeoutSeconds: 540,
+    memory: '512MiB',
+    secrets: [selfServeMailSecret, appsScriptSelfServeMailUrl],
+  },
+  async (request) => {
+    if (!request.auth?.token?.email) {
+      throw new HttpsError('unauthenticated', 'Sign in required.');
+    }
+    const caller = normalizeEmail(request.auth.token.email);
+    if (!DIGEST_ADMIN_EMAILS.has(caller)) {
+      throw new HttpsError('permission-denied', 'Admin access required.');
+    }
+    const stats = await runDailyVolunteerRoleDigestsJob({ forceResend: true });
+    return { ok: true, ...stats };
+  }
+);
+
+/**
+ * HTTP (secret query): send today's digest now — for ops when 7am job failed.
+ * GET/POST ?secret=SELF_SERVE_MAIL_SECRET
+ */
+exports.runVolunteerDigestHttp = onRequest(
+  {
+    timeoutSeconds: 540,
+    memory: '512MiB',
+    secrets: [selfServeMailSecret, appsScriptSelfServeMailUrl],
+  },
+  async (req, res) => {
+    const provided = String(req.query.secret || req.get('x-digest-secret') || '').trim();
+    const secret = selfServeMailSecret.value();
+    if (!provided || provided !== secret) {
+      res.status(403).send('forbidden');
+      return;
+    }
+    const stats = await runDailyVolunteerRoleDigestsJob({ forceResend: true });
+    res.json({ ok: true, ...stats });
+  }
+);
+
+async function loadVolunteersForSchedule() {
+  const onboardSnap = await admin.firestore().collection('volunteer_onboarding').get();
+  const volunteers = [];
+
+  for (const doc of onboardSnap.docs) {
+    const email = normalizeEmail(doc.id);
+    if (!email || !email.includes('@')) continue;
+
+    const onboard = doc.data() || {};
+    const merged = {
+      email,
+      name: String(onboard.name || '').trim(),
+      phone: String(onboard.phone || '').trim(),
+      shifts: String(onboard.shifts || '').trim(),
+      tent: String(onboard.tent || '').trim(),
+      position: String(onboard.position || '').trim(),
+    };
+
+    const volSnap = await admin
+      .firestore()
+      .collection('volunteers')
+      .where('email', '==', email)
+      .limit(1)
+      .get();
+
+    if (!volSnap.empty) {
+      const v = volSnap.docs[0].data() || {};
+      if (String(v.name || '').trim()) merged.name = v.name;
+      if (String(v.phone || '').trim()) merged.phone = v.phone;
+      if (String(v.shifts || '').trim()) merged.shifts = v.shifts;
+      if (String(v.tent || '').trim()) merged.tent = v.tent;
+      if (String(v.position || '').trim()) merged.position = v.position;
+    }
+
+    volunteers.push(merged);
+  }
+
+  return volunteers;
+}
+
+async function emailVolunteerSchedule({ to, filterDate }) {
+  const scriptUrl = appsScriptSelfServeMailUrl.value();
+  const secret = selfServeMailSecret.value();
+  if (!String(scriptUrl || '').trim() || !String(secret || '').trim()) {
+    throw new Error('mail_not_configured');
+  }
+
+  const volunteers = await loadVolunteersForSchedule();
+  const grid = buildScheduleGrid(volunteers);
+  const content = buildScheduleEmail(grid, { filterDate: filterDate || '' });
+
+  const mailRes = await fetch(scriptUrl, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'daily_volunteer_digest',
+      secret,
+      email: normalizeEmail(to),
+      subject: content.subject,
+      plainBody: content.plainBody,
+      htmlBody: content.htmlBody,
+    }),
+  });
+
+  const text = await mailRes.text();
+  let parsed = null;
+  try {
+    parsed = text ? JSON.parse(text) : null;
+  } catch (_) {}
+
+  if (!mailRes.ok || !parsed?.ok) {
+    throw new Error(String(parsed?.error || text.slice(0, 200) || 'mail_failed'));
+  }
+
+  return {
+    to: normalizeEmail(to),
+    volunteers: volunteers.length,
+    ...content.stats,
+  };
+}
+
+/**
+ * Callable (admins): email volunteer schedule grouped by date and time.
+ */
+exports.emailVolunteerSchedule = onCall(
+  {
+    cors: true,
+    timeoutSeconds: 120,
+    secrets: [selfServeMailSecret, appsScriptSelfServeMailUrl],
+  },
+  async (request) => {
+    if (!request.auth?.token?.email) {
+      throw new HttpsError('unauthenticated', 'Sign in required.');
+    }
+    const caller = normalizeEmail(request.auth.token.email);
+    if (!DIGEST_ADMIN_EMAILS.has(caller)) {
+      throw new HttpsError('permission-denied', 'Admin access required.');
+    }
+    const to = normalizeEmail(request.data?.to || 'ddbs.htx@gmail.com');
+    const filterDate = String(request.data?.date || '').trim();
+    try {
+      const stats = await emailVolunteerSchedule({ to, filterDate });
+      return { ok: true, ...stats };
+    } catch (e) {
+      throw new HttpsError('internal', String(e.message || e));
+    }
+  }
+);
+
+/**
+ * HTTP (secret query): email volunteer schedule to organizer.
+ * GET ?secret=...&to=ddbs.htx@gmail.com&date=June%2014,%202026
+ */
+exports.emailVolunteerScheduleHttp = onRequest(
+  {
+    timeoutSeconds: 120,
+    secrets: [selfServeMailSecret, appsScriptSelfServeMailUrl],
+  },
+  async (req, res) => {
+    const provided = String(req.query.secret || req.get('x-digest-secret') || '').trim();
+    const secret = selfServeMailSecret.value();
+    if (!provided || provided !== secret) {
+      res.status(403).send('forbidden');
+      return;
+    }
+    const to = normalizeEmail(req.query.to || 'ddbs.htx@gmail.com');
+    const filterDate = String(req.query.date || '').trim();
+    try {
+      const stats = await emailVolunteerSchedule({ to, filterDate });
+      res.json({ ok: true, ...stats });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: String(e.message || e) });
+    }
+  }
+);
+
+async function removeVolunteerByEmail(email) {
+  const e = normalizeEmail(email);
+  if (!e || !e.includes('@')) {
+    throw new Error('invalid_email');
+  }
+
+  let onboardingDeleted = false;
+  const onboardRef = admin.firestore().collection('volunteer_onboarding').doc(e);
+  const onboardSnap = await onboardRef.get();
+  if (onboardSnap.exists) {
+    await onboardRef.delete();
+    onboardingDeleted = true;
+  }
+
+  const volSnap = await admin.firestore().collection('volunteers').where('email', '==', e).get();
+  let directoryDeleted = 0;
+  for (const doc of volSnap.docs) {
+    const dirRef = admin.firestore().collection('volunteer_directory').doc(doc.id);
+    const dirSnap = await dirRef.get();
+    if (dirSnap.exists) {
+      await dirRef.delete();
+      directoryDeleted++;
+    }
+    await doc.ref.delete();
+  }
+
+  const digestRef = admin.firestore().collection('volunteer_daily_digest_sent').doc(e);
+  const digestSnap = await digestRef.get();
+  if (digestSnap.exists) {
+    await digestRef.delete();
+  }
+
+  return {
+    email: e,
+    onboardingDeleted,
+    volunteersRemoved: volSnap.size,
+    directoryRemoved: directoryDeleted,
+  };
+}
+
+/**
+ * HTTP (secret): remove volunteer from Firestore roster by email.
+ * GET ?secret=...&email=someone@example.com
+ */
+exports.removeVolunteerHttp = onRequest(
+  { timeoutSeconds: 60, secrets: [selfServeMailSecret] },
+  async (req, res) => {
+    const provided = String(req.query.secret || req.get('x-digest-secret') || '').trim();
+    const secret = selfServeMailSecret.value();
+    if (!provided || provided !== secret) {
+      res.status(403).send('forbidden');
+      return;
+    }
+    const email = String(req.query.email || '').trim();
+    if (!email) {
+      res.status(400).json({ ok: false, error: 'missing_email' });
+      return;
+    }
+    try {
+      const stats = await removeVolunteerByEmail(email);
+      res.json({ ok: true, ...stats });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: String(e.message || e) });
+    }
+  }
+);
+
+const TSHIRT_SIZES = new Set(['S', 'M', 'L', 'X']);
+
+function normalizeShirtSize(raw) {
+  let s = String(raw || '')
+    .trim()
+    .toUpperCase();
+  if (s === 'XL') s = 'X';
+  return s;
+}
+
+async function postTshirtSizeToAppsScript(scriptUrl, secret, { email, name, shirtSize }) {
+  async function post(body) {
+    const res = await fetch(scriptUrl, {
+      method: 'POST',
+      redirect: 'follow',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const text = await res.text();
+    let parsed = null;
+    try {
+      parsed = text ? JSON.parse(text) : {};
+    } catch (_) {}
+    return { res, text, parsed };
+  }
+
+  let result = await post({
+    type: 'volunteer_tshirt_size',
+    secret,
+    email,
+    name,
+    shirtSize,
+  });
+
+  if (result.parsed?.error === 'bad_type') {
+    result = await post({
+      type: 'volunteer_sheet_update',
+      secret,
+      email,
+      name,
+      shirtSize,
+    });
+  }
+
+  return result;
+}
 
 /**
  * Callable: after volunteer saves shirtSize on dashboard — email team + sheet col K.
@@ -882,9 +1340,7 @@ exports.notifyVolunteerTshirtSize = onCall(
       throw new HttpsError('unauthenticated', 'Sign in required.');
     }
 
-    const shirtSize = String(request.data?.shirtSize || '')
-      .trim()
-      .toUpperCase();
+    const shirtSize = normalizeShirtSize(request.data?.shirtSize);
     if (!TSHIRT_SIZES.has(shirtSize)) {
       throw new HttpsError('invalid-argument', 'Choose a valid T-shirt size.');
     }
@@ -905,35 +1361,35 @@ exports.notifyVolunteerTshirtSize = onCall(
     }
 
     let res;
+    let text;
+    let parsed;
     try {
-      res = await fetch(scriptUrl, {
-        method: 'POST',
-        redirect: 'follow',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'volunteer_tshirt_size',
-          secret,
-          email,
-          name,
-          shirtSize,
-        }),
-      });
+      ({ res, text, parsed } = await postTshirtSizeToAppsScript(scriptUrl, secret, {
+        email,
+        name,
+        shirtSize,
+      }));
     } catch (e) {
       console.error('notifyVolunteerTshirtSize fetch', e);
       throw new HttpsError('unavailable', 'Could not reach Google Apps Script.');
     }
 
-    const text = await res.text();
-    let parsed = null;
-    try {
-      parsed = text ? JSON.parse(text) : {};
-    } catch (_) {}
-
     if (!res.ok || !parsed?.ok) {
-      throw new HttpsError(
-        'internal',
-        parsed?.error || 'Could not notify team about T-shirt size.'
-      );
+      const err = String(parsed?.error || 'tshirt_notify_failed');
+      console.error('notifyVolunteerTshirtSize apps script', res.status, text);
+      if (err === 'bad_type' || err === 'nothing_to_update') {
+        throw new HttpsError(
+          'failed-precondition',
+          'Google Apps Script needs redeploying — update handleVolunteerSheetUpdate_ (or full PrayerCityFormPipeline.gs) then Deploy → New version.'
+        );
+      }
+      if (err === 'unauthorized') {
+        throw new HttpsError(
+          'failed-precondition',
+          'Apps Script secret mismatch — update SELF_SERVE_MAIL_SECRET in Firebase and CONFIG.SELF_SERVE_MAIL_SECRET in the sheet script.'
+        );
+      }
+      throw new HttpsError('internal', err);
     }
 
     await admin
@@ -951,3 +1407,158 @@ exports.notifyVolunteerTshirtSize = onCall(
     return { ok: true, emailed: parsed.emailed !== false, sheetRow: parsed.sheetRow || 0 };
   }
 );
+
+const TSHIRT_BACKFILL_ADMINS = new Set([
+  'ddbs.htx@gmail.com',
+  'abuxberkeley@gmail.com',
+]);
+
+/**
+ * Callable (admins only): push every saved shirtSize from Firestore to sheet col K + team email.
+ * Run after redeploying Apps Script with volunteer_tshirt_size handler.
+ */
+exports.backfillVolunteerTshirtSizes = onCall(
+  { cors: true, secrets: [selfServeMailSecret, appsScriptSelfServeMailUrl] },
+  async (request) => {
+    if (!request.auth?.token?.email) {
+      throw new HttpsError('unauthenticated', 'Sign in required.');
+    }
+    const caller = normalizeEmail(request.auth.token.email);
+    if (!TSHIRT_BACKFILL_ADMINS.has(caller)) {
+      throw new HttpsError('permission-denied', 'Admin access required.');
+    }
+
+    const scriptUrl = appsScriptSelfServeMailUrl.value();
+    const secret = selfServeMailSecret.value();
+    if (!String(scriptUrl || '').trim() || !String(secret || '').trim()) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Apps Script URL / secret not configured.'
+      );
+    }
+
+    const snap = await admin.firestore().collection('volunteers').get();
+    const results = [];
+    for (const doc of snap.docs) {
+      const vol = doc.data() || {};
+      const shirtSize = normalizeShirtSize(vol.shirtSize);
+      if (!TSHIRT_SIZES.has(shirtSize)) continue;
+
+      const email = normalizeEmail(vol.email || '');
+      if (!email) continue;
+
+      const name = String(vol.name || '').trim();
+      let res;
+      let text;
+      let parsed;
+      try {
+        ({ res, text, parsed } = await postTshirtSizeToAppsScript(scriptUrl, secret, {
+          email,
+          name,
+          shirtSize,
+        }));
+      } catch (e) {
+        results.push({ email, shirtSize, ok: false, error: 'fetch_failed' });
+        continue;
+      }
+
+      if (!res.ok || !parsed?.ok) {
+        results.push({
+          email,
+          shirtSize,
+          ok: false,
+          error: parsed?.error || 'apps_script_failed',
+        });
+        if (parsed?.error === 'bad_type' || parsed?.error === 'nothing_to_update') {
+          throw new HttpsError(
+            'failed-precondition',
+            'Apps Script still missing T-shirt support — update handleVolunteerSheetUpdate_ and redeploy.'
+          );
+        }
+        continue;
+      }
+
+      await doc.ref.set(
+        {
+          shirtSizeNotifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+          shirtSizeNotifiedValue: shirtSize,
+        },
+        { merge: true }
+      );
+      results.push({
+        email,
+        shirtSize,
+        ok: true,
+        sheetRow: parsed.sheetRow || 0,
+        emailed: parsed.emailed !== false,
+      });
+    }
+
+    const synced = results.filter((r) => r.ok).length;
+    const failed = results.filter((r) => !r.ok).length;
+    return { ok: true, synced, failed, total: results.length, results };
+  }
+);
+
+const { registerDigestIntelligenceExports } = require('./genkit/registerExports');
+const digestIntel = registerDigestIntelligenceExports(admin);
+exports.runDigestIntelligenceNow = digestIntel.runDigestIntelligenceNow;
+exports.scheduledDigestIntelligence = digestIntel.scheduledDigestIntelligence;
+exports.runDigestIntelligenceHttp = digestIntel.runDigestIntelligenceHttp;
+
+/**
+ * One-time thank-you after World Cup Prayer City campaign (July 6, 2026 9:00 AM CT).
+ * Enable: Firestore settings/campaign_thank_you_2026 → { enabled: true }
+ */
+exports.scheduledCampaignThankYou = onSchedule(
+  {
+    schedule: '0 9 6 7 *',
+    timeZone: 'America/Chicago',
+    timeoutSeconds: 540,
+    memory: '512MiB',
+    secrets: [selfServeMailSecret, appsScriptSelfServeMailUrl],
+  },
+  async () => {
+    try {
+      await runCampaignThankYouJob(admin, {
+        scriptUrl: appsScriptSelfServeMailUrl.value(),
+        secret: selfServeMailSecret.value(),
+      });
+    } catch (e) {
+      console.error('[scheduledCampaignThankYou]', e);
+    }
+  }
+);
+
+exports.runCampaignThankYouHttp = onRequest(
+  {
+    timeoutSeconds: 540,
+    memory: '512MiB',
+    secrets: [selfServeMailSecret, appsScriptSelfServeMailUrl],
+  },
+  async (req, res) => {
+    const provided = String(req.query.secret || req.get('x-digest-secret') || '').trim();
+    const secret = selfServeMailSecret.value();
+    if (!provided || provided !== secret) {
+      res.status(403).send('forbidden');
+      return;
+    }
+    try {
+      const stats = await runCampaignThankYouJob(admin, {
+        scriptUrl: appsScriptSelfServeMailUrl.value(),
+        secret: selfServeMailSecret.value(),
+        dryRun: req.query.dryRun !== 'false',
+        force: req.query.force === 'true',
+      });
+      res.json({ ok: true, ...stats });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: String(e.message || e) });
+    }
+  }
+);
+
+exports.saveNigeriaProfile = nigeriaVolunteer.saveNigeriaProfile;
+exports.recordNigeriaAttendance = nigeriaVolunteer.recordNigeriaAttendance;
+exports.getNigeriaDashboard = nigeriaVolunteer.getNigeriaDashboard;
+exports.submitNigeriaUnitReport = nigeriaVolunteer.submitNigeriaUnitReport;
+exports.getNigeriaAttendanceForReport = nigeriaVolunteer.getNigeriaAttendanceForReport;

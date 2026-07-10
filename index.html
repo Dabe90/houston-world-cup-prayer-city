@@ -493,6 +493,17 @@
                       ></dd>
                     </div>
                   </dl>
+                  <div
+                    id="nigeria-dash-cta"
+                    class="hidden mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"
+                  >
+                    <strong>DDBS Nigeria</strong> —
+                    <a
+                      href="ddbs-nig.html"
+                      class="font-semibold underline underline-offset-2"
+                      >Unit meetings &amp; attendance</a
+                    >
+                  </div>
                   <div class="mt-4 min-w-0 max-w-full">
                     <dt
                       class="text-slate-500 text-xs uppercase tracking-wide mb-1"
@@ -2233,6 +2244,15 @@
               els.fvEmail.textContent =
                 d.email || auth.currentUser.email || "—";
               els.fvPhone.textContent = d.phone || "—";
+              var ngCta = document.getElementById("nigeria-dash-cta");
+              if (ngCta) {
+                var ph = String(d.phone || "").replace(/\s/g, "");
+                var isNg =
+                  /^\+234\d{9,11}$/.test(ph) ||
+                  /^234\d{9,11}$/.test(ph) ||
+                  /^0[789]\d{9}$/.test(ph);
+                ngCta.classList.toggle("hidden", !isNg);
+              }
               els.fvShifts.textContent = d.shifts || "—";
               els.fvNotes.textContent = d.notes || "—";
               var tentEl = document.getElementById("fv-tent");

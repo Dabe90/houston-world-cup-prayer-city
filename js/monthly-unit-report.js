@@ -146,6 +146,17 @@
     },
     // DDBS leadership & regional
     {
+      id: 'moderators-presenters',
+      category: 'leadership',
+      label: 'Moderators & Presenters',
+      icon: 'fa-microphone-lines',
+      gradient: 'from-violet-500 to-purple-700',
+      soft: 'bg-violet-50 border-violet-200',
+      accent: 'text-violet-800',
+      ring: 'ring-violet-400',
+      barColor: '#7c3aed',
+    },
+    {
       id: 'bible-study',
       category: 'leadership',
       label: 'Bible Study Team',

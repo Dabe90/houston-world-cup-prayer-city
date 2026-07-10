@@ -35,5 +35,36 @@ service cloud.firestore {
       allow delete: if request.auth != null && resource.data.fromUid == request.auth.uid;
       allow update: if false;
     }
+
+    // Ops settings + intelligence run logs — Cloud Functions only.
+    match /settings/{docId} {
+      allow read, write: if false;
+    }
+
+    match /digest_intelligence_runs/{runId} {
+      allow read, write: if false;
+    }
+
+    // Nigeria regional volunteers (+234 phone sign-in).
+    match /nigeria_volunteers/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    match /nigeria_attendance/{attendanceId} {
+      allow read: if request.auth != null
+        && (resource.data.uid == request.auth.uid
+            || get(/databases/$(database)/documents/nigeria_volunteers/$(request.auth.uid)).data.unitId == resource.data.unitId
+               && get(/databases/$(database)/documents/nigeria_volunteers/$(request.auth.uid)).data.role == 'leader');
+      allow create: if false;
+      allow update, delete: if false;
+    }
+
+    match /nigeria_unit_reports/{reportId} {
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/nigeria_volunteers/$(request.auth.uid)).data.unitId == resource.data.unitId;
+      allow write: if false;
+    }
   }
 }
