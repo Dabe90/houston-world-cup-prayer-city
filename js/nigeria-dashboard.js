@@ -57,12 +57,10 @@
 
   function showSuperUserChrome() {
     if (!isClientSuperUser()) return;
-    if (window.PrayerCitySuperUser) {
+    show($('super-user-panel'));
+    if ($('super-user-links') && window.PrayerCitySuperUser) {
+      PrayerCitySuperUser.renderLinks($('super-user-links'));
       PrayerCitySuperUser.init({ auth: auth, functions: functions });
-      show($('super-user-panel'));
-      if ($('super-user-links')) {
-        PrayerCitySuperUser.renderLinks($('super-user-links'));
-      }
     }
     var superBanner = $('super-user-banner');
     if (superBanner) superBanner.classList.remove('hidden');
@@ -276,7 +274,7 @@
 
   function showNotEligible(message) {
     if (isClientSuperUser()) {
-      return loadSuperUserFallback(null);
+      return showSuperUserLanding();
     }
     hide($('auth-panel'));
     hide($('dash-panel'));
@@ -353,22 +351,32 @@
   }
 
   function processDashboardResponse(data) {
+    if (!data) return showSuperUserLanding();
     hide($('not-eligible-panel'));
     if (data.eligible === false) {
       if (isClientSuperUser()) {
-        return loadSuperUserFallback(null);
+        return showSuperUserLanding();
       }
       showNotEligible(data.message);
       return;
     }
     if (!data.hasProfile) {
-      showOnboarding(data.volunteer, data.isSuperUser || isClientSuperUser());
+      showOnboarding(
+        data.volunteer || coordinatorVolunteer(),
+        data.isSuperUser || isClientSuperUser()
+      );
       return;
     }
     hide($('onboard-panel'));
     hide($('auth-panel'));
     show($('dash-panel'));
-    renderDashboard(data);
+    try {
+      renderDashboard(data);
+    } catch (e) {
+      console.error('renderDashboard', e);
+      if (isClientSuperUser()) return showSuperUserLanding();
+      setStatus('Could not display dashboard. Try refreshing.', 'error');
+    }
   }
 
   function mergeProfile() {
@@ -377,41 +385,61 @@
     });
   }
 
-  function loadSuperUserFallback(err) {
-    console.warn('getNigeriaDashboard', err);
-    return loadLocalNigeriaProfile().then(function (snap) {
-      hideAuthChecking();
-      if (snap.exists) {
-        hide($('onboard-panel'));
-        hide($('not-eligible-panel'));
-        hide($('auth-panel'));
-        show($('dash-panel'));
-        renderDashboard(buildLocalDashboard(snap.data(), true));
-        return;
-      }
-      return loadVolunteerPreview().then(function (volunteer) {
-        showOnboarding(volunteer, true);
+  function coordinatorVolunteer() {
+    var user = auth.currentUser;
+    return {
+      name: (user && user.displayName) || 'Coordinator',
+      email: (user && user.email) || '',
+      phone: 'Coordinator access — all dashboards',
+    };
+  }
+
+  function showSuperUserLanding() {
+    showSuperUserChrome();
+    hide($('auth-panel'));
+    hide($('not-eligible-panel'));
+    return loadLocalNigeriaProfile()
+      .then(function (snap) {
+        if (snap.exists) {
+          hide($('onboard-panel'));
+          show($('dash-panel'));
+          renderDashboard(buildLocalDashboard(snap.data(), true));
+          return;
+        }
+        showOnboarding(coordinatorVolunteer(), true);
+      })
+      .catch(function (e) {
+        console.warn('loadLocalNigeriaProfile', e);
+        showOnboarding(coordinatorVolunteer(), true);
       });
-    });
+  }
+
+  function refreshDashboardFromCloud() {
+    return functions
+      .httpsCallable('getNigeriaDashboard')()
+      .then(function (res) {
+        if (!res || !res.data) return;
+        return processDashboardResponse(res.data);
+      })
+      .catch(function (err) {
+        console.warn('getNigeriaDashboard', err);
+      });
   }
 
   function loadDashboard() {
-    showSuperUserChrome();
-
-    var dashPromise = mergeProfile().then(function () {
-      return functions.httpsCallable('getNigeriaDashboard')();
-    });
-
     if (isClientSuperUser()) {
-      return dashPromise
-        .then(function (res) {
-          hideAuthChecking();
-          return processDashboardResponse(res.data);
-        })
-        .catch(loadSuperUserFallback);
+      showSuperUserLanding();
+      mergeProfile()
+        .then(refreshDashboardFromCloud)
+        .catch(refreshDashboardFromCloud);
+      return Promise.resolve();
     }
 
-    return dashPromise
+    showSuperUserChrome();
+    return mergeProfile()
+      .then(function () {
+        return functions.httpsCallable('getNigeriaDashboard')();
+      })
       .then(function (res) {
         hideAuthChecking();
         return processDashboardResponse(res.data);
@@ -627,12 +655,13 @@
       if (signOutBtn) signOutBtn.classList.remove('hidden');
       hide($('auth-panel'));
       loadDashboard().catch(function (err) {
-        if (!isClientSuperUser()) {
-          setStatus(err.message || 'Could not load dashboard.', 'error');
-          show($('auth-panel'));
+        console.error('loadDashboard', err);
+        if (isClientSuperUser()) {
+          showSuperUserLanding();
           return;
         }
-        loadSuperUserFallback(err);
+        setStatus(err.message || 'Could not load dashboard.', 'error');
+        show($('auth-panel'));
       });
       return;
     }
