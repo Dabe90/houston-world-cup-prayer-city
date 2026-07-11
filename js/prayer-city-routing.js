@@ -38,6 +38,12 @@
 
   function shouldAutoRouteToNigeria(volunteerData, email) {
     if (sessionStorage.getItem(STAY_KEY) === '1') return false;
+    if (
+      volunteerData &&
+      (volunteerData.nigeriaHub === true || volunteerData.region === 'nigeria')
+    ) {
+      return true;
+    }
     return isNigeriaVolunteerPhone(volunteerData && volunteerData.phone);
   }
 

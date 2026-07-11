@@ -1694,7 +1694,35 @@
     return '<span class="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 bg-emerald-100 text-emerald-700">On track</span>';
   }
 
-  function teamRosterHtml(c) {
+  function rosterManageControls(c, m, isSuperUser) {
+    var canManage = isSuperUser || c.role === 'leader';
+    if (!canManage) return '';
+    if (!isSuperUser && m.role === 'leader') return '';
+    var attrs =
+      ' data-unit-id="' + escapeHtml(c.unitId) + '" data-target-uid="' + escapeHtml(m.uid) + '"';
+    var btns = [];
+    if (m.role === 'member') {
+      btns.push(
+        '<button type="button" class="roster-action text-[10px] font-semibold rounded-md border border-amber-200 text-amber-800 px-2 py-0.5 hover:bg-amber-50"' +
+          attrs +
+          ' data-action="leader">Make leader</button>'
+      );
+    } else if (m.role === 'leader' && isSuperUser) {
+      btns.push(
+        '<button type="button" class="roster-action text-[10px] font-semibold rounded-md border border-slate-200 text-slate-700 px-2 py-0.5 hover:bg-slate-50"' +
+          attrs +
+          ' data-action="member">Make member</button>'
+      );
+    }
+    btns.push(
+      '<button type="button" class="roster-action text-[10px] font-semibold rounded-md border border-red-200 text-red-700 px-2 py-0.5 hover:bg-red-50"' +
+        attrs +
+        ' data-action="remove">Remove</button>'
+    );
+    return '<div class="flex flex-wrap gap-1 mt-1.5">' + btns.join('') + '</div>';
+  }
+
+  function teamRosterHtml(c, isSuperUser) {
     if (!c.isLeaderView || !c.teamRoster || !c.teamRoster.length) return '';
     var roster = c.teamRoster;
     var atRisk = roster.filter(function (m) {
@@ -1737,6 +1765,7 @@
           (m.tier === 'withdrawal'
             ? '<p class="text-[11px] text-red-700 font-medium mt-1"><i class="fas fa-triangle-exclamation mr-1"></i>Withdrawal reached — you may remove them from the WhatsApp group.</p>'
             : '') +
+          rosterManageControls(c, m, isSuperUser) +
           '</div>' +
           (wa
             ? '<a href="' +
@@ -1772,12 +1801,40 @@
       (roster.length === 1 ? '' : 's') +
       '</span>' +
       '</div>' +
-      '<p class="text-xs text-slate-500 mb-2">Leaders only. See who is at risk of withdrawal or coming late so you can follow up and manage your WhatsApp group.</p>' +
+      '<p class="text-xs text-slate-500 mb-2">Leaders only. See who is at risk of withdrawal or coming late so you can follow up and manage your WhatsApp group. Anyone who signs in picks their own role — use the buttons to make someone an assistant leader, change them back to a member, or remove someone who is not really on the team.</p>' +
       summary +
       '<div class="space-y-2">' +
       rows +
       '</div></div>'
     );
+  }
+
+  function bindRosterManage(wrap) {
+    if (!wrap || !functions) return;
+    wrap.querySelectorAll('.roster-action').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var unitId = btn.getAttribute('data-unit-id');
+        var targetUid = btn.getAttribute('data-target-uid');
+        var action = btn.getAttribute('data-action');
+        var verb =
+          action === 'remove'
+            ? 'remove this person from the unit'
+            : action === 'leader'
+              ? 'make this person a leader'
+              : 'change this person to a member';
+        if (!window.confirm('Are you sure you want to ' + verb + '?')) return;
+        btn.disabled = true;
+        functions
+          .httpsCallable('setNigeriaMemberRole')({ unitId: unitId, targetUid: targetUid, role: action })
+          .then(function () {
+            return loadDashboard();
+          })
+          .catch(function (err) {
+            window.alert((err && err.message) || 'Could not update the member.');
+            btn.disabled = false;
+          });
+      });
+    });
   }
 
   function renderUnitsTab(data) {
@@ -1836,7 +1893,7 @@
           '<p class="text-xs text-slate-500 mt-2 text-center">Opens 15 min before · closes 10 min after</p>' +
           absencePanelHtml(c) +
           lastMeetingDigestHtml(c, uid) +
-          teamRosterHtml(c) +
+          teamRosterHtml(c, data.isSuperUser === true) +
           visionPanelHtml(c) +
           notesHtml(unitMeetings, defaultKey) +
           '</div>'
@@ -1852,6 +1909,7 @@
 
     bindVisionPanels(wrap);
     bindAbsencePanels(wrap);
+    bindRosterManage(wrap);
 
     if (window.DDBSNigeriaMeetingNotes) {
       ctx.forEach(function (c) {

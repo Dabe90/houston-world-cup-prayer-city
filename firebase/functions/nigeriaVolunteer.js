@@ -935,7 +935,96 @@ const saveNigeriaProfile = onCall(async (request) => {
 
   await db.collection('nigeria_volunteers').doc(uid).set(patch, { merge: true });
 
+  // Flag the site-wide volunteer record so the US hub routes this person to the
+  // Nigeria hub on future sign-ins, even if their phone is not a +234 number
+  // (e.g. a Nigerian leader living abroad with a foreign phone).
+  try {
+    await db.collection('volunteers').doc(uid).set({ nigeriaHub: true }, { merge: true });
+  } catch (ignore) {}
+
   return { ok: true, units: normalizedUnits };
+});
+
+/**
+ * Coordinator/leader control to correct a member's role in a unit (since anyone
+ * who signs in picks their own role). Supports promoting to leader (assistant),
+ * demoting to member, and removing from the unit.
+ *   role: 'leader' | 'member' | 'remove'
+ * Superusers may manage anyone; a unit leader may manage members of their unit
+ * but may not change or remove another leader (only a coordinator can).
+ */
+const setNigeriaMemberRole = onCall(async (request) => {
+  const uid = requireAuth(request);
+  const db = admin.firestore();
+  const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
+
+  const data = request.data || {};
+  const unitId = String(data.unitId || '').trim();
+  const targetUid = String(data.targetUid || '').trim();
+  const action = String(data.role || '').trim();
+  if (!unitId || !getUnit(unitId)) throw new HttpsError('invalid-argument', 'Invalid unit.');
+  if (!targetUid) throw new HttpsError('invalid-argument', 'Target member required.');
+  if (!['leader', 'member', 'remove'].includes(action)) {
+    throw new HttpsError('invalid-argument', 'Action must be leader, member, or remove.');
+  }
+
+  const callerSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+  const callerProfile = callerSnap.exists ? callerSnap.data() : null;
+  const isSuper =
+    access.isSuperUser === true || (callerProfile && callerProfile.isSuperUser === true);
+  const callerIsLeader = isLeaderOfUnit(callerProfile, unitId, isSuper);
+  if (!isSuper && !callerIsLeader) {
+    throw new HttpsError('permission-denied', 'Only unit leaders or coordinators can manage members.');
+  }
+
+  const targetSnap = await db.collection('nigeria_volunteers').doc(targetUid).get();
+  if (!targetSnap.exists) {
+    throw new HttpsError('failed-precondition', 'That member has no Nigeria profile yet.');
+  }
+  const targetProfile = targetSnap.data();
+  let units = normalizeProfileUnits(targetProfile);
+  const existing = units.find((u) => u.unitId === unitId);
+  if (!existing) {
+    throw new HttpsError('failed-precondition', 'That person is not in this unit.');
+  }
+  if (!isSuper && existing.role === 'leader') {
+    throw new HttpsError(
+      'permission-denied',
+      'Only a coordinator can change or remove another leader.'
+    );
+  }
+
+  if (action === 'remove') {
+    units = units.filter((u) => u.unitId !== unitId);
+  } else {
+    existing.role = action;
+  }
+
+  const patch = {
+    units,
+    unitIds: units.map((u) => u.unitId),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+  if (units.length) {
+    patch.unitId = units[0].unitId;
+    patch.unitLabel = units[0].unitLabel;
+    patch.role = units[0].role;
+  } else {
+    patch.unitId = admin.firestore.FieldValue.delete();
+    patch.unitLabel = admin.firestore.FieldValue.delete();
+    patch.role = admin.firestore.FieldValue.delete();
+  }
+  await db.collection('nigeria_volunteers').doc(targetUid).set(patch, { merge: true });
+
+  try {
+    await db
+      .collection('volunteers')
+      .doc(targetUid)
+      .set({ nigeriaHub: units.length > 0 }, { merge: true });
+  } catch (ignore) {}
+
+  const roster = await computeUnitRoster(db, unitId, new Date());
+  return { ok: true, roster };
 });
 
 const recordNigeriaAttendance = onCall(async (request) => {
@@ -1175,6 +1264,12 @@ const getNigeriaDashboard = onCall(async (request) => {
   if (!profileUnits.length) {
     throw new HttpsError('failed-precondition', 'Profile units missing.');
   }
+
+  // Ensure the US hub routes this Nigeria volunteer to the Nigeria hub on future
+  // visits (covers leaders abroad whose phone is not a +234 number).
+  try {
+    await db.collection('volunteers').doc(uid).set({ nigeriaHub: true }, { merge: true });
+  } catch (ignore) {}
 
   const now = new Date();
   const year = parseInt(ymdInLagos(now).slice(0, 4), 10);
@@ -2382,6 +2477,7 @@ const markNigeriaWorkforceInTraining = onCall(async (request) => {
 
 module.exports = {
   saveNigeriaProfile,
+  setNigeriaMemberRole,
   recordNigeriaAttendance,
   submitNigeriaAbsenceRequest,
   getNigeriaDashboard,

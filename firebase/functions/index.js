@@ -1702,6 +1702,7 @@ exports.runCampaignThankYouHttp = onRequest(
 );
 
 exports.saveNigeriaProfile = nigeriaVolunteer.saveNigeriaProfile;
+exports.setNigeriaMemberRole = nigeriaVolunteer.setNigeriaMemberRole;
 exports.recordNigeriaAttendance = nigeriaVolunteer.recordNigeriaAttendance;
 exports.submitNigeriaAbsenceRequest = nigeriaVolunteer.submitNigeriaAbsenceRequest;
 exports.getNigeriaDashboard = nigeriaVolunteer.getNigeriaDashboard;
