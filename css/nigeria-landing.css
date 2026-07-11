@@ -7,13 +7,13 @@
   --ng-shadow-lift: 0 16px 48px rgba(15, 61, 92, 0.1);
 }
 
-/* Hero billboard — compact top banner (~35% viewport) */
+/* Hero billboard — top banner (~50% viewport) */
 #hero-billboard {
   position: relative;
-  height: clamp(220px, 35vh, 380px);
-  min-height: clamp(220px, 35vh, 380px);
-  max-height: 380px;
-  padding-bottom: 2.75rem;
+  height: clamp(280px, 50vh, 520px);
+  min-height: clamp(280px, 50vh, 520px);
+  max-height: 520px;
+  padding-bottom: 3rem;
   background: #0f3d5c;
 }
 .hero-billboard-viewport {
@@ -21,7 +21,7 @@
   left: 0;
   right: 0;
   top: 0;
-  bottom: 2.75rem;
+  bottom: 3rem;
   overflow: hidden;
   width: 100%;
 }
@@ -96,12 +96,12 @@
 }
 .hero-slide-welcome .max-w-7xl,
 .hero-flyer-content {
-  padding-top: 1.25rem !important;
-  padding-bottom: 1.25rem !important;
+  padding-top: 2rem !important;
+  padding-bottom: 2rem !important;
 }
 .hero-slide-welcome h1,
 .hero-slide-event h2 {
-  font-size: clamp(1.35rem, 3.5vw, 2rem) !important;
+  font-size: clamp(1.5rem, 4vw, 2.5rem) !important;
   line-height: 1.15 !important;
   margin-bottom: 0.5rem !important;
 }
