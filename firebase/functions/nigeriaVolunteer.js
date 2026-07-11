@@ -480,36 +480,86 @@ function computeConsecutiveMisses(pastMeetings, attendedKeys, excusedKeys = new 
   return count;
 }
 
-function attendanceMissWarning(consecutiveMisses) {
-  if (consecutiveMisses >= 4) {
-    return {
+const STRIKE_WINDOW_WEEKS = 8;
+const STRIKE_WINDOW_MS = STRIKE_WINDOW_WEEKS * 7 * 86400000;
+
+/**
+ * Counts, within the last 8 weeks, how many meetings a member missed and how
+ * many they joined late (checked in after the meeting had already started).
+ * Excused absences never count. Each miss or late arrival is one "strike".
+ */
+function computeStrikeWindowStats(allPast, attendedKeys, excusedKeys, checkedInAtByKey, now) {
+  const windowStart = now.getTime() - STRIKE_WINDOW_MS;
+  let missed = 0;
+  let late = 0;
+  (allPast || []).forEach((m) => {
+    if (m.start.getTime() < windowStart) return;
+    if (excusedKeys.has(m.key)) return;
+    if (attendedKeys.has(m.key)) {
+      const at = checkedInAtByKey[m.key];
+      if (at && at > m.start.getTime()) late += 1;
+    } else {
+      missed += 1;
+    }
+  });
+  return { missed, late, strikes: missed + late, windowWeeks: STRIKE_WINDOW_WEEKS };
+}
+
+function describeStrikes(missed, late) {
+  const parts = [];
+  if (missed > 0) parts.push('missed ' + missed + ' meeting' + (missed === 1 ? '' : 's'));
+  if (late > 0) parts.push('come late ' + late + ' time' + (late === 1 ? '' : 's'));
+  if (!parts.length) return 'had some attendance issues';
+  return parts.join(' and ');
+}
+
+/**
+ * Warning tiers based on strikes (missed OR late meetings) in the last 8 weeks:
+ * 2 = warning, 3 = final warning, 4+ = workforce withdrawal notice.
+ */
+function attendanceMissWarning(strikeStats) {
+  const stats = strikeStats || { missed: 0, late: 0, strikes: 0, windowWeeks: STRIKE_WINDOW_WEEKS };
+  const strikes = stats.strikes || 0;
+  const detail = describeStrikes(stats.missed || 0, stats.late || 0);
+  const base = {
+    consecutiveMisses: strikes,
+    strikes,
+    missed: stats.missed || 0,
+    late: stats.late || 0,
+    windowWeeks: STRIKE_WINDOW_WEEKS,
+  };
+  if (strikes >= 4) {
+    return Object.assign({}, base, {
       tier: 'withdrawal',
       level: 'critical',
-      consecutiveMisses,
       title: 'Workforce withdrawal notice',
       message:
-        'You have missed four unit meetings in a row. Withdrawal from the Kingdom Workforce will be initiated soon unless you attend the next meeting. Please contact your unit leader immediately.',
-    };
+        'In the last 8 weeks you have ' +
+        detail +
+        '. Withdrawal from the Kingdom Workforce will be initiated soon unless you attend your next meetings on time. Please contact your unit leader immediately.',
+    });
   }
-  if (consecutiveMisses >= 3) {
-    return {
+  if (strikes >= 3) {
+    return Object.assign({}, base, {
       tier: 'final',
       level: 'critical',
-      consecutiveMisses,
       title: 'Final attendance warning',
       message:
-        'You have missed three unit meetings in a row. This is your final warning — if you miss one more meeting, withdrawal from the Kingdom Workforce may be initiated.',
-    };
+        'In the last 8 weeks you have ' +
+        detail +
+        '. This is your final warning — one more missed or late meeting and withdrawal from the Kingdom Workforce may be initiated.',
+    });
   }
-  if (consecutiveMisses >= 2) {
-    return {
+  if (strikes >= 2) {
+    return Object.assign({}, base, {
       tier: 'warning',
       level: 'warn',
-      consecutiveMisses,
       title: 'Attendance warning',
       message:
-        'You have missed two unit meetings in a row. Please prioritize your next unit meeting — consistent attendance keeps the team strong.',
-    };
+        'In the last 8 weeks you have ' +
+        detail +
+        '. Please attend your next meetings on time — steady attendance keeps the team strong.',
+    });
   }
   return null;
 }
@@ -603,9 +653,14 @@ async function computeUserAttendanceStats(db, uid, unitId, year, month) {
     .get();
 
   const attendedKeys = new Set();
+  const checkedInAtByKey = {};
   snap.docs.forEach((doc) => {
     const d = doc.data();
-    if (d.meetingKey) attendedKeys.add(d.meetingKey);
+    if (d.meetingKey) {
+      attendedKeys.add(d.meetingKey);
+      const at = d.checkedInAt && d.checkedInAt.toDate ? d.checkedInAt.toDate().getTime() : null;
+      if (at) checkedInAtByKey[d.meetingKey] = at;
+    }
   });
 
   const excusedKeys = await loadExcusedMeetingKeys(db, uid, unitId);
@@ -618,7 +673,8 @@ async function computeUserAttendanceStats(db, uid, unitId, year, month) {
 
   const allPast = await pastMeetingsForUnit(db, unitId, 6);
   const consecutiveMisses = computeConsecutiveMisses(allPast, attendedKeys, excusedKeys);
-  const missWarning = attendanceMissWarning(consecutiveMisses);
+  const strikeStats = computeStrikeWindowStats(allPast, attendedKeys, excusedKeys, checkedInAtByKey, now);
+  const missWarning = attendanceMissWarning(strikeStats);
 
   return {
     year,
@@ -628,6 +684,9 @@ async function computeUserAttendanceStats(db, uid, unitId, year, month) {
     attendedCount: attendedPast.length,
     missedCount: missedPast.length,
     consecutiveMisses,
+    missed8Weeks: strikeStats.missed,
+    late8Weeks: strikeStats.late,
+    strikes8Weeks: strikeStats.strikes,
     missWarning,
     attendanceRate: rate,
     insight: rate != null ? attendanceInsight(rate) : null,
@@ -1571,6 +1630,122 @@ function formatVisionPlanText(plan) {
   return lines.join('\n').trim();
 }
 
+/**
+ * Builds a warm, plain-language starter plan (no AI, no jargon) directly from
+ * the leader's vision. Always available, so the vision board works even when
+ * the AI service is unavailable. The leader can edit everything before saving.
+ */
+function buildStarterVisionPlan(visionText, unitLabel, startDate) {
+  const monthName = (offset) => {
+    const d = new Date(startDate.getFullYear(), startDate.getMonth() + offset, 1);
+    return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+  const m1 = monthName(0);
+  const m2 = monthName(1);
+  const m3 = monthName(2);
+  const cleanVision = String(visionText || '').replace(/\s+/g, ' ').trim();
+  const visionLine = cleanVision
+    ? 'Our vision in our own words: "' + cleanVision + '"'
+    : 'Share the vision together as a team.';
+
+  return {
+    milestones: [
+      {
+        title: 'Everyone knows the vision',
+        targetMonth: m1,
+        description:
+          visionLine +
+          ' In the first month, share it with the whole team, pray over it together, and agree on what a good result looks like.',
+      },
+      {
+        title: 'A simple weekly rhythm has started',
+        targetMonth: m1,
+        description:
+          'Pick one or two simple things the team will do every week to move the vision forward, and make sure each person knows their part.',
+      },
+      {
+        title: 'More people are taking part',
+        targetMonth: m2,
+        description:
+          'Invite more members to join in, celebrate the early wins, and gently adjust anything that is not working well.',
+      },
+      {
+        title: 'The vision is reaching more people',
+        targetMonth: m3,
+        description:
+          'Open the work up to bless more people beyond the team, and keep encouraging one another along the way.',
+      },
+      {
+        title: 'We finish strong and give thanks',
+        targetMonth: m3,
+        description:
+          'Look back at how far the team has come, thank everyone for their part, and decide which good habits to keep going.',
+      },
+    ],
+    roadmap: [
+      {
+        phase: m1 + ' — Lay the foundation',
+        focus: 'Prayer, clear vision, and small first steps',
+        steps: [
+          'Meet as a team and pray over the vision together.',
+          'Explain the vision in simple words so everyone understands it.',
+          'Agree on one or two easy goals for this month.',
+          'Give each person a clear, small role.',
+        ],
+      },
+      {
+        phase: m2 + ' — Build momentum',
+        focus: 'Staying steady and growing the team',
+        steps: [
+          'Keep a steady weekly rhythm of meetings and activities.',
+          'Invite more members to join in and help.',
+          'Celebrate small wins to keep everyone encouraged.',
+          'Notice what is working and gently fix what is not.',
+        ],
+      },
+      {
+        phase: m3 + ' — Reach further and last',
+        focus: 'Blessing more people and keeping good habits',
+        steps: [
+          'Reach out to more people beyond the team.',
+          'Review the progress together and give thanks.',
+          'Decide which good habits to keep after the three months.',
+        ],
+      },
+    ],
+    howToGetThere: [
+      'Begin every step with prayer and keep God at the centre.',
+      'Keep the goals small and simple so no one feels overwhelmed.',
+      'Meet regularly and keep talking to one another.',
+      'Share updates often so the whole team feels part of the journey.',
+      'Encourage each other and celebrate every small win.',
+      'Ask members what they enjoy, and let them serve in those areas.',
+    ],
+    toolsAndResources: [
+      {
+        name: 'WhatsApp group',
+        purpose: 'Stay in touch, share reminders, and encourage one another during the week.',
+      },
+      {
+        name: 'Shared prayer list',
+        purpose: 'Pray together for the vision and for one another.',
+      },
+      {
+        name: 'A simple weekly checklist',
+        purpose: 'Keep track of the few things the team wants to do each week.',
+      },
+      {
+        name: 'The Bible and a daily devotional',
+        purpose: 'Keep the team grounded in God’s word while you serve.',
+      },
+      {
+        name: 'A short monthly catch-up',
+        purpose: 'Look back at the progress, give thanks, and plan the next step.',
+      },
+    ],
+  };
+}
+
 const generateNigeriaUnitVision = onCall(
   { cors: true, timeoutSeconds: 120, secrets: [googleGenaiApiKey] },
   async (request) => {
@@ -1600,20 +1775,31 @@ const generateNigeriaUnitVision = onCall(
     try {
       process.env.GOOGLE_GENAI_API_KEY = googleGenaiApiKey.value();
       const { output } = await generateStructured({
-        prompt: `You are helping a DDBS Nigeria ministry unit leader plan the next three months.
-Unit: ${unitLabel}
-Planning period: ${periodLabel}
+        prompt: `You are helping a church volunteer team leader plan the next three months for the "${unitLabel}" team. The planning period is ${periodLabel}.
 
-The leader's vision:
+The leader's vision (in their own words):
 ${visionText}
 
-Generate a practical, faith-centered plan with clear milestones by month, a phased roadmap, concrete steps for how the team will get there, and tools/resources the team should use (apps, channels, habits, templates, prayer rhythms, etc.). Keep language warm and actionable for volunteers.`,
+Write a simple, faith-filled plan with:
+- clear milestones for each month,
+- a step-by-step plan for each month,
+- simple things the team can do to get there,
+- and helpful everyday tools the team can use (like a WhatsApp group, a prayer list, a simple checklist, the Bible, a devotional).
+
+VERY IMPORTANT rules for the wording:
+- Use very simple, everyday English that any volunteer can understand.
+- Do NOT use technical words, business jargon, buzzwords, or abbreviations (avoid words like "KPI", "leverage", "framework", "strategy deck", "onboarding", "stakeholder", "workflow", "optimize", "synergy", "deliverables", "metrics").
+- Write warmly and kindly, as if speaking to a friend at church.
+- Keep sentences short and encouraging.`,
         schema: unitVisionPlanSchema,
       });
-      return { plan: output, aiUsed: true, periodLabel };
+      if (output && Array.isArray(output.milestones) && output.milestones.length) {
+        return { plan: output, aiUsed: true, periodLabel };
+      }
+      return { plan: buildStarterVisionPlan(visionText, unitLabel, periodStart), aiUsed: false, periodLabel };
     } catch (e) {
-      console.warn('[generateNigeriaUnitVision]', e);
-      throw new HttpsError('internal', 'Could not generate plan right now. Try again shortly.');
+      console.warn('[generateNigeriaUnitVision] falling back to starter plan:', String(e && e.message || e).slice(0, 200));
+      return { plan: buildStarterVisionPlan(visionText, unitLabel, periodStart), aiUsed: false, periodLabel };
     }
   }
 );

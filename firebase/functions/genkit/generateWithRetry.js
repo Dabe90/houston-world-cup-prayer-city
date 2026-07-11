@@ -2,8 +2,8 @@
 
 const { createAI } = require('./ai');
 
-/** Prefer stable models; 2.5-flash often 503s under load. */
-const DEFAULT_MODEL_CHAIN = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+/** "-latest" alias tracks the current available flash model; keep dated ones as fallback. */
+const DEFAULT_MODEL_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'];
 
 const MAX_ATTEMPTS_PER_MODEL = 3;
 

@@ -1172,6 +1172,9 @@
       ' requests left (8 weeks). ' +
       escapeHtml(emergencyNote) +
       '</p>' +
+      (!c.canRequestEmergency && quotas.emergencyAvailable
+        ? '<p class="text-[11px] text-violet-700/80 mb-2">Need an emergency absence? The <strong>Emergency</strong> option appears here from 15 minutes before the meeting until it ends.</p>'
+        : '') +
       '<select class="absence-type w-full rounded-lg border border-violet-200 px-2 py-1.5 text-xs mb-2 bg-white">' +
       typeOptions +
       '</select>' +
@@ -1221,11 +1224,75 @@
 
   function planToEditableText(plan) {
     if (!plan) return '';
-    try {
-      return JSON.stringify(plan, null, 2);
-    } catch (e) {
-      return '';
-    }
+    var lines = [];
+    lines.push('MILESTONES');
+    (plan.milestones || []).forEach(function (m) {
+      lines.push(
+        '• [' + (m.targetMonth || '') + '] ' + (m.title || '') + ' :: ' + (m.description || '')
+      );
+    });
+    lines.push('', 'ROADMAP');
+    (plan.roadmap || []).forEach(function (r) {
+      lines.push('## ' + (r.phase || '') + ' :: ' + (r.focus || ''));
+      (r.steps || []).forEach(function (s) {
+        lines.push('- ' + s);
+      });
+    });
+    lines.push('', 'HOW WE WILL GET THERE');
+    (plan.howToGetThere || []).forEach(function (h) {
+      lines.push('• ' + h);
+    });
+    lines.push('', 'HELPFUL TOOLS');
+    (plan.toolsAndResources || []).forEach(function (t) {
+      lines.push('• ' + (t.name || '') + ' :: ' + (t.purpose || ''));
+    });
+    return lines.join('\n');
+  }
+
+  function readableToPlan(text) {
+    var plan = { milestones: [], roadmap: [], howToGetThere: [], toolsAndResources: [] };
+    var section = '';
+    var currentPhase = null;
+    String(text || '')
+      .split(/\r?\n/)
+      .forEach(function (raw) {
+        var line = raw.trim();
+        if (!line) return;
+        var upper = line.toUpperCase();
+        if (upper === 'MILESTONES') { section = 'milestones'; return; }
+        if (upper === 'ROADMAP') { section = 'roadmap'; currentPhase = null; return; }
+        if (upper === 'HOW WE WILL GET THERE') { section = 'how'; return; }
+        if (upper === 'HELPFUL TOOLS') { section = 'tools'; return; }
+
+        if (section === 'milestones' && line.charAt(0) === '\u2022') {
+          var body = line.replace(/^\u2022\s*/, '');
+          var month = '';
+          var mb = body.match(/^\[([^\]]*)\]\s*/);
+          if (mb) { month = mb[1].trim(); body = body.slice(mb[0].length); }
+          var parts = body.split(' :: ');
+          plan.milestones.push({
+            targetMonth: month,
+            title: (parts[0] || '').trim(),
+            description: (parts.slice(1).join(' :: ') || '').trim(),
+          });
+        } else if (section === 'roadmap') {
+          if (line.indexOf('##') === 0) {
+            var pf = line.replace(/^##\s*/, '').split(' :: ');
+            currentPhase = { phase: (pf[0] || '').trim(), focus: (pf.slice(1).join(' :: ') || '').trim(), steps: [] };
+            plan.roadmap.push(currentPhase);
+          } else if (line.charAt(0) === '-') {
+            var step = line.replace(/^-\s*/, '').trim();
+            if (!currentPhase) { currentPhase = { phase: '', focus: '', steps: [] }; plan.roadmap.push(currentPhase); }
+            if (step) currentPhase.steps.push(step);
+          }
+        } else if (section === 'how' && line.charAt(0) === '\u2022') {
+          plan.howToGetThere.push(line.replace(/^\u2022\s*/, '').trim());
+        } else if (section === 'tools' && line.charAt(0) === '\u2022') {
+          var tb = line.replace(/^\u2022\s*/, '').split(' :: ');
+          plan.toolsAndResources.push({ name: (tb[0] || '').trim(), purpose: (tb.slice(1).join(' :: ') || '').trim() });
+        }
+      });
+    return plan;
   }
 
   function visionPanelHtml(c) {
@@ -1237,33 +1304,42 @@
     if (!canEdit && vision && vision.plan) {
       return (
         '<div class="unit-vision mt-5 border-t border-slate-100 pt-4">' +
-        '<h4 class="text-sm font-bold text-slate-900 mb-2"><i class="fas fa-compass text-brand mr-1"></i>3-month unit vision</h4>' +
+        '<h4 class="text-sm font-bold text-slate-900 mb-2"><i class="fas fa-star text-brand mr-1"></i>My Vision Board</h4>' +
         '<p class="text-xs text-slate-500 mb-2">Shared by your unit leader</p>' +
         '<p class="text-sm text-slate-700 whitespace-pre-wrap rounded-xl bg-slate-50 border border-slate-100 p-3 mb-2">' +
         escapeHtml(vision.visionText || '') +
         '</p>' +
-        '<pre class="text-xs text-slate-700 whitespace-pre-wrap rounded-xl bg-emerald-50 border border-emerald-100 p-3 overflow-x-auto">' +
+        '<div class="text-sm text-slate-700 whitespace-pre-wrap rounded-xl bg-emerald-50 border border-emerald-100 p-3 overflow-x-auto">' +
         escapeHtml(vision.planText || planToEditableText(vision.plan)) +
-        '</pre></div>'
+        '</div></div>'
       );
     }
     return (
       '<div class="unit-vision mt-5 border-t border-slate-100 pt-4" data-unit-id="' +
       escapeHtml(c.unitId) +
       '">' +
-      '<h4 class="text-sm font-bold text-slate-900 mb-2"><i class="fas fa-compass text-brand mr-1"></i>3-month unit vision</h4>' +
-      '<p class="text-xs text-slate-500 mb-2">Describe where your unit is headed — we will draft milestones, roadmap, and tools you can edit before publishing to the team.</p>' +
-      '<textarea class="vision-text w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm min-h-[100px] focus:ring-2 focus:ring-ng-green outline-none" placeholder="Our unit will…">' +
+      '<h4 class="text-sm font-bold text-slate-900 mb-1"><i class="fas fa-star text-brand mr-1"></i>My Vision Board</h4>' +
+      '<p class="text-xs text-slate-500 mb-3">Write where your unit is headed in the next 3 months. We\u2019ll turn it into a simple plan on the right that you can edit, then share with your team.</p>' +
+      '<div class="grid gap-4 lg:grid-cols-2">' +
+      '<div>' +
+      '<label class="block text-xs font-semibold text-slate-600 mb-1">Your vision</label>' +
+      '<textarea class="vision-text w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm min-h-[140px] focus:ring-2 focus:ring-ng-green outline-none" placeholder="Our unit will\u2026">' +
       escapeHtml((vision && vision.visionText) || '') +
       '</textarea>' +
       '<div class="flex flex-wrap gap-2 mt-2">' +
-      '<button type="button" class="btn-generate-vision text-xs font-semibold rounded-lg bg-brand text-white px-3 py-2 hover:bg-brand-light">Generate plan</button>' +
-      '<button type="button" class="btn-save-vision text-xs font-semibold rounded-lg bg-ng-green text-white px-3 py-2 hover:bg-emerald-700">Save for team</button>' +
-      '<span class="vision-status text-xs text-slate-500 self-center"></span></div>' +
-      '<label class="block text-xs font-semibold text-slate-600 mt-3 mb-1">Editable plan (JSON — milestones, roadmap, howToGetThere, toolsAndResources)</label>' +
-      '<textarea class="vision-plan w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-mono min-h-[200px] focus:ring-2 focus:ring-ng-green outline-none">' +
+      '<button type="button" class="btn-generate-vision text-xs font-semibold rounded-lg bg-brand text-white px-3 py-2 hover:bg-brand-light">Create my plan</button>' +
+      '<button type="button" class="btn-save-vision text-xs font-semibold rounded-lg bg-ng-green text-white px-3 py-2 hover:bg-emerald-700">Share with team</button>' +
+      '</div>' +
+      '<p class="vision-status text-xs text-slate-500 mt-2"></p>' +
+      '</div>' +
+      '<div>' +
+      '<label class="block text-xs font-semibold text-slate-600 mb-1">Your plan (edit anything, then share)</label>' +
+      '<textarea class="vision-plan w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm min-h-[240px] focus:ring-2 focus:ring-ng-green outline-none" placeholder="Click \u201cCreate my plan\u201d to fill this in\u2026">' +
       escapeHtml((vision && vision.plan && planToEditableText(vision.plan)) || '') +
-      '</textarea></div>'
+      '</textarea>' +
+      '<p class="text-[11px] text-slate-400 mt-1">Tip: keep the section titles (MILESTONES, ROADMAP, HOW WE WILL GET THERE, HELPFUL TOOLS).</p>' +
+      '</div>' +
+      '</div></div>'
     );
   }
 
@@ -1310,17 +1386,24 @@
             if (statusEl) statusEl.textContent = 'Write at least a short vision first.';
             return;
           }
-          if (statusEl) statusEl.textContent = 'Generating…';
+          if (statusEl) statusEl.textContent = 'Creating your plan…';
+          if (genBtn) genBtn.disabled = true;
           functions
             .httpsCallable('generateNigeriaUnitVision')({ unitId: unitId, visionText: visionText })
             .then(function (res) {
               if (planEl && res.data && res.data.plan) {
                 planEl.value = planToEditableText(res.data.plan);
               }
-              if (statusEl) statusEl.textContent = 'Plan ready — edit and save for your team.';
+              if (statusEl) {
+                statusEl.textContent =
+                  'Your plan is ready on the right — edit anything, then share with your team.';
+              }
             })
             .catch(function (err) {
-              if (statusEl) statusEl.textContent = (err && err.message) || 'Generate failed.';
+              if (statusEl) statusEl.textContent = (err && err.message) || 'Could not create a plan. Please try again.';
+            })
+            .finally(function () {
+              if (genBtn) genBtn.disabled = false;
             });
         });
       }
@@ -1329,22 +1412,28 @@
         saveBtn.addEventListener('click', function () {
           var visionText = visionTextEl ? visionTextEl.value.trim() : '';
           var planRaw = planEl ? planEl.value.trim() : '';
-          var plan = null;
-          try {
-            plan = JSON.parse(planRaw);
-          } catch (e) {
-            if (statusEl) statusEl.textContent = 'Plan must be valid JSON.';
+          if (visionText.length < 20) {
+            if (statusEl) statusEl.textContent = 'Please write your vision first.';
             return;
           }
-          if (statusEl) statusEl.textContent = 'Saving…';
+          var plan = readableToPlan(planRaw);
+          if (!plan.milestones.length && !plan.roadmap.length) {
+            if (statusEl) statusEl.textContent = 'Create your plan first (or add a few lines under the section titles).';
+            return;
+          }
+          if (statusEl) statusEl.textContent = 'Sharing…';
+          if (saveBtn) saveBtn.disabled = true;
           functions
             .httpsCallable('saveNigeriaUnitVision')({ unitId: unitId, visionText: visionText, plan: plan })
             .then(function () {
-              if (statusEl) statusEl.textContent = 'Saved — visible to all unit members.';
+              if (statusEl) statusEl.textContent = 'Shared — everyone in your unit can now see it.';
               return loadDashboard();
             })
             .catch(function (err) {
-              if (statusEl) statusEl.textContent = (err && err.message) || 'Save failed.';
+              if (statusEl) statusEl.textContent = (err && err.message) || 'Could not share. Please try again.';
+            })
+            .finally(function () {
+              if (saveBtn) saveBtn.disabled = false;
             });
         });
       }
