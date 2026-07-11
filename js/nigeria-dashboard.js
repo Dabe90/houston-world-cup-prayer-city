@@ -1890,8 +1890,9 @@
         e.preventDefault();
         signInPassword();
       });
+    } else if ($('btn-password-signin')) {
+      $('btn-password-signin').addEventListener('click', signInPassword);
     }
-    if ($('btn-password-signin')) $('btn-password-signin').addEventListener('click', signInPassword);
     if ($('btn-signout')) $('btn-signout').addEventListener('click', function () {
       auth.signOut();
     });
@@ -1980,7 +1981,7 @@
       });
   }
 
-  global.NigeriaDashboard = {
+  window.NigeriaDashboard = {
     openAuthPanel: showAuthPanel,
   };
 
