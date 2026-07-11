@@ -111,10 +111,20 @@
     return path === '' || path === '/' || path === '/index.html';
   }
 
+  function looksLikeNigeriaDevice() {
+    try {
+      var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      return tz === 'Africa/Lagos';
+    } catch (e) {
+      return false;
+    }
+  }
+
   /**
    * Best-effort geo redirect for anonymous visitors on the US root page.
    * Nigerian visitors are sent to the Nigeria hub. Respects an explicit US/NG
    * choice (?stay= or the region cookie) and only checks geo once per session.
+   * Also uses Africa/Lagos timezone when Cloudflare country is unavailable.
    */
   function maybeGeoRedirect() {
     try {
@@ -122,7 +132,8 @@
       if (sessionStorage.getItem(STAY_KEY) === '1') return;
       var region = getRegionCookie();
       if (region === 'us') return;
-      if (region === 'ng') {
+      if (region === 'ng' || looksLikeNigeriaDevice()) {
+        if (region !== 'ng') setRegionCookie('ng');
         window.location.replace(nigeriaHubUrl());
         return;
       }
