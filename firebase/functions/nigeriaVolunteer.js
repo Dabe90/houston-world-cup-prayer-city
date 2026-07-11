@@ -421,7 +421,7 @@ async function provisionNigeriaVolunteerFromOnboarding(db, uid, email) {
 }
 
 async function assertNigeriaVolunteerAccess(db, uid, authToken) {
-  const email = normalizeEmail(authToken?.email);
+  const email = normalizeEmail(authToken?.token?.email || authToken?.email);
   if (email && isSuperUserEmail(email)) {
     const vSnap = await db.collection('volunteers').doc(uid).get();
     const volunteer = vSnap.exists ? { ...vSnap.data() } : { email, name: 'Coordinator' };
