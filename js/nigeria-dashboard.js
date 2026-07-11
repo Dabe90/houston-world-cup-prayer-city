@@ -692,9 +692,12 @@
     var notes = ($('workforce-notes') && $('workforce-notes').value || '').trim();
     var status = $('workforce-status');
     var btn = $('workforce-submit');
-    if (!unitIds.length) {
+        if (!unitIds.length) {
       var hint = $('ng-workforce-unit-hint');
       if (hint) hint.classList.remove('hidden');
+      if (window.NigeriaLanding && NigeriaLanding.openWorkforcePanel) {
+        NigeriaLanding.openWorkforcePanel({ requireUnits: true });
+      }
       if (status) {
         status.textContent = 'Select at least one unit above.';
         status.className = 'text-sm rounded-xl px-3 py-2 border border-red-200 bg-red-50 text-red-800';
