@@ -43,6 +43,17 @@
         linear-gradient(135deg, rgba(0, 135, 81, 0.88) 0%, rgba(15, 61, 92, 0.9) 45%, rgba(26, 95, 138, 0.88) 100%),
         url("https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=1600&q=80") center/cover no-repeat;
     }
+    #hero-billboard { min-height: 300px; }
+    @media (min-width: 640px) { #hero-billboard { min-height: 340px; } }
+    @media (min-width: 1024px) { #hero-billboard { min-height: 400px; } }
+    .hero-flyer-frame {
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hero-flyer-img { max-height: min(72vw, 360px); }
+    @media (min-width: 1024px) { .hero-flyer-img { max-height: 380px; } }
     .verse-font { font-family: Georgia, Cambria, serif; }
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(12px); }
@@ -94,30 +105,19 @@
       </div>
     </nav>
 
-    <header class="hero-mesh text-white relative overflow-hidden">
-      <div class="max-w-7xl mx-auto px-3 sm:px-6 py-8 sm:py-14 lg:py-16">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-center">
-          <div class="animate-fade-up min-w-0">
-            <p class="text-brand-accent font-semibold tracking-wide text-xs sm:text-sm mb-3 sm:mb-4">
-              Dear Daughter Bible Study Group · Nigeria
-            </p>
-            <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-bold leading-[1.15] sm:leading-tight mb-4 sm:mb-6">
-              Teaching the undiluted Word of God across every nation
-            </h1>
-            <p class="text-base sm:text-lg text-white/95 font-medium mb-4 sm:mb-6 max-w-xl">
-              Your unit hub for weekly meetings, mid-week Bible Study, programs, and ministry together — all times in WAT (Nigeria).
-            </p>
-            <p class="verse-font text-white/85 italic text-base sm:text-lg leading-relaxed border-l-4 border-brand-accent pl-4 sm:pl-5">
-              “Your word is a lamp for my feet, a light on my path.” — Psalm 119:105
-            </p>
-          </div>
-          <div class="hidden lg:grid grid-cols-2 gap-3 animate-fade-up" style="animation-delay: 0.15s">
-            <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&q=80&auto=format&fit=crop" alt="Young people studying together" class="rounded-2xl object-cover h-44 w-full shadow-lift border border-white/20" loading="lazy" />
-            <img src="https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=400&q=80&auto=format&fit=crop" alt="Open Bible study" class="rounded-2xl object-cover h-44 w-full shadow-lift border border-white/20 mt-8" loading="lazy" />
-            <img src="https://images.unsplash.com/photo-1529390079861-591de354faf5?w=400&q=80&auto=format&fit=crop" alt="Community in fellowship" class="rounded-2xl object-cover h-44 w-full shadow-lift border border-white/20 -mt-4" loading="lazy" />
-            <img src="https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=400&q=80&auto=format&fit=crop" alt="Reading scripture" class="rounded-2xl object-cover h-44 w-full shadow-lift border border-white/20" loading="lazy" />
-          </div>
-        </div>
+    <header id="hero-billboard" class="relative overflow-hidden text-white" aria-roledescription="carousel" aria-label="DDBS Nigeria highlights">
+      <div class="overflow-hidden">
+        <div data-hero-track class="flex will-change-transform"></div>
+      </div>
+      <div class="absolute inset-x-0 bottom-0 pointer-events-none bg-gradient-to-t from-black/25 to-transparent h-16 sm:h-20" aria-hidden="true"></div>
+      <div class="absolute bottom-3 sm:bottom-4 left-0 right-0 flex items-center justify-center gap-3 sm:gap-4 px-4 pointer-events-none">
+        <button type="button" data-hero-prev class="pointer-events-auto w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur border border-white/30 flex items-center justify-center transition" aria-label="Previous slide">
+          <i class="fas fa-chevron-left text-sm" aria-hidden="true"></i>
+        </button>
+        <div data-hero-dots class="pointer-events-auto flex items-center gap-1.5 sm:gap-2"></div>
+        <button type="button" data-hero-next class="pointer-events-auto w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur border border-white/30 flex items-center justify-center transition" aria-label="Next slide">
+          <i class="fas fa-chevron-right text-sm" aria-hidden="true"></i>
+        </button>
       </div>
     </header>
 
@@ -249,7 +249,7 @@
 
           <nav id="dash-tabs" class="flex flex-wrap gap-2" aria-label="Dashboard sections">
             <button type="button" class="tab-btn active text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="home">Home</button>
-            <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="programs">Programs</button>
+            <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="programs" id="programs">Programs</button>
             <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="units">My units</button>
             <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="reports">Reports</button>
           </nav>
@@ -295,6 +295,7 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="js/ddbs-nigeria-hero-billboard.js"></script>
   <script src="js/nigeria-units.js"></script>
   <script src="js/ddbs-nigeria-programs.js"></script>
   <script src="js/ddbs-nigeria-meeting-notes.js"></script>
