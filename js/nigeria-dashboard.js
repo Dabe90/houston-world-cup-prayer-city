@@ -9,7 +9,9 @@
   var activeTab = 'home';
   var PREVIEW_PROFILE_KEY = 'ddbsNigeriaPreviewProfile';
   var AUTH_PANEL_OPEN_KEY = 'ngAuthPanelOpen';
-  var EMAIL_LINK_CONTINUE_URL = window.location.origin + window.location.pathname;
+  // Always land email links on the Nigeria hub (not the US root). A wrong
+  // continue URL + geo-redirect used to strip ?oobCode= and break sign-in.
+  var EMAIL_LINK_CONTINUE_URL = 'https://prayercityhtx.com/ddbs-nig.html';
   var SELF_SERVE_SIGNIN_URL =
     'https://us-central1-bible-study-dashboard-99f2d.cloudfunctions.net/volunteerSelfServeSignInMail';
   var SUPER_USER_EMAILS = {
@@ -125,7 +127,7 @@
     return fetch(SELF_SERVE_SIGNIN_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email }),
+      body: JSON.stringify({ email: email, continueUrl: EMAIL_LINK_CONTINUE_URL }),
     })
       .then(function (r) {
         return r.text().then(function (t) {
@@ -211,6 +213,16 @@
     if (!cfg || !cfg.apiKey) {
       show($('setup-banner'));
       hide($('app-main'));
+      return Promise.resolve(false);
+    }
+    if (typeof firebase === 'undefined') {
+      show($('setup-banner'));
+      var banner = $('setup-banner');
+      if (banner) {
+        banner.innerHTML =
+          '<p class="font-semibold">Sign-in could not load on this network.</p>' +
+          '<p class="mt-2 text-amber-800/90">Please try again on mobile data or another Wi‑Fi, or open <a class="underline font-medium" href="https://prayercityhtx.com/ddbs-nig.html">prayercityhtx.com/ddbs-nig.html</a> directly. If it keeps failing, message us on Instagram <a href="https://www.instagram.com/deardaughter_bs" class="underline font-medium">@deardaughter_bs</a>.</p>';
+      }
       return Promise.resolve(false);
     }
     if (!firebase.apps.length) firebase.initializeApp(cfg);
@@ -2458,16 +2470,33 @@
     if (!firebase.auth().isSignInWithEmailLink(window.location.href)) {
       return Promise.resolve(false);
     }
-    var email = window.localStorage.getItem('emailForSignIn') || window.prompt('Your email:');
-    if (!email) return Promise.resolve(false);
+    var email = window.localStorage.getItem('emailForSignIn');
+    if (!email) {
+      email = window.prompt('Confirm the email address that received the sign-in link:');
+    }
+    if (!email) {
+      setAuthPanelStatus('Enter the same email the link was sent to, then open the link again.', 'error');
+      showAuthPanel(true);
+      return Promise.resolve(false);
+    }
+    setAuthPanelStatus('Completing sign-in…', 'info');
+    showAuthPanel(false);
     return auth
       .signInWithEmailLink(email, window.location.href)
       .then(function () {
         window.localStorage.removeItem('emailForSignIn');
         window.history.replaceState({}, document.title, window.location.pathname);
+        setAuthPanelStatus('Signed in — loading your hub…', 'success');
+        return true;
       })
       .catch(function (e) {
-        setStatus(e.message, 'error');
+        var msg = (e && e.message) || 'Sign-in link failed.';
+        if (e && (e.code === 'auth/invalid-action-code' || e.code === 'auth/expired-action-code')) {
+          msg = 'This sign-in link is expired or already used. Request a new one below.';
+        }
+        setAuthPanelStatus(msg, 'error');
+        showAuthPanel(true);
+        return false;
       });
   }
 

@@ -12,6 +12,24 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
+    // If the Tailwind CDN is blocked/slow (common on some networks), keep the page usable.
+    (function () {
+      var failed = false;
+      function showFallbackNote() {
+        if (failed) return;
+        failed = true;
+        document.documentElement.classList.add('tw-fallback');
+      }
+      window.addEventListener('error', function (ev) {
+        var t = ev && ev.target;
+        if (t && t.src && String(t.src).indexOf('cdn.tailwindcss.com') !== -1) showFallbackNote();
+      }, true);
+      setTimeout(function () {
+        if (!window.tailwind) showFallbackNote();
+      }, 8000);
+    })();
+  </script>
+  <script>
     tailwind.config = {
       theme: {
         extend: {
@@ -33,20 +51,23 @@
     };
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260711j" />
-  <link rel="stylesheet" href="css/billion-countdown.css?v=20260711j" />
-  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260711j" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260711k" />
+  <link rel="stylesheet" href="css/billion-countdown.css?v=20260711k" />
+  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260711k" />
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
-  <script src="js/firebase-config.js?v=20260711j"></script>
+  <script src="js/firebase-config.js?v=20260711k"></script>
   <style>
+    /* Critical layout + Tailwind utilities we rely on even if the CDN fails */
     body { font-family: "Plus Jakarta Sans", system-ui, sans-serif; }
+    .hidden { display: none !important; }
     .app-shell { min-height: calc(100vh - 4rem); }
     .sidebar-sticky { position: sticky; top: 3.75rem; max-height: calc(100vh - 4.5rem); overflow-y: auto; }
     .tab-btn.active { background: #008751; color: #fff; border-color: #008751; }
+    .tw-fallback #setup-banner { display: block !important; }
   </style>
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800 overflow-x-hidden font-sans antialiased pb-[4.5rem] lg:pb-0">
@@ -605,17 +626,17 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="js/billion-countdown.js?v=20260711j"></script>
-  <script src="js/nigeria-units.js?v=20260711j"></script>
-  <script src="js/ddbs-nigeria-programs.js?v=20260711j"></script>
-  <script src="js/ddbs-nigeria-meeting-notes.js?v=20260711j"></script>
-  <script src="js/monthly-unit-report.js?v=20260711j"></script>
-  <script src="js/nigeria-dashboard-report.js?v=20260711j"></script>
-  <script src="js/prayer-city-super-user.js?v=20260711j"></script>
-  <script src="js/nigeria-gallery-manifest.js?v=20260711j"></script>
-  <script src="js/ddbs-nigeria-hero-billboard.js?v=20260711j"></script>
-  <script src="js/nigeria-landing.js?v=20260711j"></script>
-  <script src="js/nigeria-dashboard.js?v=20260711j"></script>
+  <script src="js/billion-countdown.js?v=20260711k"></script>
+  <script src="js/nigeria-units.js?v=20260711k"></script>
+  <script src="js/ddbs-nigeria-programs.js?v=20260711k"></script>
+  <script src="js/ddbs-nigeria-meeting-notes.js?v=20260711k"></script>
+  <script src="js/monthly-unit-report.js?v=20260711k"></script>
+  <script src="js/nigeria-dashboard-report.js?v=20260711k"></script>
+  <script src="js/prayer-city-super-user.js?v=20260711k"></script>
+  <script src="js/nigeria-gallery-manifest.js?v=20260711k"></script>
+  <script src="js/ddbs-nigeria-hero-billboard.js?v=20260711k"></script>
+  <script src="js/nigeria-landing.js?v=20260711k"></script>
+  <script src="js/nigeria-dashboard.js?v=20260711k"></script>
   <script>
     if (window.BillionCountdown) {
       if (document.getElementById("landing-billion-countdown")) {

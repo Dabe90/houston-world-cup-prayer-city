@@ -62,13 +62,29 @@
     document.cookie = REGION_COOKIE + '=; Path=/; Max-Age=0; SameSite=Lax';
   }
 
+  function nigeriaHubUrl(extraSearch, extraHash) {
+    var url = NIGERIA_HUB;
+    var search = extraSearch != null ? extraSearch : window.location.search || '';
+    var hash = extraHash != null ? extraHash : window.location.hash || '';
+    // Avoid duplicating ?stay= when we already have a cookie destination.
+    try {
+      if (search) {
+        var params = new URLSearchParams(search.charAt(0) === '?' ? search.slice(1) : search);
+        params.delete('stay');
+        var cleaned = params.toString();
+        search = cleaned ? '?' + cleaned : '';
+      }
+    } catch (ignore) {}
+    return url + search + hash;
+  }
+
   function maybeRedirectToNigeriaHub(volunteerData, email) {
     if (!shouldAutoRouteToNigeria(volunteerData, email)) return false;
     var path = (window.location.pathname || '').toLowerCase();
     if (path.indexOf('ddbs-nig') !== -1 || path.indexOf('nigeria-dashboard') !== -1) {
       return false;
     }
-    window.location.assign(NIGERIA_HUB);
+    window.location.assign(nigeriaHubUrl());
     return true;
   }
 
@@ -107,7 +123,7 @@
       var region = getRegionCookie();
       if (region === 'us') return;
       if (region === 'ng') {
-        window.location.replace(NIGERIA_HUB);
+        window.location.replace(nigeriaHubUrl());
         return;
       }
       if (sessionStorage.getItem(GEO_DONE_KEY) === '1') return;
@@ -121,7 +137,7 @@
           var m = /(?:^|\n)loc=([A-Z]{2})/.exec(txt || '');
           if (m && m[1] === 'NG') {
             setRegionCookie('ng');
-            window.location.replace(NIGERIA_HUB);
+            window.location.replace(nigeriaHubUrl());
           }
         })
         .catch(function () {});

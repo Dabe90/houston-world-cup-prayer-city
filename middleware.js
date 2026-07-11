@@ -3,6 +3,9 @@
  * - Nigeria (NG) → ddbs-nig.html
  * - US / other → index.html (default)
  * Overrides: ?stay=us | ?stay=ng | prayer_city_region cookie
+ *
+ * IMPORTANT: always preserve the query string when redirecting. Email sign-in
+ * links land on / with ?mode=signIn&oobCode=… — dropping those params breaks login.
  */
 const REGION_COOKIE = 'prayer_city_region';
 const MAX_AGE = 60 * 60 * 24 * 365;
@@ -27,6 +30,12 @@ function isRootPath(pathname) {
   return pathname === '/' || pathname === '/index.html';
 }
 
+function withSameQuery(dest, sourceUrl) {
+  dest.search = sourceUrl.search;
+  dest.hash = sourceUrl.hash;
+  return dest;
+}
+
 export default function middleware(request) {
   const url = new URL(request.url);
   if (!isRootPath(url.pathname)) {
@@ -49,16 +58,16 @@ export default function middleware(request) {
   const goNigeria = pref === 'ng' || (pref !== 'us' && country === 'NG');
 
   if (goNigeria) {
-    const dest = new URL('/ddbs-nig.html', url.origin);
+    const dest = withSameQuery(new URL('/ddbs-nig.html', url.origin), url);
     const headers = new Headers({ Location: dest.href });
-    if (stay === 'ng' || pref === 'ng') {
+    if (stay === 'ng' || pref === 'ng' || country === 'NG') {
       headers.append('Set-Cookie', cookieLine('ng', url));
     }
     return new Response(null, { status: 307, headers });
   }
 
   if (stay === 'us') {
-    const dest = new URL('/', url.origin);
+    const dest = withSameQuery(new URL('/', url.origin), url);
     const headers = new Headers({ Location: dest.href });
     headers.append('Set-Cookie', cookieLine('us', url));
     return new Response(null, { status: 302, headers });

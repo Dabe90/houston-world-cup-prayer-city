@@ -27,8 +27,38 @@ const selfServeMailSecret = defineSecret('SELF_SERVE_MAIL_SECRET');
 const appsScriptSelfServeMailUrl = defineSecret('APPS_SCRIPT_SELF_SERVE_MAIL_URL');
 
 /** Must match where users land after clicking the email link (your live dashboard URL). */
-const SIGNIN_CONTINUE_URL =
-  'https://prayercityhtx.com/';
+const SIGNIN_CONTINUE_URL = 'https://prayercityhtx.com/';
+
+function resolveSignInContinueUrl(raw) {
+  const fallback = SIGNIN_CONTINUE_URL;
+  const input = String(raw || '').trim();
+  if (!input) return fallback;
+  try {
+    const u = new URL(input);
+    const host = u.hostname.toLowerCase();
+    if (host !== 'prayercityhtx.com' && host !== 'www.prayercityhtx.com') {
+      return fallback;
+    }
+    // Normalize www → apex so Firebase authorized domains stay consistent.
+    u.protocol = 'https:';
+    u.hostname = 'prayercityhtx.com';
+    u.hash = '';
+    // Only allow known site paths (never arbitrary open redirect).
+    const path = u.pathname || '/';
+    if (
+      path === '/' ||
+      path === '/index.html' ||
+      path === '/ddbs-nig.html' ||
+      path === '/volunteer-hub.html' ||
+      path.startsWith('/volunteer/')
+    ) {
+      return u.origin + (path === '/index.html' ? '/' : path);
+    }
+    return fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
 
 setGlobalOptions({ region: 'us-central1' });
 
@@ -197,11 +227,32 @@ selfServeApp.post('/', async (req, res) => {
     .doc(email)
     .get();
 
-  if (!onboardSnap.exists) {
+  let registered = onboardSnap.exists;
+  if (!registered) {
+    const volSnap = await admin
+      .firestore()
+      .collection('volunteers')
+      .where('email', '==', email)
+      .limit(1)
+      .get();
+    registered = !volSnap.empty;
+  }
+  // Also allow Nigeria hub profiles (signed up via Nigeria path).
+  if (!registered) {
+    const ngSnap = await admin
+      .firestore()
+      .collection('nigeria_volunteers')
+      .where('email', '==', email)
+      .limit(1)
+      .get();
+    registered = !ngSnap.empty;
+  }
+
+  if (!registered) {
     res.status(404).json({
       error: 'not_registered',
       message:
-        'No volunteer record for this email yet. Ask an organizer to send your invite from the sheet, or use the link from your original signup email.',
+        'No volunteer record for this email yet. Join the Kingdom Workforce or ask an organizer to clear you, then try again with the same email.',
     });
     return;
   }
@@ -219,8 +270,9 @@ selfServeApp.post('/', async (req, res) => {
     }
   }
 
+  const continueUrl = resolveSignInContinueUrl(req.body?.continueUrl);
   const actionCodeSettings = {
-    url: SIGNIN_CONTINUE_URL,
+    url: continueUrl,
     handleCodeInApp: true,
   };
 
