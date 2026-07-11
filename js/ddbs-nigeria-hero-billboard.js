@@ -113,14 +113,18 @@
         '<div class="min-w-0">' +
         '<p class="hero-anim hero-anim-1 hero-eyebrow text-brand-accent font-semibold uppercase text-[10px] sm:text-xs mb-3 sm:mb-4">Dear Daughter Bible Study Group · Nigeria</p>' +
         '<h1 class="hero-anim hero-anim-2 hero-headline text-2xl sm:text-3xl md:text-4xl lg:text-[2.75rem] font-display font-semibold leading-[1.12] mb-4 sm:mb-6">Teaching the undiluted Word of God across every nation</h1>' +
-        '<p class="hero-anim hero-anim-3 text-base sm:text-lg text-white/95 font-medium mb-4 sm:mb-6 max-w-xl leading-relaxed">Your unit hub for weekly meetings, mid-week Bible Study, programs, and ministry together — all times in WAT (Nigeria).</p>' +
+        '<p class="hero-anim hero-anim-3 text-base sm:text-lg text-white/95 font-medium mb-4 sm:mb-6 max-w-xl leading-relaxed">Reaching <strong class="text-brand-accent">one billion souls for Christ</strong> by December 31, 2030 — teaching the undiluted Word of God to all nations of the World.</p>' +
+        '<div class="hero-anim hero-anim-5 flex flex-wrap gap-3 mb-4 sm:mb-6">' +
+        '<a href="#join" class="inline-flex items-center gap-2 rounded-full bg-white text-brand font-bold text-sm px-5 py-2.5 shadow-lift hover:scale-[1.03] transition-transform">Join us <i class="fas fa-arrow-right text-xs"></i></a>' +
+        '<a href="#programs" class="inline-flex items-center gap-2 rounded-full bg-white/15 border border-white/35 text-white font-semibold text-sm px-5 py-2.5 hover:bg-white/25 transition">Upcoming programs</a>' +
+        '</div>' +
         '<p class="hero-anim hero-anim-4 font-verse italic text-white/90 text-lg sm:text-xl leading-relaxed border-l-4 border-brand-accent pl-4 sm:pl-5">“Your word is a lamp for my feet, a light on my path.” — Psalm 119:105</p>' +
         '</div>' +
         '<div class="hidden lg:grid grid-cols-2 gap-3">' +
-        '<img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&amp;q=80&amp;auto=format&amp;fit=crop" alt="Young people studying together" class="hero-photo-tile rounded-2xl object-cover h-40 w-full shadow-lift border border-white/20" loading="lazy" />' +
-        '<img src="https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=400&amp;q=80&amp;auto=format&amp;fit=crop" alt="Open Bible study" class="hero-photo-tile rounded-2xl object-cover h-40 w-full shadow-lift border border-white/20 mt-8" loading="lazy" style="animation-delay:-3s" />' +
-        '<img src="https://images.unsplash.com/photo-1529390079861-591de354faf5?w=400&amp;q=80&amp;auto=format&amp;fit=crop" alt="Community in fellowship" class="hero-photo-tile rounded-2xl object-cover h-40 w-full shadow-lift border border-white/20 -mt-4" loading="lazy" style="animation-delay:-6s" />' +
-        '<img src="https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=400&amp;q=80&amp;auto=format&amp;fit=crop" alt="Reading scripture" class="hero-photo-tile rounded-2xl object-cover h-40 w-full shadow-lift border border-white/20" loading="lazy" style="animation-delay:-9s" />' +
+        '<img src="images/prayer-city-day2-team.jpeg" alt="Jesus March Nigeria — team on the move" class="hero-photo-tile rounded-2xl object-cover h-40 w-full shadow-lift border border-white/20" loading="lazy" />' +
+        '<img src="images/prayer-city-outreach-signs.jpeg" alt="Jesus March Nigeria — outreach" class="hero-photo-tile rounded-2xl object-cover h-40 w-full shadow-lift border border-white/20 mt-8" loading="lazy" style="animation-delay:-3s" />' +
+        '<img src="images/prayer-city-day2-team.jpeg" alt="Jesus March Nigeria — worship and prayer" class="hero-photo-tile rounded-2xl object-cover h-40 w-full shadow-lift border border-white/20 -mt-4" loading="lazy" style="animation-delay:-6s" />' +
+        '<img src="images/prayer-city-outreach-signs.jpeg" alt="Jesus March Nigeria — carrying the Word" class="hero-photo-tile rounded-2xl object-cover h-40 w-full shadow-lift border border-white/20" loading="lazy" style="animation-delay:-9s" />' +
         '</div></div></div></article>'
       );
     }

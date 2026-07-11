@@ -26,6 +26,17 @@
     if (el) el.classList.add('hidden');
   }
 
+  function setPublicLanding(show) {
+    if (window.NigeriaLanding && NigeriaLanding.setVisible) {
+      NigeriaLanding.setVisible(show);
+    } else {
+      var wrap = $('ng-public-landing');
+      var hero = $('hero-billboard');
+      if (wrap) wrap.classList.toggle('hidden', !show);
+      if (hero) hero.classList.toggle('hidden', !show);
+    }
+  }
+
   function setStatus(msg, type) {
     var el = $('ng-status');
     if (!el) return;
@@ -133,11 +144,13 @@
     document.querySelectorAll('.tab-btn').forEach(function (btn) {
       btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
     });
-    ['home', 'programs', 'units', 'reports'].forEach(function (name) {
+    ['home', 'programs', 'units', 'new-members', 'kingdom-workforce', 'reports'].forEach(function (name) {
       var panel = $('tab-' + name);
       if (panel) panel.classList.toggle('hidden', name !== tab);
     });
     if (tab === 'programs') renderProgramsPanel();
+    if (tab === 'new-members' && dashboardData) renderNewMembersTab();
+    if (tab === 'kingdom-workforce' && dashboardData) renderWorkforceTab();
     if (tab === 'reports' && dashboardData) renderReportsTab(dashboardData);
     try {
       var path = window.location.pathname;
@@ -254,6 +267,37 @@
     });
   }
 
+  function canViewMemberSignupsLocal(profile, isSuperUser) {
+    if (isSuperUser) return true;
+    var viewerUnits = { 'welcome-hospitality': true, 'growth-retention': true };
+    return normalizeProfileUnits(profile).some(function (u) {
+      return u.role === 'leader' && viewerUnits[u.unitId];
+    });
+  }
+
+  function workforceAccessLocal(profile, isSuperUser) {
+    if (isSuperUser) {
+      return { canView: true, canApprove: true, leaderUnitIds: null };
+    }
+    var canApprove = normalizeProfileUnits(profile).some(function (u) {
+      return u.unitId === 'workers-coordinator' && u.role === 'leader';
+    });
+    var leaderUnitIds = normalizeProfileUnits(profile)
+      .filter(function (u) {
+        return u.role === 'leader';
+      })
+      .map(function (u) {
+        return u.unitId;
+      });
+    if (canApprove) {
+      return { canView: true, canApprove: true, leaderUnitIds: leaderUnitIds };
+    }
+    if (leaderUnitIds.length) {
+      return { canView: true, canApprove: false, leaderUnitIds: leaderUnitIds };
+    }
+    return { canView: false, canApprove: false, leaderUnitIds: [] };
+  }
+
   function buildLocalDashboard(profile, isSuperUser) {
     var units = normalizeProfileUnits(profile);
     var unitIds =
@@ -268,6 +312,8 @@
       hasProfile: true,
       eligible: true,
       isSuperUser: isSuperUser,
+      canViewMemberSignups: canViewMemberSignupsLocal(profile, isSuperUser),
+      workforceAccess: workforceAccessLocal(profile, isSuperUser),
       profile: Object.assign({}, profile, { units: units, unitIds: unitIds }),
       unitContexts: unitContexts,
       nextMeeting: primary ? primary.nextMeeting : null,
@@ -329,7 +375,9 @@
   function programTileHtml(ev) {
     var P = window.DDBSNigeriaPrograms;
     if (!P) return '';
-    var enriched = ev.image ? ev : P.enrichEvent(ev);
+    var enriched = ev.displayImage ? ev : P.enrichEvent(ev);
+    var img = enriched.displayImage || enriched.image;
+    var hasFlyer = !!enriched.hasFlyer;
     var badge =
       enriched.kind === 'midweek'
         ? 'bg-emerald-500/90'
@@ -342,11 +390,19 @@
           : 'Coming up';
     var slotClass =
       enriched.slot === 'past' ? 'bg-slate-600/90' : badge;
+    var imgClass = hasFlyer
+      ? 'absolute inset-0 w-full h-full object-contain p-3 bg-white/95 transition-transform duration-300 group-hover:scale-[1.02]'
+      : 'absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105';
+    var minH = hasFlyer ? 'min-h-[240px] sm:min-h-[260px]' : 'min-h-[200px] sm:min-h-[220px]';
     return (
-      '<article class="program-card group relative rounded-2xl overflow-hidden shadow-card border border-slate-200/80 min-h-[200px] sm:min-h-[220px]">' +
+      '<article class="program-card group relative rounded-2xl overflow-hidden shadow-card border border-slate-200/80 ' +
+      minH +
+      '">' +
       '<img src="' +
-      enriched.image +
-      '" alt="" class="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" onerror="this.src=\'' +
+      img +
+      '" alt="" class="' +
+      imgClass +
+      '" loading="lazy" onerror="this.src=\'' +
       P.themeForEvent({ title: '', kind: 'special' }).image +
       '\'" />' +
       '<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10"></div>' +
@@ -392,6 +448,371 @@
       };
     }
     return { key: ctx.unitId + '_hub', dateYmd: '' };
+  }
+
+  function formatSignupDate(iso) {
+    if (!iso) return '—';
+    try {
+      return new Date(iso).toLocaleString('en-NG', {
+        timeZone: 'Africa/Lagos',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      });
+    } catch (e) {
+      return iso;
+    }
+  }
+
+  function renderNewMembersTab() {
+    var list = $('new-members-list');
+    if (!list || !functions) return;
+    list.innerHTML =
+      '<p class="text-slate-500"><i class="fas fa-spinner fa-spin mr-2"></i>Loading sign-ups…</p>';
+    functions
+      .httpsCallable('getNigeriaMemberSignups')()
+      .then(function (res) {
+        var signups = (res.data && res.data.signups) || [];
+        if (!signups.length) {
+          list.innerHTML = '<p class="text-slate-500">No new sign-ups yet.</p>';
+          return;
+        }
+        list.innerHTML = signups
+          .map(function (s) {
+            var esc = function (x) {
+              return String(x || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+            };
+            return (
+              '<div class="rounded-xl border border-slate-100 p-4 bg-slate-50/50">' +
+              '<div class="flex flex-wrap justify-between gap-2 mb-2">' +
+              '<p class="font-semibold text-slate-900">' +
+              esc(s.name || '—') +
+              '</p>' +
+              '<p class="text-xs text-slate-500">' +
+              formatSignupDate(s.createdAt) +
+              '</p></div>' +
+              '<p class="text-sm"><a class="text-brand font-medium" href="mailto:' +
+              esc(s.email || '') +
+              '">' +
+              esc(s.email || '—') +
+              '</a> · ' +
+              esc(s.phone || '—') +
+              '</p>' +
+              (s.city ? '<p class="text-xs text-slate-600 mt-1">' + esc(s.city) + '</p>' : '') +
+              (s.interest ? '<p class="text-xs text-slate-600 mt-1">Interest: ' + esc(s.interest) + '</p>' : '') +
+              (s.notes ? '<p class="text-xs text-slate-500 mt-2 italic">' + esc(s.notes) + '</p>' : '') +
+              '</div>'
+            );
+          })
+          .join('');
+      })
+      .catch(function (e) {
+        list.innerHTML =
+          '<p class="text-red-700 text-sm">' + (e.message || 'Could not load sign-ups.') + '</p>';
+      });
+  }
+
+  function updateNewMembersTabVisibility(data) {
+    var btn = $('tab-btn-new-members');
+    if (!btn) return;
+    if (data && data.canViewMemberSignups) {
+      btn.classList.remove('hidden');
+    } else {
+      btn.classList.add('hidden');
+      if (activeTab === 'new-members') switchTab('home');
+    }
+  }
+
+  function updateWorkforceTabVisibility(data) {
+    var btn = $('tab-btn-kingdom-workforce');
+    if (!btn) return;
+    var access = data && data.workforceAccess;
+    if (access && access.canView) {
+      btn.classList.remove('hidden');
+    } else {
+      btn.classList.add('hidden');
+      if (activeTab === 'kingdom-workforce') switchTab('home');
+    }
+  }
+
+  function workforceStatusLabel(status) {
+    if (status === 'approved') return 'Cleared for hub access';
+    if (status === 'in_training') return 'In Workers Training Class';
+    return 'Pending Workers Training Class';
+  }
+
+  function workforceStatusClass(status) {
+    if (status === 'approved') return 'bg-emerald-100 text-emerald-800';
+    if (status === 'in_training') return 'bg-sky-100 text-sky-800';
+    return 'bg-amber-100 text-amber-800';
+  }
+
+  function renderWorkforceTab() {
+    var list = $('kingdom-workforce-list');
+    if (!list || !functions) return;
+    list.innerHTML =
+      '<p class="text-slate-500"><i class="fas fa-spinner fa-spin mr-2"></i>Loading enlistments…</p>';
+    functions
+      .httpsCallable('getNigeriaWorkforceSignups')()
+      .then(function (res) {
+        var signups = (res.data && res.data.signups) || [];
+        var canApprove = !!(res.data && res.data.canApprove);
+        if (!signups.length) {
+          list.innerHTML = '<p class="text-slate-500">No Kingdom Workforce enlistments yet.</p>';
+          return;
+        }
+        list.innerHTML = signups
+          .map(function (s) {
+            var esc = function (x) {
+              return String(x || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+            };
+            var units = (s.units || [])
+              .map(function (u) {
+                return esc(u.unitLabel || u.unitId || '');
+              })
+              .join(', ');
+            var actions = '';
+            if (canApprove && s.status !== 'approved') {
+              if (s.status === 'pending_training') {
+                actions +=
+                  '<button type="button" class="btn-wf-in-training rounded-lg bg-sky-600 text-white text-xs font-semibold px-3 py-2 hover:bg-sky-700" data-id="' +
+                  esc(s.id) +
+                  '">Mark in training</button>';
+              }
+              actions +=
+                '<button type="button" class="btn-wf-approve rounded-lg bg-ng-green text-white text-xs font-semibold px-3 py-2 hover:bg-emerald-700" data-id="' +
+                esc(s.id) +
+                '">Greenlight hub access</button>';
+            }
+            return (
+              '<div class="rounded-xl border border-slate-100 p-4 bg-slate-50/50" data-wf-id="' +
+              esc(s.id) +
+              '">' +
+              '<div class="flex flex-wrap justify-between gap-2 mb-2">' +
+              '<p class="font-semibold text-slate-900">' +
+              esc(s.name || '—') +
+              '</p>' +
+              '<span class="text-[10px] font-bold uppercase rounded-full px-2 py-1 ' +
+              workforceStatusClass(s.status) +
+              '">' +
+              workforceStatusLabel(s.status) +
+              '</span></div>' +
+              '<p class="text-xs text-slate-500 mb-2">' +
+              formatSignupDate(s.createdAt) +
+              '</p>' +
+              '<p class="text-sm"><a class="text-brand font-medium" href="mailto:' +
+              esc(s.email || '') +
+              '">' +
+              esc(s.email || '—') +
+              '</a> · ' +
+              esc(s.phone || '—') +
+              '</p>' +
+              (s.city ? '<p class="text-xs text-slate-600 mt-1">' + esc(s.city) + '</p>' : '') +
+              (units ? '<p class="text-xs text-slate-600 mt-1"><strong>Units:</strong> ' + units + '</p>' : '') +
+              (s.notes ? '<p class="text-xs text-slate-500 mt-2 italic">' + esc(s.notes) + '</p>' : '') +
+              (actions
+                ? '<div class="flex flex-wrap gap-2 mt-3">' + actions + '</div>'
+                : '') +
+              '</div>'
+            );
+          })
+          .join('');
+
+        list.querySelectorAll('.btn-wf-in-training').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            markWorkforceInTraining(btn.getAttribute('data-id'), btn);
+          });
+        });
+        list.querySelectorAll('.btn-wf-approve').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            approveWorkforceSignup(btn.getAttribute('data-id'), btn);
+          });
+        });
+      })
+      .catch(function (e) {
+        list.innerHTML =
+          '<p class="text-red-700 text-sm">' + (e.message || 'Could not load enlistments.') + '</p>';
+      });
+  }
+
+  function markWorkforceInTraining(signupId, btn) {
+    if (!signupId || !functions) return;
+    if (btn) btn.disabled = true;
+    functions
+      .httpsCallable('markNigeriaWorkforceInTraining')({ signupId: signupId })
+      .then(function () {
+        renderWorkforceTab();
+      })
+      .catch(function (e) {
+        alert(e.message || 'Could not update status.');
+        if (btn) btn.disabled = false;
+      });
+  }
+
+  function approveWorkforceSignup(signupId, btn) {
+    if (!signupId || !functions) return;
+    if (
+      !window.confirm(
+        'Greenlight this worker for hub sign-in? They should have completed Workers Training Class.'
+      )
+    ) {
+      return;
+    }
+    if (btn) btn.disabled = true;
+    functions
+      .httpsCallable('approveNigeriaWorkforceSignup')({ signupId: signupId })
+      .then(function () {
+        renderWorkforceTab();
+      })
+      .catch(function (e) {
+        alert(e.message || 'Could not approve.');
+        if (btn) btn.disabled = false;
+      });
+  }
+
+  function submitWorkforceSignup(ev) {
+    if (ev) ev.preventDefault();
+    var form = $('ng-workforce-form');
+    if (!form || !functions) return;
+    var unitIds =
+      window.NigeriaLanding && NigeriaLanding.getWorkforceUnitIds
+        ? NigeriaLanding.getWorkforceUnitIds()
+        : [];
+    var name = ($('workforce-name') && $('workforce-name').value || '').trim();
+    var email = ($('workforce-email') && $('workforce-email').value || '').trim();
+    var phone = ($('workforce-phone') && $('workforce-phone').value || '').trim();
+    var city = ($('workforce-city') && $('workforce-city').value || '').trim();
+    var notes = ($('workforce-notes') && $('workforce-notes').value || '').trim();
+    var status = $('workforce-status');
+    var btn = $('workforce-submit');
+    if (!unitIds.length) {
+      var hint = $('ng-workforce-unit-hint');
+      if (hint) hint.classList.remove('hidden');
+      if (status) {
+        status.textContent = 'Select at least one unit above.';
+        status.className = 'text-sm rounded-xl px-3 py-2 border border-red-200 bg-red-50 text-red-800';
+        status.classList.remove('hidden');
+      }
+      return;
+    }
+    if (!name || !email || !phone) {
+      if (status) {
+        status.textContent = 'Please fill in name, email, and phone.';
+        status.className = 'text-sm rounded-xl px-3 py-2 border border-red-200 bg-red-50 text-red-800';
+        status.classList.remove('hidden');
+      }
+      return;
+    }
+    if (btn) btn.disabled = true;
+    if (status) {
+      status.textContent = 'Submitting…';
+      status.className = 'text-sm rounded-xl px-3 py-2 border border-sky-200 bg-sky-50 text-sky-900';
+      status.classList.remove('hidden');
+    }
+    functions
+      .httpsCallable('submitNigeriaWorkforceSignup')({
+        name: name,
+        email: email,
+        phone: phone,
+        city: city,
+        notes: notes,
+        unitIds: unitIds,
+      })
+      .then(function (res) {
+        form.reset();
+        if (window.NigeriaLanding) {
+          if (NigeriaLanding.clearWorkforceUnits) NigeriaLanding.clearWorkforceUnits();
+          if (NigeriaLanding.closeWorkforcePanel) {
+            setTimeout(function () {
+              NigeriaLanding.closeWorkforcePanel();
+            }, 3200);
+          }
+        }
+        if (status) {
+          status.textContent =
+            (res.data && res.data.message) ||
+            'Enlisted! Check your email about Workers Training Class.';
+          status.className =
+            'text-sm rounded-xl px-3 py-2 border border-emerald-200 bg-emerald-50 text-emerald-900';
+        }
+      })
+      .catch(function (e) {
+        if (status) {
+          status.textContent = e.message || 'Could not submit. Try again or contact the coordinator.';
+          status.className = 'text-sm rounded-xl px-3 py-2 border border-red-200 bg-red-50 text-red-800';
+        }
+      })
+      .finally(function () {
+        if (btn) btn.disabled = false;
+      });
+  }
+
+  function submitMemberSignup(ev) {
+    if (ev) ev.preventDefault();
+    var form = $('ng-signup-form');
+    if (!form || !functions) return;
+    var name = ($('signup-name') && $('signup-name').value || '').trim();
+    var email = ($('signup-email') && $('signup-email').value || '').trim();
+    var phone = ($('signup-phone') && $('signup-phone').value || '').trim();
+    var city = ($('signup-city') && $('signup-city').value || '').trim();
+    var interest = ($('signup-interest') && $('signup-interest').value || '').trim();
+    var notes = ($('signup-notes') && $('signup-notes').value || '').trim();
+    var status = $('signup-status');
+    var btn = $('signup-submit');
+    if (!name || !email || !phone) {
+      if (status) {
+        status.textContent = 'Please fill in name, email, and phone.';
+        status.className = 'text-sm rounded-xl px-3 py-2 border border-red-200 bg-red-50 text-red-800';
+        status.classList.remove('hidden');
+      }
+      return;
+    }
+    if (btn) btn.disabled = true;
+    if (status) {
+      status.textContent = 'Submitting…';
+      status.className = 'text-sm rounded-xl px-3 py-2 border border-sky-200 bg-sky-50 text-sky-900';
+      status.classList.remove('hidden');
+    }
+    functions
+      .httpsCallable('submitNigeriaMemberSignup')({
+        name: name,
+        email: email,
+        phone: phone,
+        city: city,
+        interest: interest,
+        notes: notes,
+      })
+      .then(function (res) {
+        form.reset();
+        if (window.NigeriaLanding && NigeriaLanding.closeSignupPanel) {
+          setTimeout(function () {
+            NigeriaLanding.closeSignupPanel();
+          }, 2800);
+        }
+        if (status) {
+          status.textContent =
+            (res.data && res.data.message) ||
+            'Thank you! Check your email — our team will reach out soon.';
+          status.className =
+            'text-sm rounded-xl px-3 py-2 border border-emerald-200 bg-emerald-50 text-emerald-900';
+        }
+      })
+      .catch(function (e) {
+        if (status) {
+          status.textContent = e.message || 'Could not submit. Try again or DM @deardaughter_bs.';
+          status.className = 'text-sm rounded-xl px-3 py-2 border border-red-200 bg-red-50 text-red-800';
+        }
+      })
+      .finally(function () {
+        if (btn) btn.disabled = false;
+      });
   }
 
   function renderProgramsPanel(month) {
@@ -596,6 +1017,7 @@
     hide($('onboard-panel'));
     hide($('auth-panel'));
     hide($('not-eligible-panel'));
+    setPublicLanding(false);
     show($('dash-shell'));
     showSuperUserChrome();
     renderSidebar(data);
@@ -603,12 +1025,15 @@
     renderUnitsTab(data);
     renderReportsTab(data);
     renderProgramsPanel('upcoming');
+    updateNewMembersTabVisibility(data);
+    updateWorkforceTabVisibility(data);
     switchTab(activeTab);
   }
 
   function showOnboarding(volunteer, isSuperUser) {
     hide($('dash-shell'));
     hide($('auth-panel'));
+    setPublicLanding(false);
     show($('onboard-panel'));
     var hint = $('onboard-super-hint');
     if (hint) hint.classList.toggle('hidden', !isSuperUser);
@@ -822,6 +1247,7 @@
   function showNotEligible(message) {
     if (isClientSuperUser()) return showSuperUserLanding();
     hide($('dash-shell'));
+    setPublicLanding(true);
     show($('not-eligible-panel'));
     if ($('not-eligible-msg')) $('not-eligible-msg').textContent = message || '';
   }
@@ -856,7 +1282,8 @@
     hide($('btn-signout'));
     hide($('dash-shell'));
     hide($('onboard-panel'));
-    show($('auth-panel'));
+    setPublicLanding(true);
+    hide($('auth-panel'));
     try {
       sessionStorage.removeItem(PREVIEW_PROFILE_KEY);
     } catch (e) {}
@@ -865,7 +1292,7 @@
   function bind() {
     renderUnitOptions();
     var hashTab = (window.location.hash || '').replace('#', '');
-    if (['home', 'programs', 'units', 'reports'].indexOf(hashTab) >= 0) {
+    if (['home', 'programs', 'units', 'new-members', 'kingdom-workforce', 'reports'].indexOf(hashTab) >= 0) {
       activeTab = hashTab;
     }
     document.querySelectorAll('.tab-btn').forEach(function (btn) {
@@ -896,6 +1323,12 @@
         ev.target.value = '';
         if (f) uploadSidebarPhoto(f);
       });
+    }
+    if ($('ng-signup-form')) {
+      $('ng-signup-form').addEventListener('submit', submitMemberSignup);
+    }
+    if ($('ng-workforce-form')) {
+      $('ng-workforce-form').addEventListener('submit', submitWorkforceSignup);
     }
     completeEmailLinkIfNeeded().finally(function () {
       auth.onAuthStateChanged(handleAuthUser);

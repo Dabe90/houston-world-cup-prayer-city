@@ -93,5 +93,14 @@ service cloud.firestore {
         && nigeriaCanAccessUnit(request.resource.data.unitId);
       allow delete: if false;
     }
+
+    // New member sign-ups — Cloud Functions only (welcome email + leader dashboard).
+    match /nigeria_member_signups/{signupId} {
+      allow read, write: if false;
+    }
+
+    match /nigeria_workforce_signups/{signupId} {
+      allow read, write: if false;
+    }
   }
 }

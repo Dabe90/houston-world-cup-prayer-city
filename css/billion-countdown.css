@@ -1,0 +1,92 @@
+.billion-countdown {
+  background: linear-gradient(135deg, #0f3d5c 0%, #008751 45%, #1a5f8a 100%);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.billion-countdown::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 50%, rgba(201, 162, 39, 0.15), transparent 50%),
+    radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.08), transparent 40%);
+  pointer-events: none;
+}
+.billion-countdown-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+}
+@media (min-width: 768px) {
+  .billion-countdown-inner {
+    flex-direction: row;
+    text-align: left;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    gap: 1.5rem;
+  }
+}
+.bc-copy { min-width: 0; }
+.bc-eyebrow {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #c9a227;
+}
+.bc-title {
+  font-family: Fraunces, Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+@media (min-width: 640px) { .bc-title { font-size: 1.35rem; } }
+.bc-sub {
+  font-size: 0.75rem;
+  opacity: 0.88;
+  margin-top: 0.15rem;
+}
+.bc-timer {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.bc-unit {
+  min-width: 3.25rem;
+  padding: 0.45rem 0.35rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  text-align: center;
+}
+.bc-num {
+  display: block;
+  font-family: Fraunces, Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.bc-num.bc-pop { transform: scale(1.12); }
+.bc-label {
+  display: block;
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin-top: 0.2rem;
+}
+.billion-countdown-compact .bc-title { font-size: 1rem; }
+.billion-countdown-compact .bc-unit { min-width: 2.75rem; }
+.billion-countdown-compact .bc-num { font-size: 1.1rem; }

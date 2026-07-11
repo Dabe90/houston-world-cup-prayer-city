@@ -7,7 +7,11 @@ const admin = require('firebase-admin');
 const { isSuperUserEmail, normalizeEmail } = require('./lib/adminAuth');
 const { generateStructured } = require('./genkit/generateWithRetry');
 
+const { sendMailViaAppsScript } = require('./lib/mailTransport');
+
 const googleGenaiApiKey = defineSecret('GOOGLE_GENAI_API_KEY');
+const appsScriptSelfServeMailUrl = defineSecret('APPS_SCRIPT_SELF_SERVE_MAIL_URL');
+const selfServeMailSecret = defineSecret('SELF_SERVE_MAIL_SECRET');
 
 const notesSummarySchema = z.object({
   executiveSummary: z.string(),
@@ -26,7 +30,161 @@ const NIGERIA_UNITS = [
   { id: 'welcome-hospitality', label: 'Welcome & Hospitality', day: 3, start: '22:00', end: '22:30' },
   { id: 'creative', label: 'Creative Unit', day: 4, start: '20:00', end: '21:00' },
   { id: 'choir', label: 'Choir', day: 0, start: '20:30', end: '21:30' },
+  { id: 'growth-retention', label: 'Growth & Retention', day: 5, start: '20:30', end: '21:00' },
+  { id: 'communications-social', label: 'Communications & Social Media', day: 4, start: '21:30', end: '22:00' },
+  { id: 'media', label: 'Media Team', day: 6, start: '19:00', end: '20:00' },
+  { id: 'workers-coordinator', label: 'Workers Coordinator', day: 3, start: '21:00', end: '21:30' },
 ];
+
+const WORKERS_COORDINATOR_UNIT_ID = 'workers-coordinator';
+const WORKFORCE_ACTIVE_STATUSES = ['pending_training', 'in_training'];
+const WORKFORCE_ENLIST_EXCLUDE = new Set([WORKERS_COORDINATOR_UNIT_ID]);
+const SIGNUP_VIEWER_UNIT_IDS = ['welcome-hospitality', 'growth-retention'];
+
+function escapeHtml(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function isWorkersCoordinatorLeader(profile, isSuperUser) {
+  if (isSuperUser) return true;
+  return isLeaderOfUnit(profile, WORKERS_COORDINATOR_UNIT_ID, false);
+}
+
+function workforceAccessForProfile(profile, isSuperUser) {
+  if (isSuperUser) {
+    return { canView: true, canApprove: true, leaderUnitIds: null };
+  }
+  const canApprove = isWorkersCoordinatorLeader(profile, false);
+  const leaderUnitIds = normalizeProfileUnits(profile)
+    .filter((u) => u.role === 'leader')
+    .map((u) => u.unitId);
+  if (canApprove) {
+    return { canView: true, canApprove: true, leaderUnitIds };
+  }
+  if (leaderUnitIds.length) {
+    return { canView: true, canApprove: false, leaderUnitIds };
+  }
+  return { canView: false, canApprove: false, leaderUnitIds: [] };
+}
+
+async function loadUnitLeaders(db, unitId) {
+  const seen = new Map();
+  const snaps = await Promise.all([
+    db.collection('nigeria_volunteers').where('unitIds', 'array-contains', unitId).get(),
+    db.collection('nigeria_volunteers').where('unitId', '==', unitId).get(),
+  ]);
+  for (const snap of snaps) {
+    snap.forEach((doc) => {
+      const d = doc.data() || {};
+      const email = normalizeEmail(d.email);
+      if (!email || !email.includes('@')) return;
+      const units = normalizeProfileUnits(d);
+      const isLeader = units.some((u) => u.unitId === unitId && u.role === 'leader');
+      if (!isLeader) return;
+      seen.set(doc.id, {
+        uid: doc.id,
+        email,
+        name: String(d.name || '').trim() || email.split('@')[0],
+      });
+    });
+  }
+  return [...seen.values()];
+}
+
+async function assertNoActiveWorkforceBlock(db, email) {
+  const norm = normalizeEmail(email);
+  if (!norm) return;
+  const snap = await db
+    .collection('nigeria_workforce_signups')
+    .where('email', '==', norm)
+    .limit(20)
+    .get();
+  const active = snap.docs.find((doc) => WORKFORCE_ACTIVE_STATUSES.includes(doc.data().status));
+  if (active) {
+    throw new HttpsError(
+      'permission-denied',
+      'Your Kingdom Workforce enlistment is in progress. Complete Workers Training Class — your Workers Coordinator will enable hub sign-in when you are cleared.'
+    );
+  }
+}
+
+function buildWorkforceWelcomeMail({ name, units }) {
+  const first = String(name || 'Friend').trim().split(/\s+/)[0] || 'Friend';
+  const unitLine = units.map((u) => u.unitLabel).join(', ');
+  const subject = 'Welcome to the Kingdom Workforce — Dear Daughter Nigeria';
+  const plainBody =
+    `Hi ${first},\n\n` +
+    `Thank you for enlisting in the Kingdom Workforce — the army of God serving through Dear Daughter Nigeria.\n\n` +
+    `Unit(s) you chose: ${unitLine}\n\n` +
+    `Next step: Workers Training Class\n` +
+    `You will be onboarded through our Workers Training Class before active unit service. ` +
+    `Your unit leader(s) and Workers Coordinator have been notified.\n\n` +
+    `Important: You will not have hub sign-in access until you complete training and your Workers Coordinator greenlights you in the system.\n\n` +
+    `We are glad you said yes to serve.\n\n` +
+    `Dear Daughter Bible Study Group Nigeria\n` +
+    `https://prayercityhtx.com/ddbs-nig.html`;
+  const htmlBody =
+    `<div style="font-family:system-ui,sans-serif;color:#1e293b;max-width:520px;line-height:1.55">` +
+    `<p>Hi <strong>${escapeHtml(first)}</strong>,</p>` +
+    `<p>Thank you for enlisting in the <strong>Kingdom Workforce</strong> — the army of God serving through Dear Daughter Nigeria.</p>` +
+    `<p><strong>Unit(s):</strong> ${escapeHtml(unitLine)}</p>` +
+    `<p><strong>Next step — Workers Training Class</strong><br/>` +
+    `You will be onboarded through Workers Training Class before active unit service. ` +
+    `Your unit leader(s) and Workers Coordinator have been notified.</p>` +
+    `<p><strong>Hub access:</strong> You will not be able to sign in to the volunteer hub until training is complete and your Workers Coordinator clears you.</p>` +
+    `<p>We are glad you said yes to serve.<br/>Dear Daughter Nigeria</p></div>`;
+  return { subject, plainBody, htmlBody };
+}
+
+function buildWorkforceLeaderNotifyMail({ leaderName, applicant, units }) {
+  const unitLine = units.map((u) => u.unitLabel).join(', ');
+  const subject = `Kingdom Workforce enlistment — ${applicant.name}`;
+  const plainBody =
+    `Hi ${leaderName},\n\n` +
+    `A new Kingdom Workforce enlistment was submitted for your unit(s): ${unitLine}\n\n` +
+    `Name: ${applicant.name}\n` +
+    `Email: ${applicant.email}\n` +
+    `Phone: ${applicant.phone}\n` +
+    (applicant.city ? `City: ${applicant.city}\n` : '') +
+    (applicant.notes ? `Notes: ${applicant.notes}\n` : '') +
+    `\nStatus: Pending Workers Training Class\n` +
+    `They cannot sign in to the hub until the Workers Coordinator greenlights them after training.\n\n` +
+    `Review in the DDBS Nigeria dashboard → Kingdom Workforce tab.\n\n` +
+    `Dear Daughter Nigeria`;
+  const htmlBody =
+    `<div style="font-family:system-ui,sans-serif;color:#1e293b;max-width:520px;line-height:1.55">` +
+    `<p>Hi <strong>${escapeHtml(leaderName)}</strong>,</p>` +
+    `<p>New <strong>Kingdom Workforce</strong> enlistment for: <strong>${escapeHtml(unitLine)}</strong></p>` +
+    `<ul>` +
+    `<li><strong>Name:</strong> ${escapeHtml(applicant.name)}</li>` +
+    `<li><strong>Email:</strong> ${escapeHtml(applicant.email)}</li>` +
+    `<li><strong>Phone:</strong> ${escapeHtml(applicant.phone)}</li>` +
+    (applicant.city ? `<li><strong>City:</strong> ${escapeHtml(applicant.city)}</li>` : '') +
+    `</ul>` +
+    `<p>Status: <strong>Pending Workers Training Class</strong>. Hub access is blocked until the Workers Coordinator clears them.</p>` +
+    `<p>Review in the dashboard → <strong>Kingdom Workforce</strong> tab.</p></div>`;
+  return { subject, plainBody, htmlBody };
+}
+
+function buildWorkforceApprovedMail({ name }) {
+  const first = String(name || 'Friend').trim().split(/\s+/)[0] || 'Friend';
+  const subject = 'Cleared for hub access — Dear Daughter Nigeria';
+  const plainBody =
+    `Hi ${first},\n\n` +
+    `Your Workers Coordinator has greenlit your Kingdom Workforce training — welcome to active service!\n\n` +
+    `You may now complete volunteer registration (if you have not already) and sign in to the DDBS Nigeria hub with the same email, using your Nigeria (+234) phone on file.\n\n` +
+    `Hub: https://prayercityhtx.com/ddbs-nig.html\n\n` +
+    `Dear Daughter Nigeria`;
+  const htmlBody =
+    `<p>Hi <strong>${escapeHtml(first)}</strong>,</p>` +
+    `<p>Your <strong>Workers Coordinator</strong> has cleared you after Workers Training Class. You may now register (if needed) and <strong>sign in to the DDBS Nigeria hub</strong> with your email and Nigeria (+234) phone.</p>` +
+    `<p><a href="https://prayercityhtx.com/ddbs-nig.html">Open DDBS Nigeria hub</a></p>`;
+  return { subject, plainBody, htmlBody };
+}
 
 function getUnit(id) {
   return NIGERIA_UNITS.find((u) => u.id === id);
@@ -62,6 +220,35 @@ function normalizeProfileUnits(profile) {
 function isLeaderOfUnit(profile, unitId, isSuperUser) {
   if (isSuperUser) return true;
   return normalizeProfileUnits(profile).some((u) => u.unitId === unitId && u.role === 'leader');
+}
+
+function canViewMemberSignups(profile, isSuperUser) {
+  if (isSuperUser) return true;
+  return normalizeProfileUnits(profile).some(
+    (u) => u.role === 'leader' && SIGNUP_VIEWER_UNIT_IDS.includes(u.unitId)
+  );
+}
+
+function buildWelcomeSignupMail({ name }) {
+  const first = String(name || 'Friend').trim().split(/\s+/)[0] || 'Friend';
+  const subject = 'Welcome to Dear Daughter Bible Study Group Nigeria';
+  const plainBody =
+    `Hi ${first},\n\n` +
+    `Thank you for signing up to join Dear Daughter Bible Study Group Nigeria!\n\n` +
+    `We teach the undiluted Word of God to all nations of the world — and we are glad you said yes.\n\n` +
+    `Our Welcome & Hospitality and Growth teams will reach out soon with next steps, Telegram links, and how to plug into mid-week Bible Study and programs.\n\n` +
+    `Follow us: https://www.instagram.com/deardaughter_bs\n` +
+    `Hub: https://prayercityhtx.com/ddbs-nig.html\n\n` +
+    `With love,\nDear Daughter Nigeria`;
+  const htmlBody =
+    `<p>Hi <strong>${first}</strong>,</p>` +
+    `<p>Thank you for signing up to join <strong>Dear Daughter Bible Study Group Nigeria</strong>!</p>` +
+    `<p>We teach the undiluted Word of God to all nations of the world — and we are glad you said yes.</p>` +
+    `<p>Our Welcome &amp; Hospitality and Growth teams will reach out soon with next steps, Telegram links, and how to plug into mid-week Bible Study and programs.</p>` +
+    `<p><a href="https://www.instagram.com/deardaughter_bs">@deardaughter_bs</a> · ` +
+    `<a href="https://prayercityhtx.com/ddbs-nig.html">DDBS Nigeria hub</a></p>` +
+    `<p>With love,<br/>Dear Daughter Nigeria</p>`;
+  return { subject, plainBody, htmlBody };
 }
 
 function parseHm(hm) {
@@ -197,6 +384,7 @@ async function assertNigeriaVolunteerAccess(db, uid, authToken) {
       'This dashboard is for volunteers who registered with a Nigeria (+234) phone number.'
     );
   }
+  await assertNoActiveWorkforceBlock(db, volunteer.email || email);
   return {
     volunteer,
     phone: phoneFromRegistration(phone),
@@ -591,6 +779,8 @@ const getNigeriaDashboard = onCall(async (request) => {
     hasProfile: true,
     eligible: true,
     isSuperUser,
+    canViewMemberSignups: canViewMemberSignups(profile, isSuperUser),
+    workforceAccess: workforceAccessForProfile(profile, isSuperUser),
     profile: {
       ...profile,
       units: profileUnits,
@@ -985,6 +1175,416 @@ const getPrayerCityAccess = onCall(async (request) => {
   };
 });
 
+const submitNigeriaMemberSignup = onCall(
+  {
+    cors: true,
+    secrets: [appsScriptSelfServeMailUrl, selfServeMailSecret],
+  },
+  async (request) => {
+    const name = String(request.data?.name || '').trim();
+    const email = normalizeEmail(request.data?.email);
+    const phoneRaw = String(request.data?.phone || '').trim();
+    const city = String(request.data?.city || '').trim().slice(0, 120);
+    const interest = String(request.data?.interest || '').trim().slice(0, 80);
+    const notes = String(request.data?.notes || '').trim().slice(0, 500);
+
+    if (!name || name.length < 2) {
+      throw new HttpsError('invalid-argument', 'Please enter your full name.');
+    }
+    if (!email || !email.includes('@')) {
+      throw new HttpsError('invalid-argument', 'Please enter a valid email.');
+    }
+    const phone = normalizeNigeriaPhone(phoneRaw) || phoneFromRegistration(phoneRaw);
+    if (!phone && !isNigeriaPhoneRegistered(phoneRaw)) {
+      throw new HttpsError('invalid-argument', 'Please enter a valid Nigeria phone number.');
+    }
+
+    const db = admin.firestore();
+    const docRef = db.collection('nigeria_member_signups').doc();
+    const record = {
+      name,
+      email,
+      phone: phone || phoneRaw,
+      city,
+      interest,
+      notes,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      welcomeEmailSent: false,
+    };
+    await docRef.set(record);
+
+    const mail = buildWelcomeSignupMail({ name });
+    let welcomeEmailSent = false;
+    let welcomeEmailError = '';
+    try {
+      const mailRes = await sendMailViaAppsScript({
+        scriptUrl: appsScriptSelfServeMailUrl.value(),
+        secret: selfServeMailSecret.value(),
+        email,
+        subject: mail.subject,
+        plainBody: mail.plainBody,
+        htmlBody: mail.htmlBody,
+      });
+      welcomeEmailSent = mailRes.ok === true;
+      if (!mailRes.ok) welcomeEmailError = mailRes.error || 'mail_failed';
+    } catch (e) {
+      welcomeEmailError = String(e.message || e);
+    }
+
+    await docRef.set(
+      {
+        welcomeEmailSent,
+        welcomeEmailError: welcomeEmailError || admin.firestore.FieldValue.delete(),
+      },
+      { merge: true }
+    );
+
+    return {
+      ok: true,
+      id: docRef.id,
+      welcomeEmailSent,
+      message: welcomeEmailSent
+        ? 'Thank you! Check your inbox for a welcome email — our team will reach out soon.'
+        : 'Thank you! Our team will reach out soon.',
+    };
+  }
+);
+
+const getNigeriaMemberSignups = onCall(async (request) => {
+  const uid = requireAuth(request);
+  const db = admin.firestore();
+  const email = normalizeEmail(request.auth?.token?.email);
+  const isSuperUser = isSuperUserEmail(email);
+
+  if (!isSuperUser) {
+    const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+    if (!profileSnap.exists) {
+      throw new HttpsError('failed-precondition', 'Complete your profile first.');
+    }
+    const profile = profileSnap.data();
+    if (!canViewMemberSignups(profile, false)) {
+      throw new HttpsError(
+        'permission-denied',
+        'Welcome & Hospitality or Growth & Retention leaders only.'
+      );
+    }
+  }
+
+  const snap = await db
+    .collection('nigeria_member_signups')
+    .orderBy('createdAt', 'desc')
+    .limit(50)
+    .get();
+
+  const signups = snap.docs.map((doc) => {
+    const d = doc.data();
+    const createdAt = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toISOString() : null;
+    return {
+      id: doc.id,
+      name: d.name || '',
+      email: d.email || '',
+      phone: d.phone || '',
+      city: d.city || '',
+      interest: d.interest || '',
+      notes: d.notes || '',
+      createdAt,
+      welcomeEmailSent: d.welcomeEmailSent === true,
+    };
+  });
+
+  return { signups };
+});
+
+const submitNigeriaWorkforceSignup = onCall(
+  {
+    cors: true,
+    secrets: [appsScriptSelfServeMailUrl, selfServeMailSecret],
+  },
+  async (request) => {
+    const name = String(request.data?.name || '').trim();
+    const email = normalizeEmail(request.data?.email);
+    const phoneRaw = String(request.data?.phone || '').trim();
+    const city = String(request.data?.city || '').trim().slice(0, 120);
+    const notes = String(request.data?.notes || '').trim().slice(0, 500);
+    const unitIdsRaw = Array.isArray(request.data?.unitIds) ? request.data.unitIds : [];
+
+    if (!name || name.length < 2) {
+      throw new HttpsError('invalid-argument', 'Please enter your full name.');
+    }
+    if (!email || !email.includes('@')) {
+      throw new HttpsError('invalid-argument', 'Please enter a valid email.');
+    }
+    const phone = normalizeNigeriaPhone(phoneRaw) || phoneFromRegistration(phoneRaw);
+    if (!phone && !isNigeriaPhoneRegistered(phoneRaw)) {
+      throw new HttpsError('invalid-argument', 'Please enter a valid Nigeria phone number.');
+    }
+
+    const unitIds = [...new Set(unitIdsRaw.map((id) => String(id || '').trim()).filter(Boolean))];
+    if (!unitIds.length) {
+      throw new HttpsError('invalid-argument', 'Choose at least one unit to serve.');
+    }
+
+    const units = [];
+    for (const id of unitIds) {
+      if (WORKFORCE_ENLIST_EXCLUDE.has(id)) continue;
+      const unit = getUnit(id);
+      if (!unit) throw new HttpsError('invalid-argument', 'Invalid unit: ' + id);
+      units.push({ unitId: unit.id, unitLabel: unit.label });
+    }
+    if (!units.length) {
+      throw new HttpsError('invalid-argument', 'Choose at least one unit to serve.');
+    }
+
+    const db = admin.firestore();
+    const existing = await db
+      .collection('nigeria_workforce_signups')
+      .where('email', '==', email)
+      .limit(10)
+      .get();
+    const hasActive = existing.docs.some((doc) =>
+      WORKFORCE_ACTIVE_STATUSES.includes(doc.data().status)
+    );
+    if (hasActive) {
+      throw new HttpsError(
+        'already-exists',
+        'You already have a Kingdom Workforce application in progress. Check your email for Workers Training Class details.'
+      );
+    }
+
+    const docRef = db.collection('nigeria_workforce_signups').doc();
+    const applicant = { name, email, phone: phone || phoneRaw, city, notes };
+    const record = {
+      ...applicant,
+      units,
+      unitIds: units.map((u) => u.unitId),
+      status: 'pending_training',
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      welcomeEmailSent: false,
+      leaderEmailsNotified: [],
+    };
+    await docRef.set(record);
+
+    const scriptUrl = appsScriptSelfServeMailUrl.value();
+    const secret = selfServeMailSecret.value();
+    let welcomeEmailSent = false;
+    let welcomeEmailError = '';
+
+    try {
+      const welcome = buildWorkforceWelcomeMail({ name, units });
+      const mailRes = await sendMailViaAppsScript({
+        scriptUrl,
+        secret,
+        email,
+        subject: welcome.subject,
+        plainBody: welcome.plainBody,
+        htmlBody: welcome.htmlBody,
+      });
+      welcomeEmailSent = mailRes.ok === true;
+      if (!mailRes.ok) welcomeEmailError = mailRes.error || 'mail_failed';
+    } catch (e) {
+      welcomeEmailError = String(e.message || e);
+    }
+
+    const notified = new Set();
+    const notifyTargets = new Map();
+
+    for (const u of units) {
+      const leaders = await loadUnitLeaders(db, u.unitId);
+      for (const leader of leaders) {
+        if (!notifyTargets.has(leader.email)) {
+          notifyTargets.set(leader.email, leader);
+        }
+      }
+    }
+    const coordLeaders = await loadUnitLeaders(db, WORKERS_COORDINATOR_UNIT_ID);
+    for (const leader of coordLeaders) {
+      notifyTargets.set(leader.email, leader);
+    }
+
+    for (const leader of notifyTargets.values()) {
+      if (notified.has(leader.email)) continue;
+      notified.add(leader.email);
+      try {
+        const mail = buildWorkforceLeaderNotifyMail({ leaderName: leader.name, applicant, units });
+        await sendMailViaAppsScript({
+          scriptUrl,
+          secret,
+          email: leader.email,
+          subject: mail.subject,
+          plainBody: mail.plainBody,
+          htmlBody: mail.htmlBody,
+        });
+      } catch (e) {
+        console.warn('[workforceNotify]', leader.email, e);
+      }
+    }
+
+    await docRef.set(
+      {
+        welcomeEmailSent,
+        welcomeEmailError: welcomeEmailError || admin.firestore.FieldValue.delete(),
+        leaderEmailsNotified: [...notified],
+      },
+      { merge: true }
+    );
+
+    return {
+      ok: true,
+      id: docRef.id,
+      welcomeEmailSent,
+      message: welcomeEmailSent
+        ? 'Enlisted! Check your email about Workers Training Class. Hub sign-in opens after your Workers Coordinator clears you.'
+        : 'Enlisted! Our Workers Coordinator and unit leaders will reach out about Workers Training Class.',
+    };
+  }
+);
+
+const getNigeriaWorkforceSignups = onCall(async (request) => {
+  const uid = requireAuth(request);
+  const db = admin.firestore();
+  const email = normalizeEmail(request.auth?.token?.email);
+  const isSuperUser = isSuperUserEmail(email);
+
+  let access = { canView: true, canApprove: true, leaderUnitIds: null };
+  if (!isSuperUser) {
+    const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+    if (!profileSnap.exists) {
+      throw new HttpsError('failed-precondition', 'Complete your profile first.');
+    }
+    access = workforceAccessForProfile(profileSnap.data(), false);
+    if (!access.canView) {
+      throw new HttpsError('permission-denied', 'Unit leaders and Workers Coordinator only.');
+    }
+  }
+
+  const snap = await db
+    .collection('nigeria_workforce_signups')
+    .orderBy('createdAt', 'desc')
+    .limit(80)
+    .get();
+
+  const signups = snap.docs
+    .map((doc) => {
+      const d = doc.data();
+      const createdAt =
+        d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toISOString() : null;
+      const approvedAt =
+        d.approvedAt && d.approvedAt.toDate ? d.approvedAt.toDate().toISOString() : null;
+      return {
+        id: doc.id,
+        name: d.name || '',
+        email: d.email || '',
+        phone: d.phone || '',
+        city: d.city || '',
+        notes: d.notes || '',
+        units: d.units || [],
+        unitIds: d.unitIds || [],
+        status: d.status || 'pending_training',
+        createdAt,
+        approvedAt,
+        welcomeEmailSent: d.welcomeEmailSent === true,
+      };
+    })
+    .filter((s) => {
+      if (access.leaderUnitIds === null) return true;
+      return s.unitIds.some((id) => access.leaderUnitIds.includes(id));
+    });
+
+  return { signups, canApprove: access.canApprove };
+});
+
+const approveNigeriaWorkforceSignup = onCall(
+  {
+    cors: true,
+    secrets: [appsScriptSelfServeMailUrl, selfServeMailSecret],
+  },
+  async (request) => {
+    const uid = requireAuth(request);
+    const signupId = String(request.data?.signupId || '').trim();
+    if (!signupId) throw new HttpsError('invalid-argument', 'signupId required.');
+
+    const db = admin.firestore();
+    const email = normalizeEmail(request.auth?.token?.email);
+    const isSuperUser = isSuperUserEmail(email);
+
+    if (!isSuperUser) {
+      const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+      if (!profileSnap.exists || !isWorkersCoordinatorLeader(profileSnap.data(), false)) {
+        throw new HttpsError('permission-denied', 'Workers Coordinator leader only.');
+      }
+    }
+
+    const ref = db.collection('nigeria_workforce_signups').doc(signupId);
+    const snap = await ref.get();
+    if (!snap.exists) throw new HttpsError('not-found', 'Signup not found.');
+    const data = snap.data();
+    if (data.status === 'approved') {
+      return { ok: true, alreadyApproved: true };
+    }
+
+    await ref.set(
+      {
+        status: 'approved',
+        approvedAt: admin.firestore.FieldValue.serverTimestamp(),
+        approvedByUid: uid,
+        approvedByEmail: email,
+      },
+      { merge: true }
+    );
+
+    let clearedEmailSent = false;
+    try {
+      const mail = buildWorkforceApprovedMail({ name: data.name });
+      const mailRes = await sendMailViaAppsScript({
+        scriptUrl: appsScriptSelfServeMailUrl.value(),
+        secret: selfServeMailSecret.value(),
+        email: normalizeEmail(data.email),
+        subject: mail.subject,
+        plainBody: mail.plainBody,
+        htmlBody: mail.htmlBody,
+      });
+      clearedEmailSent = mailRes.ok === true;
+    } catch (e) {
+      console.warn('[approveWorkforce]', e);
+    }
+
+    await ref.set({ clearedEmailSent }, { merge: true });
+
+    return { ok: true, clearedEmailSent };
+  }
+);
+
+const markNigeriaWorkforceInTraining = onCall(async (request) => {
+  const uid = requireAuth(request);
+  const signupId = String(request.data?.signupId || '').trim();
+  if (!signupId) throw new HttpsError('invalid-argument', 'signupId required.');
+
+  const db = admin.firestore();
+  const email = normalizeEmail(request.auth?.token?.email);
+  const isSuperUser = isSuperUserEmail(email);
+
+  if (!isSuperUser) {
+    const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+    if (!profileSnap.exists || !isWorkersCoordinatorLeader(profileSnap.data(), false)) {
+      throw new HttpsError('permission-denied', 'Workers Coordinator leader only.');
+    }
+  }
+
+  const ref = db.collection('nigeria_workforce_signups').doc(signupId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'Signup not found.');
+
+  await ref.set(
+    {
+      status: 'in_training',
+      inTrainingAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  return { ok: true };
+});
+
 module.exports = {
   saveNigeriaProfile,
   recordNigeriaAttendance,
@@ -996,6 +1596,12 @@ module.exports = {
   getNigeriaAttendanceForReport,
   summarizeNigeriaMeetingNotesForReport,
   getPrayerCityAccess,
+  submitNigeriaMemberSignup,
+  getNigeriaMemberSignups,
+  submitNigeriaWorkforceSignup,
+  getNigeriaWorkforceSignups,
+  approveNigeriaWorkforceSignup,
+  markNigeriaWorkforceInTraining,
   computeUnitAttendanceForReport,
   computeUserAttendanceStats,
 };

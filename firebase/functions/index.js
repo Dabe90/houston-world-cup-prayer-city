@@ -1710,6 +1710,12 @@ exports.approveNigeriaUnitReportDraft = nigeriaVolunteer.approveNigeriaUnitRepor
 exports.getNigeriaAttendanceForReport = nigeriaVolunteer.getNigeriaAttendanceForReport;
 exports.summarizeNigeriaMeetingNotesForReport = nigeriaVolunteer.summarizeNigeriaMeetingNotesForReport;
 exports.getPrayerCityAccess = nigeriaVolunteer.getPrayerCityAccess;
+exports.submitNigeriaMemberSignup = nigeriaVolunteer.submitNigeriaMemberSignup;
+exports.getNigeriaMemberSignups = nigeriaVolunteer.getNigeriaMemberSignups;
+exports.submitNigeriaWorkforceSignup = nigeriaVolunteer.submitNigeriaWorkforceSignup;
+exports.getNigeriaWorkforceSignups = nigeriaVolunteer.getNigeriaWorkforceSignups;
+exports.approveNigeriaWorkforceSignup = nigeriaVolunteer.approveNigeriaWorkforceSignup;
+exports.markNigeriaWorkforceInTraining = nigeriaVolunteer.markNigeriaWorkforceInTraining;
 
 /**
  * Every 5 minutes (Africa/Lagos): email Nigeria unit members meeting reminders

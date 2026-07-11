@@ -1,0 +1,147 @@
+/* Prayer City public landing — youthful motion */
+@keyframes homeFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(2deg); }
+}
+@keyframes homePulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.08); }
+}
+@keyframes homeBounceIn {
+  0% { opacity: 0; transform: translateY(24px) scale(0.96); }
+  60% { opacity: 1; transform: translateY(-6px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes homeWordPop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes homeShimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes homeMarquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.home-hero-bg {
+  background:
+    linear-gradient(145deg, rgba(15, 61, 92, 0.94) 0%, rgba(0, 135, 81, 0.88) 40%, rgba(26, 95, 138, 0.92) 100%),
+    url("https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1600&q=80") center/cover;
+}
+.home-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  animation: homePulse 6s ease-in-out infinite;
+  pointer-events: none;
+}
+.home-bounce-word {
+  display: inline-block;
+  animation: homeWordPop 2.8s ease-in-out infinite;
+}
+.home-bounce-word:nth-child(2) { animation-delay: 0.15s; }
+.home-bounce-word:nth-child(3) { animation-delay: 0.3s; }
+.home-bounce-word:nth-child(4) { animation-delay: 0.45s; }
+
+.home-reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.home-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.home-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.home-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 48px rgba(15, 61, 92, 0.14);
+}
+.home-shimmer-text {
+  background: linear-gradient(90deg, #fff 0%, #c9a227 40%, #fff 80%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: homeShimmer 4s linear infinite;
+}
+.home-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: homeMarquee 28s linear infinite;
+}
+.home-marquee:hover .home-marquee-track { animation-play-state: paused; }
+.home-program-img { transition: transform 0.5s ease; }
+.home-program-card:hover .home-program-img { transform: scale(1.06); }
+
+.ng-alive-bg {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(240, 253, 244, 0.88) 50%, rgba(232, 244, 252, 0.9) 100%),
+    url("../images/prayer-city-day2-team.jpeg") center/cover;
+  opacity: 0.5;
+}
+.ng-alive-photo {
+  animation: ngPhotoFloat 5s ease-in-out infinite;
+}
+.ng-alive-photo:nth-child(2) { animation-delay: -0.8s; }
+.ng-alive-photo:nth-child(3) { animation-delay: -1.6s; }
+.ng-alive-photo:nth-child(4) { animation-delay: -2.4s; }
+.ng-alive-photo:nth-child(5) { animation-delay: -3.2s; }
+.ng-alive-photo:nth-child(6) { animation-delay: -4s; }
+@keyframes ngPhotoFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-6px) scale(1.02); }
+}
+.ng-gallery-tile { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.ng-gallery-tile:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(15, 61, 92, 0.18); }
+
+.ng-programs-track {
+  scroll-padding-left: 1rem;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent);
+}
+.ng-join-rail {
+  max-height: calc(100vh - 5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.ng-join-rail::-webkit-scrollbar { width: 5px; }
+.ng-join-rail::-webkit-scrollbar-thumb { background: rgba(15, 61, 92, 0.2); border-radius: 999px; }
+@media (max-width: 1023px) {
+  .ng-join-rail { max-height: none; overflow: visible; }
+}
+
+.ng-signup-details[open],
+.ng-signup-details:not(.hidden) {
+  animation: ngSignupIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ng-workforce-details[open],
+.ng-workforce-details:not(.hidden) {
+  animation: ngSignupIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ng-unit-card.is-selected {
+  border-color: #008751;
+  box-shadow: 0 0 0 2px rgba(0, 135, 81, 0.25);
+  background: linear-gradient(180deg, #f0fdf4 0%, #fff 100%);
+}
+.ng-unit-card.is-selected .ng-unit-card-hint {
+  color: #008751;
+}
+@keyframes ngSignupIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ng-alive-photo { animation: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-bounce-word, .home-orb, .home-marquee-track, .home-shimmer-text { animation: none !important; }
+  .home-reveal { opacity: 1; transform: none; }
+}

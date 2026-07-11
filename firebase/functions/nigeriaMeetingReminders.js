@@ -21,6 +21,10 @@ const NIGERIA_UNITS = [
   { id: 'welcome-hospitality', label: 'Welcome & Hospitality', day: 3, start: '22:00', end: '22:30' },
   { id: 'creative', label: 'Creative Unit', day: 4, start: '20:00', end: '21:00' },
   { id: 'choir', label: 'Choir', day: 0, start: '20:30', end: '21:30' },
+  { id: 'growth-retention', label: 'Growth & Retention', day: 5, start: '20:30', end: '21:00' },
+  { id: 'communications-social', label: 'Communications & Social Media', day: 4, start: '21:30', end: '22:00' },
+  { id: 'media', label: 'Media Team', day: 6, start: '19:00', end: '20:00' },
+  { id: 'workers-coordinator', label: 'Workers Coordinator', day: 3, start: '21:00', end: '21:30' },
 ];
 
 const REMINDER_BUCKETS = [

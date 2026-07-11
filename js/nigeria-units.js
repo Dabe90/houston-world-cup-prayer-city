@@ -5,11 +5,12 @@
 (function (global) {
   var TZ = 'Africa/Lagos';
 
-  /** @type {Array<{id:string,label:string,icon:string,gradient:string,day:number,start:string,end:string,endNextDay?:boolean}>} */
+  /** @type {Array<{id:string,label:string,summary:string,icon:string,gradient:string,day:number,start:string,end:string,endNextDay?:boolean,enlistHidden?:boolean}>} */
   var NIGERIA_UNITS = [
     {
       id: 'moderators-presenters',
       label: 'Moderators & Presenters',
+      summary: 'Host and present our weekly virtual Bible study — guide the flow, welcome participants, and keep sessions engaging.',
       icon: 'fa-microphone-lines',
       gradient: 'from-violet-500 to-purple-700',
       day: 1,
@@ -19,6 +20,7 @@
     {
       id: 'bible-study',
       label: 'Bible Study Team',
+      summary: 'Prepare and teach the Word — lesson plans, discussion questions, and solid biblical content for each meeting.',
       icon: 'fa-book-bible',
       gradient: 'from-slate-700 to-blue-800',
       day: 2,
@@ -28,6 +30,7 @@
     {
       id: 'prayer',
       label: 'Prayer Team',
+      summary: 'Cover the ministry in prayer — lead intercession, pray over members and requests, and stand in the gap for Nigeria.',
       icon: 'fa-hands-praying',
       gradient: 'from-violet-500 to-indigo-700',
       day: 2,
@@ -38,6 +41,7 @@
     {
       id: 'welcome-hospitality',
       label: 'Welcome & Hospitality',
+      summary: 'Greet and care for people — welcome newcomers, follow up, and help everyone feel at home in Dear Daughter.',
       icon: 'fa-door-open',
       gradient: 'from-amber-400 to-yellow-600',
       day: 3,
@@ -47,6 +51,7 @@
     {
       id: 'creative',
       label: 'Creative Unit',
+      summary: 'Design visuals and creative assets — flyers, slides, branding, and artwork that carry our message with excellence.',
       icon: 'fa-palette',
       gradient: 'from-rose-400 to-pink-600',
       day: 4,
@@ -56,13 +61,57 @@
     {
       id: 'choir',
       label: 'Choir',
+      summary: 'Lead worship in song — rehearse, minister musically, and help the congregation encounter God through praise.',
       icon: 'fa-music',
       gradient: 'from-amber-400 to-orange-600',
       day: 0,
       start: '20:30',
       end: '21:30',
     },
+    {
+      id: 'growth-retention',
+      label: 'Growth & Retention',
+      summary: 'Help members grow and stay connected — follow up, encourage participation, and nurture long-term engagement.',
+      icon: 'fa-seedling',
+      gradient: 'from-emerald-500 to-teal-700',
+      day: 5,
+      start: '20:30',
+      end: '21:00',
+    },
+    {
+      id: 'communications-social',
+      label: 'Communications & Social Media',
+      summary: 'Tell our story online — posts, announcements, and social content that keep the community informed and inspired.',
+      icon: 'fa-hashtag',
+      gradient: 'from-sky-500 to-blue-700',
+      day: 4,
+      start: '21:30',
+      end: '22:00',
+    },
+    {
+      id: 'media',
+      label: 'Media Team',
+      summary: 'Run production behind the scenes — live stream, video, audio, and tech so every meeting is clear and reliable.',
+      icon: 'fa-video',
+      gradient: 'from-slate-600 to-slate-900',
+      day: 6,
+      start: '19:00',
+      end: '20:00',
+    },
+    {
+      id: 'workers-coordinator',
+      label: 'Workers Coordinator',
+      summary: 'Oversee worker onboarding — Workers Training Class, placement, and clearing workers for hub access.',
+      icon: 'fa-user-shield',
+      gradient: 'from-indigo-600 to-violet-800',
+      day: 3,
+      start: '21:00',
+      end: '21:30',
+      enlistHidden: true,
+    },
   ];
+
+  var WORKFORCE_ENLIST_EXCLUDE = { 'workers-coordinator': true };
 
   var DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -280,6 +329,12 @@
   global.NigeriaUnits = {
     TZ: TZ,
     NIGERIA_UNITS: NIGERIA_UNITS,
+    WORKFORCE_ENLIST_EXCLUDE: WORKFORCE_ENLIST_EXCLUDE,
+    enlistableUnits: function () {
+      return NIGERIA_UNITS.filter(function (u) {
+        return !WORKFORCE_ENLIST_EXCLUDE[u.id] && !u.enlistHidden;
+      });
+    },
     DAY_NAMES: DAY_NAMES,
     getUnit: getUnit,
     meetingScheduleLabel: meetingScheduleLabel,

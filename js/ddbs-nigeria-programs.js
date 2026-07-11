@@ -289,9 +289,36 @@
     return { key: 'default', image: THEME_IMAGES.default };
   }
 
+  function flyerForEvent(ev) {
+    var t = String(ev.title || '').toLowerCase();
+    if (/recharge|leadership conference/.test(t)) {
+      return 'images/ddbs-nigeria/recharge-leadership-conference-2026.png';
+    }
+    if (/how much do you know|couples game/.test(t)) {
+      return 'images/ddbs-nigeria/couples-game-how-much-do-you-know.png';
+    }
+    if (/movie night/.test(t)) {
+      return 'images/ddbs-nigeria/movie-night-july-2026.png';
+    }
+    if (/unstoppable generation/.test(t)) {
+      return 'images/ddbs-nigeria/unstoppable-generation-prayer.png';
+    }
+    if (/five wines of marriage/.test(t)) {
+      return 'images/ddbs-nigeria/five-wines-of-marriage.png';
+    }
+    return null;
+  }
+
   function enrichEvent(ev) {
     var theme = themeForEvent(ev);
-    return Object.assign({}, ev, { themeKey: theme.key, image: theme.image });
+    var flyer = flyerForEvent(ev);
+    return Object.assign({}, ev, {
+      themeKey: theme.key,
+      image: theme.image,
+      flyer: flyer,
+      displayImage: flyer || theme.image,
+      hasFlyer: !!flyer,
+    });
   }
 
   /** Immediate past + next 4 upcoming (picture tile row). */
@@ -325,6 +352,7 @@
     featuredTiles: featuredTiles,
     enrichEvent: enrichEvent,
     themeForEvent: themeForEvent,
+    flyerForEvent: flyerForEvent,
     formatDateLabel: formatDateLabel,
     kindBadge: kindBadge,
     lagosTodayYmd: lagosTodayYmd,
