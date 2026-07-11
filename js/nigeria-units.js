@@ -106,7 +106,7 @@
       gradient: 'from-indigo-500 to-indigo-700',
       day: 0,
       start: '21:00',
-      end: '22:00',
+      end: '21:15',
     },
     {
       id: 'group3',
@@ -116,7 +116,7 @@
       gradient: 'from-cyan-500 to-cyan-700',
       day: 3,
       start: '21:00',
-      end: '22:00',
+      end: '21:15',
     },
     {
       id: 'group4',
@@ -126,7 +126,7 @@
       gradient: 'from-lime-500 to-green-600',
       day: 4,
       start: '20:30',
-      end: '21:30',
+      end: '20:45',
     },
     {
       id: 'workers-coordinator',
