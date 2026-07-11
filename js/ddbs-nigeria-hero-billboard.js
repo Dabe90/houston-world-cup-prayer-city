@@ -230,6 +230,7 @@
     if (!root) return null;
 
     var track = root.querySelector('[data-hero-track]');
+    if (!track) return null;
     renderSlides(track);
 
     var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

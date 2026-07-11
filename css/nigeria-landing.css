@@ -9,27 +9,36 @@
 
 /* Hero billboard — tall photo background (welcome slide) */
 #hero-billboard {
+  position: relative;
+  height: min(88vh, 720px);
   min-height: min(88vh, 720px);
   padding-bottom: 3.75rem;
+  background: #0f3d5c;
 }
 .hero-billboard-viewport {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 3.75rem;
   overflow: hidden;
   width: 100%;
-  min-height: inherit;
 }
 [data-hero-track] {
   display: flex;
   width: 100%;
+  height: 100%;
   will-change: transform;
-  min-height: inherit;
 }
 [data-hero-track] .hero-slide {
   flex: 0 0 100%;
   width: 100%;
   min-width: 0;
-  min-height: min(88vh, 720px);
+  height: 100%;
+  position: relative;
 }
 .hero-mesh {
+  height: 100%;
   background:
     linear-gradient(135deg, rgba(0, 60, 40, 0.82) 0%, rgba(15, 61, 92, 0.78) 45%, rgba(0, 100, 60, 0.75) 100%),
     url("../images/prayer-city-day2-team.jpeg") center/cover no-repeat;
@@ -47,6 +56,7 @@
 .hero-flyer-mesh {
   position: relative;
   overflow: hidden;
+  height: 100%;
 }
 .hero-flyer-bg {
   position: absolute;
@@ -118,14 +128,15 @@
   to { opacity: 1; transform: translateX(0) scale(1) rotateY(0); }
 }
 .hero-slide .hero-anim { opacity: 0; }
-.hero-slide.is-active .hero-anim-1 { animation: heroReveal 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.08s forwards; }
-.hero-slide.is-active .hero-anim-2 { animation: heroPop 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.18s forwards; }
-.hero-slide.is-active .hero-anim-3 { animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.32s forwards; }
-.hero-slide.is-active .hero-anim-4 { animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.44s forwards; }
-.hero-slide.is-active .hero-anim-5 { animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.56s forwards; }
-.hero-slide.is-active .hero-anim-6 { animation: heroReveal 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.68s forwards; }
-.hero-slide.is-active .hero-flyer-wrap { animation: heroFlyerIn 1s cubic-bezier(0.22, 1, 0.36, 1) 0.22s forwards; opacity: 0; }
-.hero-slide.is-active .hero-photo-tile { animation: heroKenBurns 14s ease-in-out infinite alternate, heroReveal 1s cubic-bezier(0.22, 1, 0.36, 1) 0.35s forwards; opacity: 0; }
+.hero-slide.is-active .hero-anim { opacity: 1; }
+.hero-slide.is-active .hero-anim-1 { animation: heroReveal 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both; }
+.hero-slide.is-active .hero-anim-2 { animation: heroPop 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both; }
+.hero-slide.is-active .hero-anim-3 { animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.32s both; }
+.hero-slide.is-active .hero-anim-4 { animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.44s both; }
+.hero-slide.is-active .hero-anim-5 { animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.56s both; }
+.hero-slide.is-active .hero-anim-6 { animation: heroReveal 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.68s both; }
+.hero-slide.is-active .hero-flyer-wrap { animation: heroFlyerIn 1s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both; opacity: 1; }
+.hero-slide.is-active .hero-photo-tile { animation: heroKenBurns 14s ease-in-out infinite alternate, heroReveal 1s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both; opacity: 1; }
 .hero-dot-wrap { position: relative; overflow: hidden; border-radius: 9999px; }
 .hero-dot-progress {
   position: absolute; inset: 0; background: #c9a227; transform-origin: left;
