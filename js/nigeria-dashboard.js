@@ -1337,27 +1337,145 @@
     return plan;
   }
 
-  function visionPlanCardsHtml(plan) {
+  function normalizeVisionStatus(status) {
+    var s = String(status || 'todo').toLowerCase();
+    return s === 'done' || s === 'doing' ? s : 'todo';
+  }
+
+  function visionProgressFromPlan(plan) {
+    var list = (plan && plan.milestones) || [];
+    var done = 0;
+    var doing = 0;
+    list.forEach(function (m) {
+      var s = normalizeVisionStatus(m && m.status);
+      if (s === 'done') done += 1;
+      else if (s === 'doing') doing += 1;
+    });
+    var total = list.length;
+    var pct = total ? Math.round(((done + doing * 0.5) / total) * 100) : 0;
+    return { total: total, done: done, doing: doing, todo: Math.max(0, total - done - doing), percent: pct };
+  }
+
+  function visionProgressBenchHtml(plan) {
+    var p = visionProgressFromPlan(plan);
+    if (!p.total) return '';
+    var label =
+      p.percent >= 100
+        ? 'Vision achieved — well done!'
+        : p.percent >= 50
+          ? 'Strong progress — keep going'
+          : p.done || p.doing
+            ? 'Work is underway'
+            : 'Ready to begin';
+    return (
+      '<div class="vision-progress-bench mb-4 rounded-xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-white p-3">' +
+      '<div class="flex items-center justify-between gap-2 mb-1.5">' +
+      '<p class="text-[11px] font-bold uppercase tracking-wide text-emerald-800"><i class="fas fa-chart-line mr-1"></i>Progress bench</p>' +
+      '<p class="text-sm font-bold text-emerald-900">' +
+      p.percent +
+      '%</p></div>' +
+      '<div class="h-2.5 rounded-full bg-emerald-100 overflow-hidden mb-2">' +
+      '<div class="h-full rounded-full bg-emerald-500 transition-all" style="width:' +
+      p.percent +
+      '%"></div></div>' +
+      '<p class="text-xs text-slate-700">' +
+      escapeHtml(label) +
+      ' · <strong>' +
+      p.done +
+      '</strong> done · <strong>' +
+      p.doing +
+      '</strong> in progress · <strong>' +
+      p.todo +
+      '</strong> not started</p></div>'
+    );
+  }
+
+  function milestoneStatusControlsHtml(status, index, canTrack) {
+    var cur = normalizeVisionStatus(status);
+    var opts = [
+      { id: 'todo', label: 'Not started', icon: 'fa-circle', active: 'bg-slate-200 text-slate-700 border-slate-300' },
+      { id: 'doing', label: 'In progress', icon: 'fa-spinner', active: 'bg-amber-100 text-amber-800 border-amber-300' },
+      { id: 'done', label: 'Done', icon: 'fa-circle-check', active: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+    ];
+    if (!canTrack) {
+      var curOpt = opts.find(function (o) {
+        return o.id === cur;
+      });
+      return (
+        '<span class="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 border ' +
+        (curOpt ? curOpt.active : opts[0].active) +
+        '"><i class="fas ' +
+        (curOpt ? curOpt.icon : 'fa-circle') +
+        '"></i>' +
+        escapeHtml(curOpt ? curOpt.label : 'Not started') +
+        '</span>'
+      );
+    }
+    return (
+      '<div class="flex flex-wrap gap-1 mt-2" role="group" aria-label="Milestone progress">' +
+      opts
+        .map(function (o) {
+          var on = o.id === cur;
+          return (
+            '<button type="button" class="vision-status-btn text-[10px] font-semibold rounded-full px-2 py-1 border transition ' +
+            (on ? o.active + ' ring-1 ring-offset-1 ring-current' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50') +
+            '" data-milestone-index="' +
+            index +
+            '" data-status="' +
+            o.id +
+            '" title="' +
+            escapeHtml(o.label) +
+            '"><i class="fas ' +
+            o.icon +
+            ' mr-0.5"></i>' +
+            escapeHtml(o.label) +
+            '</button>'
+          );
+        })
+        .join('') +
+      '</div>'
+    );
+  }
+
+  function visionPlanCardsHtml(plan, opts) {
+    opts = opts || {};
+    var canTrack = opts.canTrack === true;
     if (!plan) return '';
-    var html = '';
+    var html = visionProgressBenchHtml(plan);
     if (plan.milestones && plan.milestones.length) {
       html +=
         '<div class="mb-4">' +
         '<h5 class="text-[11px] font-bold uppercase tracking-wide text-brand mb-2"><i class="fas fa-flag-checkered mr-1"></i>Milestones</h5>' +
         '<div class="grid sm:grid-cols-2 gap-2">' +
         plan.milestones
-          .map(function (m) {
+          .map(function (m, i) {
+            var st = normalizeVisionStatus(m.status);
+            var tone =
+              st === 'done'
+                ? 'border-emerald-200 bg-emerald-50/60'
+                : st === 'doing'
+                  ? 'border-amber-200 bg-amber-50/50'
+                  : 'border-slate-200 bg-white';
             return (
-              '<div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">' +
-              '<span class="inline-block text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5 mb-1">' +
+              '<div class="rounded-xl border ' +
+              tone +
+              ' p-3 shadow-sm" data-milestone-index="' +
+              i +
+              '">' +
+              '<div class="flex items-start justify-between gap-2 mb-1">' +
+              '<span class="inline-block text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5">' +
               escapeHtml(m.targetMonth || '') +
               '</span>' +
+              (!canTrack ? milestoneStatusControlsHtml(st, i, false) : '') +
+              '</div>' +
               '<p class="text-sm font-semibold text-slate-900 leading-snug">' +
               escapeHtml(m.title || '') +
               '</p>' +
               '<p class="text-xs text-slate-600 mt-1">' +
               escapeHtml(m.description || '') +
-              '</p></div>'
+              '</p>' +
+              (canTrack ? milestoneStatusControlsHtml(st, i, true) : '') +
+              '</div>'
             );
           })
           .join('') +
@@ -1441,24 +1559,30 @@
     if (!canEdit && vision && vision.plan) {
       return (
         '<div class="unit-vision mt-5 border-t border-slate-100 pt-4">' +
-        '<h4 class="text-sm font-bold text-slate-900 mb-2"><i class="fas fa-star text-brand mr-1"></i>My Vision Board</h4>' +
-        '<p class="text-xs text-slate-500 mb-2">Shared by your unit leader</p>' +
+        '<h4 class="text-sm font-bold text-slate-900 mb-2"><i class="fas fa-star text-brand mr-1"></i>Our Vision Board</h4>' +
+        '<p class="text-xs text-slate-500 mb-2">Shared by your unit leader — watch the progress bench as work moves forward.</p>' +
         '<p class="text-sm text-slate-700 whitespace-pre-wrap rounded-xl bg-slate-50 border border-slate-100 p-3 mb-3">' +
         escapeHtml(vision.visionText || '') +
         '</p>' +
         '<div class="rounded-2xl border border-slate-200 bg-white p-4">' +
-        visionPlanCardsHtml(vision.plan) +
+        visionPlanCardsHtml(vision.plan, { canTrack: false }) +
         '</div></div>'
       );
     }
-    var initialCards = vision && vision.plan ? visionPlanCardsHtml(vision.plan) : '';
+    var initialCards = vision && vision.plan ? visionPlanCardsHtml(vision.plan, { canTrack: true }) : '';
     var initialReadable = (vision && vision.plan && planToEditableText(vision.plan)) || '';
+    var planPayload = '';
+    try {
+      planPayload = vision && vision.plan ? encodeURIComponent(JSON.stringify(vision.plan)) : '';
+    } catch (ignore) {}
     return (
       '<div class="unit-vision mt-5 border-t border-slate-100 pt-4" data-unit-id="' +
       escapeHtml(c.unitId) +
-      '">' +
+      '"' +
+      (planPayload ? ' data-live-plan="' + planPayload + '"' : '') +
+      '>' +
       '<h4 class="text-sm font-bold text-slate-900 mb-1"><i class="fas fa-star text-brand mr-1"></i>My Vision Board</h4>' +
-      '<p class="text-xs text-slate-500 mb-3">Write where your unit is headed in the next 3 months. We\u2019ll turn it into a clear plan you can review, edit, and share with your team.</p>' +
+      '<p class="text-xs text-slate-500 mb-3">Write where your unit is headed in the next 3 months. After you share the plan, use the progress bench to mark each milestone as not started, in progress, or done — so the team can see the vision being achieved.</p>' +
       '<div class="grid gap-4 lg:grid-cols-2">' +
       '<div>' +
       '<label class="block text-xs font-semibold text-slate-600 mb-1">Your vision</label>' +
@@ -1478,13 +1602,13 @@
       '<button type="button" class="btn-save-plan hidden text-[11px] font-semibold rounded-lg bg-ng-green text-white px-2 py-1 hover:bg-emerald-700" title="Save edits"><i class="fas fa-check mr-1"></i>Save</button>' +
       '</div>' +
       '</div>' +
-      '<div class="vision-plan-view rounded-2xl border border-slate-200 bg-slate-50/70 p-4 opacity-70">' +
+      '<div class="vision-plan-view rounded-2xl border border-slate-200 bg-slate-50/70 p-4">' +
       initialCards +
       '</div>' +
       '<textarea class="vision-plan hidden w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm min-h-[240px] focus:ring-2 focus:ring-ng-green outline-none">' +
       escapeHtml(initialReadable) +
       '</textarea>' +
-      '<p class="text-[11px] text-slate-400 mt-1">Read-only preview \u2014 tap <strong>Edit</strong> to change, <strong>Save</strong> to keep edits. When editing, keep the section titles.</p>' +
+      '<p class="text-[11px] text-slate-400 mt-1">Tap a milestone status to update the progress bench. Tap <strong>Edit</strong> only when you need to change the plan wording.</p>' +
       '<button type="button" class="btn-share-vision mt-2 w-full text-xs font-semibold rounded-lg bg-ng-green text-white px-3 py-2.5 hover:bg-emerald-700"><i class="fas fa-share-nodes mr-1"></i>Share with team</button>' +
       '</div>' +
       '</div></div>'
@@ -1529,10 +1653,65 @@
       var visionTextEl = panel.querySelector('.vision-text');
       var planEl = panel.querySelector('.vision-plan');
       var viewEl = panel.querySelector('.vision-plan-view');
+      var livePlan = readableToPlan(planEl ? planEl.value : '');
+      try {
+        var packed = panel.getAttribute('data-live-plan');
+        if (packed) {
+          var parsed = JSON.parse(decodeURIComponent(packed));
+          if (parsed && typeof parsed === 'object') livePlan = parsed;
+        }
+      } catch (ignore) {}
 
       function renderView() {
-        if (viewEl) viewEl.innerHTML = visionPlanCardsHtml(readableToPlan(planEl ? planEl.value : ''));
+        if (!viewEl) return;
+        viewEl.innerHTML = visionPlanCardsHtml(livePlan, { canTrack: true });
+        bindProgressButtons();
       }
+
+      function bindProgressButtons() {
+        if (!viewEl) return;
+        viewEl.querySelectorAll('.vision-status-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var idx = parseInt(btn.getAttribute('data-milestone-index'), 10);
+            var next = btn.getAttribute('data-status');
+            if (!Number.isInteger(idx) || !next) return;
+            if (!livePlan.milestones || !livePlan.milestones.length) {
+              if (statusEl) statusEl.textContent = 'Share the plan with your team first, then mark progress.';
+              return;
+            }
+            btn.disabled = true;
+            if (statusEl) statusEl.textContent = 'Updating progress…';
+            functions
+              .httpsCallable('updateNigeriaVisionProgress')({
+                unitId: unitId,
+                milestoneIndex: idx,
+                status: next,
+              })
+              .then(function (res) {
+                if (res.data && res.data.plan) {
+                  livePlan = res.data.plan;
+                  if (planEl) planEl.value = planToEditableText(livePlan);
+                } else if (livePlan.milestones && livePlan.milestones[idx]) {
+                  livePlan.milestones[idx].status = next;
+                }
+                renderView();
+                var p = (res.data && res.data.progress) || visionProgressFromPlan(livePlan);
+                if (statusEl) {
+                  statusEl.textContent =
+                    'Progress updated — ' + p.percent + '% on the bench. Your team can see this too.';
+                }
+              })
+              .catch(function (err) {
+                if (statusEl) {
+                  statusEl.textContent =
+                    (err && err.message) || 'Could not update progress. Share the plan first if you have not yet.';
+                }
+                btn.disabled = false;
+              });
+          });
+        });
+      }
+
       function setEditMode(on) {
         if (!planEl || !viewEl) return;
         if (on) {
@@ -1542,6 +1721,14 @@
           if (savePlanBtn) savePlanBtn.classList.remove('hidden');
           planEl.focus();
         } else {
+          var edited = readableToPlan(planEl.value);
+          edited.milestones = (edited.milestones || []).map(function (m, i) {
+            var prev = livePlan.milestones && livePlan.milestones[i];
+            return Object.assign({}, m, {
+              status: normalizeVisionStatus((prev && prev.status) || m.status),
+            });
+          });
+          livePlan = edited;
           renderView();
           planEl.classList.add('hidden');
           viewEl.classList.remove('hidden');
@@ -1549,6 +1736,8 @@
           if (savePlanBtn) savePlanBtn.classList.add('hidden');
         }
       }
+
+      bindProgressButtons();
 
       if (genBtn) {
         genBtn.addEventListener('click', function () {
@@ -1563,12 +1752,13 @@
             .httpsCallable('generateNigeriaUnitVision')({ unitId: unitId, visionText: visionText })
             .then(function (res) {
               if (planEl && res.data && res.data.plan) {
-                planEl.value = planToEditableText(res.data.plan);
+                livePlan = res.data.plan;
+                planEl.value = planToEditableText(livePlan);
                 renderView();
               }
               if (statusEl) {
                 statusEl.textContent =
-                  'Your plan is ready — review it, tap Edit to adjust, then Share with team.';
+                  'Your plan is ready — review it, Share with team, then mark milestones on the progress bench.';
               }
             })
             .catch(function (err) {
@@ -1601,6 +1791,14 @@
             return;
           }
           var plan = readableToPlan(planEl ? planEl.value : '');
+          if (livePlan && livePlan.milestones) {
+            plan.milestones = (plan.milestones || []).map(function (m, i) {
+              var prev = livePlan.milestones[i];
+              return Object.assign({}, m, {
+                status: normalizeVisionStatus((prev && prev.status) || m.status),
+              });
+            });
+          }
           if (!plan.milestones.length && !plan.roadmap.length) {
             if (statusEl) statusEl.textContent = 'Create your plan first.';
             return;
@@ -1610,7 +1808,8 @@
           functions
             .httpsCallable('saveNigeriaUnitVision')({ unitId: unitId, visionText: visionText, plan: plan })
             .then(function () {
-              if (statusEl) statusEl.textContent = 'Shared — everyone in your unit can now see it.';
+              livePlan = plan;
+              if (statusEl) statusEl.textContent = 'Shared — mark milestones on the progress bench as work moves forward.';
               return loadDashboard();
             })
             .catch(function (err) {

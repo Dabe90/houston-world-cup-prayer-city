@@ -1714,6 +1714,7 @@ exports.getNigeriaAttendanceForReport = nigeriaVolunteer.getNigeriaAttendanceFor
 exports.summarizeNigeriaMeetingNotesForReport = nigeriaVolunteer.summarizeNigeriaMeetingNotesForReport;
 exports.generateNigeriaUnitVision = nigeriaVolunteer.generateNigeriaUnitVision;
 exports.saveNigeriaUnitVision = nigeriaVolunteer.saveNigeriaUnitVision;
+exports.updateNigeriaVisionProgress = nigeriaVolunteer.updateNigeriaVisionProgress;
 exports.getPrayerCityAccess = nigeriaVolunteer.getPrayerCityAccess;
 exports.submitNigeriaMemberSignup = nigeriaVolunteer.submitNigeriaMemberSignup;
 exports.getNigeriaMemberSignups = nigeriaVolunteer.getNigeriaMemberSignups;

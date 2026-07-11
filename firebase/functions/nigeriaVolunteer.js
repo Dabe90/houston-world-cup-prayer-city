@@ -20,6 +20,50 @@ const notesSummarySchema = z.object({
   prayerAndFollowUps: z.array(z.string()).max(8),
 });
 
+const VISION_STATUSES = new Set(['todo', 'doing', 'done']);
+
+function normalizeVisionStatus(status) {
+  const s = String(status || 'todo').trim().toLowerCase();
+  return VISION_STATUSES.has(s) ? s : 'todo';
+}
+
+/** Keep milestone progress when a leader rewrites/shares an updated plan. */
+function mergeMilestoneProgress(oldPlan, newPlan) {
+  if (!newPlan || typeof newPlan !== 'object') return newPlan;
+  const oldList = (oldPlan && Array.isArray(oldPlan.milestones) ? oldPlan.milestones : []) || [];
+  const byTitle = new Map();
+  oldList.forEach((m, i) => {
+    const title = String(m && m.title || '').trim().toLowerCase();
+    if (title) byTitle.set(title, normalizeVisionStatus(m.status));
+    byTitle.set('__idx_' + i, normalizeVisionStatus(m && m.status));
+  });
+  const milestones = Array.isArray(newPlan.milestones)
+    ? newPlan.milestones.map((m, i) => {
+        const title = String(m && m.title || '').trim().toLowerCase();
+        const status =
+          (title && byTitle.get(title)) ||
+          byTitle.get('__idx_' + i) ||
+          normalizeVisionStatus(m && m.status);
+        return Object.assign({}, m, { status });
+      })
+    : [];
+  return Object.assign({}, newPlan, { milestones });
+}
+
+function visionProgressSummary(plan) {
+  const milestones = (plan && Array.isArray(plan.milestones) ? plan.milestones : []) || [];
+  let done = 0;
+  let doing = 0;
+  milestones.forEach((m) => {
+    const s = normalizeVisionStatus(m && m.status);
+    if (s === 'done') done += 1;
+    else if (s === 'doing') doing += 1;
+  });
+  const total = milestones.length;
+  const pct = total ? Math.round(((done + doing * 0.5) / total) * 100) : 0;
+  return { total, done, doing, todo: Math.max(0, total - done - doing), percent: pct };
+}
+
 const unitVisionPlanSchema = z.object({
   milestones: z
     .array(
@@ -27,6 +71,7 @@ const unitVisionPlanSchema = z.object({
         title: z.string(),
         targetMonth: z.string(),
         description: z.string(),
+        status: z.enum(['todo', 'doing', 'done']).optional(),
       })
     )
     .max(12),
@@ -1851,6 +1896,7 @@ function buildStarterVisionPlan(visionText, unitLabel, startDate) {
       {
         title: 'Everyone knows the vision',
         targetMonth: m1,
+        status: 'todo',
         description:
           visionLine +
           ' In the first month, share it with the whole team, pray over it together, and agree on what a good result looks like.',
@@ -1858,24 +1904,28 @@ function buildStarterVisionPlan(visionText, unitLabel, startDate) {
       {
         title: 'A simple weekly rhythm has started',
         targetMonth: m1,
+        status: 'todo',
         description:
           'Pick one or two simple things the team will do every week to move the vision forward, and make sure each person knows their part.',
       },
       {
         title: 'More people are taking part',
         targetMonth: m2,
+        status: 'todo',
         description:
           'Invite more members to join in, celebrate the early wins, and gently adjust anything that is not working well.',
       },
       {
         title: 'The vision is reaching more people',
         targetMonth: m3,
+        status: 'todo',
         description:
           'Open the work up to bless more people beyond the team, and keep encouraging one another along the way.',
       },
       {
         title: 'We finish strong and give thanks',
         targetMonth: m3,
+        status: 'todo',
         description:
           'Look back at how far the team has come, thank everyone for their part, and decide which good habits to keep going.',
       },
@@ -1992,6 +2042,9 @@ VERY IMPORTANT rules for the wording:
         schema: unitVisionPlanSchema,
       });
       if (output && Array.isArray(output.milestones) && output.milestones.length) {
+        output.milestones = output.milestones.map((m) =>
+          Object.assign({}, m, { status: normalizeVisionStatus(m && m.status) })
+        );
         return { plan: output, aiUsed: true, periodLabel };
       }
       return { plan: buildStarterVisionPlan(visionText, unitLabel, periodStart), aiUsed: false, periodLabel };
@@ -2011,7 +2064,7 @@ const saveNigeriaUnitVision = onCall(async (request) => {
   const profile = profileSnap.data();
   const unitId = String(request.data?.unitId || '').trim();
   const visionText = String(request.data?.visionText || '').trim().slice(0, 4000);
-  const plan = request.data?.plan;
+  let plan = request.data?.plan;
   if (!unitId || visionText.length < 20 || !plan || typeof plan !== 'object') {
     throw new HttpsError('invalid-argument', 'Unit, vision text, and plan are required.');
   }
@@ -2019,19 +2072,82 @@ const saveNigeriaUnitVision = onCall(async (request) => {
   assertUnitLeader(profile, unitId, isSuperUser);
 
   const unit = getUnit(unitId);
+  const existingSnap = await db.collection('nigeria_unit_vision').doc(unitId).get();
+  const existing = existingSnap.exists ? existingSnap.data() : null;
+  plan = mergeMilestoneProgress(existing && existing.plan, plan);
+  if (Array.isArray(plan.milestones)) {
+    plan.milestones = plan.milestones.map((m) =>
+      Object.assign({}, m, { status: normalizeVisionStatus(m && m.status) })
+    );
+  }
+
   const record = {
     unitId,
     unitLabel: unit ? unit.label : unitId,
     visionText,
     plan,
     planText: formatVisionPlanText(plan),
+    progress: visionProgressSummary(plan),
     updatedByUid: uid,
     updatedByName: profile.name || '',
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     publishedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
   await db.collection('nigeria_unit_vision').doc(unitId).set(record, { merge: true });
-  return { ok: true };
+  return { ok: true, progress: record.progress };
+});
+
+/**
+ * Leaders mark milestone progress on the vision board (todo / doing / done)
+ * without rewriting the whole plan. The whole team sees the progress bench.
+ */
+const updateNigeriaVisionProgress = onCall(async (request) => {
+  const uid = requireAuth(request);
+  const db = admin.firestore();
+  const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
+  const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+  if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Profile required.');
+  const profile = profileSnap.data();
+  const unitId = String(request.data?.unitId || '').trim();
+  const milestoneIndex = Number(request.data?.milestoneIndex);
+  const status = normalizeVisionStatus(request.data?.status);
+  if (!unitId || !Number.isInteger(milestoneIndex) || milestoneIndex < 0) {
+    throw new HttpsError('invalid-argument', 'Unit and milestone are required.');
+  }
+  const isSuperUser = access.isSuperUser === true || profile.isSuperUser === true;
+  assertUnitLeader(profile, unitId, isSuperUser);
+
+  const ref = db.collection('nigeria_unit_vision').doc(unitId);
+  const snap = await ref.get();
+  if (!snap.exists || !snap.data().plan) {
+    throw new HttpsError('failed-precondition', 'Share a vision plan with the team first.');
+  }
+  const data = snap.data();
+  const plan = Object.assign({}, data.plan);
+  const milestones = Array.isArray(plan.milestones) ? plan.milestones.slice() : [];
+  if (milestoneIndex >= milestones.length) {
+    throw new HttpsError('invalid-argument', 'That milestone was not found.');
+  }
+  milestones[milestoneIndex] = Object.assign({}, milestones[milestoneIndex], {
+    status,
+    statusUpdatedAt: new Date().toISOString(),
+    statusUpdatedByUid: uid,
+    statusUpdatedByName: profile.name || '',
+  });
+  plan.milestones = milestones;
+  const progress = visionProgressSummary(plan);
+  await ref.set(
+    {
+      plan,
+      planText: formatVisionPlanText(plan),
+      progress,
+      updatedByUid: uid,
+      updatedByName: profile.name || '',
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+  return { ok: true, progress, plan };
 });
 
 const getPrayerCityAccess = onCall(async (request) => {
@@ -2492,6 +2608,7 @@ module.exports = {
   summarizeNigeriaMeetingNotesForReport,
   generateNigeriaUnitVision,
   saveNigeriaUnitVision,
+  updateNigeriaVisionProgress,
   getPrayerCityAccess,
   submitNigeriaMemberSignup,
   getNigeriaMemberSignups,
