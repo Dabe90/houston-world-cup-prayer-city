@@ -482,6 +482,8 @@ function computeConsecutiveMisses(pastMeetings, attendedKeys, excusedKeys = new 
 
 const STRIKE_WINDOW_WEEKS = 8;
 const STRIKE_WINDOW_MS = STRIKE_WINDOW_WEEKS * 7 * 86400000;
+/** A check-in only counts as "late" once this many minutes past the start have passed. */
+const LATE_GRACE_MS = 5 * 60 * 1000;
 
 /**
  * Counts, within the last 8 weeks, how many meetings a member missed and how
@@ -497,7 +499,7 @@ function computeStrikeWindowStats(allPast, attendedKeys, excusedKeys, checkedInA
     if (excusedKeys.has(m.key)) return;
     if (attendedKeys.has(m.key)) {
       const at = checkedInAtByKey[m.key];
-      if (at && at > m.start.getTime()) late += 1;
+      if (at && at > m.start.getTime() + LATE_GRACE_MS) late += 1;
     } else {
       missed += 1;
     }
