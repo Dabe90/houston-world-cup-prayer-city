@@ -2,13 +2,28 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isNigeriaSuperUser() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && (
+          request.auth.token.email == 'ddbs.htx@gmail.com'
+          || request.auth.token.email == 'abuxberkeley@gmail.com'
+        );
+    }
+
+    function nigeriaProfileExists() {
+      return exists(/databases/$(database)/documents/nigeria_volunteers/$(request.auth.uid));
+    }
+
     function nigeriaVolunteer() {
       return get(/databases/$(database)/documents/nigeria_volunteers/$(request.auth.uid)).data;
     }
 
     function nigeriaCanAccessUnit(unitId) {
-      let v = nigeriaVolunteer();
-      return (v.unitIds != null && unitId in v.unitIds) || v.unitId == unitId;
+      return isNigeriaSuperUser()
+        || (nigeriaProfileExists()
+            && ((nigeriaVolunteer().unitIds != null && unitId in nigeriaVolunteer().unitIds)
+                || nigeriaVolunteer().unitId == unitId));
     }
 
     // Populated by Cloud Functions only. Clients never read this directly.
@@ -63,9 +78,11 @@ service cloud.firestore {
 
     match /nigeria_attendance/{attendanceId} {
       allow read: if request.auth != null
-        && (resource.data.uid == request.auth.uid
-            || get(/databases/$(database)/documents/nigeria_volunteers/$(request.auth.uid)).data.unitId == resource.data.unitId
-               && get(/databases/$(database)/documents/nigeria_volunteers/$(request.auth.uid)).data.role == 'leader');
+        && (isNigeriaSuperUser()
+            || resource.data.uid == request.auth.uid
+            || (nigeriaProfileExists()
+                && get(/databases/$(database)/documents/nigeria_volunteers/$(request.auth.uid)).data.unitId == resource.data.unitId
+                   && get(/databases/$(database)/documents/nigeria_volunteers/$(request.auth.uid)).data.role == 'leader'));
       allow create: if false;
       allow update, delete: if false;
     }
@@ -87,10 +104,10 @@ service cloud.firestore {
 
     // Shared notes for a unit meeting — all members of that unit can read/write.
     match /nigeria_unit_meeting_notes/{noteId} {
-      allow read: if request.auth != null && nigeriaCanAccessUnit(resource.data.unitId);
+      allow read: if request.auth != null && (isNigeriaSuperUser() || nigeriaCanAccessUnit(resource.data.unitId));
       allow create, update: if request.auth != null
         && request.resource.data.updatedByUid == request.auth.uid
-        && nigeriaCanAccessUnit(request.resource.data.unitId);
+        && (isNigeriaSuperUser() || nigeriaCanAccessUnit(request.resource.data.unitId));
       allow delete: if false;
     }
 

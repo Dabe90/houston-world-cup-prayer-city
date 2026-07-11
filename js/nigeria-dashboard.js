@@ -242,20 +242,60 @@
     return m + 'm';
   }
 
+  function meetingContextExtras(unit, nextMeeting, isSuperUser, role) {
+    var absenceTarget = nextMeeting;
+    var checkInOpen = false;
+    if (nextMeeting && window.NigeriaUnits.isWithinCheckInWindow(nextMeeting)) {
+      checkInOpen = true;
+    } else if (nextMeeting && unit) {
+      var prev = window.NigeriaUnits.getNextMeeting(
+        unit,
+        new Date(new Date(nextMeeting.start).getTime() - 86400000)
+      );
+      if (prev && window.NigeriaUnits.isWithinCheckInWindow(prev)) {
+        checkInOpen = true;
+        absenceTarget = prev;
+      }
+    }
+    var targetIso = absenceTarget ? absenceTarget.start : null;
+    var canRequestPlanned =
+      targetIso && new Date(targetIso).getTime() - Date.now() >= 2 * 24 * 60 * 60 * 1000;
+    var canRequestEmergency = absenceTarget && window.NigeriaUnits.isWithinCheckInWindow(absenceTarget);
+    return {
+      checkInOpen: checkInOpen,
+      absenceTargetMeeting: absenceTarget
+        ? {
+            key: absenceTarget.key,
+            dateYmd: absenceTarget.dateYmd,
+            startIso: absenceTarget.start.toISOString(),
+            endIso: absenceTarget.end.toISOString(),
+          }
+        : null,
+      canRequestPlanned: !!canRequestPlanned,
+      canRequestEmergency: !!canRequestEmergency,
+      absenceQuotas: {
+        windowWeeks: 8,
+        maxRequests: 2,
+        usedInWindow: 0,
+        remaining: 2,
+        emergencyWindowWeeks: 12,
+        emergencyMax: 1,
+        emergencyUsedInWindow: 0,
+        emergencyAvailable: true,
+        emergencyResetsAt: null,
+      },
+      absenceRequest: null,
+      unitVision: null,
+      lastMeetingDigest: null,
+      canEditVision: role === 'leader' || isSuperUser,
+    };
+  }
+
   function buildUnitContextsFromProfile(profile, isSuperUser) {
     return normalizeProfileUnits(profile).map(function (m) {
       var unit = window.NigeriaUnits.getUnit(m.unitId);
       var nextMeeting = unit ? window.NigeriaUnits.getNextMeeting(unit) : null;
-      var checkInOpen = false;
-      if (nextMeeting && window.NigeriaUnits.isWithinCheckInWindow(nextMeeting)) {
-        checkInOpen = true;
-      } else if (nextMeeting && unit) {
-        var prev = window.NigeriaUnits.getNextMeeting(
-          unit,
-          new Date(new Date(nextMeeting.start).getTime() - 86400000)
-        );
-        if (prev && window.NigeriaUnits.isWithinCheckInWindow(prev)) checkInOpen = true;
-      }
+      var extras = meetingContextExtras(unit, nextMeeting, isSuperUser, m.role);
       return {
         unitId: m.unitId,
         unitLabel: m.unitLabel,
@@ -269,10 +309,18 @@
               endIso: nextMeeting.end.toISOString(),
             }
           : null,
-        checkInOpen: checkInOpen,
+        checkInOpen: extras.checkInOpen,
         attendanceStats: profile.attendanceStats || null,
         latestReport: null,
         canSubmitReport: m.role === 'leader' || isSuperUser,
+        canEditVision: extras.canEditVision,
+        absenceQuotas: extras.absenceQuotas,
+        absenceRequest: extras.absenceRequest,
+        absenceTargetMeeting: extras.absenceTargetMeeting,
+        canRequestPlanned: extras.canRequestPlanned,
+        canRequestEmergency: extras.canRequestEmergency,
+        unitVision: extras.unitVision,
+        lastMeetingDigest: extras.lastMeetingDigest,
       };
     });
   }
@@ -1436,27 +1484,20 @@
   }
 
   function showSuperUserLanding() {
-    if (profileSaveInFlight || $('dash-shell') && !$('dash-shell').classList.contains('hidden')) {
-      return Promise.resolve();
-    }
-    showSuperUserChrome();
-    hide($('auth-panel'));
-    var preview = loadPreviewProfile();
-    if (preview && isProfileComplete(preview)) {
-      showDashboardSafely(buildLocalDashboard(preview, true));
-      return Promise.resolve();
-    }
     showOnboarding(coordinatorVolunteer(), true);
     return loadLocalNigeriaProfile().then(function (snap) {
       if (snap.exists && isProfileComplete(snap.data())) {
-        showDashboardSafely(buildLocalDashboard(snap.data(), true));
+        return loadDashboard();
       }
     });
   }
 
   function processDashboardResponse(data) {
     if (!data || data.eligible === false) {
-      if (isClientSuperUser()) return showSuperUserLanding();
+      if (isClientSuperUser()) {
+        showOnboarding(coordinatorVolunteer(), true);
+        return;
+      }
       showNotEligible(data && data.message);
       return;
     }
@@ -1464,8 +1505,8 @@
       showOnboarding(data.volunteer || coordinatorVolunteer(), data.isSuperUser || isClientSuperUser());
       return;
     }
-    if (!data.unitContexts || !data.unitContexts.length) {
-      data = buildLocalDashboard(data.profile, data.isSuperUser);
+    if ((!data.unitContexts || !data.unitContexts.length) && data.profile) {
+      data = buildLocalDashboard(data.profile, data.isSuperUser || isClientSuperUser());
     }
     showDashboardSafely(data);
   }
@@ -1475,19 +1516,32 @@
   }
 
   function loadDashboard() {
-    if (isClientSuperUser()) {
-      showSuperUserLanding();
-      return functions
-        .httpsCallable('getNigeriaDashboard')()
-        .then(function (res) {
-          if (res && res.data) processDashboardResponse(res.data);
-        })
-        .catch(function () {});
-    }
     return functions
       .httpsCallable('getNigeriaDashboard')()
       .then(function (res) {
         processDashboardResponse(res.data);
+      })
+      .catch(function (err) {
+        console.error('getNigeriaDashboard', err);
+        var msg = (err && err.message) || 'Could not load dashboard.';
+        if (isClientSuperUser()) {
+          var preview = loadPreviewProfile();
+          if (preview && isProfileComplete(preview)) {
+            setStatus('Using offline preview — some features need a saved profile.', 'info');
+            showDashboardSafely(buildLocalDashboard(preview, true));
+            return;
+          }
+          return loadLocalNigeriaProfile().then(function (snap) {
+            if (snap.exists && isProfileComplete(snap.data())) {
+              setStatus('Using saved profile — reloading server data failed.', 'info');
+              showDashboardSafely(buildLocalDashboard(snap.data(), true));
+            } else {
+              showOnboarding(coordinatorVolunteer(), true);
+              setStatus(msg, 'error');
+            }
+          });
+        }
+        setStatus(msg, 'error');
       });
   }
 
@@ -1514,8 +1568,17 @@
     profileSaveInFlight = true;
     savePreviewProfile(profile);
     setStatus('Profile saved!', 'success');
-    showDashboardSafely(buildLocalDashboard(profile, isClientSuperUser()));
-    profileSaveInFlight = false;
+    writeProfileToFirestore(profile)
+      .then(function () {
+        return loadDashboard();
+      })
+      .catch(function (err) {
+        setStatus((err && err.message) || 'Profile saved locally; sync failed.', 'error');
+        showDashboardSafely(buildLocalDashboard(profile, isClientSuperUser()));
+      })
+      .finally(function () {
+        profileSaveInFlight = false;
+      });
   }
 
   function writeProfileToFirestore(profile) {
@@ -1550,9 +1613,22 @@
     var payload = { name: name, units: units };
 
     if (isClientSuperUser()) {
-      finishProfileSave(profile);
-      writeProfileToFirestore(profile).catch(console.warn);
-      functions.httpsCallable('saveNigeriaProfile')(payload).catch(console.warn);
+      profileSaveInFlight = true;
+      savePreviewProfile(profile);
+      writeProfileToFirestore(profile)
+        .then(function () {
+          return functions.httpsCallable('saveNigeriaProfile')(payload);
+        })
+        .then(function () {
+          setStatus('Profile saved!', 'success');
+          return loadDashboard();
+        })
+        .catch(function (err) {
+          setStatus((err && err.message) || 'Could not save.', 'error');
+        })
+        .finally(function () {
+          profileSaveInFlight = false;
+        });
       return;
     }
 
@@ -1615,7 +1691,11 @@
   }
 
   function showNotEligible(message) {
-    if (isClientSuperUser()) return showSuperUserLanding();
+    if (isClientSuperUser()) {
+      showOnboarding(coordinatorVolunteer(), true);
+      setStatus(message || 'Complete coordinator preview profile to continue.', 'info');
+      return;
+    }
     hide($('dash-shell'));
     setPublicLanding(true);
     show($('not-eligible-panel'));

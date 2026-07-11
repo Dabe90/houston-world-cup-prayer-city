@@ -220,6 +220,9 @@
           return String(a.meetingDateYmd).localeCompare(String(b.meetingDateYmd));
         });
         return out;
+      })
+      .catch(function () {
+        return [];
       });
   }
 
