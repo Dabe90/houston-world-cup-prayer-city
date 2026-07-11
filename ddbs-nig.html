@@ -83,6 +83,63 @@
       </div>
     </nav>
 
+    <!-- Sign-in & dashboard (near top so you don't scroll the whole page) -->
+    <section id="auth-checking" class="hidden" aria-hidden="true"></section>
+
+    <section id="auth-panel" class="hidden max-w-md mx-auto px-4 py-6 w-full">
+      <div class="ng-surface overflow-hidden w-full">
+        <div class="bg-ng-green/10 px-5 py-4 border-b border-ng-green/10">
+          <h2 class="font-semibold text-ng-green text-lg"><i class="fas fa-envelope mr-2"></i>Welcome back</h2>
+          <p class="text-sm text-slate-600 mt-1">Sign in to your volunteer hub.</p>
+        </div>
+        <div class="p-5 space-y-4 w-full">
+          <div id="auth-panel-status" class="hidden rounded-xl border px-3 py-2.5 text-sm" role="status" aria-live="polite"></div>
+          <form id="auth-form" class="space-y-4 w-full" autocomplete="on">
+          <div class="w-full">
+            <label for="auth-email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <input type="email" id="auth-email" autocomplete="email" class="ng-input w-full" placeholder="you@example.com" />
+          </div>
+          <div class="w-full">
+            <label for="auth-password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+            <input type="password" id="auth-password" autocomplete="current-password" class="ng-input w-full" placeholder="Your password" />
+          </div>
+          <button type="button" id="btn-email-link" class="ng-submit w-full">Email me a sign-in link</button>
+          <button type="submit" id="btn-password-signin" class="w-full rounded-xl border-2 border-slate-200 font-semibold py-3 text-sm hover:bg-slate-50 transition min-h-[48px]">Sign in with password</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section id="not-eligible-panel" class="hidden max-w-md mx-auto px-4 py-6 w-full">
+      <div class="ng-surface p-6 text-sm">
+        <p id="not-eligible-msg" class="text-amber-900 font-medium"></p>
+        <p class="mt-4"><a href="/?stay=us" class="text-brand font-medium hover:underline">US volunteer dashboard</a></p>
+      </div>
+    </section>
+
+    <section id="onboard-panel" class="hidden max-w-xl mx-auto px-4 py-6 w-full">
+      <div class="ng-surface overflow-hidden w-full">
+        <div class="bg-gradient-to-r from-brand to-ng-green px-5 py-4 text-white">
+          <h2 class="font-semibold text-lg">Complete your profile</h2>
+          <p class="text-white/80 text-sm mt-1">Tell us your name and unit(s).</p>
+        </div>
+        <div class="p-5 sm:p-6 space-y-5 w-full">
+          <p id="onboard-super-hint" class="hidden text-sm text-violet-800 bg-violet-50 border border-violet-100 rounded-lg px-3 py-2">Coordinator preview — pick any unit(s) to explore.</p>
+          <p id="onboard-phone-wrap" class="hidden text-sm text-slate-600 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">Registered phone: <strong id="onboard-phone"></strong></p>
+          <div class="w-full">
+            <label for="onboard-name" class="block text-sm font-medium text-slate-700 mb-1">Full name</label>
+            <input type="text" id="onboard-name" class="ng-input w-full" placeholder="Your name" />
+          </div>
+          <div>
+            <p class="text-sm font-medium text-slate-700 mb-2">Your unit(s)</p>
+            <p class="text-xs text-slate-500 mb-3">Choose all that apply — member in one, leader in another.</p>
+            <div id="onboard-units" class="space-y-2 max-h-72 overflow-y-auto"></div>
+          </div>
+          <button type="button" id="btn-save-profile" class="ng-submit w-full">Save &amp; go to dashboard</button>
+        </div>
+      </div>
+    </section>
+
     <div id="landing-billion-countdown"></div>
 
     <header id="hero-billboard" class="relative overflow-hidden text-white bg-brand" aria-roledescription="carousel" aria-label="DDBS Nigeria highlights">
@@ -409,63 +466,6 @@
         <div id="super-user-links" class="flex flex-wrap gap-2"></div>
       </div>
     </div>
-
-    <!-- Auth (hidden until needed) -->
-    <section id="auth-checking" class="hidden" aria-hidden="true"></section>
-
-    <section id="auth-panel" class="hidden max-w-md mx-auto px-4 py-10">
-      <div class="ng-surface overflow-hidden">
-        <div class="bg-ng-green/10 px-5 py-4 border-b border-ng-green/10">
-          <h2 class="font-semibold text-ng-green text-lg"><i class="fas fa-envelope mr-2"></i>Welcome back</h2>
-          <p class="text-sm text-slate-600 mt-1">Sign in to your volunteer hub.</p>
-        </div>
-        <div class="p-5 space-y-4">
-          <div id="auth-panel-status" class="hidden rounded-xl border px-3 py-2.5 text-sm" role="status" aria-live="polite"></div>
-          <form id="auth-form" class="space-y-4" autocomplete="on">
-          <div>
-            <label for="auth-email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
-            <input type="email" id="auth-email" autocomplete="email" class="ng-input" placeholder="you@example.com" />
-          </div>
-          <div>
-            <label for="auth-password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
-            <input type="password" id="auth-password" autocomplete="current-password" class="ng-input" placeholder="If you set one" />
-          </div>
-          <button type="button" id="btn-email-link" class="ng-submit w-full">Email me a sign-in link</button>
-          <button type="submit" id="btn-password-signin" class="w-full rounded-xl border-2 border-slate-200 font-semibold py-3 text-sm hover:bg-slate-50 transition">Sign in with password</button>
-          </form>
-        </div>
-      </div>
-    </section>
-
-    <section id="not-eligible-panel" class="hidden max-w-md mx-auto px-4 py-10">
-      <div class="ng-surface p-6 text-sm">
-        <p id="not-eligible-msg" class="text-amber-900 font-medium"></p>
-        <p class="mt-4"><a href="/?stay=us" class="text-brand font-medium hover:underline">US volunteer dashboard</a></p>
-      </div>
-    </section>
-
-    <section id="onboard-panel" class="hidden max-w-xl mx-auto px-4 py-10">
-      <div class="ng-surface overflow-hidden">
-        <div class="bg-gradient-to-r from-brand to-ng-green px-5 py-4 text-white">
-          <h2 class="font-semibold text-lg">Complete your profile</h2>
-          <p class="text-white/80 text-sm mt-1">Tell us your name and unit(s).</p>
-        </div>
-        <div class="p-5 sm:p-6 space-y-5">
-          <p id="onboard-super-hint" class="hidden text-sm text-violet-800 bg-violet-50 border border-violet-100 rounded-lg px-3 py-2">Coordinator preview — pick any unit(s) to explore.</p>
-          <p id="onboard-phone-wrap" class="hidden text-sm text-slate-600 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">Registered phone: <strong id="onboard-phone"></strong></p>
-          <div>
-            <label for="onboard-name" class="block text-sm font-medium text-slate-700 mb-1">Full name</label>
-            <input type="text" id="onboard-name" class="ng-input" placeholder="Your name" />
-          </div>
-          <div>
-            <p class="text-sm font-medium text-slate-700 mb-2">Your unit(s)</p>
-            <p class="text-xs text-slate-500 mb-3">Choose all that apply — member in one, leader in another.</p>
-            <div id="onboard-units" class="space-y-2 max-h-72 overflow-y-auto"></div>
-          </div>
-          <button type="button" id="btn-save-profile" class="ng-submit w-full">Save &amp; go to dashboard</button>
-        </div>
-      </div>
-    </section>
 
     <!-- Dashboard -->
     <div id="dash-shell" class="hidden max-w-7xl mx-auto px-4 py-6 lg:py-8">

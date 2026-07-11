@@ -287,6 +287,59 @@
 }
 #ng-mobile-nav .ng-mobile-nav-link { min-height: 44px; }
 
+/* Forms — ng-input/ng-surface/ng-submit (used on auth, onboard, dashboard) */
+.ng-surface {
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: var(--ng-shadow);
+  border: 1px solid rgba(15, 61, 92, 0.08);
+}
+.ng-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: 16px;
+  line-height: 1.4;
+  padding: 0.7rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #1e293b;
+}
+.ng-input:focus {
+  outline: none;
+  border-color: var(--ng-green);
+  box-shadow: 0 0 0 3px rgba(0, 135, 81, 0.15);
+}
+.ng-submit {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 0.75rem;
+  background: var(--ng-green);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.ng-submit:hover { background: #006b40; }
+.ng-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+#auth-panel,
+#onboard-panel {
+  width: 100%;
+  max-width: 28rem;
+}
+#auth-form input,
+#onboard-panel .ng-input {
+  width: 100%;
+  min-height: 48px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-slide .hero-anim, .hero-slide .hero-flyer-wrap, .hero-slide .hero-photo-tile,
   .ng-bounce-word, .ng-shimmer, .ng-alive-photo { opacity: 1 !important; animation: none !important; transform: none !important; filter: none !important; }
