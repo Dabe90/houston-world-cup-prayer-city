@@ -229,10 +229,13 @@
   }
 
   /** Check-in opens 20 min before start, closes 45 min after end */
+  var CHECK_IN_OPEN_MIN_BEFORE = 15;
+  var CHECK_IN_CLOSE_MIN_AFTER = 10;
+
   function isWithinCheckInWindow(meeting, now) {
     now = now || new Date();
-    var open = new Date(meeting.start.getTime() - 20 * 60000);
-    var close = new Date(meeting.end.getTime() + 45 * 60000);
+    var open = new Date(meeting.start.getTime() - CHECK_IN_OPEN_MIN_BEFORE * 60000);
+    var close = new Date(meeting.end.getTime() + CHECK_IN_CLOSE_MIN_AFTER * 60000);
     return now >= open && now <= close;
   }
 

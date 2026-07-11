@@ -249,6 +249,12 @@
       var checkInOpen = false;
       if (nextMeeting && window.NigeriaUnits.isWithinCheckInWindow(nextMeeting)) {
         checkInOpen = true;
+      } else if (nextMeeting && unit) {
+        var prev = window.NigeriaUnits.getNextMeeting(
+          unit,
+          new Date(new Date(nextMeeting.start).getTime() - 86400000)
+        );
+        if (prev && window.NigeriaUnits.isWithinCheckInWindow(prev)) checkInOpen = true;
       }
       return {
         unitId: m.unitId,
@@ -860,7 +866,348 @@
     return ctx.unitLabel || '';
   }
 
+  function escapeHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function attendanceWarningBannerHtml(warning, unitLabel) {
+    if (!warning) return '';
+    var colors =
+      warning.level === 'critical'
+        ? 'border-red-300 bg-red-50 text-red-900'
+        : 'border-amber-300 bg-amber-50 text-amber-900';
+    return (
+      '<div class="rounded-xl border px-4 py-3 text-sm ' +
+      colors +
+      '">' +
+      '<p class="font-bold">' +
+      escapeHtml(warning.title) +
+      (unitLabel ? ' · ' + escapeHtml(unitLabel) : '') +
+      '</p>' +
+      '<p class="mt-1">' +
+      escapeHtml(warning.message) +
+      '</p></div>'
+    );
+  }
+
+  function formatDigestAttendanceForUser(digest, uid) {
+    if (!digest || !Array.isArray(digest.roster)) return '';
+    var row = digest.roster.find(function (r) {
+      return r.uid === uid;
+    });
+    if (!row) return 'Attendance not recorded for this meeting.';
+    if (row.present) {
+      var when = '';
+      if (row.checkedInAt && row.checkedInAt.toDate) {
+        when = row.checkedInAt.toDate().toLocaleString('en-GB', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      }
+      return 'You were present' + (when ? ' — checked in at ' + when + ' WAT' : '') + '.';
+    }
+    return 'You were absent — you did not check in for this meeting.';
+  }
+
+  function formatDigestAttendanceForUser(digest, uid) {
+    if (!digest || !Array.isArray(digest.roster)) return '';
+    var row = digest.roster.find(function (r) {
+      return r.uid === uid;
+    });
+    if (!row) return 'Attendance not recorded for this meeting.';
+    if (row.present) {
+      var when = '';
+      if (row.checkedInAt && row.checkedInAt.toDate) {
+        when = row.checkedInAt.toDate().toLocaleString('en-GB', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      }
+      return 'You were present' + (when ? ' — checked in at ' + when + ' WAT' : '') + '.';
+    }
+    if (row.excused) {
+      return (
+        'Excused absence — your ' +
+        (row.absenceType === 'emergency' ? 'emergency' : 'planned') +
+        ' request was approved.'
+      );
+    }
+    return 'You were absent — you did not check in for this meeting.';
+  }
+
+  function absencePanelHtml(c) {
+    var target = c.absenceTargetMeeting;
+    if (!target) return '';
+    var quotas = c.absenceQuotas || {};
+    var existing = c.absenceRequest;
+    if (existing && existing.status === 'approved') {
+      return (
+        '<div class="absence-panel mt-3 rounded-xl border border-violet-100 bg-violet-50/70 p-3">' +
+        '<p class="text-xs font-bold text-violet-900"><i class="fas fa-calendar-xmark mr-1"></i>Absence approved for ' +
+        escapeHtml(target.dateYmd) +
+        '</p>' +
+        '<p class="text-xs text-violet-800 mt-1">' +
+        escapeHtml(existing.type === 'emergency' ? 'Emergency' : 'Planned') +
+        ' request — ' +
+        escapeHtml(existing.reason || '') +
+        '</p></div>'
+      );
+    }
+    var remaining = quotas.remaining != null ? quotas.remaining : 2;
+    var emergencyNote = quotas.emergencyAvailable
+      ? 'Emergency slot available (resets every 12 weeks).'
+      : 'Emergency slot used — resets ' +
+        (quotas.emergencyResetsAt
+          ? new Date(quotas.emergencyResetsAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+          : 'in 12 weeks') +
+        '.';
+    var typeOptions = '';
+    if (c.canRequestPlanned && remaining > 0) {
+      typeOptions +=
+        '<option value="planned">Planned (2+ days before meeting)</option>';
+    }
+    if (c.canRequestEmergency && remaining > 0 && quotas.emergencyAvailable) {
+      typeOptions +=
+        '<option value="emergency">Emergency (last minute / during meeting)</option>';
+    }
+    if (!typeOptions || remaining <= 0) {
+      return (
+        '<div class="absence-panel mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3">' +
+        '<p class="text-xs font-semibold text-slate-700">Absence requests</p>' +
+        '<p class="text-xs text-slate-500 mt-1">' +
+        (remaining <= 0
+          ? 'You have used both requests allowed in the last 8 weeks for this unit.'
+          : 'Planned requests open 2+ days before the meeting. Emergency requests open 15 minutes before until the meeting ends.') +
+        '</p>' +
+        '<p class="text-xs text-slate-500 mt-1">' +
+        escapeHtml(emergencyNote) +
+        '</p></div>'
+      );
+    }
+    return (
+      '<div class="absence-panel mt-3 rounded-xl border border-violet-100 bg-violet-50/50 p-3" data-unit-id="' +
+      escapeHtml(c.unitId) +
+      '" data-meeting-key="' +
+      escapeHtml(target.key) +
+      '">' +
+      '<p class="text-xs font-bold text-violet-900 mb-1"><i class="fas fa-calendar-xmark mr-1"></i>Request absence — ' +
+      escapeHtml(target.dateYmd) +
+      '</p>' +
+      '<p class="text-[11px] text-violet-800/90 mb-2">' +
+      remaining +
+      ' of ' +
+      (quotas.maxRequests || 2) +
+      ' requests left (8 weeks). ' +
+      escapeHtml(emergencyNote) +
+      '</p>' +
+      '<select class="absence-type w-full rounded-lg border border-violet-200 px-2 py-1.5 text-xs mb-2 bg-white">' +
+      typeOptions +
+      '</select>' +
+      '<textarea class="absence-reason w-full rounded-lg border border-violet-200 px-2 py-1.5 text-xs min-h-[72px] mb-2" placeholder="Brief reason (required)"></textarea>' +
+      '<button type="button" class="btn-submit-absence text-xs font-semibold rounded-lg bg-violet-700 text-white px-3 py-2 hover:bg-violet-800">Submit absence request</button>' +
+      '<span class="absence-status text-xs text-slate-500 ml-2"></span></div>'
+    );
+  }
+
+  function bindAbsencePanels(wrap) {
+    if (!wrap || !functions) return;
+    wrap.querySelectorAll('.btn-submit-absence').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var panel = btn.closest('.absence-panel');
+        if (!panel) return;
+        var unitId = panel.getAttribute('data-unit-id');
+        var meetingKey = panel.getAttribute('data-meeting-key');
+        var typeEl = panel.querySelector('.absence-type');
+        var reasonEl = panel.querySelector('.absence-reason');
+        var statusEl = panel.querySelector('.absence-status');
+        var type = typeEl ? typeEl.value : 'planned';
+        var reason = reasonEl ? reasonEl.value.trim() : '';
+        if (reason.length < 8) {
+          if (statusEl) statusEl.textContent = 'Please add a brief reason.';
+          return;
+        }
+        if (statusEl) statusEl.textContent = 'Submitting…';
+        functions
+          .httpsCallable('submitNigeriaAbsenceRequest')({
+            unitId: unitId,
+            meetingKey: meetingKey,
+            type: type,
+            reason: reason,
+          })
+          .then(function () {
+            if (statusEl) statusEl.textContent = 'Approved.';
+            setStatus('Absence request saved.', 'success');
+            return loadDashboard();
+          })
+          .catch(function (err) {
+            if (statusEl) statusEl.textContent = (err && err.message) || 'Failed.';
+            setStatus((err && err.message) || 'Absence request failed.', 'error');
+          });
+      });
+    });
+  }
+
+  function planToEditableText(plan) {
+    if (!plan) return '';
+    try {
+      return JSON.stringify(plan, null, 2);
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function visionPanelHtml(c) {
+    var vision = c.unitVision;
+    var canEdit = c.canEditVision;
+    if (!canEdit && (!vision || !vision.plan)) {
+      return '';
+    }
+    if (!canEdit && vision && vision.plan) {
+      return (
+        '<div class="unit-vision mt-5 border-t border-slate-100 pt-4">' +
+        '<h4 class="text-sm font-bold text-slate-900 mb-2"><i class="fas fa-compass text-brand mr-1"></i>3-month unit vision</h4>' +
+        '<p class="text-xs text-slate-500 mb-2">Shared by your unit leader</p>' +
+        '<p class="text-sm text-slate-700 whitespace-pre-wrap rounded-xl bg-slate-50 border border-slate-100 p-3 mb-2">' +
+        escapeHtml(vision.visionText || '') +
+        '</p>' +
+        '<pre class="text-xs text-slate-700 whitespace-pre-wrap rounded-xl bg-emerald-50 border border-emerald-100 p-3 overflow-x-auto">' +
+        escapeHtml(vision.planText || planToEditableText(vision.plan)) +
+        '</pre></div>'
+      );
+    }
+    return (
+      '<div class="unit-vision mt-5 border-t border-slate-100 pt-4" data-unit-id="' +
+      escapeHtml(c.unitId) +
+      '">' +
+      '<h4 class="text-sm font-bold text-slate-900 mb-2"><i class="fas fa-compass text-brand mr-1"></i>3-month unit vision</h4>' +
+      '<p class="text-xs text-slate-500 mb-2">Describe where your unit is headed — we will draft milestones, roadmap, and tools you can edit before publishing to the team.</p>' +
+      '<textarea class="vision-text w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm min-h-[100px] focus:ring-2 focus:ring-ng-green outline-none" placeholder="Our unit will…">' +
+      escapeHtml((vision && vision.visionText) || '') +
+      '</textarea>' +
+      '<div class="flex flex-wrap gap-2 mt-2">' +
+      '<button type="button" class="btn-generate-vision text-xs font-semibold rounded-lg bg-brand text-white px-3 py-2 hover:bg-brand-light">Generate plan</button>' +
+      '<button type="button" class="btn-save-vision text-xs font-semibold rounded-lg bg-ng-green text-white px-3 py-2 hover:bg-emerald-700">Save for team</button>' +
+      '<span class="vision-status text-xs text-slate-500 self-center"></span></div>' +
+      '<label class="block text-xs font-semibold text-slate-600 mt-3 mb-1">Editable plan (JSON — milestones, roadmap, howToGetThere, toolsAndResources)</label>' +
+      '<textarea class="vision-plan w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-mono min-h-[200px] focus:ring-2 focus:ring-ng-green outline-none">' +
+      escapeHtml((vision && vision.plan && planToEditableText(vision.plan)) || '') +
+      '</textarea></div>'
+    );
+  }
+
+  function lastMeetingDigestHtml(c, uid) {
+    var digest = c.lastMeetingDigest;
+    if (!digest) return '';
+    var attLine = formatDigestAttendanceForUser(digest, uid);
+    var notes = String(digest.notesContent || '').trim();
+    return (
+      '<div class="last-meeting-digest mt-4 rounded-xl border border-sky-100 bg-sky-50/60 p-3">' +
+      '<p class="text-xs font-bold text-sky-900 uppercase tracking-wide mb-1">Last meeting recap</p>' +
+      '<p class="text-xs text-sky-800 font-medium">' +
+      escapeHtml(digest.meetingDateYmd || '') +
+      ' · ' +
+      escapeHtml(digest.unitLabel || c.unitLabel) +
+      '</p>' +
+      '<p class="text-xs text-slate-700 mt-2"><strong>Your attendance:</strong> ' +
+      escapeHtml(attLine) +
+      '</p>' +
+      (notes
+        ? '<p class="text-xs text-slate-600 mt-2 whitespace-pre-wrap"><strong>Notes:</strong> ' +
+          escapeHtml(notes.slice(0, 800)) +
+          (notes.length > 800 ? '…' : '') +
+          '</p>'
+        : '<p class="text-xs text-slate-500 mt-2">No shared notes were saved.</p>') +
+      '</div>'
+    );
+  }
+
+  function bindVisionPanels(wrap) {
+    if (!wrap || !functions) return;
+    wrap.querySelectorAll('.unit-vision[data-unit-id]').forEach(function (panel) {
+      var unitId = panel.getAttribute('data-unit-id');
+      var genBtn = panel.querySelector('.btn-generate-vision');
+      var saveBtn = panel.querySelector('.btn-save-vision');
+      var statusEl = panel.querySelector('.vision-status');
+      var visionTextEl = panel.querySelector('.vision-text');
+      var planEl = panel.querySelector('.vision-plan');
+
+      if (genBtn) {
+        genBtn.addEventListener('click', function () {
+          var visionText = visionTextEl ? visionTextEl.value.trim() : '';
+          if (visionText.length < 20) {
+            if (statusEl) statusEl.textContent = 'Write at least a short vision first.';
+            return;
+          }
+          if (statusEl) statusEl.textContent = 'Generating…';
+          functions
+            .httpsCallable('generateNigeriaUnitVision')({ unitId: unitId, visionText: visionText })
+            .then(function (res) {
+              if (planEl && res.data && res.data.plan) {
+                planEl.value = planToEditableText(res.data.plan);
+              }
+              if (statusEl) statusEl.textContent = 'Plan ready — edit and save for your team.';
+            })
+            .catch(function (err) {
+              if (statusEl) statusEl.textContent = (err && err.message) || 'Generate failed.';
+            });
+        });
+      }
+
+      if (saveBtn) {
+        saveBtn.addEventListener('click', function () {
+          var visionText = visionTextEl ? visionTextEl.value.trim() : '';
+          var planRaw = planEl ? planEl.value.trim() : '';
+          var plan = null;
+          try {
+            plan = JSON.parse(planRaw);
+          } catch (e) {
+            if (statusEl) statusEl.textContent = 'Plan must be valid JSON.';
+            return;
+          }
+          if (statusEl) statusEl.textContent = 'Saving…';
+          functions
+            .httpsCallable('saveNigeriaUnitVision')({ unitId: unitId, visionText: visionText, plan: plan })
+            .then(function () {
+              if (statusEl) statusEl.textContent = 'Saved — visible to all unit members.';
+              return loadDashboard();
+            })
+            .catch(function (err) {
+              if (statusEl) statusEl.textContent = (err && err.message) || 'Save failed.';
+            });
+        });
+      }
+    });
+  }
+
   function renderHomeTab(data) {
+    var warnWrap = $('home-attendance-warnings');
+    if (warnWrap) {
+      var warnings = (data.unitContexts || [])
+        .map(function (c) {
+          var w = c.attendanceStats && c.attendanceStats.missWarning;
+          if (!w) return '';
+          return attendanceWarningBannerHtml(w, c.unitLabel);
+        })
+        .filter(Boolean)
+        .join('');
+      if (warnings) {
+        warnWrap.innerHTML = warnings;
+        show(warnWrap);
+      } else {
+        warnWrap.innerHTML = '';
+        hide(warnWrap);
+      }
+    }
     var up = $('home-upcoming-programs');
     var meetings = $('home-meetings-list');
     if (up && window.DDBSNigeriaPrograms) {
@@ -913,10 +1260,16 @@
         var unitMeetings = meetingsForUnit(c);
         var defaultKey = defaultMeetingKey(unitMeetings, c);
         var meeting = meetingForNotes(c);
+        var missWarn =
+          c.attendanceStats && c.attendanceStats.missWarning
+            ? attendanceWarningBannerHtml(c.attendanceStats.missWarning)
+            : '';
+        var uid = auth.currentUser && auth.currentUser.uid;
         return (
           '<div class="unit-card bg-white rounded-2xl shadow-card border border-slate-100 p-5" data-unit-id="' +
           c.unitId +
           '">' +
+          missWarn +
           '<div class="flex flex-wrap items-center gap-2 mb-3">' +
           '<h3 class="font-bold text-slate-900 flex-1">' +
           c.unitLabel +
@@ -942,7 +1295,10 @@
           '" ' +
           (open ? '' : 'disabled') +
           '>Check in</button>' +
-          '<p class="text-xs text-slate-500 mt-2 text-center">Opens 20 min before · closes 45 min after</p>' +
+          '<p class="text-xs text-slate-500 mt-2 text-center">Opens 15 min before · closes 10 min after</p>' +
+          absencePanelHtml(c) +
+          lastMeetingDigestHtml(c, uid) +
+          visionPanelHtml(c) +
           notesHtml(unitMeetings, defaultKey) +
           '</div>'
         );
@@ -954,6 +1310,9 @@
         checkIn(btn.getAttribute('data-unit-id'));
       });
     });
+
+    bindVisionPanels(wrap);
+    bindAbsencePanels(wrap);
 
     if (window.DDBSNigeriaMeetingNotes) {
       ctx.forEach(function (c) {
@@ -1282,6 +1641,16 @@
 
   function handleAuthUser(user) {
     hide($('auth-checking'));
+    var forceLanding = /[?&]landing=1(?:&|$)/.test(window.location.search || '');
+    if (user && forceLanding) {
+      if ($('btn-signout')) $('btn-signout').classList.remove('hidden');
+      hide($('dash-shell'));
+      hide($('onboard-panel'));
+      hide($('auth-panel'));
+      hide($('not-eligible-panel'));
+      setPublicLanding(true);
+      return;
+    }
     if (user) {
       if ($('btn-signout')) $('btn-signout').classList.remove('hidden');
       hide($('auth-panel'));

@@ -20,6 +20,7 @@ const {
 } = require('./emailUndeliverable');
 const nigeriaVolunteer = require('./nigeriaVolunteer');
 const { runNigeriaMeetingRemindersJob } = require('./nigeriaMeetingReminders');
+const { runNigeriaPostMeetingDigestJob } = require('./nigeriaPostMeetingDigest');
 
 const inviteSecret = defineSecret('INVITE_SECRET');
 const selfServeMailSecret = defineSecret('SELF_SERVE_MAIL_SECRET');
@@ -1702,6 +1703,7 @@ exports.runCampaignThankYouHttp = onRequest(
 
 exports.saveNigeriaProfile = nigeriaVolunteer.saveNigeriaProfile;
 exports.recordNigeriaAttendance = nigeriaVolunteer.recordNigeriaAttendance;
+exports.submitNigeriaAbsenceRequest = nigeriaVolunteer.submitNigeriaAbsenceRequest;
 exports.getNigeriaDashboard = nigeriaVolunteer.getNigeriaDashboard;
 exports.submitNigeriaUnitReport = nigeriaVolunteer.submitNigeriaUnitReport;
 exports.shareNigeriaUnitReportDraft = nigeriaVolunteer.shareNigeriaUnitReportDraft;
@@ -1709,6 +1711,8 @@ exports.contributeNigeriaUnitReportDraft = nigeriaVolunteer.contributeNigeriaUni
 exports.approveNigeriaUnitReportDraft = nigeriaVolunteer.approveNigeriaUnitReportDraft;
 exports.getNigeriaAttendanceForReport = nigeriaVolunteer.getNigeriaAttendanceForReport;
 exports.summarizeNigeriaMeetingNotesForReport = nigeriaVolunteer.summarizeNigeriaMeetingNotesForReport;
+exports.generateNigeriaUnitVision = nigeriaVolunteer.generateNigeriaUnitVision;
+exports.saveNigeriaUnitVision = nigeriaVolunteer.saveNigeriaUnitVision;
 exports.getPrayerCityAccess = nigeriaVolunteer.getPrayerCityAccess;
 exports.submitNigeriaMemberSignup = nigeriaVolunteer.submitNigeriaMemberSignup;
 exports.getNigeriaMemberSignups = nigeriaVolunteer.getNigeriaMemberSignups;
@@ -1722,6 +1726,7 @@ exports.markNigeriaWorkforceInTraining = nigeriaVolunteer.markNigeriaWorkforceIn
  * at 2 days, 1 day, 2 hours, and 15 minutes before their next unit meeting.
  *
  * Enable: Firestore `settings/nigeria_meeting_reminders` → `{ "enabled": true }`.
+ * Post-meeting digest emails: same doc → `{ "postMeetingDigestEnabled": true }`.
  * Opt-out per volunteer: `meetingReminderOptOut: true` on `nigeria_volunteers/{uid}`.
  */
 exports.scheduledNigeriaMeetingReminders = onSchedule(
@@ -1734,6 +1739,10 @@ exports.scheduledNigeriaMeetingReminders = onSchedule(
   },
   async () => {
     await runNigeriaMeetingRemindersJob(admin, {
+      scriptUrl: appsScriptSelfServeMailUrl.value(),
+      secret: selfServeMailSecret.value(),
+    });
+    await runNigeriaPostMeetingDigestJob(admin, {
       scriptUrl: appsScriptSelfServeMailUrl.value(),
       secret: selfServeMailSecret.value(),
     });
@@ -1771,6 +1780,18 @@ exports.runNigeriaMeetingRemindersNow = onCall(
         siteBase: data.siteBase,
       }
     );
-    return stats;
+    const digestStats = await runNigeriaPostMeetingDigestJob(
+      admin,
+      {
+        scriptUrl: appsScriptSelfServeMailUrl.value(),
+        secret: selfServeMailSecret.value(),
+      },
+      {
+        force: data.force === true,
+        dryRun: data.dryRun === true,
+        siteBase: data.siteBase,
+      }
+    );
+    return { reminders: stats, postMeetingDigest: digestStats };
   }
 );

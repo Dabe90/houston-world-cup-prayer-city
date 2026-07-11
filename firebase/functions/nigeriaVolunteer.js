@@ -20,6 +20,36 @@ const notesSummarySchema = z.object({
   prayerAndFollowUps: z.array(z.string()).max(8),
 });
 
+const unitVisionPlanSchema = z.object({
+  milestones: z
+    .array(
+      z.object({
+        title: z.string(),
+        targetMonth: z.string(),
+        description: z.string(),
+      })
+    )
+    .max(12),
+  roadmap: z
+    .array(
+      z.object({
+        phase: z.string(),
+        focus: z.string(),
+        steps: z.array(z.string()).max(8),
+      })
+    )
+    .max(6),
+  howToGetThere: z.array(z.string()).max(12),
+  toolsAndResources: z
+    .array(
+      z.object({
+        name: z.string(),
+        purpose: z.string(),
+      })
+    )
+    .max(12),
+});
+
 const TZ = 'Africa/Lagos';
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -304,9 +334,18 @@ function getNextMeeting(unit, fromDate = new Date()) {
   return null;
 }
 
+const CHECK_IN_OPEN_MIN_BEFORE = 15;
+const CHECK_IN_CLOSE_MIN_AFTER = 10;
+
+const ABSENCE_WINDOW_MS = 8 * 7 * 24 * 60 * 60 * 1000;
+const ABSENCE_MAX_PER_WINDOW = 2;
+const EMERGENCY_WINDOW_MS = 12 * 7 * 24 * 60 * 60 * 1000;
+const EMERGENCY_MAX_PER_WINDOW = 1;
+const PLANNED_ABSENCE_MIN_MS = 2 * 24 * 60 * 60 * 1000;
+
 function isWithinCheckInWindow(meeting, now = new Date()) {
-  const open = new Date(meeting.start.getTime() - 20 * 60000);
-  const close = new Date(meeting.end.getTime() + 45 * 60000);
+  const open = new Date(meeting.start.getTime() - CHECK_IN_OPEN_MIN_BEFORE * 60000);
+  const close = new Date(meeting.end.getTime() + CHECK_IN_CLOSE_MIN_AFTER * 60000);
   return now >= open && now <= close;
 }
 
@@ -400,6 +439,125 @@ function attendanceInsight(rate) {
   return { level: 'low', message: 'We miss you — your unit needs you this week.' };
 }
 
+function computeConsecutiveMisses(pastMeetings, attendedKeys, excusedKeys = new Set()) {
+  let count = 0;
+  for (let i = pastMeetings.length - 1; i >= 0; i--) {
+    const key = pastMeetings[i].key;
+    if (attendedKeys.has(key) || excusedKeys.has(key)) break;
+    count++;
+  }
+  return count;
+}
+
+function attendanceMissWarning(consecutiveMisses) {
+  if (consecutiveMisses >= 4) {
+    return {
+      tier: 'withdrawal',
+      level: 'critical',
+      consecutiveMisses,
+      title: 'Workforce withdrawal notice',
+      message:
+        'You have missed four unit meetings in a row. Withdrawal from the Kingdom Workforce will be initiated soon unless you attend the next meeting. Please contact your unit leader immediately.',
+    };
+  }
+  if (consecutiveMisses >= 3) {
+    return {
+      tier: 'final',
+      level: 'critical',
+      consecutiveMisses,
+      title: 'Final attendance warning',
+      message:
+        'You have missed three unit meetings in a row. This is your final warning — if you miss one more meeting, withdrawal from the Kingdom Workforce may be initiated.',
+    };
+  }
+  if (consecutiveMisses >= 2) {
+    return {
+      tier: 'warning',
+      level: 'warn',
+      consecutiveMisses,
+      title: 'Attendance warning',
+      message:
+        'You have missed two unit meetings in a row. Please prioritize your next unit meeting — consistent attendance keeps the team strong.',
+    };
+  }
+  return null;
+}
+
+async function loadExcusedMeetingKeys(db, uid, unitId) {
+  const snap = await db
+    .collection('nigeria_absence_requests')
+    .where('uid', '==', uid)
+    .where('unitId', '==', unitId)
+    .where('status', '==', 'approved')
+    .get();
+  const keys = new Set();
+  snap.docs.forEach((doc) => {
+    const mk = doc.data().meetingKey;
+    if (mk) keys.add(mk);
+  });
+  return keys;
+}
+
+async function getAbsenceQuotas(db, uid, unitId, now = new Date()) {
+  const windowStart8 = new Date(now.getTime() - ABSENCE_WINDOW_MS);
+  const windowStart12 = new Date(now.getTime() - EMERGENCY_WINDOW_MS);
+  const snap = await db
+    .collection('nigeria_absence_requests')
+    .where('uid', '==', uid)
+    .where('unitId', '==', unitId)
+    .get();
+
+  let usedInWindow = 0;
+  let emergencyUsedInWindow = 0;
+  let lastEmergencyAt = null;
+
+  snap.docs.forEach((doc) => {
+    const d = doc.data();
+    const created = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate() : null;
+    if (!created) return;
+    if (created >= windowStart8) usedInWindow++;
+    if (d.type === 'emergency' && created >= windowStart12) {
+      emergencyUsedInWindow++;
+      if (!lastEmergencyAt || created > lastEmergencyAt) lastEmergencyAt = created;
+    }
+  });
+
+  const emergencyAvailable = emergencyUsedInWindow < EMERGENCY_MAX_PER_WINDOW;
+  return {
+    windowWeeks: 8,
+    maxRequests: ABSENCE_MAX_PER_WINDOW,
+    usedInWindow,
+    remaining: Math.max(0, ABSENCE_MAX_PER_WINDOW - usedInWindow),
+    emergencyWindowWeeks: 12,
+    emergencyMax: EMERGENCY_MAX_PER_WINDOW,
+    emergencyUsedInWindow,
+    emergencyAvailable,
+    emergencyResetsAt: lastEmergencyAt
+      ? new Date(lastEmergencyAt.getTime() + EMERGENCY_WINDOW_MS).toISOString()
+      : null,
+  };
+}
+
+async function pastMeetingsForUnit(db, unitId, monthsBack = 6) {
+  const unit = getUnit(unitId);
+  if (!unit) return [];
+  const now = new Date();
+  const lagosYmd = ymdInLagos(now);
+  const year = parseInt(lagosYmd.slice(0, 4), 10);
+  const month = parseInt(lagosYmd.slice(5, 7), 10);
+  const all = [];
+  for (let i = 0; i < monthsBack; i++) {
+    let y = year;
+    let m = month - i;
+    while (m <= 0) {
+      m += 12;
+      y--;
+    }
+    all.push(...meetingsInMonth(unit, y, m));
+  }
+  return all.filter((m) => m.end <= now).sort((a, b) => a.start - b.start);
+}
+
 async function computeUserAttendanceStats(db, uid, unitId, year, month) {
   const unit = getUnit(unitId);
   if (!unit) return null;
@@ -419,11 +577,17 @@ async function computeUserAttendanceStats(db, uid, unitId, year, month) {
     if (d.meetingKey) attendedKeys.add(d.meetingKey);
   });
 
-  const attendedPast = pastScheduled.filter((m) => attendedKeys.has(m.key));
-  const missedPast = pastScheduled.filter((m) => !attendedKeys.has(m.key));
+  const excusedKeys = await loadExcusedMeetingKeys(db, uid, unitId);
+
+  const attendedPast = pastScheduled.filter((m) => meetingPresentOrExcused(m.key, attendedKeys, excusedKeys));
+  const missedPast = pastScheduled.filter((m) => !meetingPresentOrExcused(m.key, attendedKeys, excusedKeys));
   const rate = pastScheduled.length
     ? Math.round((attendedPast.length / pastScheduled.length) * 100)
     : null;
+
+  const allPast = await pastMeetingsForUnit(db, unitId, 6);
+  const consecutiveMisses = computeConsecutiveMisses(allPast, attendedKeys, excusedKeys);
+  const missWarning = attendanceMissWarning(consecutiveMisses);
 
   return {
     year,
@@ -432,20 +596,26 @@ async function computeUserAttendanceStats(db, uid, unitId, year, month) {
     pastScheduledCount: pastScheduled.length,
     attendedCount: attendedPast.length,
     missedCount: missedPast.length,
+    consecutiveMisses,
+    missWarning,
     attendanceRate: rate,
     insight: rate != null ? attendanceInsight(rate) : null,
     attendedDates: attendedPast.map((m) => m.dateYmd),
     missedDates: missedPast.map((m) => m.dateYmd),
-    bestStreak: computeStreak(pastScheduled, attendedKeys, true),
-    currentStreak: computeStreak(pastScheduled, attendedKeys, false),
+    bestStreak: computeStreak(pastScheduled, attendedKeys, excusedKeys, true),
+    currentStreak: computeStreak(pastScheduled, attendedKeys, excusedKeys, false),
   };
 }
 
-function computeStreak(pastMeetings, attendedKeys, longest) {
+function meetingPresentOrExcused(key, attendedKeys, excusedKeys) {
+  return attendedKeys.has(key) || excusedKeys.has(key);
+}
+
+function computeStreak(pastMeetings, attendedKeys, excusedKeys, longest) {
   let streak = 0;
   let best = 0;
   for (const m of pastMeetings) {
-    if (attendedKeys.has(m.key)) {
+    if (meetingPresentOrExcused(m.key, attendedKeys, excusedKeys)) {
       streak++;
       best = Math.max(best, streak);
     } else {
@@ -620,7 +790,7 @@ const recordNigeriaAttendance = onCall(async (request) => {
     } else {
       throw new HttpsError(
         'failed-precondition',
-        'Check-in opens 20 minutes before meeting and closes 45 minutes after.'
+        `Check-in opens ${CHECK_IN_OPEN_MIN_BEFORE} minutes before meeting and closes ${CHECK_IN_CLOSE_MIN_AFTER} minutes after.`
       );
     }
   }
@@ -663,6 +833,127 @@ const recordNigeriaAttendance = onCall(async (request) => {
     stats,
     unitId: membership.unitId,
   };
+});
+
+function canSubmitEmergencyAbsence(meeting, now = new Date()) {
+  const open = new Date(meeting.start.getTime() - CHECK_IN_OPEN_MIN_BEFORE * 60000);
+  return now >= open && now <= meeting.end;
+}
+
+function canSubmitPlannedAbsence(meeting, now = new Date()) {
+  return meeting.start.getTime() - now.getTime() >= PLANNED_ABSENCE_MIN_MS;
+}
+
+function meetingFromKey(unitId, meetingKeyStr) {
+  const unit = getUnit(unitId);
+  if (!unit) return null;
+  const prefix = unitId + '_';
+  if (!String(meetingKeyStr).startsWith(prefix)) return null;
+  const dateYmd = String(meetingKeyStr).slice(prefix.length);
+  const start = lagosLocalToDate(dateYmd, unit.start);
+  let endYmd = dateYmd;
+  if (unit.endNextDay) {
+    endYmd = ymdInLagos(new Date(lagosLocalToDate(dateYmd, '12:00').getTime() + 86400000));
+  }
+  let end = lagosLocalToDate(endYmd, unit.end);
+  if (end <= start) end = new Date(end.getTime() + 86400000);
+  return { unitId, dateYmd, key: meetingKeyStr, start, end };
+}
+
+const submitNigeriaAbsenceRequest = onCall(async (request) => {
+  const uid = requireAuth(request);
+  const db = admin.firestore();
+  await assertNigeriaVolunteerAccess(db, uid, request.auth);
+  const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+  if (!profileSnap.exists) {
+    throw new HttpsError('failed-precondition', 'Complete your profile first.');
+  }
+  const profile = profileSnap.data();
+  const profileUnits = normalizeProfileUnits(profile);
+  const unitId = String(request.data?.unitId || '').trim();
+  const meetingKeyStr = String(request.data?.meetingKey || '').trim();
+  const type = String(request.data?.type || '').trim();
+  const reason = String(request.data?.reason || '').trim().slice(0, 500);
+
+  if (!unitId || !meetingKeyStr || !reason || reason.length < 8) {
+    throw new HttpsError('invalid-argument', 'Unit, meeting, and a brief reason are required.');
+  }
+  if (type !== 'planned' && type !== 'emergency') {
+    throw new HttpsError('invalid-argument', 'Request type must be planned or emergency.');
+  }
+
+  const membership = profileUnits.find((u) => u.unitId === unitId);
+  if (!membership) throw new HttpsError('permission-denied', 'Not a member of that unit.');
+
+  const meeting = meetingFromKey(unitId, meetingKeyStr);
+  if (!meeting) throw new HttpsError('invalid-argument', 'Invalid meeting.');
+
+  const now = new Date();
+  if (now > meeting.end) {
+    throw new HttpsError('failed-precondition', 'That meeting has already ended.');
+  }
+
+  const attDoc = await db.collection('nigeria_attendance').doc(uid + '_' + meetingKeyStr).get();
+  if (attDoc.exists) {
+    throw new HttpsError('failed-precondition', 'You already checked in for this meeting.');
+  }
+
+  const docId = uid + '_' + meetingKeyStr;
+  const existing = await db.collection('nigeria_absence_requests').doc(docId).get();
+  if (existing.exists) {
+    return { ok: true, alreadySubmitted: true, request: existing.data() };
+  }
+
+  if (type === 'planned') {
+    if (!canSubmitPlannedAbsence(meeting, now)) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Planned absence requests must be submitted at least 2 days before the meeting.'
+      );
+    }
+  } else if (!canSubmitEmergencyAbsence(meeting, now)) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Emergency requests are only available from 15 minutes before the meeting until it ends.'
+    );
+  }
+
+  const quotas = await getAbsenceQuotas(db, uid, unitId, now);
+  if (quotas.remaining <= 0) {
+    throw new HttpsError(
+      'resource-exhausted',
+      'You have used both absence requests allowed in the last 8 weeks for this unit.'
+    );
+  }
+  if (type === 'emergency' && !quotas.emergencyAvailable) {
+    throw new HttpsError(
+      'resource-exhausted',
+      'Your emergency absence request resets after 12 weeks. You have already used it for this period.'
+    );
+  }
+
+  const unit = getUnit(unitId);
+  const record = {
+    uid,
+    unitId,
+    unitLabel: membership.unitLabel,
+    name: profile.name || '',
+    meetingKey: meetingKeyStr,
+    meetingDateYmd: meeting.dateYmd,
+    meetingStartAt: meeting.start,
+    type,
+    reason,
+    status: 'approved',
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+
+  await db.collection('nigeria_absence_requests').doc(docId).set(record);
+
+  const year = parseInt(ymdInLagos(now).slice(0, 4), 10);
+  const month = parseInt(ymdInLagos(now).slice(5, 7), 10);
+  const stats = await computeUserAttendanceStats(db, uid, unitId, year, month);
+
+  return { ok: true, request: record, absenceQuotas: await getAbsenceQuotas(db, uid, unitId, now), stats };
 });
 
 const getNigeriaDashboard = onCall(async (request) => {
@@ -721,14 +1012,50 @@ const getNigeriaDashboard = onCall(async (request) => {
     const reportSnap = await db.collection('nigeria_unit_reports').doc(reportId).get();
     const latestReport = reportSnap.exists ? reportSnap.data() : null;
 
+    const visionSnap = await db.collection('nigeria_unit_vision').doc(membership.unitId).get();
+    const unitVision = visionSnap.exists ? visionSnap.data() : null;
+
+    const digestSnap = await db
+      .collection('nigeria_meeting_digests')
+      .where('unitId', '==', membership.unitId)
+      .limit(24)
+      .get();
+    let lastMeetingDigest = null;
+    if (digestSnap.docs.length) {
+      const digests = digestSnap.docs
+        .map((d) => d.data())
+        .sort((a, b) => {
+          const ta = a.meetingEndAt && a.meetingEndAt.toMillis ? a.meetingEndAt.toMillis() : 0;
+          const tb = b.meetingEndAt && b.meetingEndAt.toMillis ? b.meetingEndAt.toMillis() : 0;
+          return tb - ta;
+        });
+      lastMeetingDigest = digests[0] || null;
+    }
+
     let checkInOpen = false;
+    let absenceTarget = nextMeeting;
     if (nextMeeting) {
       checkInOpen = isWithinCheckInWindow(nextMeeting, now);
       if (!checkInOpen) {
         const prev = getNextMeeting(unit, new Date(nextMeeting.start.getTime() - 86400000));
-        if (prev && isWithinCheckInWindow(prev, now)) checkInOpen = true;
+        if (prev && isWithinCheckInWindow(prev, now)) {
+          checkInOpen = true;
+          absenceTarget = prev;
+        }
       }
     }
+
+    const absenceQuotas = await getAbsenceQuotas(db, uid, membership.unitId, now);
+    let absenceRequest = null;
+    if (absenceTarget) {
+      const absSnap = await db.collection('nigeria_absence_requests').doc(uid + '_' + absenceTarget.key).get();
+      if (absSnap.exists) absenceRequest = absSnap.data();
+    }
+
+    const canRequestPlanned = absenceTarget
+      ? absenceTarget.start.getTime() - now.getTime() >= PLANNED_ABSENCE_MIN_MS
+      : false;
+    const canRequestEmergency = absenceTarget ? canSubmitEmergencyAbsence(absenceTarget, now) : false;
 
     unitContexts.push({
       unitId: membership.unitId,
@@ -752,7 +1079,22 @@ const getNigeriaDashboard = onCall(async (request) => {
       checkInOpen,
       attendanceStats: stats,
       latestReport,
+      unitVision,
+      lastMeetingDigest,
+      absenceQuotas,
+      absenceRequest,
+      absenceTargetMeeting: absenceTarget
+        ? {
+            key: absenceTarget.key,
+            dateYmd: absenceTarget.dateYmd,
+            startIso: absenceTarget.start.toISOString(),
+            endIso: absenceTarget.end.toISOString(),
+          }
+        : null,
+      canRequestPlanned,
+      canRequestEmergency,
       canSubmitReport: membership.role === 'leader' || isSuperUser,
+      canEditVision: membership.role === 'leader' || isSuperUser,
     });
   }
 
@@ -1162,6 +1504,120 @@ ${notesBlock}`,
     }
   }
 );
+
+function assertUnitLeader(profile, unitId, isSuperUser) {
+  if (isSuperUser) return;
+  const membership = normalizeProfileUnits(profile).find((u) => u.unitId === unitId);
+  if (!membership || membership.role !== 'leader') {
+    throw new HttpsError('permission-denied', 'Only unit leaders can edit the quarterly vision.');
+  }
+}
+
+function formatVisionPlanText(plan) {
+  if (!plan) return '';
+  const lines = [];
+  if (plan.milestones?.length) {
+    lines.push('Milestones:');
+    plan.milestones.forEach((m) => {
+      lines.push(`• ${m.targetMonth || ''} — ${m.title}: ${m.description || ''}`);
+    });
+  }
+  if (plan.roadmap?.length) {
+    lines.push('', 'Roadmap:');
+    plan.roadmap.forEach((r) => {
+      lines.push(`${r.phase} — ${r.focus}`);
+      (r.steps || []).forEach((s) => lines.push(`  - ${s}`));
+    });
+  }
+  if (plan.howToGetThere?.length) {
+    lines.push('', 'How to get there:');
+    plan.howToGetThere.forEach((h) => lines.push(`• ${h}`));
+  }
+  if (plan.toolsAndResources?.length) {
+    lines.push('', 'Tools & resources:');
+    plan.toolsAndResources.forEach((t) => lines.push(`• ${t.name}: ${t.purpose}`));
+  }
+  return lines.join('\n').trim();
+}
+
+const generateNigeriaUnitVision = onCall(
+  { cors: true, timeoutSeconds: 120, secrets: [googleGenaiApiKey] },
+  async (request) => {
+    const uid = requireAuth(request);
+    const db = admin.firestore();
+    const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
+    const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+    if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Profile required.');
+    const profile = profileSnap.data();
+    const unitId = String(request.data?.unitId || '').trim();
+    const visionText = String(request.data?.visionText || '').trim().slice(0, 4000);
+    if (!unitId || visionText.length < 20) {
+      throw new HttpsError('invalid-argument', 'Unit and a vision (at least 20 characters) are required.');
+    }
+    const isSuperUser = access.isSuperUser === true || profile.isSuperUser === true;
+    assertUnitLeader(profile, unitId, isSuperUser);
+
+    const unit = getUnit(unitId);
+    const unitLabel = unit ? unit.label : unitId;
+    const periodStart = new Date();
+    const periodEnd = new Date(periodStart.getTime() + 92 * 86400000);
+    const periodLabel =
+      periodStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) +
+      ' – ' +
+      periodEnd.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+    try {
+      process.env.GOOGLE_GENAI_API_KEY = googleGenaiApiKey.value();
+      const { output } = await generateStructured({
+        prompt: `You are helping a DDBS Nigeria ministry unit leader plan the next three months.
+Unit: ${unitLabel}
+Planning period: ${periodLabel}
+
+The leader's vision:
+${visionText}
+
+Generate a practical, faith-centered plan with clear milestones by month, a phased roadmap, concrete steps for how the team will get there, and tools/resources the team should use (apps, channels, habits, templates, prayer rhythms, etc.). Keep language warm and actionable for volunteers.`,
+        schema: unitVisionPlanSchema,
+      });
+      return { plan: output, aiUsed: true, periodLabel };
+    } catch (e) {
+      console.warn('[generateNigeriaUnitVision]', e);
+      throw new HttpsError('internal', 'Could not generate plan right now. Try again shortly.');
+    }
+  }
+);
+
+const saveNigeriaUnitVision = onCall(async (request) => {
+  const uid = requireAuth(request);
+  const db = admin.firestore();
+  const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
+  const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+  if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Profile required.');
+  const profile = profileSnap.data();
+  const unitId = String(request.data?.unitId || '').trim();
+  const visionText = String(request.data?.visionText || '').trim().slice(0, 4000);
+  const plan = request.data?.plan;
+  if (!unitId || visionText.length < 20 || !plan || typeof plan !== 'object') {
+    throw new HttpsError('invalid-argument', 'Unit, vision text, and plan are required.');
+  }
+  const isSuperUser = access.isSuperUser === true || profile.isSuperUser === true;
+  assertUnitLeader(profile, unitId, isSuperUser);
+
+  const unit = getUnit(unitId);
+  const record = {
+    unitId,
+    unitLabel: unit ? unit.label : unitId,
+    visionText,
+    plan,
+    planText: formatVisionPlanText(plan),
+    updatedByUid: uid,
+    updatedByName: profile.name || '',
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    publishedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+  await db.collection('nigeria_unit_vision').doc(unitId).set(record, { merge: true });
+  return { ok: true };
+});
 
 const getPrayerCityAccess = onCall(async (request) => {
   const email = normalizeEmail(request.auth?.token?.email);
@@ -1588,6 +2044,7 @@ const markNigeriaWorkforceInTraining = onCall(async (request) => {
 module.exports = {
   saveNigeriaProfile,
   recordNigeriaAttendance,
+  submitNigeriaAbsenceRequest,
   getNigeriaDashboard,
   submitNigeriaUnitReport,
   shareNigeriaUnitReportDraft,
@@ -1595,6 +2052,8 @@ module.exports = {
   approveNigeriaUnitReportDraft,
   getNigeriaAttendanceForReport,
   summarizeNigeriaMeetingNotesForReport,
+  generateNigeriaUnitVision,
+  saveNigeriaUnitVision,
   getPrayerCityAccess,
   submitNigeriaMemberSignup,
   getNigeriaMemberSignups,

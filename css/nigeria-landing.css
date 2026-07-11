@@ -7,12 +7,13 @@
   --ng-shadow-lift: 0 16px 48px rgba(15, 61, 92, 0.1);
 }
 
-/* Hero billboard — tall photo background (welcome slide) */
+/* Hero billboard — compact top banner (~35% viewport) */
 #hero-billboard {
   position: relative;
-  height: min(88vh, 720px);
-  min-height: min(88vh, 720px);
-  padding-bottom: 3.75rem;
+  height: clamp(220px, 35vh, 380px);
+  min-height: clamp(220px, 35vh, 380px);
+  max-height: 380px;
+  padding-bottom: 2.75rem;
   background: #0f3d5c;
 }
 .hero-billboard-viewport {
@@ -20,7 +21,7 @@
   left: 0;
   right: 0;
   top: 0;
-  bottom: 3.75rem;
+  bottom: 2.75rem;
   overflow: hidden;
   width: 100%;
 }
@@ -41,7 +42,9 @@
   height: 100%;
   background:
     linear-gradient(135deg, rgba(0, 60, 40, 0.82) 0%, rgba(15, 61, 92, 0.78) 45%, rgba(0, 100, 60, 0.75) 100%),
-    url("../images/prayer-city-day2-team.jpeg") center/cover no-repeat;
+    url("../images/prayer-city-day2-team.jpeg") center 30% / cover no-repeat;
+  background-size: cover;
+  background-position: center 28%;
 }
 .hero-mesh::after {
   content: "";
@@ -63,8 +66,10 @@
   inset: 0;
   z-index: 0;
   background-size: cover;
-  background-position: center;
+  background-position: center 25%;
   background-repeat: no-repeat;
+  transform: scale(1.08);
+  transform-origin: center 25%;
 }
 .hero-flyer-overlay {
   position: absolute;
@@ -88,6 +93,30 @@
 .hero-flyer-content {
   position: relative;
   z-index: 3;
+}
+.hero-slide-welcome .max-w-7xl,
+.hero-flyer-content {
+  padding-top: 1.25rem !important;
+  padding-bottom: 1.25rem !important;
+}
+.hero-slide-welcome h1,
+.hero-slide-event h2 {
+  font-size: clamp(1.35rem, 3.5vw, 2rem) !important;
+  line-height: 1.15 !important;
+  margin-bottom: 0.5rem !important;
+}
+.hero-slide-welcome p,
+.hero-slide-event p {
+  font-size: 0.875rem !important;
+  margin-bottom: 0.5rem !important;
+}
+.hero-slide-welcome .hero-anim-4,
+.hero-slide-event .hero-anim-4 {
+  display: none;
+}
+.hero-slide-welcome .hero-anim-5 a {
+  font-size: 0.75rem !important;
+  padding: 0.5rem 0.9rem !important;
 }
 .hero-headline {
   font-family: Fraunces, Georgia, serif;

@@ -94,6 +94,22 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /nigeria_unit_vision/{unitId} {
+      allow read, write: if false;
+    }
+
+    match /nigeria_meeting_digests/{digestId} {
+      allow read, write: if false;
+    }
+
+    match /nigeria_post_meeting_sent/{sentId} {
+      allow read, write: if false;
+    }
+
+    match /nigeria_absence_requests/{requestId} {
+      allow read, write: if false;
+    }
+
     // New member sign-ups — Cloud Functions only (welcome email + leader dashboard).
     match /nigeria_member_signups/{signupId} {
       allow read, write: if false;
