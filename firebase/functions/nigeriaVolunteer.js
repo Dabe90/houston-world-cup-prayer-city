@@ -394,6 +394,32 @@ function phoneFromRegistration(phone) {
   return null;
 }
 
+/**
+ * Bridge an approved Nigeria applicant into a login-capable volunteers/{uid}
+ * record on their first sign-in. The approval step writes an email-keyed
+ * volunteer_onboarding doc; here we materialize it under the actual uid.
+ * Returns the created volunteer data, or null when there is nothing to bridge.
+ */
+async function provisionNigeriaVolunteerFromOnboarding(db, uid, email) {
+  if (!email) return null;
+  const onboardSnap = await db.collection('volunteer_onboarding').doc(email).get();
+  if (!onboardSnap.exists) return null;
+  const onboard = onboardSnap.data() || {};
+  const phone = phoneFromRegistration(onboard.phone) || onboard.phone || '';
+  if (!isNigeriaPhoneRegistered(phone)) return null;
+  const provisioned = {
+    email,
+    name: onboard.name || '',
+    phone,
+    notes: onboard.notes || '',
+    region: 'nigeria',
+    source: onboard.source || 'nigeria_workforce',
+    createdFromOnboardingAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+  await db.collection('volunteers').doc(uid).set(provisioned, { merge: true });
+  return provisioned;
+}
+
 async function assertNigeriaVolunteerAccess(db, uid, authToken) {
   const email = normalizeEmail(authToken?.email);
   if (email && isSuperUserEmail(email)) {
@@ -409,13 +435,18 @@ async function assertNigeriaVolunteerAccess(db, uid, authToken) {
   }
 
   const vSnap = await db.collection('volunteers').doc(uid).get();
-  if (!vSnap.exists) {
-    throw new HttpsError(
-      'failed-precondition',
-      'Complete volunteer sign-up first, then sign in here with the same email.'
-    );
+  let volunteer;
+  if (vSnap.exists) {
+    volunteer = vSnap.data();
+  } else {
+    volunteer = await provisionNigeriaVolunteerFromOnboarding(db, uid, email);
+    if (!volunteer) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Complete volunteer sign-up first, then sign in here with the same email.'
+      );
+    }
   }
-  const volunteer = vSnap.data();
   const phone = volunteer.phone || '';
   if (!isNigeriaPhoneRegistered(phone)) {
     throw new HttpsError(
@@ -1987,6 +2018,28 @@ const approveNigeriaWorkforceSignup = onCall(
       },
       { merge: true }
     );
+
+    // Bridge the approved applicant into the onboarding registry so they become
+    // eligible to sign in to the Nigeria dashboard with this same email.
+    const applicantEmail = normalizeEmail(data.email);
+    if (applicantEmail) {
+      await db
+        .collection('volunteer_onboarding')
+        .doc(applicantEmail)
+        .set(
+          {
+            email: applicantEmail,
+            name: data.name || '',
+            phone: phoneFromRegistration(data.phone) || data.phone || '',
+            notes: data.notes || '',
+            region: 'nigeria',
+            source: 'nigeria_workforce',
+            nigeriaUnits: Array.isArray(data.units) ? data.units : [],
+            onboardingUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+    }
 
     let clearedEmailSent = false;
     try {
