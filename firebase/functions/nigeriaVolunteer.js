@@ -531,6 +531,16 @@ const STRIKE_WINDOW_WEEKS = 8;
 const STRIKE_WINDOW_MS = STRIKE_WINDOW_WEEKS * 7 * 86400000;
 /** A check-in only counts as "late" once this many minutes past the start have passed. */
 const LATE_GRACE_MS = 5 * 60 * 1000;
+/**
+ * First Lagos calendar day that counts for misses / late / warnings.
+ * Dashboard launched 2026-07-11; tracking begins the next day so nobody is
+ * penalized for meetings before the hub was in use.
+ */
+const ATTENDANCE_TRACKING_START_YMD = '2026-07-12';
+
+function meetingInTrackingPeriod(m) {
+  return !!(m && m.dateYmd && String(m.dateYmd) >= ATTENDANCE_TRACKING_START_YMD);
+}
 
 /**
  * Counts, within the last 8 weeks, how many meetings a member missed and how
@@ -542,6 +552,7 @@ function computeStrikeWindowStats(allPast, attendedKeys, excusedKeys, checkedInA
   let missed = 0;
   let late = 0;
   (allPast || []).forEach((m) => {
+    if (!meetingInTrackingPeriod(m)) return;
     if (m.start.getTime() < windowStart) return;
     if (excusedKeys.has(m.key)) return;
     if (attendedKeys.has(m.key)) {
@@ -685,7 +696,9 @@ async function pastMeetingsForUnit(db, unitId, monthsBack = 6) {
     }
     all.push(...meetingsInMonth(unit, y, m));
   }
-  return all.filter((m) => m.end <= now).sort((a, b) => a.start - b.start);
+  return all
+    .filter((m) => m.end <= now && meetingInTrackingPeriod(m))
+    .sort((a, b) => a.start - b.start);
 }
 
 async function computeUserAttendanceStats(db, uid, unitId, year, month) {
@@ -693,7 +706,8 @@ async function computeUserAttendanceStats(db, uid, unitId, year, month) {
   if (!unit) return null;
   const scheduled = meetingsInMonth(unit, year, month);
   const now = new Date();
-  const pastScheduled = scheduled.filter((m) => m.end <= now);
+  // Only meetings on/after tracking start count for misses, rate, and streaks.
+  const pastScheduled = scheduled.filter((m) => m.end <= now && meetingInTrackingPeriod(m));
 
   const snap = await db
     .collection('nigeria_attendance')
