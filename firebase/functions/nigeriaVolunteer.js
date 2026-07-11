@@ -718,6 +718,97 @@ function computeStreak(pastMeetings, attendedKeys, excusedKeys, longest) {
   return longest ? best : streak;
 }
 
+async function loadUnitMembers(db, unitId) {
+  const seen = new Map();
+  const snaps = await Promise.all([
+    db.collection('nigeria_volunteers').where('unitIds', 'array-contains', unitId).get(),
+    db.collection('nigeria_volunteers').where('unitId', '==', unitId).get(),
+  ]);
+  for (const snap of snaps) {
+    snap.forEach((doc) => {
+      if (seen.has(doc.id)) return;
+      const d = doc.data() || {};
+      const units = normalizeProfileUnits(d);
+      const mine = units.find((u) => u.unitId === unitId);
+      if (!mine) return;
+      seen.set(doc.id, {
+        uid: doc.id,
+        name: String(d.name || '').trim() || (d.email ? String(d.email).split('@')[0] : 'Member'),
+        phone: String(d.phone || '').trim(),
+        email: normalizeEmail(d.email),
+        role: mine.role,
+      });
+    });
+  }
+  return [...seen.values()];
+}
+
+/**
+ * Leader-only roster of every member in a unit, each with their 8-week strike
+ * status (missed / late / withdrawal risk). Lets a leader see at a glance who
+ * needs a nudge and who has hit the withdrawal notice (so they can remove them
+ * from the WhatsApp group).
+ */
+async function computeUnitRoster(db, unitId, now = new Date()) {
+  const unit = getUnit(unitId);
+  if (!unit) return [];
+  const members = await loadUnitMembers(db, unitId);
+  if (!members.length) return [];
+
+  const allPast = await pastMeetingsForUnit(db, unitId, 6);
+
+  const attSnap = await db.collection('nigeria_attendance').where('unitId', '==', unitId).get();
+  const attByUid = {};
+  attSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    if (!d.uid || !d.meetingKey) return;
+    const rec = attByUid[d.uid] || (attByUid[d.uid] = { keys: new Set(), at: {} });
+    rec.keys.add(d.meetingKey);
+    const at = d.checkedInAt && d.checkedInAt.toDate ? d.checkedInAt.toDate().getTime() : null;
+    if (at) rec.at[d.meetingKey] = at;
+  });
+
+  const absSnap = await db
+    .collection('nigeria_absence_requests')
+    .where('unitId', '==', unitId)
+    .where('status', '==', 'approved')
+    .get();
+  const excusedByUid = {};
+  absSnap.forEach((doc) => {
+    const d = doc.data() || {};
+    if (!d.uid || !d.meetingKey) return;
+    (excusedByUid[d.uid] || (excusedByUid[d.uid] = new Set())).add(d.meetingKey);
+  });
+
+  const roster = members.map((m) => {
+    const att = attByUid[m.uid] || { keys: new Set(), at: {} };
+    const excused = excusedByUid[m.uid] || new Set();
+    const strikeStats = computeStrikeWindowStats(allPast, att.keys, excused, att.at, now);
+    const warning = attendanceMissWarning(strikeStats);
+    return {
+      uid: m.uid,
+      name: m.name,
+      phone: m.phone,
+      role: m.role,
+      missed: strikeStats.missed,
+      late: strikeStats.late,
+      strikes: strikeStats.strikes,
+      tier: warning ? warning.tier : 'ok',
+      level: warning ? warning.level : 'ok',
+    };
+  });
+
+  const tierRank = { withdrawal: 0, final: 1, warning: 2, ok: 3 };
+  roster.sort((a, b) => {
+    const ra = tierRank[a.tier] != null ? tierRank[a.tier] : 3;
+    const rb = tierRank[b.tier] != null ? tierRank[b.tier] : 3;
+    if (ra !== rb) return ra - rb;
+    if (b.strikes !== a.strikes) return b.strikes - a.strikes;
+    return a.name.localeCompare(b.name);
+  });
+  return roster;
+}
+
 async function computeUnitAttendanceForReport(db, unitId, year, month) {
   const unit = getUnit(unitId);
   if (!unit) return null;
@@ -1149,6 +1240,12 @@ const getNigeriaDashboard = onCall(async (request) => {
       : false;
     const canRequestEmergency = absenceTarget ? canSubmitEmergencyAbsence(absenceTarget, now) : false;
 
+    const isUnitLeader = membership.role === 'leader' || isSuperUser;
+    let teamRoster = null;
+    if (isUnitLeader) {
+      teamRoster = await computeUnitRoster(db, membership.unitId, now);
+    }
+
     unitContexts.push({
       unitId: membership.unitId,
       unitLabel: membership.unitLabel,
@@ -1185,8 +1282,10 @@ const getNigeriaDashboard = onCall(async (request) => {
         : null,
       canRequestPlanned,
       canRequestEmergency,
-      canSubmitReport: membership.role === 'leader' || isSuperUser,
-      canEditVision: membership.role === 'leader' || isSuperUser,
+      canSubmitReport: isUnitLeader,
+      canEditVision: isUnitLeader,
+      isLeaderView: isUnitLeader,
+      teamRoster,
     });
   }
 

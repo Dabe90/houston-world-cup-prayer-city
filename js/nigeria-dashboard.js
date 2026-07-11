@@ -1677,6 +1677,109 @@
     }
   }
 
+  function rosterWaLink(phone) {
+    var digits = String(phone || '').replace(/[^0-9]/g, '');
+    if (!digits) return '';
+    if (digits.length === 11 && digits.charAt(0) === '0') digits = '234' + digits.slice(1);
+    return 'https://wa.me/' + digits;
+  }
+
+  function rosterStatusBadge(tier) {
+    if (tier === 'withdrawal')
+      return '<span class="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 bg-red-100 text-red-700">Withdrawal</span>';
+    if (tier === 'final')
+      return '<span class="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 bg-orange-100 text-orange-700">Final warning</span>';
+    if (tier === 'warning')
+      return '<span class="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 bg-amber-100 text-amber-700">Warning</span>';
+    return '<span class="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 bg-emerald-100 text-emerald-700">On track</span>';
+  }
+
+  function teamRosterHtml(c) {
+    if (!c.isLeaderView || !c.teamRoster || !c.teamRoster.length) return '';
+    var roster = c.teamRoster;
+    var atRisk = roster.filter(function (m) {
+      return m.tier && m.tier !== 'ok';
+    });
+    var withdrawals = roster.filter(function (m) {
+      return m.tier === 'withdrawal';
+    });
+    var rows = roster
+      .map(function (m) {
+        var wa = rosterWaLink(m.phone);
+        var rowTone =
+          m.tier === 'withdrawal'
+            ? 'bg-red-50/70 border-red-100'
+            : m.tier === 'final'
+              ? 'bg-orange-50/60 border-orange-100'
+              : m.tier === 'warning'
+                ? 'bg-amber-50/50 border-amber-100'
+                : 'bg-white border-slate-100';
+        return (
+          '<div class="rounded-xl border ' +
+          rowTone +
+          ' p-2.5 flex items-start gap-2">' +
+          '<div class="min-w-0 flex-1">' +
+          '<div class="flex items-center gap-2 flex-wrap">' +
+          '<span class="text-sm font-semibold text-slate-900 truncate">' +
+          escapeHtml(m.name) +
+          '</span>' +
+          (m.role === 'leader'
+            ? '<span class="text-[9px] font-bold uppercase rounded px-1.5 py-0.5 bg-amber-100 text-amber-800">Leader</span>'
+            : '') +
+          rosterStatusBadge(m.tier) +
+          '</div>' +
+          '<p class="text-[11px] text-slate-500 mt-0.5">' +
+          escapeHtml(String(m.missed || 0)) +
+          ' missed · ' +
+          escapeHtml(String(m.late || 0)) +
+          ' late · last 8 wks</p>' +
+          (m.phone ? '<p class="text-[11px] text-slate-500">' + escapeHtml(m.phone) + '</p>' : '') +
+          (m.tier === 'withdrawal'
+            ? '<p class="text-[11px] text-red-700 font-medium mt-1"><i class="fas fa-triangle-exclamation mr-1"></i>Withdrawal reached — you may remove them from the WhatsApp group.</p>'
+            : '') +
+          '</div>' +
+          (wa
+            ? '<a href="' +
+              wa +
+              '" target="_blank" rel="noopener" class="shrink-0 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-2 py-1 hover:bg-emerald-100"><i class="fas fa-comment-dots mr-1"></i>Message</a>'
+            : '') +
+          '</div>'
+        );
+      })
+      .join('');
+
+    var summary = withdrawals.length
+      ? '<div class="rounded-lg bg-red-50 border border-red-100 px-3 py-2 text-xs text-red-800 mb-2"><strong>' +
+        withdrawals.length +
+        '</strong> member' +
+        (withdrawals.length === 1 ? '' : 's') +
+        ' reached the withdrawal notice — consider removing them from the WhatsApp group.</div>'
+      : atRisk.length
+        ? '<div class="rounded-lg bg-amber-50 border border-amber-100 px-3 py-2 text-xs text-amber-800 mb-2"><strong>' +
+          atRisk.length +
+          '</strong> member' +
+          (atRisk.length === 1 ? '' : 's') +
+          ' need a nudge to stay on track.</div>'
+        : '<div class="rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2 text-xs text-emerald-800 mb-2">Everyone is on track. 🎉</div>';
+
+    return (
+      '<div class="team-roster mt-5 border-t border-slate-100 pt-4">' +
+      '<div class="flex items-center justify-between mb-1">' +
+      '<h4 class="text-sm font-bold text-slate-900"><i class="fas fa-users text-brand mr-1"></i>Team roster</h4>' +
+      '<span class="text-[11px] text-slate-500">' +
+      roster.length +
+      ' member' +
+      (roster.length === 1 ? '' : 's') +
+      '</span>' +
+      '</div>' +
+      '<p class="text-xs text-slate-500 mb-2">Leaders only. See who is at risk of withdrawal or coming late so you can follow up and manage your WhatsApp group.</p>' +
+      summary +
+      '<div class="space-y-2">' +
+      rows +
+      '</div></div>'
+    );
+  }
+
   function renderUnitsTab(data) {
     var wrap = $('units-cards');
     if (!wrap) return;
@@ -1733,6 +1836,7 @@
           '<p class="text-xs text-slate-500 mt-2 text-center">Opens 15 min before · closes 10 min after</p>' +
           absencePanelHtml(c) +
           lastMeetingDigestHtml(c, uid) +
+          teamRosterHtml(c) +
           visionPanelHtml(c) +
           notesHtml(unitMeetings, defaultKey) +
           '</div>'
