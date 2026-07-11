@@ -102,7 +102,7 @@
 
   function welcomeSlideHtml() {
     return (
-      '<article class="hero-slide hero-slide-welcome hero-mesh min-w-full shrink-0" data-slide="0" aria-label="Welcome">' +
+      '<article class="hero-slide hero-slide-welcome hero-mesh" data-slide="0" aria-label="Welcome">' +
       '<div class="max-w-7xl mx-auto px-3 sm:px-6 py-8 sm:py-12 lg:py-14 h-full">' +
       '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-center min-h-[280px] sm:min-h-[320px] lg:min-h-[360px]">' +
       '<div class="min-w-0">' +
@@ -128,7 +128,7 @@
       })
       .join('');
     return (
-      '<article class="hero-slide hero-slide-event min-w-full shrink-0 bg-gradient-to-br ' +
+      '<article class="hero-slide hero-slide-event bg-gradient-to-br ' +
       esc(slide.accent) +
       '" data-slide="' +
       index +
@@ -182,10 +182,6 @@
       html += slide.type === 'welcome' ? welcomeSlideHtml() : eventSlideHtml(slide, i);
     });
     track.innerHTML = html;
-    track.style.width = SLIDES.length * 100 + '%';
-    track.querySelectorAll('.hero-slide').forEach(function (el) {
-      el.style.width = 100 / SLIDES.length + '%';
-    });
   }
 
   function renderDots(root, count, active) {
@@ -217,9 +213,8 @@
 
     function goTo(i, animate) {
       index = ((i % SLIDES.length) + SLIDES.length) % SLIDES.length;
-      var pct = (index * 100) / SLIDES.length;
       track.style.transition = animate === false ? 'none' : 'transform 0.75s cubic-bezier(0.4, 0, 0.2, 1)';
-      track.style.transform = 'translateX(-' + pct + '%)';
+      track.style.transform = 'translateX(-' + index * 100 + '%)';
       renderDots(root, SLIDES.length, index);
       root.setAttribute('data-active-slide', String(index));
     }
@@ -302,7 +297,12 @@
     mount: mount,
   };
 
-  document.addEventListener('DOMContentLoaded', function () {
+  function init() {
     mount('#hero-billboard');
-  });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })(typeof window !== 'undefined' ? window : this);

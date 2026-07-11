@@ -43,9 +43,10 @@
         linear-gradient(135deg, rgba(0, 135, 81, 0.88) 0%, rgba(15, 61, 92, 0.9) 45%, rgba(26, 95, 138, 0.88) 100%),
         url("https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=1600&q=80") center/cover no-repeat;
     }
-    #hero-billboard { min-height: 300px; }
-    @media (min-width: 640px) { #hero-billboard { min-height: 340px; } }
-    @media (min-width: 1024px) { #hero-billboard { min-height: 400px; } }
+    #hero-billboard { padding-bottom: 3.5rem; }
+    .hero-billboard-viewport { overflow: hidden; width: 100%; }
+    [data-hero-track] { display: flex; width: 100%; }
+    [data-hero-track] .hero-slide { flex: 0 0 100%; width: 100%; min-width: 0; }
     .hero-flyer-frame {
       aspect-ratio: 1 / 1;
       display: flex;
@@ -105,9 +106,9 @@
       </div>
     </nav>
 
-    <header id="hero-billboard" class="relative overflow-hidden text-white" aria-roledescription="carousel" aria-label="DDBS Nigeria highlights">
-      <div class="overflow-hidden">
-        <div data-hero-track class="flex will-change-transform"></div>
+    <header id="hero-billboard" class="relative overflow-hidden text-white bg-brand" aria-roledescription="carousel" aria-label="DDBS Nigeria highlights">
+      <div class="hero-billboard-viewport">
+        <div data-hero-track class="will-change-transform"></div>
       </div>
       <div class="absolute inset-x-0 bottom-0 pointer-events-none bg-gradient-to-t from-black/25 to-transparent h-16 sm:h-20" aria-hidden="true"></div>
       <div class="absolute bottom-3 sm:bottom-4 left-0 right-0 flex items-center justify-center gap-3 sm:gap-4 px-4 pointer-events-none">
@@ -121,7 +122,7 @@
       </div>
     </header>
 
-    <section class="max-w-7xl mx-auto px-3 sm:px-6 -mt-2 sm:-mt-4 relative z-10 pb-2">
+    <section class="max-w-7xl mx-auto px-3 sm:px-6 mt-6 sm:mt-8 pb-2">
       <div class="bg-white rounded-2xl shadow-lift border border-slate-100 overflow-hidden">
         <div class="bg-gradient-to-r from-ng-green via-brand to-brand-light px-5 sm:px-8 py-4 sm:py-5 text-white">
           <p class="text-brand-accent font-semibold tracking-[0.2em] uppercase text-[10px] sm:text-xs mb-1">Our Vision</p>
