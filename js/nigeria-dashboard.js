@@ -1038,21 +1038,63 @@
 
   function attendanceWarningBannerHtml(warning, unitLabel) {
     if (!warning) return '';
-    var colors =
-      warning.level === 'critical'
-        ? 'border-red-300 bg-red-50 text-red-900'
-        : 'border-amber-300 bg-amber-50 text-amber-900';
+    var critical = warning.level === 'critical';
+    var bar = critical ? 'bg-red-500' : 'bg-amber-400';
+    var iconWrap = critical ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600';
+    var titleColor = critical ? 'text-red-900' : 'text-amber-900';
+    var border = critical ? 'border-red-200' : 'border-amber-200';
+    var icon =
+      warning.tier === 'withdrawal'
+        ? 'fa-triangle-exclamation'
+        : warning.tier === 'final'
+          ? 'fa-circle-exclamation'
+          : 'fa-bell';
+    var stats =
+      warning.strikes != null
+        ? '<div class="flex flex-wrap gap-2 mt-2">' +
+          '<span class="text-[11px] font-semibold text-slate-600 bg-slate-100 rounded-full px-2 py-0.5">' +
+          escapeHtml(String(warning.missed || 0)) +
+          ' missed</span>' +
+          '<span class="text-[11px] font-semibold text-slate-600 bg-slate-100 rounded-full px-2 py-0.5">' +
+          escapeHtml(String(warning.late || 0)) +
+          ' late</span>' +
+          '<span class="text-[11px] font-semibold text-slate-500 bg-slate-100 rounded-full px-2 py-0.5">last ' +
+          escapeHtml(String(warning.windowWeeks || 8)) +
+          ' weeks</span>' +
+          '</div>'
+        : '';
     return (
-      '<div class="rounded-xl border px-4 py-3 text-sm ' +
-      colors +
+      '<div class="rounded-2xl border ' +
+      border +
+      ' bg-white shadow-sm overflow-hidden mb-3">' +
+      '<div class="flex">' +
+      '<div class="w-1.5 ' +
+      bar +
+      '"></div>' +
+      '<div class="flex items-start gap-3 p-4 flex-1">' +
+      '<div class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center ' +
+      iconWrap +
+      '"><i class="fas ' +
+      icon +
+      '"></i></div>' +
+      '<div class="min-w-0">' +
+      '<div class="flex items-center gap-2 flex-wrap">' +
+      '<p class="font-bold ' +
+      titleColor +
       '">' +
-      '<p class="font-bold">' +
       escapeHtml(warning.title) +
-      (unitLabel ? ' · ' + escapeHtml(unitLabel) : '') +
       '</p>' +
-      '<p class="mt-1">' +
+      (unitLabel
+        ? '<span class="text-[10px] font-semibold uppercase tracking-wide text-slate-500 bg-slate-100 rounded-full px-2 py-0.5">' +
+          escapeHtml(unitLabel) +
+          '</span>'
+        : '') +
+      '</div>' +
+      '<p class="text-sm text-slate-700 mt-1">' +
       escapeHtml(warning.message) +
-      '</p></div>'
+      '</p>' +
+      stats +
+      '</div></div></div></div>'
     );
   }
 
@@ -1295,6 +1337,101 @@
     return plan;
   }
 
+  function visionPlanCardsHtml(plan) {
+    if (!plan) return '';
+    var html = '';
+    if (plan.milestones && plan.milestones.length) {
+      html +=
+        '<div class="mb-4">' +
+        '<h5 class="text-[11px] font-bold uppercase tracking-wide text-brand mb-2"><i class="fas fa-flag-checkered mr-1"></i>Milestones</h5>' +
+        '<div class="grid sm:grid-cols-2 gap-2">' +
+        plan.milestones
+          .map(function (m) {
+            return (
+              '<div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">' +
+              '<span class="inline-block text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5 mb-1">' +
+              escapeHtml(m.targetMonth || '') +
+              '</span>' +
+              '<p class="text-sm font-semibold text-slate-900 leading-snug">' +
+              escapeHtml(m.title || '') +
+              '</p>' +
+              '<p class="text-xs text-slate-600 mt-1">' +
+              escapeHtml(m.description || '') +
+              '</p></div>'
+            );
+          })
+          .join('') +
+        '</div></div>';
+    }
+    if (plan.roadmap && plan.roadmap.length) {
+      html +=
+        '<div class="mb-4">' +
+        '<h5 class="text-[11px] font-bold uppercase tracking-wide text-brand mb-2"><i class="fas fa-diagram-project mr-1"></i>Roadmap</h5>' +
+        '<ol class="relative border-l-2 border-brand/30 ml-2 space-y-3">' +
+        plan.roadmap
+          .map(function (r, i) {
+            return (
+              '<li class="ml-4">' +
+              '<span class="absolute -left-[11px] flex items-center justify-center w-5 h-5 rounded-full bg-brand text-white text-[10px] font-bold shadow">' +
+              (i + 1) +
+              '</span>' +
+              '<p class="text-sm font-semibold text-slate-900 leading-snug">' +
+              escapeHtml(r.phase || '') +
+              '</p>' +
+              (r.focus
+                ? '<p class="text-[11px] text-slate-500 italic mb-1">' + escapeHtml(r.focus) + '</p>'
+                : '') +
+              '<ul class="list-disc list-inside text-xs text-slate-600 space-y-0.5">' +
+              (r.steps || [])
+                .map(function (s) {
+                  return '<li>' + escapeHtml(s) + '</li>';
+                })
+                .join('') +
+              '</ul></li>'
+            );
+          })
+          .join('') +
+        '</ol></div>';
+    }
+    if (plan.howToGetThere && plan.howToGetThere.length) {
+      html +=
+        '<div class="mb-4">' +
+        '<h5 class="text-[11px] font-bold uppercase tracking-wide text-brand mb-2"><i class="fas fa-shoe-prints mr-1"></i>How we\u2019ll get there</h5>' +
+        '<ul class="space-y-1">' +
+        plan.howToGetThere
+          .map(function (h) {
+            return (
+              '<li class="flex items-start gap-2 text-xs text-slate-700"><i class="fas fa-circle-check text-emerald-500 mt-0.5 shrink-0"></i><span>' +
+              escapeHtml(h) +
+              '</span></li>'
+            );
+          })
+          .join('') +
+        '</ul></div>';
+    }
+    if (plan.toolsAndResources && plan.toolsAndResources.length) {
+      html +=
+        '<div>' +
+        '<h5 class="text-[11px] font-bold uppercase tracking-wide text-brand mb-2"><i class="fas fa-toolbox mr-1"></i>Helpful tools</h5>' +
+        '<div class="grid sm:grid-cols-2 gap-2">' +
+        plan.toolsAndResources
+          .map(function (t) {
+            return (
+              '<div class="rounded-xl border border-slate-200 bg-slate-50 p-2.5">' +
+              '<p class="text-xs font-semibold text-slate-900">' +
+              escapeHtml(t.name || '') +
+              '</p>' +
+              '<p class="text-[11px] text-slate-600 mt-0.5">' +
+              escapeHtml(t.purpose || '') +
+              '</p></div>'
+            );
+          })
+          .join('') +
+        '</div></div>';
+    }
+    return html || '<p class="text-xs text-slate-400">No plan yet — click \u201cCreate my plan\u201d.</p>';
+  }
+
   function visionPanelHtml(c) {
     var vision = c.unitVision;
     var canEdit = c.canEditVision;
@@ -1306,20 +1443,22 @@
         '<div class="unit-vision mt-5 border-t border-slate-100 pt-4">' +
         '<h4 class="text-sm font-bold text-slate-900 mb-2"><i class="fas fa-star text-brand mr-1"></i>My Vision Board</h4>' +
         '<p class="text-xs text-slate-500 mb-2">Shared by your unit leader</p>' +
-        '<p class="text-sm text-slate-700 whitespace-pre-wrap rounded-xl bg-slate-50 border border-slate-100 p-3 mb-2">' +
+        '<p class="text-sm text-slate-700 whitespace-pre-wrap rounded-xl bg-slate-50 border border-slate-100 p-3 mb-3">' +
         escapeHtml(vision.visionText || '') +
         '</p>' +
-        '<div class="text-sm text-slate-700 whitespace-pre-wrap rounded-xl bg-emerald-50 border border-emerald-100 p-3 overflow-x-auto">' +
-        escapeHtml(vision.planText || planToEditableText(vision.plan)) +
+        '<div class="rounded-2xl border border-slate-200 bg-white p-4">' +
+        visionPlanCardsHtml(vision.plan) +
         '</div></div>'
       );
     }
+    var initialCards = vision && vision.plan ? visionPlanCardsHtml(vision.plan) : '';
+    var initialReadable = (vision && vision.plan && planToEditableText(vision.plan)) || '';
     return (
       '<div class="unit-vision mt-5 border-t border-slate-100 pt-4" data-unit-id="' +
       escapeHtml(c.unitId) +
       '">' +
       '<h4 class="text-sm font-bold text-slate-900 mb-1"><i class="fas fa-star text-brand mr-1"></i>My Vision Board</h4>' +
-      '<p class="text-xs text-slate-500 mb-3">Write where your unit is headed in the next 3 months. We\u2019ll turn it into a simple plan on the right that you can edit, then share with your team.</p>' +
+      '<p class="text-xs text-slate-500 mb-3">Write where your unit is headed in the next 3 months. We\u2019ll turn it into a clear plan you can review, edit, and share with your team.</p>' +
       '<div class="grid gap-4 lg:grid-cols-2">' +
       '<div>' +
       '<label class="block text-xs font-semibold text-slate-600 mb-1">Your vision</label>' +
@@ -1327,17 +1466,26 @@
       escapeHtml((vision && vision.visionText) || '') +
       '</textarea>' +
       '<div class="flex flex-wrap gap-2 mt-2">' +
-      '<button type="button" class="btn-generate-vision text-xs font-semibold rounded-lg bg-brand text-white px-3 py-2 hover:bg-brand-light">Create my plan</button>' +
-      '<button type="button" class="btn-save-vision text-xs font-semibold rounded-lg bg-ng-green text-white px-3 py-2 hover:bg-emerald-700">Share with team</button>' +
+      '<button type="button" class="btn-generate-vision text-xs font-semibold rounded-lg bg-brand text-white px-3 py-2 hover:bg-brand-light"><i class="fas fa-wand-magic-sparkles mr-1"></i>Create my plan</button>' +
       '</div>' +
       '<p class="vision-status text-xs text-slate-500 mt-2"></p>' +
       '</div>' +
       '<div>' +
-      '<label class="block text-xs font-semibold text-slate-600 mb-1">Your plan (edit anything, then share)</label>' +
-      '<textarea class="vision-plan w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm min-h-[240px] focus:ring-2 focus:ring-ng-green outline-none" placeholder="Click \u201cCreate my plan\u201d to fill this in\u2026">' +
-      escapeHtml((vision && vision.plan && planToEditableText(vision.plan)) || '') +
+      '<div class="flex items-center justify-between mb-1">' +
+      '<label class="block text-xs font-semibold text-slate-600">Your plan</label>' +
+      '<div class="flex items-center gap-1">' +
+      '<button type="button" class="btn-edit-vision text-[11px] font-semibold rounded-lg border border-slate-200 text-slate-600 px-2 py-1 hover:bg-slate-50" title="Edit plan"><i class="fas fa-pen mr-1"></i>Edit</button>' +
+      '<button type="button" class="btn-save-plan hidden text-[11px] font-semibold rounded-lg bg-ng-green text-white px-2 py-1 hover:bg-emerald-700" title="Save edits"><i class="fas fa-check mr-1"></i>Save</button>' +
+      '</div>' +
+      '</div>' +
+      '<div class="vision-plan-view rounded-2xl border border-slate-200 bg-slate-50/70 p-4 opacity-70">' +
+      initialCards +
+      '</div>' +
+      '<textarea class="vision-plan hidden w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm min-h-[240px] focus:ring-2 focus:ring-ng-green outline-none">' +
+      escapeHtml(initialReadable) +
       '</textarea>' +
-      '<p class="text-[11px] text-slate-400 mt-1">Tip: keep the section titles (MILESTONES, ROADMAP, HOW WE WILL GET THERE, HELPFUL TOOLS).</p>' +
+      '<p class="text-[11px] text-slate-400 mt-1">Read-only preview \u2014 tap <strong>Edit</strong> to change, <strong>Save</strong> to keep edits. When editing, keep the section titles.</p>' +
+      '<button type="button" class="btn-share-vision mt-2 w-full text-xs font-semibold rounded-lg bg-ng-green text-white px-3 py-2.5 hover:bg-emerald-700"><i class="fas fa-share-nodes mr-1"></i>Share with team</button>' +
       '</div>' +
       '</div></div>'
     );
@@ -1374,10 +1522,33 @@
     wrap.querySelectorAll('.unit-vision[data-unit-id]').forEach(function (panel) {
       var unitId = panel.getAttribute('data-unit-id');
       var genBtn = panel.querySelector('.btn-generate-vision');
-      var saveBtn = panel.querySelector('.btn-save-vision');
+      var editBtn = panel.querySelector('.btn-edit-vision');
+      var savePlanBtn = panel.querySelector('.btn-save-plan');
+      var shareBtn = panel.querySelector('.btn-share-vision');
       var statusEl = panel.querySelector('.vision-status');
       var visionTextEl = panel.querySelector('.vision-text');
       var planEl = panel.querySelector('.vision-plan');
+      var viewEl = panel.querySelector('.vision-plan-view');
+
+      function renderView() {
+        if (viewEl) viewEl.innerHTML = visionPlanCardsHtml(readableToPlan(planEl ? planEl.value : ''));
+      }
+      function setEditMode(on) {
+        if (!planEl || !viewEl) return;
+        if (on) {
+          planEl.classList.remove('hidden');
+          viewEl.classList.add('hidden');
+          if (editBtn) editBtn.classList.add('hidden');
+          if (savePlanBtn) savePlanBtn.classList.remove('hidden');
+          planEl.focus();
+        } else {
+          renderView();
+          planEl.classList.add('hidden');
+          viewEl.classList.remove('hidden');
+          if (editBtn) editBtn.classList.remove('hidden');
+          if (savePlanBtn) savePlanBtn.classList.add('hidden');
+        }
+      }
 
       if (genBtn) {
         genBtn.addEventListener('click', function () {
@@ -1387,42 +1558,55 @@
             return;
           }
           if (statusEl) statusEl.textContent = 'Creating your plan…';
-          if (genBtn) genBtn.disabled = true;
+          genBtn.disabled = true;
           functions
             .httpsCallable('generateNigeriaUnitVision')({ unitId: unitId, visionText: visionText })
             .then(function (res) {
               if (planEl && res.data && res.data.plan) {
                 planEl.value = planToEditableText(res.data.plan);
+                renderView();
               }
               if (statusEl) {
                 statusEl.textContent =
-                  'Your plan is ready on the right — edit anything, then share with your team.';
+                  'Your plan is ready — review it, tap Edit to adjust, then Share with team.';
               }
             })
             .catch(function (err) {
               if (statusEl) statusEl.textContent = (err && err.message) || 'Could not create a plan. Please try again.';
             })
             .finally(function () {
-              if (genBtn) genBtn.disabled = false;
+              genBtn.disabled = false;
             });
         });
       }
 
-      if (saveBtn) {
-        saveBtn.addEventListener('click', function () {
+      if (editBtn) {
+        editBtn.addEventListener('click', function () {
+          setEditMode(true);
+          if (statusEl) statusEl.textContent = 'Editing — make your changes, then tap Save.';
+        });
+      }
+      if (savePlanBtn) {
+        savePlanBtn.addEventListener('click', function () {
+          setEditMode(false);
+          if (statusEl) statusEl.textContent = 'Edits saved. Tap Share with team to publish.';
+        });
+      }
+
+      if (shareBtn) {
+        shareBtn.addEventListener('click', function () {
           var visionText = visionTextEl ? visionTextEl.value.trim() : '';
-          var planRaw = planEl ? planEl.value.trim() : '';
           if (visionText.length < 20) {
             if (statusEl) statusEl.textContent = 'Please write your vision first.';
             return;
           }
-          var plan = readableToPlan(planRaw);
+          var plan = readableToPlan(planEl ? planEl.value : '');
           if (!plan.milestones.length && !plan.roadmap.length) {
-            if (statusEl) statusEl.textContent = 'Create your plan first (or add a few lines under the section titles).';
+            if (statusEl) statusEl.textContent = 'Create your plan first.';
             return;
           }
           if (statusEl) statusEl.textContent = 'Sharing…';
-          if (saveBtn) saveBtn.disabled = true;
+          shareBtn.disabled = true;
           functions
             .httpsCallable('saveNigeriaUnitVision')({ unitId: unitId, visionText: visionText, plan: plan })
             .then(function () {
@@ -1433,7 +1617,7 @@
               if (statusEl) statusEl.textContent = (err && err.message) || 'Could not share. Please try again.';
             })
             .finally(function () {
-              if (saveBtn) saveBtn.disabled = false;
+              shareBtn.disabled = false;
             });
         });
       }
