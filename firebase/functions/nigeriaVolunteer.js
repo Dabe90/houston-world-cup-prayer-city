@@ -448,17 +448,16 @@ async function assertNigeriaVolunteerAccess(db, uid, authToken) {
     }
   }
   const phone = volunteer.phone || '';
-  if (!isNigeriaPhoneRegistered(phone)) {
-    throw new HttpsError(
-      'permission-denied',
-      'This dashboard is for volunteers who registered with a Nigeria (+234) phone number.'
-    );
-  }
+  // Any already-registered volunteer may join the Nigeria hub — including people
+  // who signed up on the US hub before the Nigeria hub existed. After signing in
+  // they pick their unit(s) and role (member/leader). A Nigeria (+234) phone is
+  // preferred (it powers WhatsApp follow-up in the leader roster) but is no
+  // longer required for access.
   await assertNoActiveWorkforceBlock(db, volunteer.email || email);
   return {
     volunteer,
-    phone: phoneFromRegistration(phone),
-    email: volunteer.email || '',
+    phone: phoneFromRegistration(phone) || phone || '',
+    email: volunteer.email || email || '',
     isSuperUser: false,
   };
 }
