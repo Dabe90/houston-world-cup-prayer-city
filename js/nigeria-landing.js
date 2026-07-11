@@ -520,6 +520,13 @@
   }
 
   function scrollToAuth() {
+    if (window.NigeriaDashboard && NigeriaDashboard.openAuthPanel) {
+      NigeriaDashboard.openAuthPanel();
+      return;
+    }
+    try {
+      sessionStorage.setItem('ngAuthPanelOpen', '1');
+    } catch (e) {}
     var auth = document.getElementById('auth-panel');
     if (auth) {
       auth.classList.remove('hidden');

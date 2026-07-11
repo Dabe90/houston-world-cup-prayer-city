@@ -8,6 +8,7 @@
   var superUserInitDone = false;
   var activeTab = 'home';
   var PREVIEW_PROFILE_KEY = 'ddbsNigeriaPreviewProfile';
+  var AUTH_PANEL_OPEN_KEY = 'ngAuthPanelOpen';
   var EMAIL_LINK_CONTINUE_URL = window.location.origin + window.location.pathname;
   var SELF_SERVE_SIGNIN_URL =
     'https://us-central1-bible-study-dashboard-99f2d.cloudfunctions.net/volunteerSelfServeSignInMail';
@@ -39,6 +40,119 @@
       if (countdown) countdown.classList.toggle('hidden', !show);
       if (mobileNav) mobileNav.classList.toggle('hidden', !show);
     }
+  }
+
+  function setAuthPanelStatus(msg, type) {
+    var el = $('auth-panel-status');
+    if (!el) {
+      setStatus(msg, type);
+      return;
+    }
+    if (!msg) {
+      hide(el);
+      el.textContent = '';
+      return;
+    }
+    el.textContent = msg;
+    el.className =
+      'rounded-xl border px-3 py-2.5 text-sm ' +
+      (type === 'error'
+        ? 'border-red-200 bg-red-50 text-red-900'
+        : type === 'success'
+          ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+          : 'border-sky-200 bg-sky-50 text-sky-900');
+    show(el);
+  }
+
+  function markAuthPanelOpen() {
+    try {
+      sessionStorage.setItem(AUTH_PANEL_OPEN_KEY, '1');
+    } catch (e) {}
+  }
+
+  function clearAuthPanelOpen() {
+    try {
+      sessionStorage.removeItem(AUTH_PANEL_OPEN_KEY);
+    } catch (e) {}
+  }
+
+  function wantsAuthPanelVisible() {
+    try {
+      if (sessionStorage.getItem(AUTH_PANEL_OPEN_KEY) === '1') return true;
+    } catch (e) {}
+    var hash = (window.location.hash || '').replace('#', '');
+    return ['auth', 'units', 'home', 'programs', 'reports', 'kingdom-workforce', 'new-members'].indexOf(hash) >= 0;
+  }
+
+  function showAuthPanel(scroll) {
+    markAuthPanelOpen();
+    var panel = $('auth-panel');
+    if (panel) {
+      show(panel);
+      if (scroll !== false) {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }
+
+  function friendlyPasswordSignInError(e) {
+    var code = e && e.code;
+    if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
+      return 'Invalid password, or no password is set for this account. Use “Email me a sign-in link” if needed.';
+    }
+    if (code === 'auth/user-not-found') {
+      return 'No account found with that email. Check spelling or sign up to volunteer first.';
+    }
+    if (code === 'auth/invalid-email') {
+      return 'Enter a valid email address.';
+    }
+    if (code === 'auth/too-many-requests') {
+      return 'Too many attempts. Wait a few minutes, then try again or use a sign-in link.';
+    }
+    return (e && e.message) || 'Sign-in failed.';
+  }
+
+  function sendSignInLinkViaFirebaseClient(email) {
+    return auth
+      .sendSignInLinkToEmail(email, { url: EMAIL_LINK_CONTINUE_URL, handleCodeInApp: true })
+      .then(function () {
+        window.localStorage.setItem('emailForSignIn', email);
+        setAuthPanelStatus('Check your inbox for the sign-in link.', 'success');
+      });
+  }
+
+  function sendSignInLinkViaAppsScript(email) {
+    return fetch(SELF_SERVE_SIGNIN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email }),
+    })
+      .then(function (r) {
+        return r.text().then(function (t) {
+          var j = {};
+          try {
+            j = t ? JSON.parse(t) : {};
+          } catch (ignore) {}
+          return { status: r.status, body: j };
+        });
+      })
+      .then(function (result) {
+        if (result.status === 200 && result.body && result.body.ok) {
+          window.localStorage.setItem('emailForSignIn', email);
+          setAuthPanelStatus(
+            'Check your inbox for the sign-in link (sent from ddbs.htx@gmail.com).',
+            'success'
+          );
+          return;
+        }
+        if (result.status === 404 && result.body && result.body.error === 'not_registered') {
+          throw new Error(result.body.message || 'No volunteer record for this email.');
+        }
+        if (result.status === 429) {
+          throw new Error(result.body.message || 'Please wait a minute before trying again.');
+        }
+        throw new Error((result.body && result.body.message) || 'Could not send sign-in link.');
+      });
   }
 
   function setStatus(msg, type) {
@@ -1524,6 +1638,10 @@
       .catch(function (err) {
         console.error('getNigeriaDashboard', err);
         var msg = (err && err.message) || 'Could not load dashboard.';
+        setStatus(msg, 'error');
+        if (auth && auth.currentUser) {
+          setAuthPanelStatus(msg + ' Sign out and sign in again if this keeps happening.', 'error');
+        }
         if (isClientSuperUser()) {
           var preview = loadPreviewProfile();
           if (preview && isProfileComplete(preview)) {
@@ -1732,10 +1850,11 @@
       return;
     }
     if (user) {
+      clearAuthPanelOpen();
+      setAuthPanelStatus('', '');
       if ($('btn-signout')) $('btn-signout').classList.remove('hidden');
       hide($('auth-panel'));
       if (profileSaveInFlight) return;
-      if ($('dash-shell') && !$('dash-shell').classList.contains('hidden')) return;
       loadDashboard();
       return;
     }
@@ -1743,7 +1862,11 @@
     hide($('dash-shell'));
     hide($('onboard-panel'));
     setPublicLanding(true);
-    hide($('auth-panel'));
+    if (wantsAuthPanelVisible()) {
+      show($('auth-panel'));
+    } else {
+      hide($('auth-panel'));
+    }
     try {
       sessionStorage.removeItem(PREVIEW_PROFILE_KEY);
     } catch (e) {}
@@ -1762,6 +1885,12 @@
     });
     if ($('btn-save-profile')) $('btn-save-profile').addEventListener('click', saveProfile);
     if ($('btn-email-link')) $('btn-email-link').addEventListener('click', sendEmailLink);
+    if ($('auth-form')) {
+      $('auth-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        signInPassword();
+      });
+    }
     if ($('btn-password-signin')) $('btn-password-signin').addEventListener('click', signInPassword);
     if ($('btn-signout')) $('btn-signout').addEventListener('click', function () {
       auth.signOut();
@@ -1791,42 +1920,77 @@
       $('ng-workforce-form').addEventListener('submit', submitWorkforceSignup);
     }
     completeEmailLinkIfNeeded().finally(function () {
-      auth.onAuthStateChanged(handleAuthUser);
+      var ready = auth.authStateReady ? auth.authStateReady() : Promise.resolve();
+      ready.finally(function () {
+        auth.onAuthStateChanged(handleAuthUser);
+      });
     });
   }
 
   function sendEmailLink() {
-    var email = ($('auth-email') && $('auth-email').value || '').trim();
-    if (!email) {
-      setStatus('Enter email.', 'error');
+    if (!auth) {
+      setAuthPanelStatus('Sign-in is still loading. Please wait a moment and try again.', 'error');
       return;
     }
-    auth
-      .sendSignInLinkToEmail(email, { url: EMAIL_LINK_CONTINUE_URL, handleCodeInApp: true })
-      .then(function () {
-        window.localStorage.setItem('emailForSignIn', email);
-        setStatus('Check your inbox for the sign-in link.', 'success');
+    var email = ($('auth-email') && $('auth-email').value || '').trim();
+    if (!email) {
+      setAuthPanelStatus('Enter your email first.', 'error');
+      return;
+    }
+    setAuthPanelStatus('Sending link…', 'info');
+    var sendPromise = SELF_SERVE_SIGNIN_URL
+      ? sendSignInLinkViaAppsScript(email)
+      : sendSignInLinkViaFirebaseClient(email);
+    sendPromise
+      .catch(function (e) {
+        if (SELF_SERVE_SIGNIN_URL) {
+          return sendSignInLinkViaFirebaseClient(email);
+        }
+        throw e;
       })
       .catch(function (e) {
-        setStatus(e.message, 'error');
+        setAuthPanelStatus((e && e.message) || 'Could not send link.', 'error');
       });
   }
 
   function signInPassword() {
-    var email = ($('auth-email') && $('auth-email').value || '').trim();
-    var pw = $('auth-password') && $('auth-password').value;
-    if (!email || !pw) {
-      setStatus('Enter email and password.', 'error');
+    if (!auth) {
+      setAuthPanelStatus('Sign-in is still loading. Please wait a moment and try again.', 'error');
       return;
     }
-    auth.signInWithEmailAndPassword(email, pw).catch(function (e) {
-      setStatus(e.message, 'error');
-    });
+    var email = ($('auth-email') && $('auth-email').value || '').trim();
+    var pw = String(($('auth-password') && $('auth-password').value) || '').trim();
+    if (!email || !pw) {
+      setAuthPanelStatus('Enter email and password.', 'error');
+      return;
+    }
+    var btn = $('btn-password-signin');
+    if (btn) btn.disabled = true;
+    setAuthPanelStatus('Signing in…', 'info');
+    auth
+      .signInWithEmailAndPassword(email, pw)
+      .then(function () {
+        setAuthPanelStatus('Signed in — loading your hub…', 'success');
+      })
+      .catch(function (e) {
+        setAuthPanelStatus(friendlyPasswordSignInError(e), 'error');
+      })
+      .finally(function () {
+        if (btn) btn.disabled = false;
+      });
   }
+
+  global.NigeriaDashboard = {
+    openAuthPanel: showAuthPanel,
+  };
 
   document.addEventListener('DOMContentLoaded', function () {
     initFirebase().then(function (ok) {
-      if (ok) bind();
+      if (!ok) return;
+      bind();
+      if (wantsAuthPanelVisible() && !auth.currentUser) {
+        showAuthPanel(false);
+      }
     });
   });
 })();
