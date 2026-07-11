@@ -7,6 +7,9 @@
   <link rel="icon" type="image/png" href="images/favicon.png" />
   <title>DDBS Nigeria — Dear Daughter Bible Study Group</title>
   <meta name="description" content="Dear Daughter Bible Study Group Nigeria — unit hub, programs, and attendance." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -17,8 +20,9 @@
             ng: { green: '#008751', white: '#ffffff' },
           },
           fontFamily: {
-            display: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
-            sans: ['system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
+            display: ['Fraunces', 'Georgia', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            verse: ['"Cormorant Garamond"', 'Georgia', 'serif'],
           },
           boxShadow: {
             card: '0 4px 24px rgba(15, 61, 92, 0.08), 0 1px 3px rgba(0,0,0,0.06)',
@@ -37,30 +41,75 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
   <script src="js/firebase-config.js"></script>
   <style>
-    body { font-family: system-ui, sans-serif; }
+    body { font-family: "Plus Jakarta Sans", system-ui, sans-serif; }
     .hero-mesh {
       background:
         linear-gradient(135deg, rgba(0, 135, 81, 0.88) 0%, rgba(15, 61, 92, 0.9) 45%, rgba(26, 95, 138, 0.88) 100%),
         url("https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=1600&q=80") center/cover no-repeat;
     }
-    #hero-billboard { padding-bottom: 3.5rem; }
+    #hero-billboard { padding-bottom: 3.75rem; }
     .hero-billboard-viewport { overflow: hidden; width: 100%; }
-    [data-hero-track] { display: flex; width: 100%; }
+    [data-hero-track] { display: flex; width: 100%; will-change: transform; }
     [data-hero-track] .hero-slide { flex: 0 0 100%; width: 100%; min-width: 0; }
+    .hero-headline {
+      font-family: Fraunces, Georgia, serif;
+      text-shadow: 0 2px 24px rgba(0, 0, 0, 0.18);
+      letter-spacing: -0.02em;
+    }
+    .hero-eyebrow {
+      font-family: "Plus Jakarta Sans", sans-serif;
+      letter-spacing: 0.14em;
+    }
     .hero-flyer-frame {
       aspect-ratio: 1 / 1;
       display: flex;
       align-items: center;
       justify-content: center;
+      perspective: 1200px;
     }
     .hero-flyer-img { max-height: min(72vw, 360px); }
     @media (min-width: 1024px) { .hero-flyer-img { max-height: 380px; } }
-    .verse-font { font-family: Georgia, Cambria, serif; }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
+    .hero-photo-tile { animation: heroKenBurns 14s ease-in-out infinite alternate; }
+    .hero-photo-tile:nth-child(2) { animation-delay: -3s; }
+    .hero-photo-tile:nth-child(3) { animation-delay: -6s; }
+    .hero-photo-tile:nth-child(4) { animation-delay: -9s; }
+    @keyframes heroKenBurns {
+      from { transform: scale(1) translateY(0); }
+      to { transform: scale(1.06) translateY(-4px); }
     }
-    .animate-fade-up { animation: fadeUp 0.6s ease forwards; }
+    @keyframes heroReveal {
+      from { opacity: 0; transform: translateY(28px); filter: blur(6px); }
+      to { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+    @keyframes heroPop {
+      0% { opacity: 0; transform: translateY(20px) scale(0.97); }
+      70% { opacity: 1; transform: translateY(-2px) scale(1.01); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes heroFlyerIn {
+      from { opacity: 0; transform: translateX(32px) scale(0.94) rotateY(-8deg); }
+      to { opacity: 1; transform: translateX(0) scale(1) rotateY(0); }
+    }
+    .hero-slide .hero-anim { opacity: 0; }
+    .hero-slide.is-active .hero-anim-1 { animation: heroReveal 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.08s forwards; }
+    .hero-slide.is-active .hero-anim-2 { animation: heroPop 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.18s forwards; }
+    .hero-slide.is-active .hero-anim-3 { animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.32s forwards; }
+    .hero-slide.is-active .hero-anim-4 { animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.44s forwards; }
+    .hero-slide.is-active .hero-anim-5 { animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.56s forwards; }
+    .hero-slide.is-active .hero-anim-6 { animation: heroReveal 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.68s forwards; }
+    .hero-slide.is-active .hero-flyer-wrap { animation: heroFlyerIn 1s cubic-bezier(0.22, 1, 0.36, 1) 0.22s forwards; opacity: 0; }
+    .hero-slide.is-active .hero-photo-tile { animation: heroKenBurns 14s ease-in-out infinite alternate, heroReveal 1s cubic-bezier(0.22, 1, 0.36, 1) 0.35s forwards; opacity: 0; }
+    @media (prefers-reduced-motion: reduce) {
+      .hero-slide .hero-anim, .hero-slide .hero-flyer-wrap, .hero-slide .hero-photo-tile { opacity: 1 !important; animation: none !important; transform: none !important; filter: none !important; }
+      [data-hero-track] { will-change: auto; }
+    }
+    .hero-dot-wrap { position: relative; overflow: hidden; border-radius: 9999px; }
+    .hero-dot-progress {
+      position: absolute; inset: 0; background: #c9a227; transform-origin: left;
+      transform: scaleX(0); border-radius: inherit;
+    }
+    .hero-dot.is-active .hero-dot-progress { animation: heroDotProgress var(--hero-slide-ms, 5s) linear forwards; }
+    @keyframes heroDotProgress { to { transform: scaleX(1); } }
     .app-shell { min-height: calc(100vh - 4rem); }
     .sidebar-sticky { position: sticky; top: 3.75rem; max-height: calc(100vh - 4.5rem); overflow-y: auto; }
     .tab-btn.active { background: #008751; color: #fff; border-color: #008751; }
@@ -73,7 +122,7 @@
     }
   </style>
 </head>
-<body class="min-h-screen bg-slate-100 text-slate-800 overflow-x-hidden">
+<body class="min-h-screen bg-slate-100 text-slate-800 overflow-x-hidden font-sans antialiased">
 
   <div id="setup-banner" class="hidden max-w-lg mx-auto m-6 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900 text-sm">
     Configure <code class="bg-white px-1 rounded">js/firebase-config.js</code> to use DDBS Nigeria.
@@ -126,7 +175,7 @@
       <div class="bg-white rounded-2xl shadow-lift border border-slate-100 overflow-hidden">
         <div class="bg-gradient-to-r from-ng-green via-brand to-brand-light px-5 sm:px-8 py-4 sm:py-5 text-white">
           <p class="text-brand-accent font-semibold tracking-[0.2em] uppercase text-[10px] sm:text-xs mb-1">Our Vision</p>
-          <h2 class="text-xl sm:text-2xl md:text-3xl font-display font-bold">What we are building toward</h2>
+          <h2 class="text-xl sm:text-2xl md:text-3xl font-display font-semibold tracking-tight">What we are building toward</h2>
         </div>
         <div class="p-4 sm:p-6 lg:p-8 grid sm:grid-cols-3 gap-4 sm:gap-5">
           <article class="vision-card rounded-2xl border border-emerald-100 p-5 sm:p-6 shadow-card hover:shadow-lift transition-shadow">
