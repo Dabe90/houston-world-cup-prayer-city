@@ -4,6 +4,20 @@
 (function (global) {
   var NIGERIA_HUB = 'ddbs-nig.html';
   var STAY_KEY = 'prayerCityStayOnUsHub';
+  var REGION_COOKIE = 'prayer_city_region';
+  var COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+  function setRegionCookie(value) {
+    var secure = location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie =
+      REGION_COOKIE +
+      '=' +
+      value +
+      '; Path=/; Max-Age=' +
+      COOKIE_MAX_AGE +
+      '; SameSite=Lax' +
+      secure;
+  }
 
   function isNigeriaVolunteerPhone(phone) {
     if (global.NigeriaUnits && NigeriaUnits.isNigeriaPhone) {
@@ -24,10 +38,17 @@
 
   function markStayOnUsHub() {
     sessionStorage.setItem(STAY_KEY, '1');
+    setRegionCookie('us');
+  }
+
+  function markStayOnNigeriaHub() {
+    sessionStorage.removeItem(STAY_KEY);
+    setRegionCookie('ng');
   }
 
   function clearStayOnUsHub() {
     sessionStorage.removeItem(STAY_KEY);
+    document.cookie = REGION_COOKIE + '=; Path=/; Max-Age=0; SameSite=Lax';
   }
 
   function maybeRedirectToNigeriaHub(volunteerData, email) {
@@ -42,9 +63,9 @@
 
   function parseStayQuery() {
     try {
-      if (new URLSearchParams(window.location.search).get('stay') === 'us') {
-        markStayOnUsHub();
-      }
+      var stay = new URLSearchParams(window.location.search).get('stay');
+      if (stay === 'us') markStayOnUsHub();
+      else if (stay === 'ng') markStayOnNigeriaHub();
     } catch (ignore) {}
   }
 
@@ -54,6 +75,7 @@
     shouldAutoRouteToNigeria: shouldAutoRouteToNigeria,
     maybeRedirectToNigeriaHub: maybeRedirectToNigeriaHub,
     markStayOnUsHub: markStayOnUsHub,
+    markStayOnNigeriaHub: markStayOnNigeriaHub,
     clearStayOnUsHub: clearStayOnUsHub,
     parseStayQuery: parseStayQuery,
   };
