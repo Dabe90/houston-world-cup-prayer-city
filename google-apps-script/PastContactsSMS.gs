@@ -203,7 +203,7 @@ function buildMemberSmsBody_(name) {
     SMS_CONFIG.VIRTUAL_SESSION_SHORT +
     ': prayer tent locations, parking & shuttle to NRG Stadium. Zoom: ' +
     SMS_CONFIG.ZOOM_URL +
-    ' Reply with your T-shirt size (S, M, L, XL, 2XL, 3XL). Optional shirt donation: ' +
+    ' Reply with your T-shirt size (S, M, L, X). Optional shirt donation: ' +
     SMS_CONFIG.DONATION_URL +
     ' Reply STOP to opt out.'
   );

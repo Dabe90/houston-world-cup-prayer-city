@@ -10,8 +10,12 @@
     "deploy": "firebase deploy --only functions"
   },
   "dependencies": {
+    "@genkit-ai/firebase": "^1.14.0",
+    "@genkit-ai/google-genai": "^1.14.0",
     "express": "^4.21.0",
     "firebase-admin": "^12.6.0",
-    "firebase-functions": "^5.1.1"
+    "firebase-functions": "^5.1.1",
+    "genkit": "^1.14.0",
+    "zod": "^3.24.0"
   }
 }

@@ -2,6 +2,12 @@
 
 const crypto = require('crypto');
 const { buildServeDayFlowBlock } = require('./serveDayFlowContent');
+const {
+  buildRotatingDigestSubject,
+  buildDailyServeGuideBlock,
+  buildRotatingTshirtBlock,
+  shouldShowVirtualSession,
+} = require('./volunteerDigestDailyGuide');
 
 /**
  * Role-based daily digest text — mirrors js/volunteer-daily-content.js and
@@ -90,9 +96,96 @@ const PRAYERCITY_DONATION_URL =
 const PRAYERCITY_TSHIRT_IMAGE_URL = 'https://prayercityhtx.com/images/prayer-city-tshirt.png';
 const PRAYERCITY_VIDEO_YOUTUBE_URL = 'https://youtu.be/3Sn8ysMi1Lk';
 const PRAYERCITY_SIGNUP_URL = 'https://prayercityhtx.com/volunteer/';
-const DIGEST_EMAIL_SUBJECT =
-  'Thu Jun 11 virtual session (6pm). All You Need to Know about Sunday.';
+const PRAYERCITY_GALLERY_URL = 'https://prayercityhtx.com/gallery.html';
+// Day 1 featured photo (hosted on Firebase Storage via gallery upload).
+const PRAYERCITY_DAY1_FEATURE_IMAGE_URL =
+  'https://firebasestorage.googleapis.com/v0/b/bible-study-dashboard-99f2d.firebasestorage.app/o/gallery%2Fday1%2FIMG_6538.jpeg?alt=media';
+const PRAYERCITY_DAY2_FEATURE_IMAGE_URL =
+  'https://prayercityhtx.com/images/prayer-city-day2-team.jpeg';
+const PRAYERCITY_OUTREACH_FEATURE_IMAGE_URL =
+  'https://prayercityhtx.com/images/prayer-city-outreach-signs.jpeg';
+const PRAYERCITY_PERSONAL_INSTAGRAM_URL = 'https://www.instagram.com/_abedamilola/';
+const PRAYERCITY_PERSONAL_INSTAGRAM_HANDLE = '@_abedamilola';
+/** Featured World Cup Prayer City video (Damilola / @_abedamilola — also shared on Instagram). */
+const PRAYERCITY_FEATURED_WC_VIDEO_URL = 'https://youtu.be/3Sn8ysMi1Lk';
+const PRAYERCITY_FEATURED_WC_VIDEO_THUMB =
+  'https://i.ytimg.com/vi/3Sn8ysMi1Lk/hqdefault.jpg';
+const PRAYERCITY_FEATURED_WC_VIDEO_TITLE =
+  'Houston Prayer City: Be Part of the World Cup Experience';
 
+/** Houston Stadium (NRG) World Cup 2026 match days — Central Time. */
+const HOUSTON_GAME_DAYS = [
+  { ymd: '2026-06-14', weekday: 'Sunday', teams: 'Germany vs Curaçao', time: '12:00 PM', dayNum: 1 },
+  { ymd: '2026-06-17', weekday: 'Wednesday', teams: 'Portugal vs DR Congo', time: '12:00 PM', dayNum: 2 },
+  { ymd: '2026-06-20', weekday: 'Saturday', teams: 'Netherlands vs Sweden', time: '12:00 PM', dayNum: 3 },
+  { ymd: '2026-06-23', weekday: 'Tuesday', teams: 'Portugal vs Uzbekistan', time: '12:00 PM', dayNum: 4 },
+  { ymd: '2026-06-26', weekday: 'Friday', teams: 'Cape Verde vs Saudi Arabia', time: '7:00 PM', dayNum: 5 },
+  { ymd: '2026-06-29', weekday: 'Monday', teams: 'Round of 32', time: '12:00 PM', dayNum: 6 },
+  { ymd: '2026-07-04', weekday: 'Saturday', teams: 'Round of 16', time: '12:00 PM', dayNum: 7 },
+];
+
+const HOUSTON_MATCHES_BY_YMD = Object.fromEntries(HOUSTON_GAME_DAYS.map((d) => [d.ymd, d]));
+
+const PRAYERCITY_GAME_DAY_FEATURE_IMAGES = {
+  1: PRAYERCITY_DAY1_FEATURE_IMAGE_URL,
+  2: PRAYERCITY_DAY2_FEATURE_IMAGE_URL,
+};
+
+function houstonMatchOnDate(ymd) {
+  return HOUSTON_MATCHES_BY_YMD[String(ymd || '').trim()] || null;
+}
+
+function previousHoustonMatchBefore(ymd) {
+  let prev = null;
+  for (const d of HOUSTON_GAME_DAYS) {
+    if (d.ymd < ymd) prev = d;
+    else break;
+  }
+  return prev;
+}
+
+function nextHoustonMatchAfter(ymd) {
+  for (const d of HOUSTON_GAME_DAYS) {
+    if (d.ymd > ymd) return d;
+  }
+  return null;
+}
+
+function isDayAfterHoustonGameDay(ymd) {
+  const prev = previousHoustonMatchBefore(ymd);
+  if (!prev) return false;
+  const gap = daysUntilYmd(prev.ymd, ymd);
+  return gap === 1;
+}
+
+function isDayBeforeHoustonGameDay(ymd) {
+  const next = nextHoustonMatchAfter(ymd);
+  if (!next) return false;
+  const gap = daysUntilYmd(ymd, next.ymd);
+  return gap === 1;
+}
+
+function featureImageForGameDay(dayNum) {
+  return PRAYERCITY_GAME_DAY_FEATURE_IMAGES[dayNum] || '';
+}
+
+function digestSubjectForDate(dateStr) {
+  if (houstonMatchOnDate(dateStr)) {
+    return "Prayer City — it's today! Excited to see you";
+  }
+  const prev = previousHoustonMatchBefore(dateStr);
+  if (prev && isDayAfterHoustonGameDay(dateStr)) {
+    return `Prayer City — thank you for Day ${prev.dayNum}!`;
+  }
+  const next = nextHoustonMatchAfter(dateStr);
+  if (next && isDayBeforeHoustonGameDay(dateStr)) {
+    return `Prayer City — tomorrow is game day! ${next.teams}`;
+  }
+  if (next && dateStr >= '2026-06-14') {
+    return `Prayer City — thank you for Day ${prev ? prev.dayNum : 1} + ${next.weekday} is next`;
+  }
+  return 'Prayer City — daily volunteer digest';
+}
 /** One per day for every digest (same for all recipients that day). */
 const FAITH_EXALTATIONS = [
   'Exalt the Lord today: his faithfulness is not a mood — it is his character. Let gratitude lead your first words and your last thought.',
@@ -550,9 +643,7 @@ function buildTipsListHtml(lines) {
 }
 
 function buildEmailBannerHtml(dateStr) {
-  const daysToVirtual = daysUntilYmd(dateStr, VIRTUAL_INFO_SESSION_DATE);
-  const showVirtual =
-    typeof daysToVirtual === 'number' && daysToVirtual >= 0;
+  const showVirtual = shouldShowVirtualSession(dateStr);
 
   const sessionPill = showVirtual
     ? `<div style="margin-top:16px;text-align:center;">` +
@@ -575,6 +666,16 @@ function buildEmailBannerHtml(dateStr) {
   );
 }
 
+const COUNTDOWN_TAGLINES = [
+  'We’re counting down with joy — ready to win souls to Christ with you.',
+  'Not everyone serves on day one, but we’re preparing together with excitement.',
+  'Houston is about to welcome the world — and the Church is ready to pray.',
+  'Every day is a chance to invite someone else to Prayer City.',
+  'Let’s fill this city with prayer, welcome, and gospel courage.',
+  'The tents are coming alive in spirit before they rise near NRG.',
+  'Stay ready — your dashboard has today’s details and tomorrow’s hope.',
+];
+
 function buildCountdownBlock(dateStr) {
   const days = daysUntilYmd(dateStr, WORLD_CUP_HOUSTON_FIRST_GAME_DATE);
   const targetLabel = formatMdyLongChicago(WORLD_CUP_HOUSTON_FIRST_GAME_DATE);
@@ -582,12 +683,12 @@ function buildCountdownBlock(dateStr) {
 
   const clamped = Math.max(0, days);
   const dayWord = clamped === 1 ? 'day' : 'days';
+  const rng = mulberry32(hashStr(`countdown-${dateStr}`));
+  const tagline = pickN(COUNTDOWN_TAGLINES, 1, rng)[0] || COUNTDOWN_TAGLINES[0];
   const plain =
     `COUNTDOWN TO SUNDAY\n` +
     `${clamped} ${dayWord} until the first World Cup games in Houston (${targetLabel}).\n` +
-    `We’re excited — not everyone serves on day one, but we’re counting down with joy and we can’t wait to win souls to Christ with you.\n` +
-    `Join Thursday’s virtual session (6pm) for tent locations, shuttle details, and serve-day flow.\n` +
-    `Let’s fill Houston with prayer and faith — invite one person today.`;
+    `${tagline}`;
 
   const html =
     `<div style="margin:-6px 0 22px;border-radius:16px;overflow:hidden;border:1px solid #cbd5e1;background:linear-gradient(135deg,rgba(15,61,92,0.08),rgba(13,148,136,0.12));box-shadow:0 8px 30px rgba(15,61,92,0.12);">` +
@@ -600,8 +701,7 @@ function buildCountdownBlock(dateStr) {
     `</div>` +
     `<div style="margin-top:8px;font-size:13px;color:#334155;line-height:1.5;">` +
     `First World Cup games in Houston: <strong>${escapeHtml(targetLabel)}</strong>. ` +
-    `We’re counting down with excitement — ready to <strong>win souls to Christ</strong>. ` +
-    `Thursday virtual session (6pm) + your dashboard have shuttle, tent, and serve-day details.` +
+    `${escapeHtml(tagline)}` +
     `</div>` +
     `</td>` +
     `<td style="width:116px;padding:0 14px 0 0;vertical-align:middle;text-align:center;">` +
@@ -617,14 +717,240 @@ function buildCountdownBlock(dateStr) {
   return { plain, html };
 }
 
-function buildVolunteerDigestSubject_(dateStr) {
-  const days = daysUntilYmd(dateStr, WORLD_CUP_HOUSTON_FIRST_GAME_DATE);
-  if (typeof days === 'number' && days >= 0) {
-    const clamped = Math.max(0, days);
-    const dayWord = clamped === 1 ? 'day' : 'days';
-    return `${clamped} ${dayWord} to Sunday · ${DIGEST_EMAIL_SUBJECT}`;
+function buildDay1ThankYouBlock() {
+  const plain =
+    `THANK YOU FOR SUNDAY (DAY 1)\n` +
+    `Thank you to everyone who showed up on Sunday — it was incredible.\n\n` +
+    `We were received with so much love and warmth at Prayer City, and we can’t wait to see everyone again.\n\n` +
+    `See more pictures from Day 1:\n${PRAYERCITY_GALLERY_URL}`;
+
+  const html =
+    `<div style="margin:-6px 0 22px;border-radius:16px;overflow:hidden;border:1px solid #cbd5e1;background:linear-gradient(135deg,rgba(15,61,92,0.06),rgba(13,148,136,0.10));box-shadow:0 8px 30px rgba(15,61,92,0.12);">` +
+    `<div style="padding:18px 18px 16px;">` +
+    `<p style="margin:0 0 8px;font-size:11px;font-weight:900;letter-spacing:0.16em;color:#0f3d5c;text-transform:uppercase;">Thank you for Sunday (Day 1)</p>` +
+    `<p style="margin:0;font-size:15px;color:#0f172a;line-height:1.65;font-weight:700;">Thank you to everyone who showed up on Sunday — it was incredible.</p>` +
+    `<p style="margin:10px 0 0;font-size:14px;color:#334155;line-height:1.65;">We were received with so much love and warmth at Prayer City, and we can’t wait to see everyone again.</p>` +
+    `</div>` +
+    (PRAYERCITY_DAY1_FEATURE_IMAGE_URL
+      ? `<div style="padding:0 18px 16px;">` +
+        `<img src="${escapeHtml(PRAYERCITY_DAY1_FEATURE_IMAGE_URL)}" alt="Prayer City Day 1 photo" width="600" style="display:block;width:100%;height:auto;border-radius:14px;border:1px solid rgba(148,163,184,0.55);" />` +
+        `</div>`
+      : '') +
+    `<div style="padding:0 18px 18px;">` +
+    `<a href="${escapeHtml(PRAYERCITY_GALLERY_URL)}" style="display:inline-block;padding:12px 16px;border-radius:9999px;background:#0f3d5c;color:#ffffff;font-weight:900;font-size:13px;text-decoration:none;box-shadow:0 6px 18px rgba(15,61,92,0.18);">See more Day 1 photos →</a>` +
+    `</div>` +
+    `</div>`;
+
+  return { plain, html };
+}
+
+function buildGameDayOpeningBlock(dateStr, match) {
+  const teams = match.teams;
+  const time = match.time;
+  const weekday = match.weekday;
+
+  const plain =
+    `IT'S ${weekday.toUpperCase()} — GAME DAY IN HOUSTON\n` +
+    `Today at NRG Stadium (Houston Stadium): ${teams} — kickoff ${time} Central.\n\n` +
+    `We're excited to see you at Prayer City today! Whether you're on shift or praying from home, thank you for showing up for Houston and the nations.\n\n` +
+    `A quick thank-you again for Sunday (Day 1) — what a beautiful start.\n\n` +
+    `See pictures from Day 1:\n${PRAYERCITY_GALLERY_URL}\n\n` +
+    `Know someone who wants to serve? Invite them to register:\n${PRAYERCITY_SIGNUP_URL}`;
+
+  const html =
+    `<div style="margin:-6px 0 22px;border-radius:16px;overflow:hidden;border:1px solid #0d9488;background:linear-gradient(135deg,rgba(13,148,136,0.12),rgba(15,61,92,0.08));box-shadow:0 8px 30px rgba(15,61,92,0.14);">` +
+    `<div style="padding:18px 18px 16px;">` +
+    `<p style="margin:0 0 8px;font-size:11px;font-weight:900;letter-spacing:0.16em;color:#0d9488;text-transform:uppercase;">It's ${escapeHtml(weekday)} — game day in Houston</p>` +
+    `<p style="margin:0;font-size:17px;color:#0f172a;line-height:1.55;font-weight:900;">Excited to see you today!</p>` +
+    `<p style="margin:12px 0 0;font-size:15px;color:#334155;line-height:1.65;">` +
+    `At <strong>NRG Stadium (Houston Stadium)</strong> today: <strong>${escapeHtml(teams)}</strong> — kickoff <strong>${escapeHtml(time)} Central</strong>. ` +
+    `Thank you for serving at Prayer City as Houston welcomes the world.` +
+    `</p>` +
+    `<p style="margin:10px 0 0;font-size:14px;color:#334155;line-height:1.65;">Whether you're on site or praying from home — we're grateful for you today.</p>` +
+    `</div>` +
+    (PRAYERCITY_DAY1_FEATURE_IMAGE_URL
+      ? `<div style="padding:0 18px 12px;">` +
+        `<p style="margin:0 0 10px;font-size:11px;font-weight:900;letter-spacing:0.12em;color:#64748b;text-transform:uppercase;">Highlights from Sunday (Day 1)</p>` +
+        `<img src="${escapeHtml(PRAYERCITY_DAY1_FEATURE_IMAGE_URL)}" alt="Prayer City Day 1 photo" width="600" style="display:block;width:100%;height:auto;border-radius:14px;border:1px solid rgba(148,163,184,0.55);" />` +
+        `</div>`
+      : '') +
+    `<div style="padding:0 18px 18px;">` +
+    `<a href="${escapeHtml(PRAYERCITY_GALLERY_URL)}" style="display:inline-block;margin-right:8px;padding:12px 16px;border-radius:9999px;background:#0f3d5c;color:#ffffff;font-weight:900;font-size:13px;text-decoration:none;box-shadow:0 6px 18px rgba(15,61,92,0.18);">See more Day 1 photos →</a>` +
+    `<a href="${escapeHtml(PRAYERCITY_SIGNUP_URL)}" style="display:inline-block;padding:12px 16px;border-radius:9999px;background:#0d9488;color:#ffffff;font-weight:900;font-size:13px;text-decoration:none;box-shadow:0 6px 18px rgba(13,148,136,0.22);">Invite a friend to serve →</a>` +
+    `</div>` +
+    `</div>`;
+
+  return { plain, html };
+}
+
+function buildPostGameDayThankYouBlock(dateStr, prev) {
+  const dayNum = prev.dayNum;
+  const imageUrl = featureImageForGameDay(dayNum);
+  const next = nextHoustonMatchAfter(dateStr);
+
+  const plain =
+    `THANK YOU FOR DAY ${dayNum}\n` +
+    `Thank you to everyone who joined us yesterday (${prev.weekday}) for Day ${dayNum} of World Cup games in Houston — ${prev.teams}.\n\n` +
+    `We are so grateful for your hearts, prayers, and service at Prayer City. Houston felt your love.\n\n` +
+    (imageUrl ? `See more from the World Cup in Houston:\n${PRAYERCITY_GALLERY_URL}\n\n` : '') +
+    (next
+      ? `NEXT GAME: ${next.weekday.toUpperCase()}\n` +
+        `At NRG Stadium: ${next.teams} (${next.time} Central). Please invite your friends and family.\n\n` +
+        `Register to serve:\n${PRAYERCITY_SIGNUP_URL}`
+      : '');
+
+  const nextHtml = next
+    ? `<div style="height:1px;background:rgba(148,163,184,0.55);margin:16px 0;"></div>` +
+      `<p style="margin:0 0 8px;font-size:11px;font-weight:900;letter-spacing:0.16em;color:#0d9488;text-transform:uppercase;">Next game: ${escapeHtml(next.weekday)}</p>` +
+      `<p style="margin:0;font-size:14px;color:#334155;line-height:1.65;">At NRG Stadium: <strong>${escapeHtml(next.teams)}</strong> (${escapeHtml(next.time)} Central). Bring your friends and family — forward this link:</p>` +
+      `<p style="margin:12px 0 0;">` +
+      `<a href="${escapeHtml(PRAYERCITY_SIGNUP_URL)}" style="display:inline-block;padding:12px 16px;border-radius:9999px;background:#0d9488;color:#ffffff;font-weight:900;font-size:13px;text-decoration:none;box-shadow:0 6px 18px rgba(13,148,136,0.22);">Register to serve →</a>` +
+      `</p>` +
+      `<p style="margin:10px 0 0;font-size:12px;color:#64748b;word-break:break-all;">${escapeHtml(PRAYERCITY_SIGNUP_URL)}</p>`
+    : '';
+
+  const html =
+    `<div style="margin:-6px 0 22px;border-radius:16px;overflow:hidden;border:1px solid #cbd5e1;background:linear-gradient(135deg,rgba(15,61,92,0.06),rgba(13,148,136,0.10));box-shadow:0 8px 30px rgba(15,61,92,0.12);">` +
+    `<div style="padding:18px 18px 16px;">` +
+    `<p style="margin:0 0 8px;font-size:11px;font-weight:900;letter-spacing:0.16em;color:#0f3d5c;text-transform:uppercase;">Thank you for Day ${dayNum}</p>` +
+    `<p style="margin:0;font-size:17px;color:#0f172a;line-height:1.55;font-weight:900;">Thank you for joining us yesterday!</p>` +
+    `<p style="margin:12px 0 0;font-size:15px;color:#334155;line-height:1.65;">` +
+    `What a gift to serve together on <strong>Day ${dayNum}</strong> of World Cup games in Houston` +
+    ` (<strong>${escapeHtml(prev.teams)}</strong>, ${escapeHtml(prev.weekday)}). ` +
+    `We are grateful for every volunteer who prayed, welcomed, and pointed hearts to Jesus.` +
+    `</p>` +
+    `</div>` +
+    (imageUrl
+      ? `<div style="padding:0 18px 16px;">` +
+        `<img src="${escapeHtml(imageUrl)}" alt="Prayer City Day ${dayNum} volunteers" width="600" style="display:block;width:100%;height:auto;border-radius:14px;border:1px solid rgba(148,163,184,0.55);" />` +
+        `</div>`
+      : '') +
+    `<div style="padding:0 18px 18px;">` +
+    `<a href="${escapeHtml(PRAYERCITY_GALLERY_URL)}" style="display:inline-block;margin-right:8px;padding:12px 16px;border-radius:9999px;background:#0f3d5c;color:#ffffff;font-weight:900;font-size:13px;text-decoration:none;box-shadow:0 6px 18px rgba(15,61,92,0.18);">See gallery photos →</a>` +
+    nextHtml +
+    `</div>` +
+    `</div>`;
+
+  return { plain, html };
+}
+
+function buildInstagramFeaturedWorldCupBlock() {
+  const plain =
+    `WATCH WORLD CUP PRAYER CITY MOMENTS\n` +
+    `Featured video: ${PRAYERCITY_FEATURED_WC_VIDEO_TITLE}\n` +
+    `${PRAYERCITY_FEATURED_WC_VIDEO_URL}\n\n` +
+    `For more video moments from the field, follow ${PRAYERCITY_PERSONAL_INSTAGRAM_HANDLE} on Instagram:\n` +
+    `${PRAYERCITY_PERSONAL_INSTAGRAM_URL}`;
+
+  const html =
+    `<div style="margin:16px 0 0;border-radius:14px;border:1px solid #e2e8f0;background:#ffffff;overflow:hidden;box-shadow:0 6px 22px rgba(15,61,92,0.08);">` +
+    `<div style="padding:14px 16px 10px;border-bottom:1px solid #f1f5f9;">` +
+    `<p style="margin:0 0 4px;font-size:11px;font-weight:900;letter-spacing:0.12em;color:#0d9488;text-transform:uppercase;">World Cup on Instagram</p>` +
+    `<p style="margin:0;font-size:14px;color:#334155;line-height:1.55;">One of our most shared World Cup Prayer City videos — <strong>watch below</strong>, then see more reels on Instagram.</p>` +
+    `</div>` +
+    `<div style="padding:0;background:#0f172a;">` +
+    `<a href="${escapeHtml(PRAYERCITY_FEATURED_WC_VIDEO_URL)}" style="display:block;text-decoration:none;">` +
+    `<img src="${escapeHtml(PRAYERCITY_FEATURED_WC_VIDEO_THUMB)}" alt="${escapeHtml(PRAYERCITY_FEATURED_WC_VIDEO_TITLE)}" width="600" style="display:block;width:100%;height:auto;border:0;" />` +
+    `</a>` +
+    `</div>` +
+    `<div style="padding:14px 16px 16px;">` +
+    `<p style="margin:0 0 10px;font-size:14px;color:#334155;line-height:1.6;"><strong>${escapeHtml(PRAYERCITY_FEATURED_WC_VIDEO_TITLE)}</strong></p>` +
+    `<a href="${escapeHtml(PRAYERCITY_FEATURED_WC_VIDEO_URL)}" style="display:inline-block;margin-right:8px;margin-bottom:8px;padding:10px 14px;border-radius:9999px;background:#0f3d5c;color:#ffffff;font-weight:800;font-size:13px;text-decoration:none;">▶ Watch featured video</a>` +
+    `<a href="${escapeHtml(PRAYERCITY_PERSONAL_INSTAGRAM_URL)}" style="display:inline-block;margin-bottom:8px;padding:10px 14px;border-radius:9999px;background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#ffffff;font-weight:800;font-size:13px;text-decoration:none;">Follow ${escapeHtml(PRAYERCITY_PERSONAL_INSTAGRAM_HANDLE)} for more →</a>` +
+    `<p style="margin:10px 0 0;font-size:12px;color:#64748b;line-height:1.55;">More video moments from Houston Prayer City are on Instagram ${escapeHtml(PRAYERCITY_PERSONAL_INSTAGRAM_HANDLE)} — watch, share, and invite friends.</p>` +
+    `</div></div>`;
+
+  return { plain, html };
+}
+
+function buildDayBeforeGameBlock(dateStr, next) {
+  const prev = previousHoustonMatchBefore(dateStr);
+  const ig = buildInstagramFeaturedWorldCupBlock();
+
+  const plain =
+    `TOMORROW IS GAME DAY IN HOUSTON (DAY ${next.dayNum})\n` +
+    `Hello Prayer City family — thank you for your hearts this week.\n\n` +
+    (prev
+      ? `Thank you again to everyone who served on Day ${prev.dayNum} (${prev.teams}). Your love is reaching Houston and the nations.\n\n`
+      : '') +
+    `Tomorrow (${next.weekday}): ${next.teams} at NRG Stadium (Houston Stadium) — kickoff ${next.time} Central.\n\n` +
+    `If you are scheduled tomorrow, plan to arrive ~15–30 minutes early. Free street parking is available near the tents at 1325 La Concha Lane, Houston, TX. Call Tricia Hill at 832-277-3831 if you need help finding us.\n\n` +
+    `Gallery photos:\n${PRAYERCITY_GALLERY_URL}\n\n` +
+    ig.plain +
+    `\n\nStill need a shift? Register or invite a friend:\n${PRAYERCITY_SIGNUP_URL}`;
+
+  const html =
+    `<div style="margin:-6px 0 22px;border-radius:16px;overflow:hidden;border:1px solid #0d9488;background:linear-gradient(135deg,rgba(13,148,136,0.10),rgba(15,61,92,0.06));box-shadow:0 8px 30px rgba(15,61,92,0.12);">` +
+    `<div style="padding:18px 18px 16px;">` +
+    `<p style="margin:0 0 8px;font-size:11px;font-weight:900;letter-spacing:0.16em;color:#0d9488;text-transform:uppercase;">Tomorrow is game day · Day ${next.dayNum}</p>` +
+    `<p style="margin:0;font-size:17px;color:#0f172a;line-height:1.55;font-weight:900;">Hello Prayer City family — we’re excited for tomorrow!</p>` +
+    (prev
+      ? `<p style="margin:12px 0 0;font-size:14px;color:#334155;line-height:1.65;">Thank you to everyone who joined us for <strong>Day ${prev.dayNum}</strong> (${escapeHtml(prev.teams)}). Your prayers and welcome are making a difference.</p>`
+      : '') +
+    `<p style="margin:12px 0 0;font-size:15px;color:#334155;line-height:1.65;">` +
+    `<strong>Tomorrow (${escapeHtml(next.weekday)})</strong> at <strong>NRG Stadium (Houston Stadium)</strong>: ` +
+    `<strong>${escapeHtml(next.teams)}</strong> — kickoff <strong>${escapeHtml(next.time)} Central</strong>. ` +
+    `We would love to see you at Prayer City if you’re serving, and please keep Houston in prayer if you’re at home.` +
+    `</p>` +
+    `<p style="margin:10px 0 0;font-size:13px;color:#475569;line-height:1.6;">` +
+    `On site: arrive ~15–30 min early · <strong>free street parking</strong> near <strong>1325 La Concha Lane, Houston, TX</strong> · call <strong>Tricia Hill</strong> at <a href="tel:8322773831" style="color:#0f3d5c;font-weight:800;text-decoration:none;">832-277-3831</a> if needed · prayer tents at the same address.` +
+    `</p>` +
+    `</div>` +
+    `<div style="padding:0 18px 16px;">` +
+    `<img src="${escapeHtml(PRAYERCITY_OUTREACH_FEATURE_IMAGE_URL)}" alt="Prayer City volunteers with gospel signs" width="600" style="display:block;width:100%;height:auto;border-radius:14px;border:1px solid rgba(148,163,184,0.55);" />` +
+    `</div>` +
+    `<div style="padding:0 18px 18px;">` +
+    `<a href="${escapeHtml(PRAYERCITY_GALLERY_URL)}" style="display:inline-block;margin-right:8px;margin-bottom:8px;padding:12px 16px;border-radius:9999px;background:#0f3d5c;color:#ffffff;font-weight:900;font-size:13px;text-decoration:none;box-shadow:0 6px 18px rgba(15,61,92,0.18);">See gallery photos →</a>` +
+    `<a href="${escapeHtml(PRAYERCITY_SIGNUP_URL)}" style="display:inline-block;margin-bottom:8px;padding:12px 16px;border-radius:9999px;background:#0d9488;color:#ffffff;font-weight:900;font-size:13px;text-decoration:none;box-shadow:0 6px 18px rgba(13,148,136,0.22);">Register / invite a friend →</a>` +
+    ig.html +
+    `</div></div>`;
+
+  return { plain, html };
+}
+
+function buildPreGameThankYouBlock(dateStr) {
+  const next = nextHoustonMatchAfter(dateStr);
+  const day1 = buildDay1ThankYouBlock();
+  if (!next) return day1;
+
+  const plain =
+    day1.plain +
+    `\n\nNEXT GAME: ${next.weekday.toUpperCase()}\n` +
+    `At NRG Stadium: ${next.teams} (${next.time} Central). Please invite your friends and family.\n\n` +
+    `Register to serve (send this link to them):\n${PRAYERCITY_SIGNUP_URL}`;
+
+  const nextInner =
+    `<div style="height:1px;background:rgba(148,163,184,0.55);margin:16px 0;"></div>` +
+    `<p style="margin:0 0 8px;font-size:11px;font-weight:900;letter-spacing:0.16em;color:#0d9488;text-transform:uppercase;">Next game: ${escapeHtml(next.weekday)}</p>` +
+    `<p style="margin:0;font-size:14px;color:#334155;line-height:1.65;">At NRG Stadium: <strong>${escapeHtml(next.teams)}</strong> (${escapeHtml(next.time)} Central). Please bring your friends and family — forward this link:</p>` +
+    `<p style="margin:12px 0 0;">` +
+    `<a href="${escapeHtml(PRAYERCITY_SIGNUP_URL)}" style="display:inline-block;padding:12px 16px;border-radius:9999px;background:#0d9488;color:#ffffff;font-weight:900;font-size:13px;text-decoration:none;box-shadow:0 6px 18px rgba(13,148,136,0.22);">Register to serve →</a>` +
+    `</p>` +
+    `<p style="margin:10px 0 0;font-size:12px;color:#64748b;word-break:break-all;">${escapeHtml(PRAYERCITY_SIGNUP_URL)}</p>`;
+
+  const marker = 'See more Day 1 photos →</a>';
+  const cut = day1.html.indexOf(marker);
+  const html =
+    cut >= 0
+      ? day1.html.slice(0, cut + marker.length) + nextInner + day1.html.slice(cut + marker.length)
+      : day1.html;
+
+  return { plain, html };
+}
+
+function buildOpeningBlock(dateStr) {
+  const match = houstonMatchOnDate(dateStr);
+  if (match) return buildGameDayOpeningBlock(dateStr, match);
+  const prev = previousHoustonMatchBefore(dateStr);
+  if (prev && isDayAfterHoustonGameDay(dateStr)) {
+    return buildPostGameDayThankYouBlock(dateStr, prev);
   }
-  return DIGEST_EMAIL_SUBJECT;
+  const next = nextHoustonMatchAfter(dateStr);
+  if (next && isDayBeforeHoustonGameDay(dateStr)) {
+    return buildDayBeforeGameBlock(dateStr, next);
+  }
+  if (dateStr >= '2026-06-14') return buildPreGameThankYouBlock(dateStr);
+  return { plain: '', html: '' };
 }
 
 function buildVirtualInfoSessionBlock(dateStr) {
@@ -636,7 +962,7 @@ function buildVirtualInfoSessionBlock(dateStr) {
     `${VIRTUAL_INFO_SESSION_LABEL} at ${VIRTUAL_INFO_SESSION_TIME} ${VIRTUAL_INFO_SESSION_TIMEZONE}\n\n` +
     `Thank you to everyone who joined us for Prayer City training — we are grateful for you. ` +
     `If you missed the in-person night, please join us virtually. Your attendance matters: ` +
-    `prayer tent locations, parking and shuttle arrangements to NRG Stadium, team details, and everything you need before our first serve day this Sunday.\n\n` +
+    `prayer tent locations, free street parking near 1325 La Concha Lane, team details, and everything you need before our first serve day this Sunday.\n\n` +
     `Join on Zoom:\n${PRAYERCITY_ZOOM_URL}`;
 
   const html =
@@ -647,7 +973,7 @@ function buildVirtualInfoSessionBlock(dateStr) {
     `<h2 style="margin:0 0 10px;font-size:18px;font-weight:900;color:#0f172a;letter-spacing:-0.01em;">Virtual information session — please attend</h2>` +
     `<p style="margin:0 0 12px;font-size:14px;color:#334155;line-height:1.65;">` +
     `Thank you to everyone who joined us for <strong>Prayer City training</strong>. If you were not able to attend in person, please join us virtually — we will share ` +
-    `<strong>prayer tent locations</strong>, <strong>parking and shuttle plans</strong> to NRG Stadium, and everything you need before our first serve day this <strong>Sunday</strong>.` +
+    `<strong>prayer tent locations</strong>, <strong>free street parking</strong> at 1325 La Concha Lane, and everything you need before our first serve day this <strong>Sunday</strong>.` +
     `</p>` +
     `<p style="margin:0;font-size:15px;font-weight:900;color:#0f172a;">` +
     `${escapeHtml(VIRTUAL_INFO_SESSION_LABEL)} · ${escapeHtml(VIRTUAL_INFO_SESSION_TIME)} ` +
@@ -665,7 +991,7 @@ function buildVirtualInfoSessionBlock(dateStr) {
 function buildTshirtVolunteerBlock() {
   const plain =
     `PRAYER CITY T-SHIRTS\n` +
-    `We are printing Houston Prayer City volunteer T-shirts. Please reply to this email with your shirt size (S, M, L, XL, 2XL, or 3XL).\n\n` +
+    `We are printing Houston Prayer City volunteer T-shirts. Please reply to this email with your shirt size (S, M, L, or X).\n\n` +
     `If you are able to make a donation toward your shirt, that would be wonderful — much appreciated:\n` +
     PRAYERCITY_DONATION_URL;
 
@@ -675,7 +1001,7 @@ function buildTshirtVolunteerBlock() {
     `<p style="margin:0 0 8px;font-size:11px;font-weight:900;letter-spacing:0.14em;color:#0d9488;text-transform:uppercase;">Prayer City volunteer T-shirts</p>` +
     `<img src="${escapeHtml(PRAYERCITY_TSHIRT_IMAGE_URL)}" alt="Houston Prayer City volunteer T-shirt" width="600" style="width:100%;max-width:100%;height:auto;border-radius:12px;border:1px solid #e2e8f0;display:block;margin:0 0 14px;" />` +
     `<p style="margin:0 0 10px;font-size:14px;color:#334155;line-height:1.65;">` +
-    `We are printing <strong>Houston Prayer City</strong> shirts for our volunteer family. Please <strong>reply to this email</strong> with your size: <strong>S, M, L, XL, 2XL, or 3XL</strong>.` +
+    `We are printing <strong>Houston Prayer City</strong> shirts for our volunteer family. Please <strong>reply to this email</strong> with your size: <strong>S, M, L, or X</strong>.` +
     `</p>` +
     `<p style="margin:0 0 14px;font-size:14px;color:#334155;line-height:1.65;">` +
     `If you are able to make a donation toward your shirt, that would be wonderful — much appreciated (100% to the movement via Zeffy).` +
@@ -756,7 +1082,7 @@ function digestSectionCardHtml(eyebrow, title, bodyHtml, accent) {
  */
 async function buildDailyVolunteerDigest(vol) {
   const siteBase = (vol.siteBase || SITE_DEFAULT).replace(/\/?$/, '');
-  const dateStr = todayYmdChicago();
+  const dateStr = String(vol.previewDate || '').trim() || todayYmdChicago();
   const combined = [vol.shifts || '', vol.position || '', vol.timeslot || '', vol.tent || ''].join(' ');
   const roles = findRolesFromShifts(combined);
   if (roles.length === 0) {
@@ -842,29 +1168,33 @@ async function buildDailyVolunteerDigest(vol) {
   }
 
   const roleLabels = roles.map((r) => r.label).join(' · ');
-  const daysToVirtual = daysUntilYmd(dateStr, VIRTUAL_INFO_SESSION_DATE);
-  const subject = buildVolunteerDigestSubject_(dateStr);
+  const roleIds = roles.map((r) => r.id);
+  const subject = digestSubjectForDate(dateStr);
 
-  const introPlain =
-    `${dearName}\n\n` +
-    `Thank you to everyone who joined us for Prayer City training — we are truly grateful for you.\n\n` +
-    (typeof daysToVirtual === 'number' && daysToVirtual >= 0
-      ? `Please join our virtual information session on ${VIRTUAL_INFO_SESSION_LABEL} at ${VIRTUAL_INFO_SESSION_TIME} ${VIRTUAL_INFO_SESSION_TIMEZONE} — all you need to know before Sunday: prayer tent locations, parking and shuttle to NRG Stadium, and key serve-day details.\n\n` +
-        `Zoom: ${PRAYERCITY_ZOOM_URL}\n\n`
-      : '') +
-    `Thank you for walking with us as a Houston Prayer City volunteer. Here is your encouragement and focus for today (${displayDate}) — shaped by your role(s): ${roleLabels}.\n\n` +
-    `Whenever you want the full dashboard — prayer points, serving tips, social inspiration, and more — it’s ready for you here:\n${dashboardUrl}\n`;
+  const dailyGuide = buildDailyServeGuideBlock(dateStr, {
+    dearName,
+    dashboardUrl,
+    roleLabels,
+    roleIds,
+    displayDate,
+    tent: vol.tent || '',
+  });
 
   const universalSpirit = buildUniversalDailySpiritualBlock(dateStr);
 
-  const countdown = buildCountdownBlock(dateStr);
+  const opening = buildOpeningBlock(dateStr);
   const serveDay = buildServeDayFlowBlock({
-    roleIds: roles.map((r) => r.id),
+    roleIds,
     tent: vol.tent || '',
   });
-  const virtualSession = buildVirtualInfoSessionBlock(dateStr);
-  const tshirt = buildTshirtVolunteerBlock();
-  const video = buildVideoShareBlock(siteBase);
+  const tshirt = buildRotatingTshirtBlock(dateStr, dashboardUrl, dailyGuide.tshirtCta);
+  const showVideo = hashStr(`video-${dateStr}`) % 3 === 0;
+  const video = showVideo ? buildVideoShareBlock(siteBase) : { plain: '', html: '' };
+
+  const roleFocusPlain =
+    sections.length > 0
+      ? `\n\n---\n\nTODAY'S FOCUS (${displayDate}) — ${roleLabels}\n\n${sections.join('\n\n---\n\n')}`
+      : '';
 
   const closingPlain = `\n\nWith gratitude,\n\nDamilola\nPrayer City HTX`;
 
@@ -880,31 +1210,26 @@ async function buildDailyVolunteerDigest(vol) {
   );
 
   const plainBody =
-    introPlain +
-    (countdown.plain ? `\n\n---\n\n${countdown.plain}` : '') +
+    (opening.plain ? `${opening.plain}\n\n---\n\n` : '') +
+    dailyGuide.plain +
     (serveDay.plain ? `\n\n---\n\n${serveDay.plain}` : '') +
-    (virtualSession.plain ? `\n\n---\n\n${virtualSession.plain}` : '') +
     (tshirt.plain ? `\n\n---\n\n${tshirt.plain}` : '') +
     (video.plain ? `\n\n---\n\n${video.plain}` : '') +
-    `\n\n` +
-    universalSpirit.plain +
     `\n\n---\n\n` +
-    `${sections.join('\n\n---\n\n')}` +
+    universalSpirit.plain +
+    roleFocusPlain +
     closingPlain +
     unsub.plain +
     (resub.plain ? `\n${resub.plain}` : '');
 
-  const introHtml =
-    `<p style="margin:0;font-size:18px;color:#0f172a;font-weight:800;letter-spacing:-0.02em;">${escapeHtml(dearName)}</p>` +
-    `<p style="margin:14px 0 0;font-size:15px;color:#334155;line-height:1.65;">Thank you to everyone who joined us for <strong>Prayer City training</strong> — your presence and prayers blessed our city. We are truly grateful for you.</p>` +
-    (typeof daysToVirtual === 'number' && daysToVirtual >= 0
-      ? `<p style="margin:14px 0 0;font-size:15px;color:#334155;line-height:1.65;">Please join our <strong>virtual information session</strong> on <strong>${escapeHtml(VIRTUAL_INFO_SESSION_LABEL)}</strong> at <strong>${escapeHtml(VIRTUAL_INFO_SESSION_TIME)}</strong> ${escapeHtml(VIRTUAL_INFO_SESSION_TIMEZONE)} — <strong>all you need to know before Sunday</strong>: prayer tent locations, parking, shuttle to NRG Stadium, and key serve-day details.</p>`
-      : '') +
-    `<p style="margin:14px 0 0;font-size:15px;color:#334155;line-height:1.65;">Thank you for walking with us as a <strong style="color:#0f3d5c;">Houston Prayer City</strong> volunteer. Here is your encouragement and focus for <strong style="color:#0f3d5c;">${escapeHtml(displayDate)}</strong> — shaped by your role(s): <span style="color:#0f766e;font-weight:700;">${escapeHtml(roleLabels)}</span>.</p>` +
-    `<p style="margin:14px 0 0;font-size:15px;color:#334155;line-height:1.65;">Whenever you want the full dashboard — prayer points, serving tips, social inspiration, and more — it’s ready for you whenever you open it.</p>` +
-    `<p style="margin:20px 0 0;text-align:center;">` +
-    `<a href="${escapeHtml(dashboardUrl)}" style="display:inline-block;padding:14px 28px;border-radius:9999px;background:linear-gradient(90deg,#0f3d5c,#0d9488);color:#ffffff;font-weight:800;font-size:15px;text-decoration:none;box-shadow:0 6px 20px rgba(15,61,92,0.28);">Open your volunteer dashboard</a>` +
-    `</p>`;
+  const sep =
+    `<div style="height:1px;background:linear-gradient(90deg,transparent,rgba(148,163,184,0.55),transparent);margin:10px 0 26px;"></div>`;
+
+  const roleFocusHtml =
+    htmlChunks.length > 0
+      ? `<p style="margin:0 0 14px;font-size:11px;font-weight:900;letter-spacing:0.14em;color:#0d9488;text-transform:uppercase;">Today’s focus · ${escapeHtml(displayDate)} · ${escapeHtml(roleLabels)}</p>` +
+        htmlChunks.join(sep)
+      : '';
 
   const closingHtml =
     `<div style="margin-top:32px;padding-top:22px;border-top:1px solid #e2e8f0;">` +
@@ -913,33 +1238,26 @@ async function buildDailyVolunteerDigest(vol) {
     `<p style="margin:4px 0 0;font-size:13px;font-weight:700;letter-spacing:0.12em;color:#c9a227;text-transform:uppercase;">Prayer City HTX</p>` +
     `</div>`;
 
-  const sep =
-    `<div style="height:1px;background:linear-gradient(90deg,transparent,rgba(148,163,184,0.55),transparent);margin:10px 0 26px;"></div>`;
-
   const htmlBody =
     `<div style="background:linear-gradient(180deg,#e0f2fe 0%,#f8fafc 48%,#ffffff 100%);padding:28px 12px 40px;">` +
     `<div style="max-width:640px;margin:0 auto;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0f172a;">` +
     buildEmailBannerHtml(dateStr) +
-    countdown.html +
-    introHtml +
+    opening.html +
+    dailyGuide.html +
     sep +
     serveDay.html +
     sep +
-    virtualSession.html +
-    (virtualSession.html ? sep : '') +
     tshirt.html +
-    sep +
-    video.html +
+    (video.html ? sep + video.html : '') +
     sep +
     universalSpirit.html +
-    sep +
-    htmlChunks.join(sep) +
+    (roleFocusHtml ? sep + roleFocusHtml : '') +
     closingHtml +
     unsub.html +
     resub.html +
     `</div></div>`;
 
-  return { subject, plainBody, htmlBody, roleIds: roles.map((r) => r.id) };
+  return { subject, plainBody, htmlBody, roleIds };
 }
 
 module.exports = {

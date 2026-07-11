@@ -58,7 +58,7 @@
       (countdown
         ? '<p class="text-sm font-semibold text-blue-800 mt-2">' + esc(countdown) + '</p>'
         : '') +
-      '<p class="text-sm text-slate-600 mt-3 leading-relaxed max-w-3xl">Thank you to everyone who joined us for <strong>Prayer City training</strong>. If you were not able to attend in person, please join us virtually — we will share <strong>prayer tent locations</strong>, <strong>parking and shuttle plans</strong> to NRG Stadium, and everything you need before our first serve day this <strong>Sunday</strong>.</p>' +
+      '<p class="text-sm text-slate-600 mt-3 leading-relaxed max-w-3xl">Thank you to everyone who joined us for <strong>Prayer City training</strong>. If you were not able to attend in person, please join us virtually — we will share <strong>prayer tent locations</strong>, <strong>free street parking</strong> near 1325 La Concha Lane, and everything you need before our first serve day this <strong>Sunday</strong>.</p>' +
       '<p class="text-base sm:text-lg font-bold text-slate-900 mt-4">' +
       esc(CFG.label) +
       ' · ' +

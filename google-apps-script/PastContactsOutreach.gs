@@ -65,6 +65,41 @@ function shouldShowVirtualSessionInEmail_() {
 var PAST_OUTREACH_FIRST_BATCH_DAILY_FN = 'sendPastContactsOutreachDaily';
 var PAST_OUTREACH_DAILY_FN = 'sendPastContactsFollowUpDaily';
 var PAST_OUTREACH_FIRST_BATCH_DONE_PROP = 'PAST_OUTREACH_FIRST_BATCH_DONE_NOTIFIED';
+/** When set, daily + manual past-contact outreach skips sending (campaign ended). */
+var PAST_OUTREACH_PAUSED_PROP = 'PAST_OUTREACH_CAMPAIGN_PAUSED';
+
+function isPastOutreachPaused_() {
+  return PropertiesService.getScriptProperties().getProperty(PAST_OUTREACH_PAUSED_PROP) === '1';
+}
+
+function setPastOutreachPaused_(paused) {
+  var props = PropertiesService.getScriptProperties();
+  if (paused) {
+    props.setProperty(PAST_OUTREACH_PAUSED_PROP, '1');
+  } else {
+    props.deleteProperty(PAST_OUTREACH_PAUSED_PROP);
+  }
+}
+
+/** Menu: stop all past-contact email (removes daily triggers + sets pause flag). */
+function pausePastOutreachCampaignEnded() {
+  setPastOutreachPaused_(true);
+  removePastOutreachFirstBatchDailyTrigger_();
+  removePastOutreachDailyTrigger_();
+  alertOrLog_(
+    'Past-contact outreach is PAUSED (campaign ended).\n\n' +
+      'Daily triggers are OFF and send functions will no-op until you choose Resume.'
+  );
+}
+
+/** Menu: allow past-contact outreach again (does not re-enable daily triggers). */
+function resumePastOutreachCampaign() {
+  setPastOutreachPaused_(false);
+  alertOrLog_(
+    'Past-contact outreach pause is OFF.\n\n' +
+      'Daily triggers are still OFF until you turn them back on from the menu.'
+  );
+}
 
 function authorizePastOutreachSender() {
   GmailApp.getInboxThreads(0, 1);
@@ -693,6 +728,12 @@ function maybeNotifyPastOutreachFirstBatchComplete_() {
 function sendPastContactsOutreachCore_(opts) {
   opts = opts || {};
   var silent = opts.silent === true;
+  if (isPastOutreachPaused_()) {
+    var pausedMsg = 'Past-contact outreach is paused (campaign ended). No emails sent.';
+    Logger.log('[sendPastContactsOutreach] ' + pausedMsg);
+    if (!silent) alertOrLog_(pausedMsg);
+    return { sent: 0, paused: true };
+  }
   var sh = getPastLeadsSheet_();
   var remainingStart = getRemainingEmailQuota_();
   if (remainingStart >= 0 && remainingStart === 0) {
@@ -856,6 +897,10 @@ function sendPastContactsOutreachDaily() {
  * Sends at most one email per person per calendar day (Chicago).
  */
 function sendPastContactsFollowUpDaily() {
+  if (isPastOutreachPaused_()) {
+    Logger.log('[sendPastContactsFollowUpDaily] Paused (campaign ended). No emails sent.');
+    return;
+  }
   var sh = getPastLeadsSheet_();
   var registered = loadRegisteredEmails_();
   var data = sh.getDataRange().getValues();
@@ -1102,6 +1147,11 @@ function removePastOutreachAllDailyTriggers() {
   removePastOutreachFirstBatchDailyTrigger_();
   removePastOutreachDailyTrigger_();
   alertOrLog_('All daily outreach triggers are OFF.');
+}
+
+/** Same as removePastOutreachAllDailyTriggers but also sets the campaign pause flag. */
+function stopAllPastOutreachEmail() {
+  pausePastOutreachCampaignEnded();
 }
 
 function installPastOutreachFirstBatchDailyTrigger_() {

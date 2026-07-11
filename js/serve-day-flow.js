@@ -1,5 +1,5 @@
 /**
- * Serve-day flow — shuttle, tent, coordinator check-in (all volunteer roles).
+ * Serve-day flow — tent, parking, coordinator check-in (all volunteer roles).
  */
 (function (global) {
   var assets = global.PrayerCityAssets || {};
@@ -10,22 +10,23 @@
           return p;
         };
 
+  var TENT_ADDRESS = '1325 La Concha Lane, Houston, TX';
+  var TENT_MAP_QUERY = encodeURIComponent(TENT_ADDRESS);
+  var TENT_MAP_URL =
+    'https://www.google.com/maps/search/?api=1&query=' + TENT_MAP_QUERY;
+  var TENT_MAP_EMBED_URL =
+    'https://maps.google.com/maps?q=' + TENT_MAP_QUERY + '&z=16&output=embed';
+
   var CFG = {
-    shuttleName: 'Walmart',
-    shuttleAddress: '2391 S Wayside Dr, Houston, TX 77023',
-    shuttleParking:
-      'Park on the left side next to Automotive and Curbside Pick-up.',
-    shuttleMapUrl:
-      'https://www.google.com/maps/search/?api=1&query=' +
-      encodeURIComponent('Walmart 2391 S Wayside Dr Houston TX 77023'),
-    shuttleBusImage: assets.shuttleBus || assetUrl('images/prayer-city-shuttle-bus.png'),
+    tentAddress: TENT_ADDRESS,
+    parkingNote:
+      'Free street parking is available near the prayer tents at 1325 La Concha Lane, Houston, TX. Arrive a few minutes early to find a spot.',
+    tentMapUrl: TENT_MAP_URL,
+    mapEmbedUrl: TENT_MAP_EMBED_URL,
     tentImage: assets.tentSetup || assetUrl('images/prayer-city-tent-setup.png'),
     coordinatorName: 'Tricia Hill',
     coordinatorTitle: 'Prayer City Coordinator',
-    coordinatorPhone: '346-664-8066',
-    shuttleDriverName: 'Claudia',
-    shuttleDriverPhone: '979-231-6324',
-    shuttleInterval: 'about every 30 minutes',
+    coordinatorPhone: '832-277-3831',
   };
 
   var ROLE_ON_SHIFT = {
@@ -34,7 +35,7 @@
     counselors:
       'Serve in your assigned zone with calm gospel conversations. Win souls to Christ with love. Coordinate with the coordinator for referrals.',
     'logistics-welfare':
-      'Keep supplies, shade, snacks, and flow smooth. Support guests and volunteers; shuttle runs every 30 minutes back to the Walmart lot.',
+      'Keep supplies, shade, snacks, and flow smooth. Support guests and volunteers at the tent.',
     'photography-video':
       'Capture the story respectfully (ask consent). Cover your assigned area; upload selects via dashboard when you can.',
     'social-media':
@@ -76,41 +77,27 @@
         '<div class="rounded-xl border border-slate-200 bg-white p-4">' +
         '<p class="text-sm text-slate-600 leading-relaxed">' +
         '<i class="fas fa-lock text-slate-400 mr-1" aria-hidden="true"></i>' +
-        '<strong>Day-of phone numbers</strong> (shuttle driver &amp; coordinator) are shown when you ' +
+        '<strong>Day-of phone number</strong> for Tricia Hill (Prayer City Coordinator) is shown when you ' +
         '<a href="/" class="text-brand font-semibold hover:underline">sign in to your dashboard</a> or ' +
         '<a href="volunteer-hub.html" class="text-brand font-semibold hover:underline">volunteer hub</a>.' +
         '</p></div>'
       );
     }
-    var shuttleName = String(d.shuttleDriverName || CFG.shuttleDriverName || 'Shuttle driver').trim();
-    var shuttlePhone = String(d.shuttleDriverPhone || CFG.shuttleDriverPhone || '').trim();
     var coordPhone = String(d.coordinatorPhone || CFG.coordinatorPhone || '').trim();
     return (
-      '<div class="grid sm:grid-cols-2 gap-4">' +
-      '<div class="rounded-xl border border-slate-200 bg-white p-4">' +
-      '<p class="text-xs font-bold uppercase text-slate-500">Shuttle driver</p>' +
-      '<p class="text-sm font-semibold text-slate-900 mt-1">' +
-      esc(shuttleName) +
-      '</p>' +
-      '<p class="text-sm font-semibold text-slate-900 mt-0.5">' +
-      phoneLinkHtml(shuttlePhone) +
-      '</p></div>' +
       '<div class="rounded-xl border border-slate-200 bg-white p-4">' +
       '<p class="text-xs font-bold uppercase text-slate-500">' +
       esc(CFG.coordinatorName) +
       ' · Coordinator</p>' +
       '<p class="text-sm font-semibold text-slate-900 mt-1">' +
       phoneLinkHtml(coordPhone) +
-      '</p></div></div>' +
+      '</p>' +
+      '<p class="text-xs text-slate-500 mt-2">Call if you need help finding the tent on serve day.</p></div>' +
       '<div class="rounded-xl border border-rose-200/80 bg-rose-50/50 p-4">' +
       '<p class="text-xs font-bold uppercase text-rose-800 tracking-wide">Day-of emergency</p>' +
       '<p class="text-sm text-slate-700 mt-2 leading-relaxed">Lost, running late, or need help on serve day? Call <strong>' +
-      esc(shuttleName) +
-      '</strong> (shuttle) at ' +
-      phoneLinkHtml(shuttlePhone) +
-      ' or <strong>' +
       esc(CFG.coordinatorName) +
-      '</strong> (coordinator) at ' +
+      '</strong> at ' +
       phoneLinkHtml(coordPhone) +
       '.</p></div>'
     );
@@ -123,7 +110,9 @@
     var showContacts = !!opts.showContacts;
     var roles = rolesFromVolunteer(d);
     var tent = String(d.tent || '').trim();
-    var tentLabel = tent ? esc(tent) : 'See your dashboard after check-in';
+    var tentLabel = tent
+      ? esc(tent) + ' · ' + esc(CFG.tentAddress)
+      : esc(CFG.tentAddress);
 
     var roleBlocks = '';
     if (roles.length) {
@@ -156,55 +145,62 @@
       '<div class="p-4 sm:p-6 space-y-6">' +
       '<div class="grid md:grid-cols-2 gap-5">' +
       '<div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">' +
-      '<h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Prayer City Shuttle Bus</h3>' +
-      '<img src="' +
-      esc(CFG.shuttleBusImage) +
-      '" alt="Prayer City Shuttle Bus" class="w-full rounded-lg border border-slate-100 mt-3" loading="lazy" />' +
+      '<h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Parking · free street parking</h3>' +
       '<p class="text-sm font-semibold text-slate-900 mt-3">' +
-      esc(CFG.shuttleName) +
-      '</p>' +
-      '<p class="text-sm text-slate-600">' +
-      esc(CFG.shuttleAddress) +
+      esc(CFG.tentAddress) +
       '</p>' +
       '<p class="text-sm text-teal-800 font-medium mt-2">' +
-      esc(CFG.shuttleParking) +
+      esc(CFG.parkingNote) +
       '</p>' +
-      '<p class="text-xs text-slate-500 mt-2">Look for <strong>Prayer City Shuttle Bus</strong> on the vehicle. Runs ' +
-      esc(CFG.shuttleInterval) +
-      ' — to NRG tents and back to your car all day.</p>' +
       '<a href="' +
-      esc(CFG.shuttleMapUrl) +
+      esc(CFG.tentMapUrl) +
       '" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 mt-3 text-sm font-semibold text-brand hover:underline">' +
-      '<i class="fas fa-map-marker-alt"></i> Open pick-up map</a>' +
+      '<i class="fas fa-map-marker-alt"></i> Open map</a>' +
       '</div>' +
       '<div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">' +
-      '<h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Prayer tent (NRG · &lt; 5 min from stadium)</h3>' +
+      '<h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Prayer tents · NRG area</h3>' +
       '<img src="' +
       esc(CFG.tentImage) +
       '" alt="Prayer City tent example" class="w-full rounded-lg border border-slate-100 mt-3" loading="lazy" />' +
-      '<p class="text-xs text-slate-500 mt-2">Exact location announced soon — this is what to expect.</p>' +
+      '<p class="text-sm font-semibold text-slate-900 mt-3">' +
+      esc(CFG.tentAddress) +
+      '</p>' +
+      '<p class="text-xs text-slate-500 mt-2">All Prayer City tents are at this address.</p>' +
       '<p class="text-sm font-semibold text-brand mt-3">Your assigned tent: <span class="text-slate-900">' +
       tentLabel +
       '</span></p>' +
+      '<a href="' +
+      esc(CFG.tentMapUrl) +
+      '" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 mt-3 text-sm font-semibold text-brand hover:underline">' +
+      '<i class="fas fa-map-marker-alt"></i> Open tent map</a>' +
       '</div></div>' +
+      '<div class="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">' +
+      '<div class="px-4 py-3 border-b border-slate-100 bg-slate-50/80">' +
+      '<h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Map</h3>' +
+      '</div>' +
+      '<iframe title="Prayer City tent & parking map" src="' +
+      esc(CFG.mapEmbedUrl) +
+      '" class="w-full h-56 sm:h-64 border-0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>' +
+      '</div>' +
       '<div class="rounded-xl border border-amber-200/80 bg-amber-50/50 p-4 sm:p-5">' +
       '<h3 class="text-sm font-bold text-amber-950 uppercase tracking-wide">Your step-by-step flow</h3>' +
       '<ol class="mt-3 space-y-2 text-sm text-slate-700 list-decimal list-inside leading-relaxed">' +
-      '<li>Park at the Walmart shuttle pick-up (avoid NRG parking).</li>' +
-      '<li>Find the Prayer City shuttle bus.</li>' +
-      '<li>Ride to your assigned tent near NRG (~30 min loop).</li>' +
-      '<li>Check in with <strong>' +
+      '<li>Park on the street near <strong>' +
+      esc(CFG.tentAddress) +
+      '</strong> (free street parking).</li>' +
+      '<li>Walk to the prayer tents and check in with <strong>' +
       esc(CFG.coordinatorName) +
-      '</strong>, ' +
-      esc(CFG.coordinatorTitle) +
-      ' — T-shirt, volunteer tags, briefing.</li>' +
+      '</strong> at ' +
+      phoneLinkHtml(CFG.coordinatorPhone) +
+      '.</li>' +
+      '<li>Receive your T-shirt, volunteer tags, and briefing.</li>' +
       '<li>Join morning worship &amp; prayer at the tent; ' +
       esc(CFG.coordinatorName) +
       ' will pray with you if your shift starts later.</li>' +
       '<li>Get materials; serve in your assigned area.</li>' +
       (showContacts
-        ? '<li>Shuttle &amp; coordinator phone numbers are listed below.</li>'
-        : '<li>Sign in to see day-of phone numbers for the shuttle and coordinator.</li>') +
+        ? '<li>Coordinator phone number is listed below.</li>'
+        : '<li>Sign in to see Tricia’s day-of phone number.</li>') +
       '</ol></div>' +
       contactsHtml(showContacts, d) +
       '<div><h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3">On shift — your role</h3>' +
@@ -213,14 +209,24 @@
       '</div></div>' +
       '<div class="rounded-xl border border-slate-100 bg-slate-50/60 p-4 text-sm text-slate-600 leading-relaxed space-y-2">' +
       '<p><strong class="text-slate-800">Serving as a group?</strong> Email <a href="mailto:ddbs.htx@gmail.com" class="text-brand font-semibold hover:underline">ddbs.htx@gmail.com</a> with your names and dates — see <a href="faq.html" class="text-brand font-semibold hover:underline">FAQ</a> for details.</p>' +
-      '<p><strong class="text-slate-800">Serving remotely?</strong> Social Media &amp; Virtual Support volunteers share daily posts from your <a href="/" class="text-brand font-semibold hover:underline">dashboard</a> on game days — no shuttle needed.</p>' +
+      '<p><strong class="text-slate-800">Serving remotely?</strong> Social Media &amp; Virtual Support volunteers share daily posts from your <a href="/" class="text-brand font-semibold hover:underline">dashboard</a> on game days — no travel needed.</p>' +
+      '<p><strong class="text-slate-800">Friday June 26:</strong> evening volunteer shifts run <strong>6:00 PM – 10:00 PM</strong>. All other serve days: shifts start at <strong>11:00 AM</strong>.</p>' +
       '</div>' +
       '</div></div>';
+  }
+
+  function formatTentDisplay(tent) {
+    var label = String(tent || '').trim();
+    if (label) {
+      return label + ' · ' + CFG.tentAddress;
+    }
+    return CFG.tentAddress;
   }
 
   global.PrayerCityServeDay = {
     CFG: CFG,
     ROLE_ON_SHIFT: ROLE_ON_SHIFT,
+    formatTentDisplay: formatTentDisplay,
     renderServeDayFlow: renderServeDayFlow,
   };
 })(typeof window !== 'undefined' ? window : this);

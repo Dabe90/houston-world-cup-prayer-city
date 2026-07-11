@@ -32,8 +32,8 @@
     var serve = global.PrayerCityServeDay && global.PrayerCityServeDay.CFG;
     var tent = String(d.tent || '').trim();
     var shirt = String(d.shirtSize || '').trim();
-    var showVirtual = daysUntilYmd(VIRTUAL_SESSION_DATE);
-    showVirtual = showVirtual == null || showVirtual >= 0;
+    var todayYmd = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+    var showVirtual = todayYmd <= VIRTUAL_SESSION_DATE;
 
     var items = [];
     if (showVirtual) {
@@ -55,14 +55,16 @@
     items.push(
       '<li class="flex gap-2"><span class="text-brand font-bold shrink-0">' +
         (showVirtual ? '3' : '2') +
-        '.</span><span><strong>Park at the shuttle pick-up</strong> (not NRG): ' +
-        (serve ? esc(serve.shuttleName) + ', ' + esc(serve.shuttleAddress) + '. ' + esc(serve.shuttleParking) : 'Walmart, 2391 S Wayside Dr') +
+        '.</span><span><strong>Free street parking</strong> near the tents at ' +
+        (serve ? esc(serve.tentAddress) : '1325 La Concha Lane, Houston, TX') +
+        '. ' +
+        (serve ? esc(serve.parkingNote) : 'Arrive a few minutes early to find a spot.') +
         ' — <a href="#serve-day-flow-section" class="text-brand font-semibold hover:underline">Serve-day details</a></span></li>'
     );
     items.push(
       '<li class="flex gap-2"><span class="text-brand font-bold shrink-0">' +
         (showVirtual ? '4' : '3') +
-        '.</span><span><strong>Arrive ~30–45 minutes before your shift</strong> for shuttle, check-in, and briefing with ' +
+        '.</span><span><strong>Arrive ~15–30 minutes before your shift</strong> for check-in and briefing with ' +
         (serve ? esc(serve.coordinatorName) : 'Tricia Hill') +
         '.</span></li>'
     );
@@ -75,27 +77,31 @@
       '<li class="flex gap-2"><span class="text-brand font-bold shrink-0">' +
         (showVirtual ? '6' : '5') +
         '.</span><span><strong>Your tent:</strong> ' +
-        (tent ? esc(tent) : 'Posted on your dashboard when assigned — confirm at check-in') +
+        (tent
+          ? esc(tent) +
+            ' · ' +
+            esc(
+              (serve && serve.tentAddress) ||
+                '1325 La Concha Lane, Houston, TX'
+            )
+          : esc(
+              (serve && serve.tentAddress) ||
+                '1325 La Concha Lane, Houston, TX'
+            )) +
         '.</span></li>'
     );
-    var shuttleName =
-      (serve && serve.shuttleDriverName) || 'Claudia';
-    var shuttlePhone =
-      (serve && serve.shuttleDriverPhone) || '979-231-6324';
     var coordName =
       (serve && serve.coordinatorName) || 'Tricia Hill';
     var coordPhone =
-      (serve && serve.coordinatorPhone) || '346-664-8066';
+      (serve && serve.coordinatorPhone) || '832-277-3831';
     items.push(
       '<li class="flex gap-2"><span class="text-brand font-bold shrink-0">' +
         (showVirtual ? '7' : '6') +
-        '.</span><span><strong>Day-of emergency:</strong> ' +
-        esc(shuttleName) +
-        ' (shuttle) <a href="tel:9792316324" class="text-brand font-semibold hover:underline">' +
-        esc(shuttlePhone) +
-        '</a> · ' +
+        '.</span><span><strong>Day-of emergency:</strong> call ' +
         esc(coordName) +
-        ' (coordinator) <a href="tel:3466648066" class="text-brand font-semibold hover:underline">' +
+        ' (coordinator) <a href="tel:' +
+        esc(String(coordPhone).replace(/\D/g, '')) +
+        '" class="text-brand font-semibold hover:underline">' +
         esc(coordPhone) +
         '</a></span></li>'
     );

@@ -1,6 +1,12 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // Public serve-day gallery (photos & videos uploaded by team).
+    match /gallery/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Profile photos: public read (for avatars in UI); only owner can write; images only, max ~3MB.
     match /volunteer_photos/{userId}/{allPaths=**} {
       allow read: if true;

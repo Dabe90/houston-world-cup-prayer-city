@@ -2,7 +2,7 @@
   "name": "prayer-city-apps-script",
   "private": true,
   "scripts": {
-    "push": "clasp push",
+    "push": "clasp push --force",
     "open": "clasp open",
     "pull": "clasp pull"
   },

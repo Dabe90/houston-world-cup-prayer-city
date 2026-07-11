@@ -8,6 +8,12 @@ firebase-debug.log
 .vercel
 .env*.local
 
+# Firebase service account keys (never commit)
+*firebase-adminsdk*.json
+
+# Local gallery originals (hosted on Firebase Storage; manifest in js/)
+images/gallery/day1/
+
 # Apps Script CLI — contains your Google Script project ID (local only)
 google-apps-script/.clasp.json
 google-apps-script/node_modules

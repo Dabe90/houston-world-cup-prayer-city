@@ -15,7 +15,7 @@
     donationUrl:
       'https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement',
     contactEmail: 'ddbs.htx@gmail.com',
-    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+    sizes: ['S', 'M', 'L', 'X'],
   };
 
   function esc(s) {
@@ -52,6 +52,7 @@
     options = options || {};
     var d = volunteerData || {};
     var saved = String(d.shirtSize || '').trim();
+    if (saved.toUpperCase() === 'XL') saved = 'X';
     var mailSubject = encodeURIComponent('Prayer City volunteer T-shirt size');
     var mailBody = encodeURIComponent(
       'Hi Prayer City team,\n\nMy T-shirt size is: \n\nThank you!'
@@ -78,7 +79,7 @@
       '" alt="Houston Prayer City volunteer T-shirt" class="w-full rounded-lg border border-slate-100" loading="lazy" />' +
       '</div>' +
       '<div class="space-y-4">' +
-      '<p class="text-sm text-slate-700 leading-relaxed">Sizes available: <strong>S, M, L, XL, 2XL, 3XL</strong>. You will receive your shirt when you check in with the Prayer City coordinator on your serve day.</p>' +
+      '<p class="text-sm text-slate-700 leading-relaxed">Sizes available: <strong>S, M, L, X</strong>. You will receive your shirt when you check in with the Prayer City coordinator on your serve day.</p>' +
       (saved
         ? '<p class="text-sm rounded-xl border border-teal-200 bg-teal-50/80 px-4 py-3 text-teal-900"><i class="fas fa-check-circle mr-2"></i>We have your size on file: <strong>' +
           esc(saved) +

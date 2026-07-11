@@ -5,7 +5,10 @@ const path = require('path');
 const volunteerDailyDigest = require('../volunteerDailyDigest');
 
 (async () => {
+  const previewDate = process.env.PREVIEW_DATE || volunteerDailyDigest.todayYmdChicago();
+
   const r = await volunteerDailyDigest.buildDailyVolunteerDigest({
+    previewDate,
     name: 'Damilola Preview',
     email: 'preview@example.com',
     shifts:
