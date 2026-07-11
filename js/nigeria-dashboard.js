@@ -1888,7 +1888,12 @@
     if ($('auth-form')) {
       $('auth-form').addEventListener('submit', function (e) {
         e.preventDefault();
-        signInPassword();
+        var pw = String(($('auth-password') && $('auth-password').value) || '').trim();
+        if (pw) {
+          signInPassword();
+        } else {
+          sendEmailLink();
+        }
       });
     } else if ($('btn-password-signin')) {
       $('btn-password-signin').addEventListener('click', signInPassword);

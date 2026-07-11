@@ -33,15 +33,15 @@
     };
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260711b" />
-  <link rel="stylesheet" href="css/billion-countdown.css?v=20260711b" />
-  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260711b" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260711c" />
+  <link rel="stylesheet" href="css/billion-countdown.css?v=20260711c" />
+  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260711c" />
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
-  <script src="js/firebase-config.js?v=20260711b"></script>
+  <script src="js/firebase-config.js?v=20260711c"></script>
   <style>
     body { font-family: "Plus Jakarta Sans", system-ui, sans-serif; }
     .app-shell { min-height: calc(100vh - 4rem); }
@@ -89,23 +89,34 @@
     <section id="auth-panel" class="hidden max-w-md mx-auto px-4 py-6 w-full">
       <div class="ng-surface overflow-hidden w-full">
         <div class="bg-ng-green/10 px-5 py-4 border-b border-ng-green/10">
-          <h2 class="font-semibold text-ng-green text-lg"><i class="fas fa-envelope mr-2"></i>Welcome back</h2>
-          <p class="text-sm text-slate-600 mt-1">Sign in to your volunteer hub.</p>
+          <h2 class="font-semibold text-ng-green text-lg"><i class="fas fa-envelope mr-2"></i>Sign in</h2>
+          <p class="text-sm text-slate-600 mt-1">Use the same email you signed up with. No password needed — we'll email you a secure sign-in link.</p>
         </div>
         <div class="p-5 space-y-4 w-full">
           <div id="auth-panel-status" class="hidden rounded-xl border px-3 py-2.5 text-sm" role="status" aria-live="polite"></div>
           <form id="auth-form" class="space-y-4 w-full" autocomplete="on">
-          <div class="w-full">
-            <label for="auth-email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
-            <input type="email" id="auth-email" autocomplete="email" class="ng-input w-full" placeholder="you@example.com" />
-          </div>
-          <div class="w-full">
-            <label for="auth-password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
-            <input type="password" id="auth-password" autocomplete="current-password" class="ng-input w-full" placeholder="Your password" />
-          </div>
-          <button type="button" id="btn-email-link" class="ng-submit w-full">Email me a sign-in link</button>
-          <button type="submit" id="btn-password-signin" class="w-full rounded-xl border-2 border-slate-200 font-semibold py-3 text-sm hover:bg-slate-50 transition min-h-[48px]">Sign in with password</button>
+            <div class="w-full">
+              <label for="auth-email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <input type="email" id="auth-email" autocomplete="email" class="ng-input w-full" placeholder="you@example.com" />
+            </div>
+            <button type="button" id="btn-email-link" class="ng-submit w-full"><i class="fas fa-paper-plane mr-2"></i>Email me a sign-in link</button>
+            <p class="text-xs text-slate-500 text-center">Recommended — works even if you've never set a password.</p>
+
+            <div class="relative py-1">
+              <div class="border-t border-slate-200"></div>
+              <span class="absolute inset-x-0 -top-2 flex justify-center"><span class="bg-white px-2 text-xs text-slate-400">or</span></span>
+            </div>
+
+            <details class="w-full">
+              <summary class="cursor-pointer text-sm font-medium text-slate-600 select-none">I already set a password</summary>
+              <div class="w-full mt-3">
+                <label for="auth-password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                <input type="password" id="auth-password" autocomplete="current-password" class="ng-input w-full" placeholder="Your password" />
+              </div>
+              <button type="submit" id="btn-password-signin" class="w-full mt-3 rounded-xl border-2 border-slate-200 font-semibold py-3 text-sm hover:bg-slate-50 transition min-h-[48px]">Sign in with password</button>
+            </details>
           </form>
+          <p class="text-xs text-slate-500 mt-3">New here? <a href="#serve" class="text-brand font-medium hover:underline">Join the Kingdom Workforce</a> first, then sign in with that same email.</p>
         </div>
       </div>
     </section>
@@ -113,7 +124,11 @@
     <section id="not-eligible-panel" class="hidden max-w-md mx-auto px-4 py-6 w-full">
       <div class="ng-surface p-6 text-sm">
         <p id="not-eligible-msg" class="text-amber-900 font-medium"></p>
-        <p class="mt-4"><a href="/?stay=us" class="text-brand font-medium hover:underline">US volunteer dashboard</a></p>
+        <p class="mt-4 text-slate-600">If you filled the interest form but haven't joined a unit yet, join the Kingdom Workforce with this same email, then sign in again.</p>
+        <div class="mt-4 flex flex-wrap gap-4">
+          <a href="#serve" class="text-brand font-medium hover:underline">Join the Kingdom Workforce</a>
+          <a href="/?stay=us" class="text-slate-500 font-medium hover:underline">US volunteer dashboard</a>
+        </div>
       </div>
     </section>
 
@@ -590,17 +605,17 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="js/billion-countdown.js?v=20260711b"></script>
-  <script src="js/nigeria-units.js?v=20260711b"></script>
-  <script src="js/ddbs-nigeria-programs.js?v=20260711b"></script>
-  <script src="js/ddbs-nigeria-meeting-notes.js?v=20260711b"></script>
-  <script src="js/monthly-unit-report.js?v=20260711b"></script>
-  <script src="js/nigeria-dashboard-report.js?v=20260711b"></script>
-  <script src="js/prayer-city-super-user.js?v=20260711b"></script>
-  <script src="js/nigeria-gallery-manifest.js?v=20260711b"></script>
-  <script src="js/ddbs-nigeria-hero-billboard.js?v=20260711b"></script>
-  <script src="js/nigeria-landing.js?v=20260711b"></script>
-  <script src="js/nigeria-dashboard.js?v=20260711b"></script>
+  <script src="js/billion-countdown.js?v=20260711c"></script>
+  <script src="js/nigeria-units.js?v=20260711c"></script>
+  <script src="js/ddbs-nigeria-programs.js?v=20260711c"></script>
+  <script src="js/ddbs-nigeria-meeting-notes.js?v=20260711c"></script>
+  <script src="js/monthly-unit-report.js?v=20260711c"></script>
+  <script src="js/nigeria-dashboard-report.js?v=20260711c"></script>
+  <script src="js/prayer-city-super-user.js?v=20260711c"></script>
+  <script src="js/nigeria-gallery-manifest.js?v=20260711c"></script>
+  <script src="js/ddbs-nigeria-hero-billboard.js?v=20260711c"></script>
+  <script src="js/nigeria-landing.js?v=20260711c"></script>
+  <script src="js/nigeria-dashboard.js?v=20260711c"></script>
   <script>
     if (window.BillionCountdown) {
       if (document.getElementById("landing-billion-countdown")) {
