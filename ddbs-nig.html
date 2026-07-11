@@ -16,7 +16,14 @@
             brand: { DEFAULT: '#0f3d5c', light: '#1a5f8a', soft: '#e8f4fc', accent: '#c9a227' },
             ng: { green: '#008751', white: '#ffffff' },
           },
-          boxShadow: { card: '0 4px 24px rgba(15, 61, 92, 0.08)' },
+          fontFamily: {
+            display: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
+            sans: ['system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+          boxShadow: {
+            card: '0 4px 24px rgba(15, 61, 92, 0.08), 0 1px 3px rgba(0,0,0,0.06)',
+            lift: '0 12px 40px rgba(15, 61, 92, 0.12)',
+          },
         },
       },
     };
@@ -31,14 +38,24 @@
   <script src="js/firebase-config.js"></script>
   <style>
     body { font-family: system-ui, sans-serif; }
-    .ng-hero {
-      background: linear-gradient(135deg, #008751 0%, #0f3d5c 60%, #1a5f8a 100%);
+    .hero-mesh {
+      background:
+        linear-gradient(135deg, rgba(0, 135, 81, 0.88) 0%, rgba(15, 61, 92, 0.9) 45%, rgba(26, 95, 138, 0.88) 100%),
+        url("https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=1600&q=80") center/cover no-repeat;
     }
-    .ng-stripe { height: 3px; background: linear-gradient(90deg, #008751 33%, #fff 33%, #fff 66%, #008751 66%); }
+    .verse-font { font-family: Georgia, Cambria, serif; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-up { animation: fadeUp 0.6s ease forwards; }
     .app-shell { min-height: calc(100vh - 4rem); }
     .sidebar-sticky { position: sticky; top: 3.75rem; max-height: calc(100vh - 4.5rem); overflow-y: auto; }
     .tab-btn.active { background: #008751; color: #fff; border-color: #008751; }
     .program-card:hover { transform: translateY(-2px); transition: transform 0.15s ease; }
+    .vision-card {
+      background: linear-gradient(145deg, #ffffff 0%, #f0fdf4 100%);
+    }
     @media (max-width: 1023px) {
       .sidebar-sticky { position: static; max-height: none; }
     }
@@ -51,33 +68,96 @@
   </div>
 
   <div id="app-main">
-    <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 min-h-14 flex items-center justify-between gap-2">
-        <div class="flex items-center gap-2">
-          <span class="w-9 h-9 rounded-lg bg-ng-green text-white text-[10px] font-bold flex items-center justify-center leading-tight text-center">DDBS<br>Nig</span>
-          <div>
-            <span class="font-semibold text-slate-900 text-sm block">Dear Daughter Bible Study</span>
-            <span class="text-xs text-slate-500">Nigeria</span>
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 min-h-14 py-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
+        <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 basis-[min(100%,16rem)] sm:flex-initial">
+          <a href="/" class="touch-manipulation w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white text-sm font-bold shrink-0 hover:opacity-90 transition" title="Home">PC</a>
+          <div class="flex items-center gap-1 sm:gap-2 flex-wrap min-w-0">
+            <a href="/" class="font-semibold text-slate-900 text-xs sm:text-sm hover:text-brand transition shrink-0">Prayer City</a>
+            <span class="text-slate-300" aria-hidden="true">|</span>
+            <a href="/?stay=us" class="touch-manipulation text-xs sm:text-sm font-medium text-slate-600 hover:text-brand px-1.5 sm:px-2 py-1 rounded-lg hover:bg-slate-50 transition">US dashboard</a>
+            <span class="text-slate-300 hidden sm:inline" aria-hidden="true">|</span>
+            <a href="faq.html" class="touch-manipulation hidden sm:inline text-xs sm:text-sm font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition">FAQ</a>
+            <span class="text-slate-300 hidden sm:inline" aria-hidden="true">|</span>
+            <span class="text-xs sm:text-sm font-semibold text-ng-green px-2 py-1 rounded-lg bg-emerald-50 whitespace-nowrap">DDBS Nigeria</span>
           </div>
         </div>
-        <div class="flex items-center gap-3">
-          <a href="ddbs-nig.html#reports" class="text-xs font-medium text-brand hover:underline hidden sm:inline">Monthly report</a>
-          <button type="button" id="btn-signout" class="text-xs text-slate-600 hover:text-red-600 px-2 hidden">Sign out</button>
+        <div class="flex items-center gap-1.5 sm:gap-3 flex-wrap justify-end w-full sm:w-auto sm:flex-initial">
+          <a href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement" target="_blank" rel="noopener noreferrer" class="touch-manipulation inline-flex items-center gap-1 rounded-full bg-amber-400 px-2.5 sm:px-3 py-1.5 text-xs font-bold text-brand shadow-sm hover:bg-amber-300 transition">
+            <i class="fas fa-heart" aria-hidden="true"></i> Donate
+          </a>
+          <a href="ddbs-nig.html#reports" class="touch-manipulation text-xs sm:text-sm font-medium text-slate-600 hover:text-brand px-2 py-1.5 rounded-lg hover:bg-slate-50 transition hidden md:inline">Monthly report</a>
+          <button type="button" id="btn-signout" class="hidden touch-manipulation text-xs sm:text-sm font-medium text-slate-600 hover:text-red-600 transition px-2 sm:px-3 py-1.5 rounded-lg hover:bg-slate-50 whitespace-nowrap min-h-[40px]">
+            <i class="fas fa-sign-out-alt sm:mr-1" aria-hidden="true"></i><span class="hidden sm:inline">Sign out</span>
+          </button>
         </div>
       </div>
-      <div class="ng-stripe" aria-hidden="true"></div>
     </nav>
 
-    <header class="ng-hero text-white px-4 py-8 sm:py-10">
-      <div class="max-w-7xl mx-auto">
-        <h1 class="text-2xl sm:text-3xl font-bold font-[Georgia,Cambria,serif] leading-tight">
-          Dear Daughter Bible Study Group Nigeria
-        </h1>
-        <p class="text-emerald-50/90 text-sm sm:text-base mt-2 max-w-2xl">
-          Your unit hub — meetings, mid-week Bible Study, and ministry programs across Nigeria (WAT).
-        </p>
+    <header class="hero-mesh text-white relative overflow-hidden">
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 py-8 sm:py-14 lg:py-16">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-center">
+          <div class="animate-fade-up min-w-0">
+            <p class="text-brand-accent font-semibold tracking-wide text-xs sm:text-sm mb-3 sm:mb-4">
+              Dear Daughter Bible Study Group · Nigeria
+            </p>
+            <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-bold leading-[1.15] sm:leading-tight mb-4 sm:mb-6">
+              Teaching the undiluted Word of God across every nation
+            </h1>
+            <p class="text-base sm:text-lg text-white/95 font-medium mb-4 sm:mb-6 max-w-xl">
+              Your unit hub for weekly meetings, mid-week Bible Study, programs, and ministry together — all times in WAT (Nigeria).
+            </p>
+            <p class="verse-font text-white/85 italic text-base sm:text-lg leading-relaxed border-l-4 border-brand-accent pl-4 sm:pl-5">
+              “Your word is a lamp for my feet, a light on my path.” — Psalm 119:105
+            </p>
+          </div>
+          <div class="hidden lg:grid grid-cols-2 gap-3 animate-fade-up" style="animation-delay: 0.15s">
+            <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&q=80&auto=format&fit=crop" alt="Young people studying together" class="rounded-2xl object-cover h-44 w-full shadow-lift border border-white/20" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=400&q=80&auto=format&fit=crop" alt="Open Bible study" class="rounded-2xl object-cover h-44 w-full shadow-lift border border-white/20 mt-8" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1529390079861-591de354faf5?w=400&q=80&auto=format&fit=crop" alt="Community in fellowship" class="rounded-2xl object-cover h-44 w-full shadow-lift border border-white/20 -mt-4" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=400&q=80&auto=format&fit=crop" alt="Reading scripture" class="rounded-2xl object-cover h-44 w-full shadow-lift border border-white/20" loading="lazy" />
+          </div>
+        </div>
       </div>
     </header>
+
+    <section class="max-w-7xl mx-auto px-3 sm:px-6 -mt-2 sm:-mt-4 relative z-10 pb-2">
+      <div class="bg-white rounded-2xl shadow-lift border border-slate-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-ng-green via-brand to-brand-light px-5 sm:px-8 py-4 sm:py-5 text-white">
+          <p class="text-brand-accent font-semibold tracking-[0.2em] uppercase text-[10px] sm:text-xs mb-1">Our Vision</p>
+          <h2 class="text-xl sm:text-2xl md:text-3xl font-display font-bold">What we are building toward</h2>
+        </div>
+        <div class="p-4 sm:p-6 lg:p-8 grid sm:grid-cols-3 gap-4 sm:gap-5">
+          <article class="vision-card rounded-2xl border border-emerald-100 p-5 sm:p-6 shadow-card hover:shadow-lift transition-shadow">
+            <div class="w-11 h-11 rounded-xl bg-ng-green/10 text-ng-green flex items-center justify-center mb-4">
+              <i class="fas fa-book-bible text-lg" aria-hidden="true"></i>
+            </div>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-ng-green mb-2">Vision I</p>
+            <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">
+              To teach the <strong class="text-brand">undiluted word of God</strong> to all nations of the world.
+            </p>
+          </article>
+          <article class="vision-card rounded-2xl border border-amber-100 p-5 sm:p-6 shadow-card hover:shadow-lift transition-shadow bg-gradient-to-br from-white to-amber-50/80">
+            <div class="w-11 h-11 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-4">
+              <i class="fas fa-globe-africa text-lg" aria-hidden="true"></i>
+            </div>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-2">Vision II</p>
+            <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">
+              To reach <strong class="text-brand">one billion souls</strong> for Christ by <strong>2030</strong>.
+            </p>
+          </article>
+          <article class="vision-card rounded-2xl border border-sky-100 p-5 sm:p-6 shadow-card hover:shadow-lift transition-shadow bg-gradient-to-br from-white to-sky-50/80 sm:col-span-1">
+            <div class="w-11 h-11 rounded-xl bg-sky-100 text-brand flex items-center justify-center mb-4">
+              <i class="fas fa-cross text-lg" aria-hidden="true"></i>
+            </div>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-brand mb-2">Vision III</p>
+            <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">
+              To teach the <strong class="text-brand">infallible word of God</strong> to all nations of the world.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
 
     <div id="ng-status" class="hidden max-w-7xl mx-auto px-4 pt-4" role="status"></div>
 
