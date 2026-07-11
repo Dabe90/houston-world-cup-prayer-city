@@ -474,7 +474,7 @@
         return u.unitId;
       });
     if (canApprove) {
-      return { canView: true, canApprove: true, leaderUnitIds: leaderUnitIds };
+      return { canView: true, canApprove: true, leaderUnitIds: null };
     }
     if (leaderUnitIds.length) {
       return { canView: true, canApprove: false, leaderUnitIds: leaderUnitIds };

@@ -140,8 +140,10 @@ function workforceAccessForProfile(profile, isSuperUser) {
   const leaderUnitIds = normalizeProfileUnits(profile)
     .filter((u) => u.role === 'leader')
     .map((u) => u.unitId);
+  // Workers Coordinator leaders must see every enlistment (not only their own
+  // unit id — workforce applicants never pick "Workers Coordinator" as a unit).
   if (canApprove) {
-    return { canView: true, canApprove: true, leaderUnitIds };
+    return { canView: true, canApprove: true, leaderUnitIds: null };
   }
   if (leaderUnitIds.length) {
     return { canView: true, canApprove: false, leaderUnitIds };

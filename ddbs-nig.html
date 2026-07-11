@@ -51,15 +51,15 @@
     };
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260711m" />
-  <link rel="stylesheet" href="css/billion-countdown.css?v=20260711m" />
-  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260711m" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260711n" />
+  <link rel="stylesheet" href="css/billion-countdown.css?v=20260711n" />
+  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260711n" />
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
-  <script src="js/firebase-config.js?v=20260711m"></script>
+  <script src="js/firebase-config.js?v=20260711n"></script>
   <style>
     /* Critical layout + Tailwind utilities we rely on even if the CDN fails */
     body { font-family: "Plus Jakarta Sans", system-ui, sans-serif; }
@@ -507,47 +507,52 @@
     </div>
 
     <!-- Dashboard -->
-    <div id="dash-shell" class="hidden max-w-7xl mx-auto px-4 py-6 lg:py-8">
-      <div id="dash-billion-countdown" class="mb-4"></div>
-      <div class="app-shell flex flex-col lg:flex-row gap-6 lg:gap-8">
+    <div id="dash-shell" class="hidden max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 lg:py-8">
+      <div id="dash-billion-countdown" class="mb-3 sm:mb-4"></div>
+      <div class="app-shell flex flex-col lg:flex-row gap-4 lg:gap-8">
         <aside id="profile-sidebar" class="w-full lg:w-72 shrink-0 sidebar-sticky">
-          <div class="ng-surface p-5 space-y-4">
-            <div class="text-center">
-              <div class="relative inline-block">
-                <img id="sidebar-avatar-img" class="hidden w-24 h-24 rounded-full object-cover border-4 border-ng-green/20 mx-auto" alt="" />
-                <div id="sidebar-avatar-initial" class="w-24 h-24 rounded-full bg-ng-green text-white text-3xl font-bold flex items-center justify-center mx-auto border-4 border-ng-green/20"></div>
-                <label class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center cursor-pointer shadow-md" title="Upload photo">
-                  <i class="fas fa-camera text-xs"></i>
+          <div class="ng-surface p-4 sm:p-5 space-y-3 sm:space-y-4">
+            <div class="flex sm:block items-center gap-3 sm:text-center">
+              <div class="relative inline-block shrink-0 mx-auto">
+                <img id="sidebar-avatar-img" class="hidden w-16 h-16 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-ng-green/20" alt="" />
+                <div id="sidebar-avatar-initial" class="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-ng-green text-white text-xl sm:text-3xl font-bold flex items-center justify-center border-4 border-ng-green/20"></div>
+                <label class="absolute bottom-0 right-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-brand text-white flex items-center justify-center cursor-pointer shadow-md" title="Upload photo">
+                  <i class="fas fa-camera text-[10px] sm:text-xs"></i>
                   <input type="file" id="sidebar-avatar-input" accept="image/*" class="hidden" />
                 </label>
               </div>
-              <p id="sidebar-upload-status" class="text-xs text-slate-400 mt-2 min-h-[1rem]"></p>
+              <div class="min-w-0 flex-1 sm:mt-2 sm:border-b sm:border-slate-100 sm:pb-4">
+                <h2 id="sidebar-name" class="font-bold text-slate-900 text-base sm:text-lg truncate sm:whitespace-normal"></h2>
+                <p id="sidebar-email" class="text-[11px] sm:text-xs text-slate-500 mt-0.5 break-all"></p>
+                <p id="sidebar-phone" class="text-[11px] sm:text-xs text-slate-500 mt-0.5"></p>
+                <p id="sidebar-upload-status" class="text-xs text-slate-400 mt-1 min-h-[1rem]"></p>
+              </div>
             </div>
-            <div class="text-center border-b border-slate-100 pb-4">
-              <h2 id="sidebar-name" class="font-bold text-slate-900 text-lg"></h2>
-              <p id="sidebar-email" class="text-xs text-slate-500 mt-1 break-all"></p>
-              <p id="sidebar-phone" class="text-xs text-slate-500 mt-1"></p>
-            </div>
-            <div>
-              <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">My units</p>
-              <ul id="sidebar-units" class="space-y-2 text-sm"></ul>
-            </div>
-            <button type="button" id="btn-edit-profile" class="w-full text-sm rounded-xl border border-slate-200 py-2 hover:bg-slate-50">Edit profile</button>
+            <details class="dash-profile-more" open>
+              <summary class="sm:hidden">Units &amp; profile</summary>
+              <div class="pt-1 space-y-3">
+                <div>
+                  <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">My units</p>
+                  <ul id="sidebar-units" class="space-y-2 text-sm"></ul>
+                </div>
+                <button type="button" id="btn-edit-profile" class="w-full text-sm rounded-xl border border-slate-200 py-2.5 min-h-[44px] hover:bg-slate-50">Edit profile</button>
+              </div>
+            </details>
           </div>
         </aside>
 
-        <main class="flex-1 min-w-0 space-y-4">
-          <div id="super-user-banner" class="hidden rounded-xl border border-violet-200 bg-violet-50 text-violet-900 px-4 py-3 text-sm">
+        <main class="flex-1 min-w-0 space-y-3 sm:space-y-4">
+          <div id="super-user-banner" class="hidden rounded-xl border border-violet-200 bg-violet-50 text-violet-900 px-3 sm:px-4 py-2.5 sm:py-3 text-sm">
             <strong>Coordinator preview</strong> — explore all features.
           </div>
 
-          <nav id="dash-tabs" class="flex flex-wrap gap-2" aria-label="Dashboard sections">
-            <button type="button" class="tab-btn active text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="home">Home</button>
-            <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="programs" id="tab-btn-programs">Programs</button>
-            <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="units">My units</button>
-            <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white hidden" data-tab="new-members" id="tab-btn-new-members">New members</button>
-            <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white hidden" data-tab="kingdom-workforce" id="tab-btn-kingdom-workforce">Kingdom Workforce</button>
-            <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="reports">Reports</button>
+          <nav id="dash-tabs" class="flex gap-2" aria-label="Dashboard sections">
+            <button type="button" class="tab-btn active text-sm font-semibold px-3 sm:px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="home">Home</button>
+            <button type="button" class="tab-btn text-sm font-semibold px-3 sm:px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="programs" id="tab-btn-programs">Programs</button>
+            <button type="button" class="tab-btn text-sm font-semibold px-3 sm:px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="units">My units</button>
+            <button type="button" class="tab-btn text-sm font-semibold px-3 sm:px-4 py-2 rounded-full border border-slate-200 bg-white hidden" data-tab="new-members" id="tab-btn-new-members">New members</button>
+            <button type="button" class="tab-btn text-sm font-semibold px-3 sm:px-4 py-2 rounded-full border border-slate-200 bg-white hidden" data-tab="kingdom-workforce" id="tab-btn-kingdom-workforce">Workforce</button>
+            <button type="button" class="tab-btn text-sm font-semibold px-3 sm:px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="reports">Reports</button>
           </nav>
 
           <div id="tab-home" class="tab-panel space-y-4">
@@ -588,7 +593,7 @@
           <div id="tab-kingdom-workforce" class="tab-panel hidden space-y-4">
             <div class="ng-surface p-5">
               <h3 class="font-semibold text-slate-900 mb-1"><i class="fas fa-shield-halved text-brand mr-2"></i>Kingdom Workforce</h3>
-              <p class="text-xs text-slate-500 mb-4">Mark Workers Training Class and greenlight hub access when ready.</p>
+              <p class="text-xs text-slate-500 mb-4">Workers Coordinator: see every enlistment, mark Workers Training Class, and greenlight hub access. Other unit leaders see applicants for their unit(s).</p>
               <div id="kingdom-workforce-list" class="space-y-3 text-sm"></div>
             </div>
           </div>
@@ -629,17 +634,17 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="js/billion-countdown.js?v=20260711m"></script>
-  <script src="js/nigeria-units.js?v=20260711m"></script>
-  <script src="js/ddbs-nigeria-programs.js?v=20260711m"></script>
-  <script src="js/ddbs-nigeria-meeting-notes.js?v=20260711m"></script>
-  <script src="js/monthly-unit-report.js?v=20260711m"></script>
-  <script src="js/nigeria-dashboard-report.js?v=20260711m"></script>
-  <script src="js/prayer-city-super-user.js?v=20260711m"></script>
-  <script src="js/nigeria-gallery-manifest.js?v=20260711m"></script>
-  <script src="js/ddbs-nigeria-hero-billboard.js?v=20260711m"></script>
-  <script src="js/nigeria-landing.js?v=20260711m"></script>
-  <script src="js/nigeria-dashboard.js?v=20260711m"></script>
+  <script src="js/billion-countdown.js?v=20260711n"></script>
+  <script src="js/nigeria-units.js?v=20260711n"></script>
+  <script src="js/ddbs-nigeria-programs.js?v=20260711n"></script>
+  <script src="js/ddbs-nigeria-meeting-notes.js?v=20260711n"></script>
+  <script src="js/monthly-unit-report.js?v=20260711n"></script>
+  <script src="js/nigeria-dashboard-report.js?v=20260711n"></script>
+  <script src="js/prayer-city-super-user.js?v=20260711n"></script>
+  <script src="js/nigeria-gallery-manifest.js?v=20260711n"></script>
+  <script src="js/ddbs-nigeria-hero-billboard.js?v=20260711n"></script>
+  <script src="js/nigeria-landing.js?v=20260711n"></script>
+  <script src="js/nigeria-dashboard.js?v=20260711n"></script>
   <script>
     if (window.BillionCountdown) {
       if (document.getElementById("landing-billion-countdown")) {

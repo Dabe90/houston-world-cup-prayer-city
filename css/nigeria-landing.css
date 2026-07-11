@@ -340,6 +340,104 @@
   min-height: 48px;
 }
 
+/* —— Dashboard mobile layout —— */
+#dash-shell {
+  width: 100%;
+  max-width: 80rem;
+  box-sizing: border-box;
+}
+#dash-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 0.25rem;
+  margin-left: -0.25rem;
+  margin-right: -0.25rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+  position: sticky;
+  top: 3.5rem;
+  z-index: 30;
+  background: linear-gradient(to bottom, #f1f5f9 70%, rgba(241, 245, 249, 0));
+  padding-top: 0.25rem;
+}
+#dash-tabs::-webkit-scrollbar { display: none; }
+#dash-tabs .tab-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  min-height: 40px;
+  font-size: 0.8125rem;
+  padding: 0.5rem 0.875rem;
+}
+#units-cards .unit-card,
+#kingdom-workforce-list > div,
+#new-members-list > div {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+#kingdom-workforce-list .btn-wf-in-training,
+#kingdom-workforce-list .btn-wf-approve {
+  min-height: 44px;
+}
+
+@media (max-width: 1023px) {
+  #dash-shell {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.75rem;
+    padding-bottom: 1.25rem;
+  }
+  #profile-sidebar.sidebar-sticky {
+    position: static;
+    max-height: none;
+  }
+  #profile-sidebar .ng-surface {
+    padding: 0.875rem 1rem;
+  }
+  #profile-sidebar .text-center .relative.inline-block #sidebar-avatar-img,
+  #profile-sidebar .text-center .relative.inline-block #sidebar-avatar-initial,
+  #sidebar-avatar-img,
+  #sidebar-avatar-initial {
+    width: 4rem !important;
+    height: 4rem !important;
+    font-size: 1.25rem !important;
+  }
+  #sidebar-name {
+    font-size: 1rem;
+  }
+  #profile-sidebar details.dash-profile-more > summary {
+    list-style: none;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #475569;
+    padding: 0.5rem 0;
+  }
+  #profile-sidebar details.dash-profile-more > summary::-webkit-details-marker {
+    display: none;
+  }
+  .vision-plan-view,
+  .team-roster {
+    font-size: 0.8125rem;
+  }
+  #kingdom-workforce-list .flex.flex-wrap.gap-2 {
+    flex-direction: column;
+  }
+  #kingdom-workforce-list .btn-wf-in-training,
+  #kingdom-workforce-list .btn-wf-approve {
+    width: 100%;
+  }
+}
+
+@media (min-width: 640px) {
+  #profile-sidebar details.dash-profile-more > summary {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-slide .hero-anim, .hero-slide .hero-flyer-wrap, .hero-slide .hero-photo-tile,
   .ng-bounce-word, .ng-shimmer, .ng-alive-photo { opacity: 1 !important; animation: none !important; transform: none !important; filter: none !important; }
