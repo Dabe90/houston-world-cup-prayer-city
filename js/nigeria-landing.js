@@ -468,20 +468,21 @@
   }
 
   function openSignupPanel() {
+    var join = document.getElementById('join');
+    if (join) {
+      try {
+        join.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (e) {}
+    }
     var panel = document.getElementById('ng-signup-details');
     if (!panel) return;
     panel.classList.remove('hidden');
-    panel.setAttribute('open', '');
-    try {
-      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    } catch (e) {}
   }
 
   function closeSignupPanel() {
     var panel = document.getElementById('ng-signup-details');
     if (!panel) return;
     panel.classList.add('hidden');
-    panel.removeAttribute('open');
   }
 
   function initSignupCollapse() {
@@ -550,9 +551,11 @@
       var wrap = document.getElementById('ng-public-landing');
       var hero = document.getElementById('hero-billboard');
       var mobileNav = document.getElementById('ng-mobile-nav');
+      var countdown = document.getElementById('landing-billion-countdown');
       var stickyPicks = document.getElementById('ng-workforce-sticky-picks');
       if (wrap) wrap.classList.toggle('hidden', !show);
       if (hero) hero.classList.toggle('hidden', !show);
+      if (countdown) countdown.classList.toggle('hidden', !show);
       if (mobileNav) mobileNav.classList.toggle('hidden', !show);
       if (stickyPicks && !show) stickyPicks.classList.add('hidden');
       document.body.classList.toggle('pb-[4.5rem]', show);

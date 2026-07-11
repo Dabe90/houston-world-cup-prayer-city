@@ -44,147 +44,48 @@
   <script src="js/firebase-config.js"></script>
   <style>
     body { font-family: "Plus Jakarta Sans", system-ui, sans-serif; }
-    .hero-mesh {
-      background:
-        linear-gradient(135deg, rgba(0, 135, 81, 0.88) 0%, rgba(15, 61, 92, 0.9) 45%, rgba(26, 95, 138, 0.88) 100%),
-        url("images/prayer-city-day2-team.jpeg") center/cover no-repeat;
-    }
-    #hero-billboard { padding-bottom: 3.75rem; }
-    .hero-billboard-viewport { overflow: hidden; width: 100%; }
-    [data-hero-track] { display: flex; width: 100%; will-change: transform; }
-    [data-hero-track] .hero-slide { flex: 0 0 100%; width: 100%; min-width: 0; }
-    .hero-headline {
-      font-family: Fraunces, Georgia, serif;
-      text-shadow: 0 2px 24px rgba(0, 0, 0, 0.18);
-      letter-spacing: -0.02em;
-    }
-    .hero-eyebrow {
-      font-family: "Plus Jakarta Sans", sans-serif;
-      letter-spacing: 0.14em;
-    }
-    .hero-flyer-frame {
-      aspect-ratio: 1 / 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      perspective: 1200px;
-    }
-    .hero-flyer-img { max-height: min(72vw, 360px); }
-    @media (min-width: 1024px) { .hero-flyer-img { max-height: 380px; } }
-    .hero-photo-tile { animation: heroKenBurns 14s ease-in-out infinite alternate; }
-    .hero-photo-tile:nth-child(2) { animation-delay: -3s; }
-    .hero-photo-tile:nth-child(3) { animation-delay: -6s; }
-    .hero-photo-tile:nth-child(4) { animation-delay: -9s; }
-    @keyframes heroKenBurns {
-      from { transform: scale(1) translateY(0); }
-      to { transform: scale(1.06) translateY(-4px); }
-    }
-    @keyframes heroReveal {
-      from { opacity: 0; transform: translateY(28px); filter: blur(6px); }
-      to { opacity: 1; transform: translateY(0); filter: blur(0); }
-    }
-    @keyframes heroPop {
-      0% { opacity: 0; transform: translateY(20px) scale(0.97); }
-      70% { opacity: 1; transform: translateY(-2px) scale(1.01); }
-      100% { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    @keyframes heroFlyerIn {
-      from { opacity: 0; transform: translateX(32px) scale(0.94) rotateY(-8deg); }
-      to { opacity: 1; transform: translateX(0) scale(1) rotateY(0); }
-    }
-    .hero-slide .hero-anim { opacity: 0; }
-    .hero-slide.is-active .hero-anim-1 { animation: heroReveal 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.08s forwards; }
-    .hero-slide.is-active .hero-anim-2 { animation: heroPop 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.18s forwards; }
-    .hero-slide.is-active .hero-anim-3 { animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.32s forwards; }
-    .hero-slide.is-active .hero-anim-4 { animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.44s forwards; }
-    .hero-slide.is-active .hero-anim-5 { animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.56s forwards; }
-    .hero-slide.is-active .hero-anim-6 { animation: heroReveal 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.68s forwards; }
-    .hero-slide.is-active .hero-flyer-wrap { animation: heroFlyerIn 1s cubic-bezier(0.22, 1, 0.36, 1) 0.22s forwards; opacity: 0; }
-    .hero-slide.is-active .hero-photo-tile { animation: heroKenBurns 14s ease-in-out infinite alternate, heroReveal 1s cubic-bezier(0.22, 1, 0.36, 1) 0.35s forwards; opacity: 0; }
-    @media (prefers-reduced-motion: reduce) {
-      .hero-slide .hero-anim, .hero-slide .hero-flyer-wrap, .hero-slide .hero-photo-tile { opacity: 1 !important; animation: none !important; transform: none !important; filter: none !important; }
-      [data-hero-track] { will-change: auto; }
-    }
-    .hero-dot-wrap { position: relative; overflow: hidden; border-radius: 9999px; }
-    .hero-dot-progress {
-      position: absolute; inset: 0; background: #c9a227; transform-origin: left;
-      transform: scaleX(0); border-radius: inherit;
-    }
-    .hero-dot.is-active .hero-dot-progress { animation: heroDotProgress var(--hero-slide-ms, 5s) linear forwards; }
-    @keyframes heroDotProgress { to { transform: scaleX(1); } }
     .app-shell { min-height: calc(100vh - 4rem); }
     .sidebar-sticky { position: sticky; top: 3.75rem; max-height: calc(100vh - 4.5rem); overflow-y: auto; }
     .tab-btn.active { background: #008751; color: #fff; border-color: #008751; }
-    .program-card:hover { transform: translateY(-2px); transition: transform 0.15s ease; }
-    .vision-card {
-      background: linear-gradient(145deg, #ffffff 0%, #f0fdf4 100%);
-    }
-    .ng-reveal {
-      opacity: 0;
-      transform: translateY(32px);
-      transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    .ng-reveal.is-visible { opacity: 1; transform: translateY(0); }
-    .ng-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
-    .ng-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(15, 61, 92, 0.14); }
-    .ng-bounce-word { display: inline-block; animation: homeWordPop 2.8s ease-in-out infinite; }
-    .ng-bounce-word:nth-child(2) { animation-delay: 0.15s; }
-    .ng-bounce-word:nth-child(3) { animation-delay: 0.3s; }
-    .ng-shimmer {
-      background: linear-gradient(90deg, #008751 0%, #c9a227 45%, #008751 90%);
-      background-size: 200% auto;
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      animation: homeShimmer 4s linear infinite;
-    }
-    .ng-marquee-track { display: flex; width: max-content; animation: homeMarquee 32s linear infinite; }
-    .ng-program-img { transition: transform 0.5s ease; }
-    .ng-program-card:hover .ng-program-img { transform: scale(1.06); }
   </style>
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800 overflow-x-hidden font-sans antialiased pb-[4.5rem] lg:pb-0">
 
-  <div id="setup-banner" class="hidden max-w-lg mx-auto m-6 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900 text-sm">
-    Configure <code class="bg-white px-1 rounded">js/firebase-config.js</code> to use DDBS Nigeria.
+  <div id="setup-banner" class="hidden max-w-lg mx-auto m-6 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-900 text-sm text-center">
+    <p class="font-semibold">Sign-in is temporarily unavailable.</p>
+    <p class="mt-2 text-amber-800/90">Please try again shortly or contact the team on Instagram <a href="https://www.instagram.com/deardaughter_bs" class="underline font-medium">@deardaughter_bs</a>.</p>
   </div>
 
   <div id="app-main">
-    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
-      <div class="max-w-7xl mx-auto px-3 sm:px-6 min-h-14 py-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
-        <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 basis-[min(100%,16rem)] sm:flex-initial">
-          <a href="/" class="touch-manipulation w-9 h-9 rounded-lg bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white text-sm font-bold shrink-0 hover:opacity-90 transition" title="Home">PC</a>
-          <div class="flex items-center gap-1 sm:gap-2 flex-wrap min-w-0">
-            <a href="/" class="font-semibold text-slate-900 text-xs sm:text-sm hover:text-brand transition shrink-0">Prayer City</a>
-            <span class="text-slate-300" aria-hidden="true">|</span>
-            <a href="/?stay=us" class="touch-manipulation text-xs sm:text-sm font-medium text-slate-600 hover:text-brand px-1.5 sm:px-2 py-1 rounded-lg hover:bg-slate-50 transition">US dashboard</a>
-            <span class="text-slate-300 hidden sm:inline" aria-hidden="true">|</span>
-            <a href="faq.html" class="touch-manipulation hidden sm:inline text-xs sm:text-sm font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition">FAQ</a>
-            <span class="text-slate-300 hidden sm:inline" aria-hidden="true">|</span>
-            <span class="text-xs sm:text-sm font-semibold text-ng-green px-2 py-1 rounded-lg bg-emerald-50 whitespace-nowrap">DDBS Nigeria</span>
-            <span class="text-slate-300 hidden lg:inline" aria-hidden="true">|</span>
-            <a href="#programs" class="hidden lg:inline text-xs font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition">Programs</a>
-            <a href="#about" class="hidden lg:inline text-xs font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition">About</a>
-            <a href="#gallery" class="hidden lg:inline text-xs font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition">Gallery</a>
-            <a href="#join" class="hidden lg:inline text-xs font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition">Join</a>
-            <a href="#serve" class="hidden lg:inline text-xs font-medium text-slate-600 hover:text-brand px-2 py-1 rounded-lg hover:bg-slate-50 transition">Kingdom Workforce</a>
+
+    <!-- Nav -->
+    <nav class="ng-nav sticky top-0 z-50">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 min-h-14 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <a href="/" class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-ng-green flex items-center justify-center text-white text-xs font-bold shrink-0" title="Prayer City">DD</a>
+          <div class="min-w-0">
+            <p class="font-semibold text-slate-900 text-sm leading-tight truncate">Dear Daughter Nigeria</p>
+            <p class="text-[10px] text-ng-green font-medium hidden sm:block">Bible Study Group</p>
           </div>
         </div>
-        <div class="flex items-center gap-1.5 sm:gap-3 flex-wrap justify-end w-full sm:w-auto sm:flex-initial">
-          <a href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement" target="_blank" rel="noopener noreferrer" class="touch-manipulation inline-flex items-center gap-1 rounded-full bg-amber-400 px-2.5 sm:px-3 py-1.5 text-xs font-bold text-brand shadow-sm hover:bg-amber-300 transition">
-            <i class="fas fa-heart" aria-hidden="true"></i> Donate
-          </a>
-          <a href="ddbs-nig.html#reports" class="touch-manipulation text-xs sm:text-sm font-medium text-slate-600 hover:text-brand px-2 py-1.5 rounded-lg hover:bg-slate-50 transition hidden md:inline">Monthly report</a>
-          <button type="button" id="btn-signout" class="hidden touch-manipulation text-xs sm:text-sm font-medium text-slate-600 hover:text-red-600 transition px-2 sm:px-3 py-1.5 rounded-lg hover:bg-slate-50 whitespace-nowrap min-h-[40px]">
-            <i class="fas fa-sign-out-alt sm:mr-1" aria-hidden="true"></i><span class="hidden sm:inline">Sign out</span>
-          </button>
+        <div class="hidden md:flex items-center gap-1 text-xs font-medium">
+          <a href="#programs" class="text-slate-600 hover:text-ng-green px-2.5 py-1.5 rounded-lg hover:bg-white/80 transition">Programs</a>
+          <a href="#mandate" class="text-slate-600 hover:text-ng-green px-2.5 py-1.5 rounded-lg hover:bg-white/80 transition">Vision</a>
+          <a href="#about" class="text-slate-600 hover:text-ng-green px-2.5 py-1.5 rounded-lg hover:bg-white/80 transition">About</a>
+          <a href="#gallery" class="text-slate-600 hover:text-ng-green px-2.5 py-1.5 rounded-lg hover:bg-white/80 transition">Gallery</a>
+          <a href="#join" class="text-slate-600 hover:text-ng-green px-2.5 py-1.5 rounded-lg hover:bg-white/80 transition">Join</a>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button type="button" data-ng-scroll-auth class="text-xs font-semibold text-brand hover:text-ng-green px-3 py-2 rounded-lg hover:bg-white/80 transition hidden sm:inline-flex">Sign in</button>
+          <a href="#serve" class="text-xs font-bold text-white bg-ng-green hover:bg-emerald-700 px-4 py-2 rounded-full transition shadow-sm">Serve</a>
+          <button type="button" id="btn-signout" class="hidden text-xs font-medium text-slate-500 hover:text-red-600 px-2 py-1.5">Sign out</button>
         </div>
       </div>
     </nav>
 
-    <div id="dash-billion-countdown"></div>
+    <div id="landing-billion-countdown"></div>
 
-    <header id="hero-billboard" class="relative overflow-hidden text-white bg-brand" aria-roledescription="carousel" aria-label="DDBS Nigeria highlights">
+    <header id="hero-billboard" class="relative overflow-hidden text-white" aria-roledescription="carousel" aria-label="DDBS Nigeria highlights">
       <div class="hero-billboard-viewport">
         <div data-hero-track class="will-change-transform"></div>
       </div>
@@ -200,455 +101,393 @@
       </div>
     </header>
 
-    <div class="border-t border-ng-green/20 bg-gradient-to-r from-ng-green via-brand to-brand-light overflow-hidden py-2.5">
-      <div class="ng-marquee whitespace-nowrap text-white/90 text-sm font-medium">
-        <div class="ng-marquee-track gap-8 px-4">
-          <span>🚶 Jesus March &amp; Jesus Rally outreaches</span><span>·</span>
-          <span>📱 Media &amp; technology for the Gospel</span><span>·</span>
-          <span>💡 Innovating how we teach the Word</span><span>·</span>
-          <span>🌍 One billion souls by Dec 31, 2030</span><span>·</span>
-          <span>📖 Mid-week Bible Study every Wednesday</span><span>·</span>
-          <span>🙏 Unstoppable Generation prayer nights</span><span>·</span>
-          <span>💍 Biblical marriage &amp; relationship teaching</span><span>·</span>
-          <span>🇳🇬 Global light since January 30, 2017</span><span>·</span>
-          <span>🚶 Jesus March &amp; Jesus Rally outreaches</span><span>·</span>
-          <span>📱 Media &amp; technology for the Gospel</span><span>·</span>
-          <span>💡 Innovating how we teach the Word</span><span>·</span>
-          <span>🌍 One billion souls by Dec 31, 2030</span><span>·</span>
-          <span>📖 Mid-week Bible Study every Wednesday</span><span>·</span>
-          <span>🙏 Unstoppable Generation prayer nights</span><span>·</span>
-          <span>💍 Biblical marriage &amp; relationship teaching</span><span>·</span>
-          <span>🇳🇬 Global light since January 30, 2017</span><span>·</span>
-        </div>
-      </div>
-    </div>
-
     <div id="ng-public-landing">
 
-    <!-- Programs first — like Life.Church / Elevation: hero → what's happening now -->
-    <section id="programs" class="bg-white border-b border-slate-100 py-10 sm:py-12 overflow-hidden">
-      <div class="max-w-7xl mx-auto px-3 sm:px-6 mb-6 ng-reveal flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p class="text-ng-green font-bold text-xs uppercase tracking-[0.2em] mb-2">What&apos;s happening</p>
-          <h2 class="font-display text-2xl sm:text-3xl font-semibold text-slate-900">Upcoming programs</h2>
-          <p class="text-slate-600 mt-2 text-sm max-w-xl">Recharge conference, couples night, movie night, prayer — swipe the lineup.</p>
-        </div>
-        <a href="#join" class="shrink-0 inline-flex items-center gap-2 rounded-full bg-ng-green text-white font-bold text-sm px-5 py-2.5 shadow-card hover:scale-[1.02] transition-transform">
-          Join us <i class="fas fa-arrow-right text-xs"></i>
-        </a>
-      </div>
-      <div id="ng-landing-programs" class="flex gap-4 overflow-x-auto pb-2 px-3 sm:px-6 snap-x snap-mandatory ng-programs-track"></div>
-      <p class="text-center text-xs text-slate-400 mt-2 px-3 sm:hidden ng-reveal"><i class="fas fa-hand-point-right mr-1"></i>Swipe for more programs</p>
-    </section>
-
-    <section id="start-here" class="bg-slate-50 border-b border-slate-100 py-8 sm:py-10">
-      <div class="max-w-7xl mx-auto px-3 sm:px-6">
-        <div class="ng-reveal text-center mb-6 max-w-xl mx-auto">
-          <p class="text-brand font-bold text-xs uppercase tracking-[0.2em] mb-2">Start here</p>
-          <h2 class="font-display text-xl sm:text-2xl font-semibold text-slate-900">First time on this page?</h2>
-          <p class="text-slate-600 text-sm mt-2">Pick the path that fits you — membership, serving, or signing back in.</p>
-        </div>
-        <div class="grid sm:grid-cols-3 gap-3 sm:gap-4 max-w-4xl mx-auto ng-reveal">
-          <a href="#join" class="ng-start-card group rounded-2xl bg-white border border-emerald-100 p-4 sm:p-5 shadow-card hover:shadow-lift hover:border-ng-green/40 transition text-left">
-            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-ng-green flex items-center justify-center mb-3 group-hover:scale-105 transition-transform"><i class="fas fa-user-plus"></i></div>
-            <h3 class="font-semibold text-slate-900 text-sm sm:text-base">Join the family</h3>
-            <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">New to Dear Daughter? Sign up — we&apos;ll welcome you in.</p>
+      <section id="programs" class="bg-white border-b border-slate-100 py-10 sm:py-12 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 mb-6 ng-reveal flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p class="text-ng-green font-bold text-xs uppercase tracking-[0.2em] mb-2">What&apos;s happening</p>
+            <h2 class="font-display text-2xl sm:text-3xl font-semibold text-slate-900">Upcoming programs</h2>
+            <p class="text-slate-600 mt-2 text-sm max-w-xl">Recharge conference, couples night, movie night, prayer nights, and mid-week Bible Study — join us online.</p>
+          </div>
+          <a href="#join" class="shrink-0 inline-flex items-center gap-2 rounded-full bg-ng-green text-white font-bold text-sm px-5 py-2.5 shadow-card hover:scale-[1.02] transition-transform">
+            Join us <i class="fas fa-arrow-right text-xs"></i>
           </a>
-          <a href="#serve" class="ng-start-card group rounded-2xl bg-white border border-indigo-100 p-4 sm:p-5 shadow-card hover:shadow-lift hover:border-brand/40 transition text-left">
-            <div class="w-10 h-10 rounded-xl bg-indigo-100 text-brand flex items-center justify-center mb-3 group-hover:scale-105 transition-transform"><i class="fas fa-shield-halved"></i></div>
-            <h3 class="font-semibold text-slate-900 text-sm sm:text-base">Serve on a unit</h3>
-            <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">Pick a team, see meeting times, submit the New Workers&apos; form.</p>
-          </a>
-          <button type="button" data-ng-scroll-auth class="ng-start-card group rounded-2xl bg-white border border-slate-200 p-4 sm:p-5 shadow-card hover:shadow-lift hover:border-slate-300 transition text-left w-full">
-            <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform"><i class="fas fa-right-to-bracket"></i></div>
-            <h3 class="font-semibold text-slate-900 text-sm sm:text-base">Sign in</h3>
-            <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">Already cleared after training? Open your volunteer hub.</p>
-          </button>
         </div>
-      </div>
-    </section>
+        <div id="ng-landing-programs" class="flex gap-4 overflow-x-auto pb-2 px-3 sm:px-6 snap-x snap-mandatory ng-programs-track"></div>
+        <p class="text-center text-xs text-slate-400 mt-2 px-3 sm:hidden ng-reveal"><i class="fas fa-hand-point-right mr-1"></i>Swipe for more programs</p>
+      </section>
 
-    <div class="ng-landing-shell max-w-[96rem] mx-auto px-3 sm:px-6 lg:px-8">
-      <div class="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8 xl:gap-10">
-
-    <div class="ng-landing-main flex-1 min-w-0 order-2 lg:order-1">
-
-    <section id="serve" class="py-8 sm:py-10 pb-4">
-      <div class="ng-reveal mb-6 rounded-2xl bg-gradient-to-br from-slate-900 via-brand to-ng-green p-6 sm:p-8 text-white shadow-lift">
-        <p class="text-brand-accent font-bold text-[10px] uppercase tracking-[0.2em] mb-2">Kingdom Workforce</p>
-        <h2 class="font-display text-2xl sm:text-3xl font-semibold leading-tight">Join the army of God</h2>
-        <p class="text-white/90 mt-3 text-sm sm:text-base max-w-2xl leading-relaxed">
-          Serve in a unit that fits your gifts. After you apply, you&apos;ll attend <strong class="text-brand-accent">Workers Training Class</strong>. Hub sign-in opens once your Workers Coordinator clears you.
-        </p>
-        <button type="button" id="ng-workforce-toggle" class="mt-5 inline-flex items-center gap-2 rounded-full bg-white text-brand font-bold text-sm px-6 py-3 hover:scale-[1.02] transition-transform">
-          <i class="fas fa-shield-halved"></i> Open New Workers' form
-        </button>
-      </div>
-
-      <div id="ng-units-anchor" class="ng-reveal mb-6">
-        <p class="text-brand font-bold text-xs uppercase tracking-[0.2em] mb-2">Choose your unit</p>
-        <h3 class="font-display text-xl font-semibold text-slate-900">Where do you want to serve?</h3>
-        <p class="text-slate-600 mt-2 text-sm">Read what each team does and when they meet, then tap to select and complete the New Workers' form.</p>
-      </div>
-      <div id="ng-landing-units" class="grid sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4"></div>
-
-      <details id="ng-workforce-details" class="ng-workforce-details ng-reveal hidden mt-8 rounded-2xl border border-indigo-200 bg-indigo-50/40 shadow-card overflow-hidden">
-        <summary class="sr-only">Kingdom Workforce New Workers form</summary>
-        <form id="ng-workforce-form" class="p-5 sm:p-6 space-y-4 border-t border-indigo-100">
-          <div>
-            <h3 class="font-semibold text-slate-900 text-lg"><i class="fas fa-shield-halved text-brand mr-2"></i>New Workers' form</h3>
+      <section id="start-here" class="bg-slate-50 border-b border-slate-100 py-8 sm:py-10">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6">
+          <div class="ng-reveal text-center mb-6 max-w-xl mx-auto">
+            <p class="text-brand font-bold text-xs uppercase tracking-[0.2em] mb-2">Start here</p>
+            <h2 class="font-display text-xl sm:text-2xl font-semibold text-slate-900">First time on this page?</h2>
+            <p class="text-slate-600 text-sm mt-2">Pick the path that fits you — membership, serving, or signing back in.</p>
           </div>
-          <div id="ng-workforce-unit-picks" class="flex flex-wrap gap-2 min-h-[2rem]"></div>
-          <p id="ng-workforce-unit-hint" class="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 hidden">Select at least one unit above.</p>
-          <div>
-            <label for="workforce-name" class="block text-sm font-medium mb-1">Full name</label>
-            <input type="text" id="workforce-name" required class="w-full rounded-xl border border-slate-200 px-4 py-2.5 bg-white" placeholder="Your name" />
-          </div>
-          <div class="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label for="workforce-email" class="block text-sm font-medium mb-1">Email</label>
-              <input type="email" id="workforce-email" required class="w-full rounded-xl border border-slate-200 px-4 py-2.5 bg-white" placeholder="you@example.com" />
-            </div>
-            <div>
-              <label for="workforce-phone" class="block text-sm font-medium mb-1">Phone (Nigeria)</label>
-              <input type="tel" id="workforce-phone" required class="w-full rounded-xl border border-slate-200 px-4 py-2.5 bg-white" placeholder="+234…" />
-            </div>
-          </div>
-          <div>
-            <label for="workforce-city" class="block text-sm font-medium mb-1">City / state</label>
-            <input type="text" id="workforce-city" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 bg-white" placeholder="e.g. Lagos" />
-          </div>
-          <div>
-            <label for="workforce-notes" class="block text-sm font-medium mb-1">Why do you want to serve? (optional)</label>
-            <textarea id="workforce-notes" rows="2" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white" placeholder="Gifts, experience, availability…"></textarea>
-          </div>
-          <p id="workforce-status" class="hidden text-sm rounded-xl px-3 py-2" role="status"></p>
-          <div class="flex flex-wrap gap-3">
-            <button type="submit" id="workforce-submit" class="rounded-xl bg-brand text-white font-bold px-6 py-3 hover:opacity-95 transition disabled:opacity-50">
-              Submit
+          <div class="grid sm:grid-cols-3 gap-3 sm:gap-4 max-w-4xl mx-auto ng-reveal">
+            <a href="#join" class="ng-start-card group rounded-2xl bg-white border border-emerald-100 p-4 sm:p-5 shadow-card hover:shadow-lift hover:border-ng-green/40 transition text-left">
+              <div class="w-10 h-10 rounded-xl bg-emerald-100 text-ng-green flex items-center justify-center mb-3 group-hover:scale-105 transition-transform"><i class="fas fa-user-plus"></i></div>
+              <h3 class="font-semibold text-slate-900 text-sm sm:text-base">Join the family</h3>
+              <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">New to Dear Daughter? Sign up — we&apos;ll welcome you in.</p>
+            </a>
+            <a href="#serve" class="ng-start-card group rounded-2xl bg-white border border-indigo-100 p-4 sm:p-5 shadow-card hover:shadow-lift hover:border-brand/40 transition text-left">
+              <div class="w-10 h-10 rounded-xl bg-indigo-100 text-brand flex items-center justify-center mb-3 group-hover:scale-105 transition-transform"><i class="fas fa-shield-halved"></i></div>
+              <h3 class="font-semibold text-slate-900 text-sm sm:text-base">Serve on a unit</h3>
+              <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">Pick a team, see meeting times, submit the New Workers&apos; form.</p>
+            </a>
+            <button type="button" data-ng-scroll-auth class="ng-start-card group rounded-2xl bg-white border border-slate-200 p-4 sm:p-5 shadow-card hover:shadow-lift hover:border-brand/30 transition text-left w-full">
+              <div class="w-10 h-10 rounded-xl bg-slate-100 text-brand flex items-center justify-center mb-3 group-hover:scale-105 transition-transform"><i class="fas fa-right-to-bracket"></i></div>
+              <h3 class="font-semibold text-slate-900 text-sm sm:text-base">Sign in</h3>
+              <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">Already cleared after training? Open your volunteer hub.</p>
             </button>
-            <button type="button" id="ng-workforce-close" class="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50">Close</button>
-          </div>
-        </form>
-      </details>
-    </section>
-
-    <section class="relative py-8 sm:py-10 overflow-hidden">
-      <div class="ng-alive-bg absolute inset-0 rounded-3xl mx-3 sm:mx-6" aria-hidden="true"></div>
-      <div class="ng-reveal is-visible relative text-center max-w-3xl mx-auto z-10">
-        <p class="text-ng-green font-bold text-xs uppercase tracking-[0.2em] mb-3">Our mandate</p>
-        <h2 class="font-display text-2xl sm:text-3xl md:text-4xl font-semibold text-slate-900 leading-tight">
-          <span class="ng-bounce-word">We</span>
-          <span class="ng-bounce-word">will</span>
-          <span class="ng-bounce-word">teach the</span>
-          <span class="ng-shimmer ng-bounce-word">undiluted Word of God</span>
-          <span class="block mt-3 text-lg sm:text-xl text-slate-700 font-sans font-medium">to all nations of the World.</span>
-        </h2>
-        <p class="mt-4 text-sm sm:text-base text-slate-700 max-w-xl mx-auto font-medium">
-          <span class="text-3xl sm:text-4xl font-display font-bold text-ng-green align-middle mr-1">1B</span>
-          souls for Christ by <strong>December 31, 2030</strong>
-        </p>
-      </div>
-      <div class="ng-alive-strip ng-reveal relative z-10 mt-6 grid grid-cols-4 sm:grid-cols-6 gap-2 max-w-3xl mx-auto" id="ng-alive-photos" aria-hidden="true"></div>
-    </section>
-
-    <section class="pb-2">
-      <div class="bg-white rounded-2xl shadow-lift border border-slate-100 overflow-hidden">
-        <div class="bg-gradient-to-r from-ng-green via-brand to-brand-light px-5 sm:px-8 py-4 sm:py-5 text-white">
-          <p class="text-brand-accent font-semibold tracking-[0.2em] uppercase text-[10px] sm:text-xs mb-1">Our Vision</p>
-          <h2 class="text-xl sm:text-2xl md:text-3xl font-display font-semibold tracking-tight">What we are building toward</h2>
-        </div>
-        <div class="p-4 sm:p-6 lg:p-8 grid sm:grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-          <article class="vision-card rounded-2xl border border-emerald-100 p-5 sm:p-6 shadow-card hover:shadow-lift transition-shadow">
-            <div class="w-11 h-11 rounded-xl bg-ng-green/10 text-ng-green flex items-center justify-center mb-4">
-              <i class="fas fa-book-bible text-lg" aria-hidden="true"></i>
-            </div>
-            <p class="text-[10px] font-bold uppercase tracking-wider text-ng-green mb-2">Vision I</p>
-            <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">
-              To teach the <strong class="text-brand">undiluted word of God</strong> to all nations of the world.
-            </p>
-          </article>
-          <article class="vision-card rounded-2xl border border-amber-100 p-5 sm:p-6 shadow-card hover:shadow-lift transition-shadow bg-gradient-to-br from-white to-amber-50/80">
-            <div class="w-11 h-11 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-4">
-              <i class="fas fa-globe-africa text-lg" aria-hidden="true"></i>
-            </div>
-            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-2">Vision II</p>
-            <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">
-              To reach <strong class="text-brand">one billion souls</strong> for Christ by <strong>2030</strong>.
-            </p>
-          </article>
-          <article class="vision-card rounded-2xl border border-sky-100 p-5 sm:p-6 shadow-card hover:shadow-lift transition-shadow bg-gradient-to-br from-white to-sky-50/80 sm:col-span-1">
-            <div class="w-11 h-11 rounded-xl bg-sky-100 text-brand flex items-center justify-center mb-4">
-              <i class="fas fa-cross text-lg" aria-hidden="true"></i>
-            </div>
-            <p class="text-[10px] font-bold uppercase tracking-wider text-brand mb-2">Vision III</p>
-            <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">
-              To teach the <strong class="text-brand">infallible word of God</strong> to all nations of the world.
-            </p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section id="mission" class="py-10 sm:py-12">
-      <div class="ng-reveal text-center max-w-2xl mx-auto mb-8">
-        <p class="text-brand font-bold text-xs uppercase tracking-[0.2em] mb-2">How we get there</p>
-        <h2 class="font-display text-2xl sm:text-3xl font-semibold text-slate-900">To achieve our mission</h2>
-        <p class="text-slate-600 mt-2 text-sm sm:text-base">Five commitments that shape everything we do — from Bible Study to Jesus March, media, and leadership training.</p>
-      </div>
-      <div class="grid sm:grid-cols-2 gap-4 ng-mission-grid">
-        <article class="ng-card ng-reveal rounded-2xl bg-white border border-slate-100 p-5 sm:p-6 shadow-card">
-          <div class="w-11 h-11 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center mb-4">
-            <i class="fas fa-shield-halved text-lg" aria-hidden="true"></i>
-          </div>
-          <p class="text-[10px] font-bold uppercase tracking-wider text-violet-700 mb-2">We will</p>
-          <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">
-            Raise a generation of <strong class="text-brand">holy people</strong> who are <strong>soldiers for Christ</strong>.
-          </p>
-        </article>
-        <article class="ng-card ng-reveal rounded-2xl bg-white border border-slate-100 p-5 sm:p-6 shadow-card" style="transition-delay:0.05s">
-          <div class="w-11 h-11 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center mb-4">
-            <i class="fas fa-tower-broadcast text-lg" aria-hidden="true"></i>
-          </div>
-          <p class="text-[10px] font-bold uppercase tracking-wider text-sky-700 mb-2">We will</p>
-          <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">
-            Use all the necessary means to reach the world — including <strong class="text-brand">media</strong> and <strong>technology</strong>.
-          </p>
-        </article>
-        <article class="ng-card ng-reveal rounded-2xl bg-white border border-slate-100 p-5 sm:p-6 shadow-card" style="transition-delay:0.1s">
-          <div class="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-4">
-            <i class="fas fa-lightbulb text-lg" aria-hidden="true"></i>
-          </div>
-          <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-2">We will</p>
-          <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">
-            <strong class="text-brand">Innovate</strong> on existing methods to meet the modern-day demands of teaching the Gospel.
-          </p>
-        </article>
-        <article class="ng-card ng-reveal rounded-2xl bg-white border border-rose-100 bg-gradient-to-br from-white to-rose-50/50 p-5 sm:p-6 shadow-card" style="transition-delay:0.15s">
-          <div class="w-11 h-11 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mb-4">
-            <i class="fas fa-heart text-lg" aria-hidden="true"></i>
-          </div>
-          <p class="text-[10px] font-bold uppercase tracking-wider text-rose-700 mb-2">We will</p>
-          <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">
-            Teach young people the <strong class="text-brand">Biblical teachings</strong> of marriage, relationship, and romance.
-          </p>
-        </article>
-        <article class="ng-card ng-reveal rounded-2xl bg-white border border-amber-100 bg-gradient-to-br from-white to-amber-50/50 p-5 sm:p-6 shadow-card sm:col-span-2" style="transition-delay:0.2s">
-          <div class="w-11 h-11 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-4">
-            <i class="fas fa-people-arrows text-lg" aria-hidden="true"></i>
-          </div>
-          <p class="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-2">We will</p>
-          <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">
-            Train <strong class="text-brand">leaders</strong> who are able to teach others — all over the world.
-          </p>
-        </article>
-      </div>
-    </section>
-
-    <section id="about" class="bg-slate-50 border-y border-slate-100 py-10 sm:py-14 -mx-3 sm:-mx-0 px-3 sm:px-0 rounded-none sm:rounded-2xl">
-      <div>
-        <div class="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-          <div class="ng-reveal">
-            <p class="text-ng-green font-bold text-xs uppercase tracking-[0.2em] mb-2">Who we are</p>
-            <h2 class="font-display text-2xl sm:text-3xl font-semibold text-slate-900 leading-tight">Dear Daughter Bible Study Group</h2>
-            <p class="mt-4 text-slate-700 leading-relaxed text-sm sm:text-base">
-              A community of <strong>believers who teach the Word of God</strong>. We are a <strong class="text-brand">global light</strong> called to shine all over the world — online, on the streets, and in every nation.
-            </p>
-            <p class="mt-4 text-slate-600 leading-relaxed text-sm sm:text-base">
-              It began with the first social media post on <strong>January 30, 2017</strong> on Facebook. Since then, Dear Daughter has grown into a movement of believers organizing <strong>evangelistic campaigns and outreach</strong> — including <strong class="text-ng-green">Jesus Marches</strong>, <strong class="text-ng-green">Jesus Rallies</strong>, and outreaches that carry the Gospel into cities and campuses across Nigeria and beyond.
-            </p>
-            <div class="mt-6 flex flex-wrap gap-2">
-              <span class="inline-flex items-center gap-1.5 rounded-full bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700"><i class="fas fa-person-walking text-ng-green"></i> Jesus March</span>
-              <span class="inline-flex items-center gap-1.5 rounded-full bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700"><i class="fas fa-bullhorn text-brand"></i> Jesus Rally</span>
-              <span class="inline-flex items-center gap-1.5 rounded-full bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700"><i class="fas fa-hands-holding-circle text-amber-600"></i> Outreach</span>
-              <span class="inline-flex items-center gap-1.5 rounded-full bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700"><i class="fab fa-facebook text-blue-600"></i> Since 2017</span>
-            </div>
-          </div>
-          <div class="ng-reveal relative pt-10 pb-12 sm:pt-8 sm:pb-10" style="transition-delay:0.1s">
-            <div class="rounded-2xl overflow-hidden shadow-lift border border-slate-200">
-              <img src="images/prayer-city-outreach-signs.jpeg" alt="Dear Daughter outreach — Jesus March Nigeria" class="w-full h-56 sm:h-72 object-cover" loading="lazy" />
-            </div>
-            <div class="absolute -bottom-4 -left-2 sm:left-4 bg-white rounded-2xl shadow-card border border-slate-100 px-4 py-3 max-w-[14rem]">
-              <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Founded</p>
-              <p class="font-display text-2xl font-bold text-ng-green">Jan 30, 2017</p>
-              <p class="text-xs text-slate-600 mt-0.5">First post · Facebook</p>
-            </div>
-            <div class="absolute -top-3 -right-2 sm:right-4 bg-gradient-to-br from-ng-green to-brand text-white rounded-2xl shadow-lift px-4 py-3 max-w-[11rem] text-center">
-              <p class="text-[10px] font-bold uppercase tracking-wider text-white/80">Our call</p>
-              <p class="font-display text-sm font-semibold leading-snug">Global light to the world</p>
-            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section id="gallery" class="bg-white py-10 sm:py-14">
-      <div>
-        <div class="ng-reveal mb-8 text-center max-w-2xl mx-auto">
-          <p class="text-brand font-bold text-xs uppercase tracking-[0.2em] mb-2">Jesus March Nigeria</p>
-          <h2 class="font-display text-2xl sm:text-3xl font-semibold text-slate-900">On the streets for Christ</h2>
-          <p class="text-slate-600 mt-2 text-sm sm:text-base">Real moments from Jesus March across Nigeria — the same evangelistic heart that started on Facebook in 2017.</p>
-        </div>
-        <div id="ng-landing-gallery" class="ng-reveal grid grid-cols-3 sm:grid-cols-5 gap-3 sm:gap-4 max-w-4xl mx-auto"></div>
-        <div id="ng-landing-gallery-more" class="hidden ng-reveal grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 mt-4 max-w-5xl mx-auto"></div>
-        <div class="text-center mt-6 ng-reveal" id="ng-gallery-actions">
-          <button type="button" id="ng-gallery-view-more" class="hidden inline-flex items-center gap-2 rounded-full border-2 border-brand text-brand font-bold text-sm px-6 py-2.5 hover:bg-brand hover:text-white transition">
-            View more in gallery <i class="fas fa-images text-xs"></i>
-          </button>
-          <p class="text-xs text-slate-500 mt-4">Full album: <a href="https://drive.google.com/drive/folders/181XV-Tqbr_GPl2A58weTUChUZ7qrZj3C" target="_blank" rel="noopener" class="text-brand font-semibold hover:underline">Jesus March past pics (Google Drive)</a></p>
-        </div>
-      </div>
-    </section>
+      <div class="ng-landing-shell max-w-[96rem] mx-auto px-3 sm:px-6 lg:px-8">
+        <div class="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8 xl:gap-10">
 
-    </div><!-- /ng-landing-main -->
+          <div class="ng-landing-main flex-1 min-w-0 order-2 lg:order-1">
 
-    <aside id="join" class="ng-join-rail order-1 lg:order-2 w-full lg:w-[17.5rem] xl:w-[19rem] 2xl:w-[21rem] shrink-0 lg:sticky lg:top-[3.75rem] lg:self-start z-20 mb-6 lg:mb-0">
-      <div class="rounded-2xl border border-slate-200/80 bg-white shadow-lift overflow-hidden">
-        <div class="bg-gradient-to-br from-ng-green via-brand to-brand-light px-4 py-4 text-white">
-          <p class="text-brand-accent font-bold text-[10px] uppercase tracking-[0.2em] mb-1">Membership</p>
-          <h2 class="font-display text-lg xl:text-xl font-semibold leading-snug">Join the Dear Daughter family</h2>
-          <p class="text-white/85 text-xs mt-2 leading-relaxed">This form is for <strong>newcomers joining the community</strong>. Want to serve on a team? Go to <a href="#serve" class="underline text-brand-accent font-semibold hover:text-white">Kingdom Workforce</a>.</p>
-        </div>
-        <div class="p-4 space-y-3">
-          <button type="button" id="ng-signup-toggle" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-ng-green text-white font-bold text-sm px-4 py-3 shadow-sm hover:opacity-95 transition min-h-[44px]">
-            <i class="fas fa-user-plus"></i> New here? Sign up
-          </button>
-          <button type="button" data-ng-scroll-auth class="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-slate-200 bg-white text-slate-800 font-semibold text-sm px-4 py-3 hover:border-ng-green hover:text-ng-green transition min-h-[44px]">
-            <i class="fas fa-right-to-bracket"></i> Sign in
-          </button>
-          <a href="https://www.instagram.com/deardaughter_bs" target="_blank" rel="noopener" class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 text-slate-600 font-medium text-xs px-4 py-2.5 hover:bg-slate-50 transition">
-            <i class="fab fa-instagram"></i> @deardaughter_bs
-          </a>
-          <details id="ng-signup-details" class="ng-signup-details hidden rounded-xl border border-emerald-100 bg-emerald-50/50 overflow-hidden">
-            <summary class="sr-only">New member sign-up form</summary>
-            <form id="ng-signup-form" class="p-4 space-y-3 border-t border-emerald-100/80">
-              <p class="text-xs text-slate-600">We&apos;ll send a welcome email and our team will reach out.</p>
-              <div>
-                <label for="signup-name" class="block text-xs font-medium mb-1">Full name</label>
-                <input type="text" id="signup-name" name="name" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white" placeholder="Your name" />
-              </div>
-              <div>
-                <label for="signup-email" class="block text-xs font-medium mb-1">Email</label>
-                <input type="email" id="signup-email" name="email" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white" placeholder="you@example.com" />
-              </div>
-              <div>
-                <label for="signup-phone" class="block text-xs font-medium mb-1">Phone (Nigeria)</label>
-                <input type="tel" id="signup-phone" name="phone" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white" placeholder="+234…" />
-              </div>
-              <div>
-                <label for="signup-city" class="block text-xs font-medium mb-1">City / state</label>
-                <input type="text" id="signup-city" name="city" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white" placeholder="e.g. Lagos" />
-              </div>
-              <div>
-                <label for="signup-interest" class="block text-xs font-medium mb-1">Interest (optional)</label>
-                <select id="signup-interest" name="interest" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white">
-                  <option value="">Select one</option>
-                  <option value="bible-study">Mid-week Bible Study</option>
-                  <option value="prayer">Prayer &amp; intercession</option>
-                  <option value="serve">Serve on a unit</option>
-                  <option value="programs">Programs &amp; events</option>
-                  <option value="friend">Invited by a friend</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div>
-                <label for="signup-notes" class="block text-xs font-medium mb-1">Notes (optional)</label>
-                <textarea id="signup-notes" name="notes" rows="2" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs bg-white" placeholder="How you heard about us…"></textarea>
-              </div>
-              <p id="signup-status" class="hidden text-xs rounded-lg px-3 py-2" role="status"></p>
-              <div class="flex flex-col gap-2">
-                <button type="submit" id="signup-submit" class="w-full rounded-lg bg-ng-green text-white font-bold py-2.5 text-sm hover:opacity-95 transition disabled:opacity-50">
-                  Submit
+            <section id="serve" class="py-8 sm:py-10 pb-4">
+              <div class="ng-reveal mb-6 rounded-2xl bg-gradient-to-br from-slate-900 via-brand to-ng-green p-6 sm:p-8 text-white shadow-lift">
+                <p class="text-brand-accent font-bold text-[10px] uppercase tracking-[0.2em] mb-2">Kingdom Workforce</p>
+                <h2 class="font-display text-2xl sm:text-3xl font-semibold leading-tight">Join the army of God</h2>
+                <p class="text-white/90 mt-3 text-sm sm:text-base max-w-2xl leading-relaxed">
+                  Serve in a unit that fits your gifts. After you apply, you&apos;ll attend <strong class="text-brand-accent">Workers Training Class</strong>. Sign-in opens once your Workers Coordinator clears you.
+                </p>
+                <button type="button" id="ng-workforce-toggle" class="mt-5 inline-flex items-center gap-2 rounded-full bg-white text-brand font-bold text-sm px-6 py-3 hover:scale-[1.02] transition-transform">
+                  <i class="fas fa-shield-halved"></i> Open New Workers&apos; form
                 </button>
-                <button type="button" id="ng-signup-close" class="w-full rounded-lg border border-slate-200 bg-white py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">Close form</button>
               </div>
-            </form>
-          </details>
+              <div id="ng-units-anchor" class="ng-reveal mb-6">
+                <p class="text-brand font-bold text-xs uppercase tracking-[0.2em] mb-2">Choose your unit</p>
+                <h3 class="font-display text-xl font-semibold text-slate-900">Where do you want to serve?</h3>
+                <p class="text-slate-600 mt-2 text-sm">Read what each team does and when they meet, then tap to select and complete the New Workers&apos; form.</p>
+              </div>
+              <div id="ng-landing-units" class="grid sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4"></div>
+              <div id="ng-workforce-details" class="ng-workforce-details ng-reveal hidden mt-8 rounded-2xl border border-indigo-200 bg-indigo-50/40 shadow-card overflow-hidden max-w-2xl">
+                <form id="ng-workforce-form" class="p-5 sm:p-6 space-y-4">
+                  <h3 class="font-semibold text-slate-900 text-lg"><i class="fas fa-shield-halved text-brand mr-2"></i>New Workers&apos; form</h3>
+                  <div id="ng-workforce-unit-picks" class="flex flex-wrap gap-2 min-h-[2rem]"></div>
+                  <p id="ng-workforce-unit-hint" class="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 hidden">Select at least one unit above.</p>
+                  <div>
+                    <label for="workforce-name" class="block text-sm font-medium mb-1">Full name</label>
+                    <input type="text" id="workforce-name" required class="w-full rounded-xl border border-slate-200 px-4 py-2.5 bg-white" placeholder="Your name" />
+                  </div>
+                  <div class="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label for="workforce-email" class="block text-sm font-medium mb-1">Email</label>
+                      <input type="email" id="workforce-email" required class="w-full rounded-xl border border-slate-200 px-4 py-2.5 bg-white" placeholder="you@example.com" />
+                    </div>
+                    <div>
+                      <label for="workforce-phone" class="block text-sm font-medium mb-1">Phone (Nigeria)</label>
+                      <input type="tel" id="workforce-phone" required class="w-full rounded-xl border border-slate-200 px-4 py-2.5 bg-white" placeholder="+234…" />
+                    </div>
+                  </div>
+                  <div>
+                    <label for="workforce-city" class="block text-sm font-medium mb-1">City / state</label>
+                    <input type="text" id="workforce-city" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 bg-white" placeholder="e.g. Lagos" />
+                  </div>
+                  <div>
+                    <label for="workforce-notes" class="block text-sm font-medium mb-1">Why do you want to serve? (optional)</label>
+                    <textarea id="workforce-notes" rows="2" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white" placeholder="Gifts, experience, availability…"></textarea>
+                  </div>
+                  <p id="workforce-status" class="hidden text-sm rounded-xl px-3 py-2" role="status"></p>
+                  <div class="flex flex-wrap gap-3">
+                    <button type="submit" id="workforce-submit" class="rounded-xl bg-brand text-white font-bold px-6 py-3 hover:opacity-95 transition disabled:opacity-50">Submit</button>
+                    <button type="button" id="ng-workforce-close" class="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50">Close</button>
+                  </div>
+                </form>
+              </div>
+            </section>
+
+            <section id="mandate" class="relative py-8 sm:py-10 overflow-hidden">
+              <div class="ng-alive-bg absolute inset-0 rounded-3xl mx-3 sm:mx-6" aria-hidden="true"></div>
+              <div class="ng-reveal is-visible relative text-center max-w-3xl mx-auto z-10">
+                <p class="text-ng-green font-bold text-xs uppercase tracking-[0.2em] mb-3">Our mandate</p>
+                <h2 class="font-display text-2xl sm:text-3xl md:text-4xl font-semibold text-slate-900 leading-tight">
+                  <span class="ng-bounce-word">We</span>
+                  <span class="ng-bounce-word">will</span>
+                  <span class="ng-bounce-word">teach the</span>
+                  <span class="ng-shimmer ng-bounce-word">undiluted Word of God</span>
+                  <span class="block mt-3 text-lg sm:text-xl text-slate-700 font-sans font-medium">to all nations of the World.</span>
+                </h2>
+                <p class="mt-4 text-sm sm:text-base text-slate-700 max-w-xl mx-auto font-medium">
+                  <span class="text-3xl sm:text-4xl font-display font-bold text-ng-green align-middle mr-1">1B</span>
+                  souls for Christ by <strong>December 31, 2030</strong>
+                </p>
+              </div>
+              <div class="ng-alive-strip ng-reveal relative z-10 mt-6 grid grid-cols-4 sm:grid-cols-6 gap-2 max-w-3xl mx-auto" id="ng-alive-photos" aria-hidden="true"></div>
+            </section>
+
+            <section class="pb-2">
+              <div class="bg-white rounded-2xl shadow-lift border border-slate-100 overflow-hidden">
+                <div class="bg-gradient-to-r from-ng-green via-brand to-brand-light px-5 sm:px-8 py-4 sm:py-5 text-white">
+                  <p class="text-brand-accent font-semibold tracking-[0.2em] uppercase text-[10px] sm:text-xs mb-1">Our Vision</p>
+                  <h2 class="text-xl sm:text-2xl md:text-3xl font-display font-semibold tracking-tight">What we are building toward</h2>
+                </div>
+                <div class="p-4 sm:p-6 lg:p-8 grid sm:grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+                  <article class="vision-card rounded-2xl border border-emerald-100 p-5 sm:p-6 shadow-card hover:shadow-lift transition-shadow">
+                    <div class="w-11 h-11 rounded-xl bg-ng-green/10 text-ng-green flex items-center justify-center mb-4"><i class="fas fa-book-bible text-lg"></i></div>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-ng-green mb-2">Vision I</p>
+                    <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">To teach the <strong class="text-brand">undiluted word of God</strong> to all nations of the world.</p>
+                  </article>
+                  <article class="vision-card rounded-2xl border border-amber-100 p-5 sm:p-6 shadow-card hover:shadow-lift transition-shadow bg-gradient-to-br from-white to-amber-50/80">
+                    <div class="w-11 h-11 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-4"><i class="fas fa-globe-africa text-lg"></i></div>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-2">Vision II</p>
+                    <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">To reach <strong class="text-brand">one billion souls</strong> for Christ by <strong>2030</strong>.</p>
+                  </article>
+                  <article class="vision-card rounded-2xl border border-sky-100 p-5 sm:p-6 shadow-card hover:shadow-lift transition-shadow bg-gradient-to-br from-white to-sky-50/80">
+                    <div class="w-11 h-11 rounded-xl bg-sky-100 text-brand flex items-center justify-center mb-4"><i class="fas fa-cross text-lg"></i></div>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-brand mb-2">Vision III</p>
+                    <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">To teach the <strong class="text-brand">infallible word of God</strong> to all nations of the world.</p>
+                  </article>
+                </div>
+              </div>
+            </section>
+
+            <section id="mission" class="py-10 sm:py-12">
+              <div class="ng-reveal text-center max-w-2xl mx-auto mb-8">
+                <p class="text-brand font-bold text-xs uppercase tracking-[0.2em] mb-2">How we get there</p>
+                <h2 class="font-display text-2xl sm:text-3xl font-semibold text-slate-900">To achieve our mission</h2>
+                <p class="text-slate-600 mt-2 text-sm sm:text-base">Five commitments that shape everything we do — from Bible Study to Jesus March, media, and leadership training.</p>
+              </div>
+              <div class="grid sm:grid-cols-2 gap-4">
+                <article class="ng-card ng-reveal rounded-2xl bg-white border border-slate-100 p-5 sm:p-6 shadow-card">
+                  <div class="w-11 h-11 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center mb-4"><i class="fas fa-shield-halved text-lg"></i></div>
+                  <p class="text-[10px] font-bold uppercase tracking-wider text-violet-700 mb-2">We will</p>
+                  <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">Raise a generation of <strong class="text-brand">holy people</strong> who are <strong>soldiers for Christ</strong>.</p>
+                </article>
+                <article class="ng-card ng-reveal rounded-2xl bg-white border border-slate-100 p-5 sm:p-6 shadow-card" style="transition-delay:0.05s">
+                  <div class="w-11 h-11 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center mb-4"><i class="fas fa-tower-broadcast text-lg"></i></div>
+                  <p class="text-[10px] font-bold uppercase tracking-wider text-sky-700 mb-2">We will</p>
+                  <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">Use all the necessary means to reach the world — including <strong class="text-brand">media</strong> and <strong>technology</strong>.</p>
+                </article>
+                <article class="ng-card ng-reveal rounded-2xl bg-white border border-slate-100 p-5 sm:p-6 shadow-card" style="transition-delay:0.1s">
+                  <div class="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-4"><i class="fas fa-lightbulb text-lg"></i></div>
+                  <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-2">We will</p>
+                  <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base"><strong class="text-brand">Innovate</strong> on existing methods to meet the modern-day demands of teaching the Gospel.</p>
+                </article>
+                <article class="ng-card ng-reveal rounded-2xl bg-white border border-rose-100 bg-gradient-to-br from-white to-rose-50/50 p-5 sm:p-6 shadow-card" style="transition-delay:0.15s">
+                  <div class="w-11 h-11 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mb-4"><i class="fas fa-heart text-lg"></i></div>
+                  <p class="text-[10px] font-bold uppercase tracking-wider text-rose-700 mb-2">We will</p>
+                  <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">Teach young people the <strong class="text-brand">Biblical teachings</strong> of marriage, relationship, and romance.</p>
+                </article>
+                <article class="ng-card ng-reveal rounded-2xl bg-white border border-amber-100 bg-gradient-to-br from-white to-amber-50/50 p-5 sm:p-6 shadow-card sm:col-span-2" style="transition-delay:0.2s">
+                  <div class="w-11 h-11 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-4"><i class="fas fa-people-arrows text-lg"></i></div>
+                  <p class="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-2">We will</p>
+                  <p class="text-slate-800 font-medium leading-relaxed text-sm sm:text-base">Train <strong class="text-brand">leaders</strong> who are able to teach others — all over the world.</p>
+                </article>
+              </div>
+            </section>
+
+            <section id="about" class="bg-slate-50 border-y border-slate-100 py-10 sm:py-14 -mx-3 sm:-mx-0 px-3 sm:px-0 rounded-none sm:rounded-2xl">
+              <div class="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                <div class="ng-reveal">
+                  <p class="text-ng-green font-bold text-xs uppercase tracking-[0.2em] mb-2">Who we are</p>
+                  <h2 class="font-display text-2xl sm:text-3xl font-semibold text-slate-900 leading-tight">Dear Daughter Bible Study Group</h2>
+                  <p class="mt-4 text-slate-700 leading-relaxed text-sm sm:text-base">
+                    A community of <strong>believers who teach the Word of God</strong>. We are a <strong class="text-brand">global light</strong> called to shine all over the world — online, on the streets, and in every nation.
+                  </p>
+                  <p class="mt-4 text-slate-600 leading-relaxed text-sm sm:text-base">
+                    It began with the first social media post on <strong>January 30, 2017</strong> on Facebook. Since then, Dear Daughter has grown into a movement organizing <strong>Jesus Marches</strong>, <strong>Jesus Rallies</strong>, and outreaches across Nigeria and beyond.
+                  </p>
+                  <div class="mt-6 flex flex-wrap gap-2">
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700"><i class="fas fa-person-walking text-ng-green"></i> Jesus March</span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700"><i class="fas fa-bullhorn text-brand"></i> Jesus Rally</span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700"><i class="fas fa-hands-holding-circle text-amber-600"></i> Outreach</span>
+                  </div>
+                </div>
+                <div class="ng-reveal relative pt-10 pb-12 sm:pt-8 sm:pb-10" style="transition-delay:0.1s">
+                  <div class="rounded-2xl overflow-hidden shadow-lift border border-slate-200">
+                    <img src="images/prayer-city-outreach-signs.jpeg" alt="Dear Daughter outreach — Jesus March Nigeria" class="w-full h-56 sm:h-72 object-cover" loading="lazy" />
+                  </div>
+                  <div class="absolute -bottom-4 -left-2 sm:left-4 bg-white rounded-2xl shadow-card border border-slate-100 px-4 py-3 max-w-[14rem]">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Founded</p>
+                    <p class="font-display text-2xl font-bold text-ng-green">Jan 30, 2017</p>
+                    <p class="text-xs text-slate-600 mt-0.5">First post · Facebook</p>
+                  </div>
+                  <div class="absolute -top-3 -right-2 sm:right-4 bg-gradient-to-br from-ng-green to-brand text-white rounded-2xl shadow-lift px-4 py-3 max-w-[11rem] text-center">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-white/80">Our call</p>
+                    <p class="font-display text-sm font-semibold leading-snug">Global light to the world</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section id="gallery" class="bg-white py-10 sm:py-14">
+              <div class="ng-reveal mb-8 text-center max-w-2xl mx-auto">
+                <p class="text-brand font-bold text-xs uppercase tracking-[0.2em] mb-2">Jesus March Nigeria</p>
+                <h2 class="font-display text-2xl sm:text-3xl font-semibold text-slate-900">On the streets for Christ</h2>
+                <p class="text-slate-600 mt-2 text-sm sm:text-base">Real moments from Jesus March across Nigeria — the same evangelistic heart that started on Facebook in 2017.</p>
+              </div>
+              <div id="ng-landing-gallery" class="ng-reveal grid grid-cols-3 sm:grid-cols-5 gap-3 sm:gap-4 max-w-4xl mx-auto"></div>
+              <div id="ng-landing-gallery-more" class="hidden ng-reveal grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 mt-4 max-w-5xl mx-auto"></div>
+              <div class="text-center mt-6 ng-reveal" id="ng-gallery-actions">
+                <button type="button" id="ng-gallery-view-more" class="hidden inline-flex items-center gap-2 rounded-full border-2 border-brand text-brand font-bold text-sm px-6 py-2.5 hover:bg-brand hover:text-white transition">
+                  View more in gallery <i class="fas fa-images text-xs"></i>
+                </button>
+              </div>
+            </section>
+
+          </div><!-- /ng-landing-main -->
+
+          <aside id="join" class="ng-join-rail order-1 lg:order-2 w-full lg:w-[17.5rem] xl:w-[19rem] 2xl:w-[21rem] shrink-0 lg:sticky lg:top-[3.75rem] lg:self-start z-20 mb-6 lg:mb-0">
+            <div class="rounded-2xl border border-slate-200/80 bg-white shadow-lift overflow-hidden">
+              <div class="bg-gradient-to-br from-ng-green via-brand to-brand-light px-4 py-4 text-white">
+                <p class="text-brand-accent font-bold text-[10px] uppercase tracking-[0.2em] mb-1">Membership</p>
+                <h2 class="font-display text-lg xl:text-xl font-semibold leading-snug">Join the Dear Daughter family</h2>
+                <p class="text-white/85 text-xs mt-2 leading-relaxed">For <strong>newcomers joining the community</strong>. Want to serve? Go to <a href="#serve" class="underline text-brand-accent font-semibold hover:text-white">Kingdom Workforce</a>.</p>
+              </div>
+              <div class="p-4 space-y-3">
+                <button type="button" id="ng-signup-toggle" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-ng-green text-white font-bold text-sm px-4 py-3 shadow-sm hover:opacity-95 transition min-h-[44px]">
+                  <i class="fas fa-user-plus"></i> New here? Sign up
+                </button>
+                <button type="button" data-ng-scroll-auth class="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-slate-200 bg-white text-slate-800 font-semibold text-sm px-4 py-3 hover:border-ng-green hover:text-ng-green transition min-h-[44px]">
+                  <i class="fas fa-right-to-bracket"></i> Sign in
+                </button>
+                <a href="https://www.instagram.com/deardaughter_bs" target="_blank" rel="noopener" class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 text-slate-600 font-medium text-xs px-4 py-2.5 hover:bg-slate-50 transition">
+                  <i class="fab fa-instagram"></i> @deardaughter_bs
+                </a>
+                <div id="ng-signup-details" class="ng-signup-details hidden rounded-xl border border-emerald-100 bg-emerald-50/50 overflow-hidden">
+                  <form id="ng-signup-form" class="p-4 space-y-3 border-t border-emerald-100/80">
+                    <div>
+                      <label for="signup-name" class="block text-xs font-medium mb-1">Full name</label>
+                      <input type="text" id="signup-name" name="name" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white" placeholder="Your name" />
+                    </div>
+                    <div>
+                      <label for="signup-email" class="block text-xs font-medium mb-1">Email</label>
+                      <input type="email" id="signup-email" name="email" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white" placeholder="you@example.com" />
+                    </div>
+                    <div>
+                      <label for="signup-phone" class="block text-xs font-medium mb-1">Phone (Nigeria)</label>
+                      <input type="tel" id="signup-phone" name="phone" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white" placeholder="+234…" />
+                    </div>
+                    <div>
+                      <label for="signup-city" class="block text-xs font-medium mb-1">City / state</label>
+                      <input type="text" id="signup-city" name="city" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white" placeholder="e.g. Lagos" />
+                    </div>
+                    <div>
+                      <label for="signup-interest" class="block text-xs font-medium mb-1">Interest (optional)</label>
+                      <select id="signup-interest" name="interest" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white">
+                        <option value="">Select one</option>
+                        <option value="bible-study">Mid-week Bible Study</option>
+                        <option value="prayer">Prayer &amp; intercession</option>
+                        <option value="serve">Serve on a unit</option>
+                        <option value="programs">Programs &amp; events</option>
+                        <option value="friend">Invited by a friend</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label for="signup-notes" class="block text-xs font-medium mb-1">Notes (optional)</label>
+                      <textarea id="signup-notes" name="notes" rows="2" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs bg-white" placeholder="How you heard about us…"></textarea>
+                    </div>
+                    <p id="signup-status" class="hidden text-xs rounded-lg px-3 py-2" role="status"></p>
+                    <div class="flex flex-col gap-2">
+                      <button type="submit" id="signup-submit" class="w-full rounded-lg bg-ng-green text-white font-bold py-2.5 text-sm hover:opacity-95 transition disabled:opacity-50">Join the family</button>
+                      <button type="button" id="ng-signup-close" class="w-full rounded-lg border border-slate-200 bg-white py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">Close form</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </aside>
+
         </div>
       </div>
-    </aside>
 
-      </div>
-    </div>
-    </div>
+    </div><!-- /ng-public-landing -->
 
-    <div id="ng-status" class="hidden max-w-7xl mx-auto px-4 pt-4" role="status"></div>
+    <div id="ng-status" class="hidden max-w-6xl mx-auto px-4 pt-4" role="status"></div>
 
-    <div id="super-user-panel" class="hidden max-w-7xl mx-auto px-4 pt-4">
-      <div class="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50 p-4 shadow-sm">
-        <p class="text-xs font-bold uppercase tracking-wider text-violet-700 mb-2"><i class="fas fa-shield-halved mr-1"></i> Coordinator access</p>
+    <div id="super-user-panel" class="hidden max-w-6xl mx-auto px-4 pt-4">
+      <div class="rounded-2xl border border-violet-200 bg-violet-50 p-4 text-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-violet-700 mb-2">Coordinator access</p>
         <div id="super-user-links" class="flex flex-wrap gap-2"></div>
       </div>
     </div>
 
-    <section id="auth-checking" class="hidden max-w-lg mx-auto px-4 py-12 text-center">
-      <p class="text-sm text-slate-600"><i class="fas fa-spinner fa-spin mr-2 text-ng-green"></i>Loading…</p>
-    </section>
+    <!-- Auth (hidden until needed) -->
+    <section id="auth-checking" class="hidden" aria-hidden="true"></section>
 
-    <section id="auth-panel" class="hidden max-w-lg mx-auto px-4 py-8">
-      <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
-        <div class="bg-ng-green/10 px-5 py-3 border-b"><h2 class="font-semibold text-ng-green"><i class="fas fa-envelope mr-2"></i>Sign in</h2></div>
+    <section id="auth-panel" class="hidden max-w-md mx-auto px-4 py-10">
+      <div class="ng-surface overflow-hidden">
+        <div class="bg-ng-green/10 px-5 py-4 border-b border-ng-green/10">
+          <h2 class="font-semibold text-ng-green text-lg"><i class="fas fa-envelope mr-2"></i>Welcome back</h2>
+          <p class="text-sm text-slate-600 mt-1">Sign in to your volunteer hub.</p>
+        </div>
         <div class="p-5 space-y-4">
-          <p class="text-sm text-slate-600">Use the same email from your volunteer sign-up.</p>
-          <input type="email" id="auth-email" autocomplete="email" class="w-full rounded-xl border border-slate-200 px-4 py-2.5" placeholder="you@example.com" />
-          <input type="password" id="auth-password" autocomplete="current-password" class="w-full rounded-xl border border-slate-200 px-4 py-2.5" placeholder="Password (if set)" />
-          <button type="button" id="btn-email-link" class="w-full rounded-xl bg-ng-green text-white font-semibold py-3">Email me a sign-in link</button>
-          <button type="button" id="btn-password-signin" class="w-full rounded-xl border-2 border-slate-200 font-semibold py-3">Sign in with password</button>
+          <div>
+            <label for="auth-email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <input type="email" id="auth-email" autocomplete="email" class="ng-input" placeholder="you@example.com" />
+          </div>
+          <div>
+            <label for="auth-password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+            <input type="password" id="auth-password" autocomplete="current-password" class="ng-input" placeholder="If you set one" />
+          </div>
+          <button type="button" id="btn-email-link" class="ng-submit w-full">Email me a sign-in link</button>
+          <button type="button" id="btn-password-signin" class="w-full rounded-xl border-2 border-slate-200 font-semibold py-3 text-sm hover:bg-slate-50 transition">Sign in with password</button>
         </div>
       </div>
     </section>
 
-    <section id="not-eligible-panel" class="hidden max-w-lg mx-auto px-4 py-8">
-      <div class="bg-white rounded-2xl border border-amber-200 p-6 text-sm">
+    <section id="not-eligible-panel" class="hidden max-w-md mx-auto px-4 py-10">
+      <div class="ng-surface p-6 text-sm">
         <p id="not-eligible-msg" class="text-amber-900 font-medium"></p>
-        <p class="mt-3"><a href="/?stay=us" class="text-brand underline">US dashboard</a></p>
+        <p class="mt-4"><a href="/?stay=us" class="text-brand font-medium hover:underline">US volunteer dashboard</a></p>
       </div>
     </section>
 
-    <section id="onboard-panel" class="hidden max-w-2xl mx-auto px-4 py-8">
-      <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
-        <div class="bg-gradient-to-r from-violet-600 to-indigo-700 px-5 py-3 text-white">
-          <h2 class="font-semibold"><i class="fas fa-user-plus mr-2"></i>Complete your profile</h2>
+    <section id="onboard-panel" class="hidden max-w-xl mx-auto px-4 py-10">
+      <div class="ng-surface overflow-hidden">
+        <div class="bg-gradient-to-r from-brand to-ng-green px-5 py-4 text-white">
+          <h2 class="font-semibold text-lg">Complete your profile</h2>
+          <p class="text-white/80 text-sm mt-1">Tell us your name and unit(s).</p>
         </div>
         <div class="p-5 sm:p-6 space-y-5">
           <p id="onboard-super-hint" class="hidden text-sm text-violet-800 bg-violet-50 border border-violet-100 rounded-lg px-3 py-2">Coordinator preview — pick any unit(s) to explore.</p>
-          <p class="text-sm text-slate-600 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">Phone on file: <strong id="onboard-phone">—</strong></p>
+          <p id="onboard-phone-wrap" class="hidden text-sm text-slate-600 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">Registered phone: <strong id="onboard-phone"></strong></p>
           <div>
-            <label for="onboard-name" class="block text-sm font-medium mb-1">Full name</label>
-            <input type="text" id="onboard-name" class="w-full rounded-xl border border-slate-200 px-4 py-2.5" placeholder="Your name" />
+            <label for="onboard-name" class="block text-sm font-medium text-slate-700 mb-1">Full name</label>
+            <input type="text" id="onboard-name" class="ng-input" placeholder="Your name" />
           </div>
           <div>
-            <p class="text-sm font-medium mb-2">Your unit(s) — choose all that apply</p>
-            <p class="text-xs text-slate-500 mb-3">You can be a <strong>member</strong> in one unit and a <strong>leader</strong> in another.</p>
-            <div id="onboard-units" class="space-y-2 max-h-80 overflow-y-auto"></div>
+            <p class="text-sm font-medium text-slate-700 mb-2">Your unit(s)</p>
+            <p class="text-xs text-slate-500 mb-3">Choose all that apply — member in one, leader in another.</p>
+            <div id="onboard-units" class="space-y-2 max-h-72 overflow-y-auto"></div>
           </div>
-          <button type="button" id="btn-save-profile" class="w-full rounded-xl bg-ng-green text-white font-semibold py-3.5 disabled:opacity-50">Save & go to dashboard</button>
+          <button type="button" id="btn-save-profile" class="ng-submit w-full">Save &amp; go to dashboard</button>
         </div>
       </div>
     </section>
 
+    <!-- Dashboard -->
     <div id="dash-shell" class="hidden max-w-7xl mx-auto px-4 py-6 lg:py-8">
+      <div id="dash-billion-countdown" class="mb-4"></div>
       <div class="app-shell flex flex-col lg:flex-row gap-6 lg:gap-8">
         <aside id="profile-sidebar" class="w-full lg:w-72 shrink-0 sidebar-sticky">
-          <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5 space-y-4">
+          <div class="ng-surface p-5 space-y-4">
             <div class="text-center">
               <div class="relative inline-block">
                 <img id="sidebar-avatar-img" class="hidden w-24 h-24 rounded-full object-cover border-4 border-ng-green/20 mx-auto" alt="" />
-                <div id="sidebar-avatar-initial" class="w-24 h-24 rounded-full bg-ng-green text-white text-3xl font-bold flex items-center justify-center mx-auto border-4 border-ng-green/20">?</div>
+                <div id="sidebar-avatar-initial" class="w-24 h-24 rounded-full bg-ng-green text-white text-3xl font-bold flex items-center justify-center mx-auto border-4 border-ng-green/20"></div>
                 <label class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center cursor-pointer shadow-md" title="Upload photo">
                   <i class="fas fa-camera text-xs"></i>
                   <input type="file" id="sidebar-avatar-input" accept="image/*" class="hidden" />
                 </label>
               </div>
-              <p id="sidebar-upload-status" class="text-xs text-slate-500 mt-2 min-h-[1rem]"></p>
+              <p id="sidebar-upload-status" class="text-xs text-slate-400 mt-2 min-h-[1rem]"></p>
             </div>
             <div class="text-center border-b border-slate-100 pb-4">
-              <h2 id="sidebar-name" class="font-bold text-slate-900 text-lg">—</h2>
-              <p id="sidebar-email" class="text-xs text-slate-500 mt-1 break-all">—</p>
-              <p id="sidebar-phone" class="text-xs text-slate-500 mt-1">—</p>
+              <h2 id="sidebar-name" class="font-bold text-slate-900 text-lg"></h2>
+              <p id="sidebar-email" class="text-xs text-slate-500 mt-1 break-all"></p>
+              <p id="sidebar-phone" class="text-xs text-slate-500 mt-1"></p>
             </div>
             <div>
-              <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">My units</p>
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">My units</p>
               <ul id="sidebar-units" class="space-y-2 text-sm"></ul>
             </div>
             <button type="button" id="btn-edit-profile" class="w-full text-sm rounded-xl border border-slate-200 py-2 hover:bg-slate-50">Edit profile</button>
@@ -657,12 +496,12 @@
 
         <main class="flex-1 min-w-0 space-y-4">
           <div id="super-user-banner" class="hidden rounded-xl border border-violet-200 bg-violet-50 text-violet-900 px-4 py-3 text-sm">
-            <strong>Coordinator preview</strong> — explore all features without a +234 number.
+            <strong>Coordinator preview</strong> — explore all features.
           </div>
 
           <nav id="dash-tabs" class="flex flex-wrap gap-2" aria-label="Dashboard sections">
             <button type="button" class="tab-btn active text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="home">Home</button>
-            <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="programs" id="programs">Programs</button>
+            <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="programs" id="tab-btn-programs">Programs</button>
             <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="units">My units</button>
             <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white hidden" data-tab="new-members" id="tab-btn-new-members">New members</button>
             <button type="button" class="tab-btn text-sm font-semibold px-4 py-2 rounded-full border border-slate-200 bg-white hidden" data-tab="kingdom-workforce" id="tab-btn-kingdom-workforce">Kingdom Workforce</button>
@@ -672,10 +511,10 @@
           <div id="tab-home" class="tab-panel space-y-4">
             <div>
               <h3 class="font-semibold text-slate-900 mb-1">Ministry spotlight</h3>
-              <p class="text-xs text-slate-500 mb-3">Last program + next four · themed tiles</p>
+              <p class="text-xs text-slate-500 mb-3">Upcoming programs</p>
               <div id="home-upcoming-programs" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
             </div>
-            <div id="home-unit-snapshot" class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
+            <div id="home-unit-snapshot" class="ng-surface p-5">
               <h3 class="font-semibold text-slate-900 mb-3"><i class="fas fa-calendar-check text-ng-green mr-2"></i>Next unit meetings</h3>
               <div id="home-meetings-list" class="space-y-3 text-sm"></div>
             </div>
@@ -684,65 +523,61 @@
           <div id="tab-programs" class="tab-panel hidden space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <h3 class="font-semibold text-slate-900 text-lg">2026 ministry calendar</h3>
-              <select id="programs-month-filter" class="rounded-xl border border-slate-200 px-3 py-2 text-sm"></select>
+              <select id="programs-month-filter" class="ng-input w-auto py-2 text-sm"></select>
             </div>
-            <p class="text-sm text-slate-600">Mid-week Bible Study every <strong>Wednesday</strong> · full year below.</p>
+            <p class="text-sm text-slate-600">Mid-week Bible Study every <strong>Wednesday</strong>.</p>
             <div id="programs-grid" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
           </div>
 
           <div id="tab-units" class="tab-panel hidden space-y-4">
-            <p class="text-sm text-slate-600">Check in during your meeting window and capture shared notes with your unit.</p>
+            <p class="text-sm text-slate-600">Check in during your meeting window and capture shared notes.</p>
             <div id="units-cards" class="space-y-4"></div>
           </div>
 
           <div id="tab-new-members" class="tab-panel hidden space-y-4">
-            <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
+            <div class="ng-surface p-5">
               <h3 class="font-semibold text-slate-900 mb-1"><i class="fas fa-user-clock text-ng-green mr-2"></i>New member sign-ups</h3>
-              <p class="text-xs text-slate-500 mb-4">Visible to Welcome &amp; Hospitality and Growth &amp; Retention leaders. Reach out and welcome them in.</p>
+              <p class="text-xs text-slate-500 mb-4">Welcome &amp; Hospitality and Growth leaders — reach out and welcome them in.</p>
               <div id="new-members-list" class="space-y-3 text-sm"></div>
             </div>
           </div>
 
           <div id="tab-kingdom-workforce" class="tab-panel hidden space-y-4">
-            <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
-              <h3 class="font-semibold text-slate-900 mb-1"><i class="fas fa-shield-halved text-brand mr-2"></i>Kingdom Workforce enlistments</h3>
-              <p class="text-xs text-slate-500 mb-4">Unit leaders see enlistments for their units. Workers Coordinator can mark <strong>Workers Training Class</strong> and greenlight hub access when training is complete.</p>
+            <div class="ng-surface p-5">
+              <h3 class="font-semibold text-slate-900 mb-1"><i class="fas fa-shield-halved text-brand mr-2"></i>Kingdom Workforce</h3>
+              <p class="text-xs text-slate-500 mb-4">Mark Workers Training Class and greenlight hub access when ready.</p>
               <div id="kingdom-workforce-list" class="space-y-3 text-sm"></div>
             </div>
           </div>
 
           <div id="tab-reports" class="tab-panel hidden space-y-4">
             <div id="reports-panels"></div>
-            <p id="reports-member-note" class="hidden text-sm text-slate-500 text-center">Leader reports appear here when your unit leader submits.</p>
+            <p id="reports-member-note" class="hidden text-sm text-slate-500 text-center">Leader reports appear here when submitted.</p>
           </div>
         </main>
       </div>
     </div>
 
-    <footer class="py-8 text-center text-xs text-slate-500 border-t border-slate-200 mt-8 bg-white">
-      <p>Dear Daughter Bible Study Group Nigeria</p>
-      <p class="mt-2"><a href="/?stay=us" class="text-brand hover:underline">US volunteer dashboard</a> · <a href="monthly-report.html" class="text-brand hover:underline">Monthly report</a></p>
+    <footer class="py-10 text-center text-xs text-slate-500 border-t border-slate-200/80 bg-white/60">
+      <p class="font-medium text-slate-600">Dear Daughter Bible Study Group Nigeria</p>
+      <p class="mt-2">
+        <a href="https://www.instagram.com/deardaughter_bs" target="_blank" rel="noopener" class="text-brand hover:underline">@deardaughter_bs</a>
+        · <a href="/?stay=us" class="text-brand hover:underline">US dashboard</a>
+        · <a href="monthly-report.html" class="text-brand hover:underline">Monthly report</a>
+      </p>
     </footer>
 
-    <nav id="ng-mobile-nav" class="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-4px_24px_rgba(15,61,92,0.08)]" aria-label="Quick navigation">
+    <nav id="ng-mobile-nav" class="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200/80 shadow-[0_-4px_20px_rgba(15,61,92,0.06)]" aria-label="Quick navigation">
       <div class="grid grid-cols-4 max-w-lg mx-auto">
-        <a href="#programs" class="ng-mobile-nav-link flex flex-col items-center gap-0.5 py-2.5 px-1 text-[10px] font-semibold text-slate-600 hover:text-ng-green transition">
-          <i class="fas fa-calendar-days text-base"></i><span>Programs</span>
-        </a>
-        <a href="#join" class="ng-mobile-nav-link flex flex-col items-center gap-0.5 py-2.5 px-1 text-[10px] font-semibold text-slate-600 hover:text-ng-green transition">
-          <i class="fas fa-user-plus text-base"></i><span>Join</span>
-        </a>
-        <a href="#serve" class="ng-mobile-nav-link flex flex-col items-center gap-0.5 py-2.5 px-1 text-[10px] font-semibold text-slate-600 hover:text-ng-green transition">
-          <i class="fas fa-shield-halved text-base"></i><span>Serve</span>
-        </a>
-        <button type="button" data-ng-scroll-auth class="ng-mobile-nav-link flex flex-col items-center gap-0.5 py-2.5 px-1 text-[10px] font-semibold text-slate-600 hover:text-ng-green transition w-full">
-          <i class="fas fa-right-to-bracket text-base"></i><span>Sign in</span>
-        </button>
+        <a href="#programs" class="ng-mobile-nav-link flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold text-slate-600"><i class="fas fa-calendar-days text-base"></i><span>Programs</span></a>
+        <a href="#join" class="ng-mobile-nav-link flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold text-slate-600"><i class="fas fa-user-plus text-base"></i><span>Join</span></a>
+        <a href="#serve" class="ng-mobile-nav-link flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold text-slate-600"><i class="fas fa-shield-halved text-base"></i><span>Serve</span></a>
+        <button type="button" data-ng-scroll-auth class="ng-mobile-nav-link flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold text-slate-600 w-full"><i class="fas fa-right-to-bracket text-base"></i><span>Sign in</span></button>
       </div>
     </nav>
 
-    <div id="ng-workforce-sticky-picks" class="hidden fixed bottom-[4.25rem] lg:bottom-4 left-0 right-0 z-40 px-3 sm:px-6 pointer-events-none" aria-live="polite">
-      <div class="max-w-xl mx-auto pointer-events-auto rounded-xl bg-white border border-indigo-200 shadow-lift px-3 py-2.5 flex flex-wrap items-center gap-2">
+    <div id="ng-workforce-sticky-picks" class="hidden fixed bottom-[4.25rem] lg:bottom-4 left-0 right-0 z-40 px-3 pointer-events-none" aria-live="polite">
+      <div class="max-w-xl mx-auto pointer-events-auto rounded-xl bg-white border border-slate-200 shadow-lg px-3 py-2.5 flex flex-wrap items-center gap-2">
         <span class="text-[10px] font-bold uppercase tracking-wide text-brand shrink-0">Selected:</span>
         <div id="ng-workforce-sticky-chips" class="flex flex-wrap gap-1.5 flex-1 min-w-0"></div>
         <button type="button" id="ng-workforce-sticky-more" class="text-xs font-semibold text-brand hover:underline shrink-0">+ Add unit</button>
@@ -752,7 +587,6 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="js/billion-countdown.js"></script>
-  <script src="js/ddbs-nigeria-hero-billboard.js"></script>
   <script src="js/nigeria-units.js"></script>
   <script src="js/ddbs-nigeria-programs.js"></script>
   <script src="js/ddbs-nigeria-meeting-notes.js"></script>
@@ -760,11 +594,17 @@
   <script src="js/nigeria-dashboard-report.js"></script>
   <script src="js/prayer-city-super-user.js"></script>
   <script src="js/nigeria-gallery-manifest.js"></script>
+  <script src="js/ddbs-nigeria-hero-billboard.js"></script>
   <script src="js/nigeria-landing.js"></script>
   <script src="js/nigeria-dashboard.js"></script>
   <script>
     if (window.BillionCountdown) {
-      BillionCountdown.mount("#dash-billion-countdown", { compact: true });
+      if (document.getElementById("landing-billion-countdown")) {
+        BillionCountdown.mount("#landing-billion-countdown", { compact: true });
+      }
+      if (document.getElementById("dash-billion-countdown")) {
+        BillionCountdown.mount("#dash-billion-countdown", { compact: true });
+      }
     }
   </script>
 </body>

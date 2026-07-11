@@ -32,8 +32,12 @@
     } else {
       var wrap = $('ng-public-landing');
       var hero = $('hero-billboard');
+      var countdown = $('landing-billion-countdown');
+      var mobileNav = $('ng-mobile-nav');
       if (wrap) wrap.classList.toggle('hidden', !show);
       if (hero) hero.classList.toggle('hidden', !show);
+      if (countdown) countdown.classList.toggle('hidden', !show);
+      if (mobileNav) mobileNav.classList.toggle('hidden', !show);
     }
   }
 
@@ -341,12 +345,12 @@
 
   function renderSidebar(data) {
     var profile = data.profile || {};
-    if ($('sidebar-name')) $('sidebar-name').textContent = profile.name || '—';
+    if ($('sidebar-name')) $('sidebar-name').textContent = profile.name || '';
     if ($('sidebar-email')) {
       $('sidebar-email').textContent =
-        profile.email || (auth.currentUser && auth.currentUser.email) || '—';
+        profile.email || (auth.currentUser && auth.currentUser.email) || '';
     }
-    if ($('sidebar-phone')) $('sidebar-phone').textContent = profile.phone || '—';
+    if ($('sidebar-phone')) $('sidebar-phone').textContent = profile.phone || '';
     setSidebarAvatar(profile.name, profile.photoURL);
 
     var list = $('sidebar-units');
@@ -1043,8 +1047,12 @@
     if (volunteer && volunteer.name && $('onboard-name')) {
       $('onboard-name').value = volunteer.name;
     }
+    var phoneWrap = $('onboard-phone-wrap');
     if ($('onboard-phone') && volunteer && volunteer.phone) {
       $('onboard-phone').textContent = volunteer.phone;
+      if (phoneWrap) show(phoneWrap);
+    } else if (phoneWrap) {
+      hide(phoneWrap);
     }
     var preview = loadPreviewProfile();
     if (preview) applyUnitsToForm(normalizeProfileUnits(preview));

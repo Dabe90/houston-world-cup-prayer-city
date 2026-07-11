@@ -1,92 +1,166 @@
-/* Prayer City public landing — youthful motion */
-@keyframes homeFloat {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-12px) rotate(2deg); }
+/* DDBS Nigeria — landing styles */
+:root {
+  --ng-green: #008751;
+  --brand: #0f3d5c;
+  --brand-accent: #c9a227;
+  --ng-shadow: 0 4px 24px rgba(15, 61, 92, 0.07);
+  --ng-shadow-lift: 0 16px 48px rgba(15, 61, 92, 0.1);
 }
-@keyframes homePulse {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 0.85; transform: scale(1.08); }
+
+/* Hero billboard — tall photo background (welcome slide) */
+#hero-billboard {
+  min-height: min(88vh, 720px);
+  padding-bottom: 3.75rem;
 }
-@keyframes homeBounceIn {
-  0% { opacity: 0; transform: translateY(24px) scale(0.96); }
-  60% { opacity: 1; transform: translateY(-6px) scale(1.02); }
+.hero-billboard-viewport {
+  overflow: hidden;
+  width: 100%;
+  min-height: inherit;
+}
+[data-hero-track] {
+  display: flex;
+  width: 100%;
+  will-change: transform;
+  min-height: inherit;
+}
+[data-hero-track] .hero-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+  min-height: min(88vh, 720px);
+}
+.hero-mesh {
+  background:
+    linear-gradient(135deg, rgba(0, 60, 40, 0.82) 0%, rgba(15, 61, 92, 0.78) 45%, rgba(0, 100, 60, 0.75) 100%),
+    url("../images/prayer-city-day2-team.jpeg") center/cover no-repeat;
+}
+.hero-mesh::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 70% 40%, rgba(201, 162, 39, 0.15), transparent 60%);
+  pointer-events: none;
+}
+.hero-slide-welcome.hero-mesh {
+  position: relative;
+}
+.hero-flyer-mesh {
+  position: relative;
+  overflow: hidden;
+}
+.hero-flyer-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.hero-flyer-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 60, 40, 0.72) 0%,
+    rgba(15, 61, 92, 0.68) 45%,
+    rgba(0, 100, 60, 0.65) 100%
+  );
+}
+.hero-flyer-mesh::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: radial-gradient(ellipse 80% 60% at 70% 40%, rgba(201, 162, 39, 0.15), transparent 60%);
+  pointer-events: none;
+}
+.hero-flyer-content {
+  position: relative;
+  z-index: 3;
+}
+.hero-headline {
+  font-family: Fraunces, Georgia, serif;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.18);
+  letter-spacing: -0.02em;
+}
+.hero-eyebrow {
+  letter-spacing: 0.14em;
+}
+.hero-flyer-frame {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+}
+.hero-flyer-img { max-height: min(72vw, 360px); }
+@media (min-width: 1024px) { .hero-flyer-img { max-height: 380px; } }
+.hero-photo-tile { animation: heroKenBurns 14s ease-in-out infinite alternate; }
+.hero-photo-tile:nth-child(2) { animation-delay: -3s; }
+.hero-photo-tile:nth-child(3) { animation-delay: -6s; }
+.hero-photo-tile:nth-child(4) { animation-delay: -9s; }
+@keyframes heroKenBurns {
+  from { transform: scale(1) translateY(0); }
+  to { transform: scale(1.06) translateY(-4px); }
+}
+@keyframes heroReveal {
+  from { opacity: 0; transform: translateY(28px); filter: blur(6px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+@keyframes heroPop {
+  0% { opacity: 0; transform: translateY(20px) scale(0.97); }
+  70% { opacity: 1; transform: translateY(-2px) scale(1.01); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
-@keyframes homeWordPop {
+@keyframes heroFlyerIn {
+  from { opacity: 0; transform: translateX(32px) scale(0.94) rotateY(-8deg); }
+  to { opacity: 1; transform: translateX(0) scale(1) rotateY(0); }
+}
+.hero-slide .hero-anim { opacity: 0; }
+.hero-slide.is-active .hero-anim-1 { animation: heroReveal 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.08s forwards; }
+.hero-slide.is-active .hero-anim-2 { animation: heroPop 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.18s forwards; }
+.hero-slide.is-active .hero-anim-3 { animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.32s forwards; }
+.hero-slide.is-active .hero-anim-4 { animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.44s forwards; }
+.hero-slide.is-active .hero-anim-5 { animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.56s forwards; }
+.hero-slide.is-active .hero-anim-6 { animation: heroReveal 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.68s forwards; }
+.hero-slide.is-active .hero-flyer-wrap { animation: heroFlyerIn 1s cubic-bezier(0.22, 1, 0.36, 1) 0.22s forwards; opacity: 0; }
+.hero-slide.is-active .hero-photo-tile { animation: heroKenBurns 14s ease-in-out infinite alternate, heroReveal 1s cubic-bezier(0.22, 1, 0.36, 1) 0.35s forwards; opacity: 0; }
+.hero-dot-wrap { position: relative; overflow: hidden; border-radius: 9999px; }
+.hero-dot-progress {
+  position: absolute; inset: 0; background: #c9a227; transform-origin: left;
+  transform: scaleX(0); border-radius: inherit;
+}
+.hero-dot.is-active .hero-dot-progress { animation: heroDotProgress var(--hero-slide-ms, 5s) linear forwards; }
+@keyframes heroDotProgress { to { transform: scaleX(1); } }
+
+/* Mandate motion */
+@keyframes ngWordPop {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-4px); }
 }
-@keyframes homeShimmer {
+@keyframes ngShimmer {
   0% { background-position: 0% 50%; }
   100% { background-position: 200% 50%; }
 }
-@keyframes homeMarquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-.home-hero-bg {
-  background:
-    linear-gradient(145deg, rgba(15, 61, 92, 0.94) 0%, rgba(0, 135, 81, 0.88) 40%, rgba(26, 95, 138, 0.92) 100%),
-    url("https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1600&q=80") center/cover;
-}
-.home-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(40px);
-  animation: homePulse 6s ease-in-out infinite;
-  pointer-events: none;
-}
-.home-bounce-word {
-  display: inline-block;
-  animation: homeWordPop 2.8s ease-in-out infinite;
-}
-.home-bounce-word:nth-child(2) { animation-delay: 0.15s; }
-.home-bounce-word:nth-child(3) { animation-delay: 0.3s; }
-.home-bounce-word:nth-child(4) { animation-delay: 0.45s; }
-
-.home-reveal {
-  opacity: 0;
-  transform: translateY(32px);
-  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.home-reveal.is-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-.home-card {
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-.home-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 16px 48px rgba(15, 61, 92, 0.14);
-}
-.home-shimmer-text {
-  background: linear-gradient(90deg, #fff 0%, #c9a227 40%, #fff 80%);
+.ng-bounce-word { display: inline-block; animation: ngWordPop 2.8s ease-in-out infinite; }
+.ng-bounce-word:nth-child(2) { animation-delay: 0.15s; }
+.ng-bounce-word:nth-child(3) { animation-delay: 0.3s; }
+.ng-shimmer {
+  background: linear-gradient(90deg, #008751 0%, #c9a227 45%, #008751 90%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: homeShimmer 4s linear infinite;
+  animation: ngShimmer 4s linear infinite;
 }
-.home-marquee-track {
-  display: flex;
-  width: max-content;
-  animation: homeMarquee 28s linear infinite;
-}
-.home-marquee:hover .home-marquee-track { animation-play-state: paused; }
-.home-program-img { transition: transform 0.5s ease; }
-.home-program-card:hover .home-program-img { transform: scale(1.06); }
-
 .ng-alive-bg {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(240, 253, 244, 0.88) 50%, rgba(232, 244, 252, 0.9) 100%),
     url("../images/prayer-city-day2-team.jpeg") center/cover;
   opacity: 0.5;
 }
-.ng-alive-photo {
-  animation: ngPhotoFloat 5s ease-in-out infinite;
-}
+.ng-alive-photo { animation: ngPhotoFloat 5s ease-in-out infinite; }
 .ng-alive-photo:nth-child(2) { animation-delay: -0.8s; }
 .ng-alive-photo:nth-child(3) { animation-delay: -1.6s; }
 .ng-alive-photo:nth-child(4) { animation-delay: -2.4s; }
@@ -96,14 +170,20 @@
   0%, 100% { transform: translateY(0) scale(1); }
   50% { transform: translateY(-6px) scale(1.02); }
 }
-.ng-gallery-tile { transition: transform 0.3s ease, box-shadow 0.3s ease; }
-.ng-gallery-tile:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(15, 61, 92, 0.18); }
+.vision-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f0fdf4 100%);
+}
 
+/* Programs horizontal track */
 .ng-programs-track {
   scroll-padding-left: 1rem;
   -webkit-mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent);
   mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent);
 }
+.ng-program-img { transition: transform 0.5s ease; }
+.ng-program-card:hover .ng-program-img { transform: scale(1.06); }
+
+/* Join sidebar */
 .ng-join-rail {
   max-height: calc(100vh - 5rem);
   overflow-y: auto;
@@ -116,25 +196,26 @@
   .ng-join-rail { max-height: none; overflow: visible; }
 }
 
-.ng-signup-details[open],
-.ng-signup-details:not(.hidden) {
-  animation: ngSignupIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+/* Cards & reveal */
+.ng-reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.ng-workforce-details[open],
-.ng-workforce-details:not(.hidden) {
-  animation: ngSignupIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-}
+.ng-reveal.is-visible { opacity: 1; transform: translateY(0); }
+.ng-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+.ng-card:hover { transform: translateY(-4px); box-shadow: var(--ng-shadow-lift); }
+.ng-gallery-tile { transition: transform 0.3s ease, box-shadow 0.3s ease; border-radius: 1rem; }
+.ng-gallery-tile:hover { transform: translateY(-3px); box-shadow: var(--ng-shadow-lift); }
+
+/* Units */
 .ng-unit-card.is-selected {
-  border-color: #008751;
+  border-color: var(--ng-green);
   box-shadow: 0 0 0 2px rgba(0, 135, 81, 0.25);
   background: linear-gradient(180deg, #f0fdf4 0%, #fff 100%);
 }
-.ng-unit-card.is-selected .ng-unit-card-hint {
-  color: #008751;
-}
-.ng-units-highlight {
-  animation: ngUnitsPulse 0.6s ease-in-out 3;
-}
+.ng-unit-card.is-selected .ng-unit-card-hint { color: var(--ng-green); }
+.ng-units-highlight { animation: ngUnitsPulse 0.6s ease-in-out 3; }
 @keyframes ngUnitsPulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(0, 135, 81, 0); }
   50% { box-shadow: 0 0 0 4px rgba(0, 135, 81, 0.35); }
@@ -145,19 +226,31 @@
   margin: -0.5rem;
   background: rgba(240, 253, 244, 0.6);
 }
-.ng-start-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-.ng-start-card:active { transform: scale(0.98); }
-#ng-mobile-nav .ng-mobile-nav-link { min-height: 44px; }
-@keyframes ngSignupIn {
-  from { opacity: 0; transform: translateY(-8px); }
+
+.ng-signup-details:not(.hidden),
+.ng-workforce-details:not(.hidden) {
+  animation: ngFadeIn 0.35s ease;
+}
+@keyframes ngFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ng-alive-photo { animation: none !important; }
+.ng-start-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.ng-start-card:active { transform: scale(0.98); }
+
+/* Nav */
+.ng-nav {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(15, 61, 92, 0.06);
 }
+#ng-mobile-nav .ng-mobile-nav-link { min-height: 44px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-bounce-word, .home-orb, .home-marquee-track, .home-shimmer-text { animation: none !important; }
-  .home-reveal { opacity: 1; transform: none; }
+  .hero-slide .hero-anim, .hero-slide .hero-flyer-wrap, .hero-slide .hero-photo-tile,
+  .ng-bounce-word, .ng-shimmer, .ng-alive-photo { opacity: 1 !important; animation: none !important; transform: none !important; filter: none !important; }
+  [data-hero-track] { will-change: auto; }
+  .ng-reveal { opacity: 1; transform: none; transition: none; }
+  .ng-card:hover { transform: none; }
 }

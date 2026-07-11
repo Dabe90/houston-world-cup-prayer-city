@@ -108,15 +108,15 @@
         '<article class="hero-slide hero-slide-welcome hero-mesh" data-logical="' +
         logicalIndex +
         '" aria-label="Welcome">' +
-        '<div class="max-w-7xl mx-auto px-3 sm:px-6 py-8 sm:py-12 lg:py-14 h-full">' +
-        '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-center min-h-[280px] sm:min-h-[320px] lg:min-h-[360px]">' +
+        '<div class="max-w-7xl mx-auto px-3 sm:px-6 py-10 sm:py-14 lg:py-16 h-full">' +
+        '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-center min-h-[min(60vh,480px)] sm:min-h-[min(65vh,520px)] lg:min-h-[min(72vh,560px)]">' +
         '<div class="min-w-0">' +
         '<p class="hero-anim hero-anim-1 hero-eyebrow text-brand-accent font-semibold uppercase text-[10px] sm:text-xs mb-3 sm:mb-4">Dear Daughter Bible Study Group · Nigeria</p>' +
-        '<h1 class="hero-anim hero-anim-2 hero-headline text-2xl sm:text-3xl md:text-4xl lg:text-[2.75rem] font-display font-semibold leading-[1.12] mb-4 sm:mb-6">Teaching the undiluted Word of God across every nation</h1>' +
-        '<p class="hero-anim hero-anim-3 text-base sm:text-lg text-white/95 font-medium mb-4 sm:mb-6 max-w-xl leading-relaxed">Reaching <strong class="text-brand-accent">one billion souls for Christ</strong> by December 31, 2030 — teaching the undiluted Word of God to all nations of the World.</p>' +
+        '<h1 class="hero-anim hero-anim-2 hero-headline text-2xl sm:text-3xl md:text-4xl lg:text-[2.75rem] font-display font-semibold leading-[1.12] mb-4 sm:mb-6">Teaching the undiluted Word of God to all nations</h1>' +
+        '<p class="hero-anim hero-anim-3 text-base sm:text-lg text-white/95 font-medium mb-4 sm:mb-6 max-w-xl leading-relaxed">A warm, global family on mission for <strong class="text-brand-accent">one billion souls for Christ</strong> by December 31, 2030 — through Bible Study, Jesus March, prayer, and faithful service.</p>' +
         '<div class="hero-anim hero-anim-5 flex flex-wrap gap-3 mb-4 sm:mb-6">' +
-        '<a href="#join" class="inline-flex items-center gap-2 rounded-full bg-white text-brand font-bold text-sm px-5 py-2.5 shadow-lift hover:scale-[1.03] transition-transform">Join us <i class="fas fa-arrow-right text-xs"></i></a>' +
-        '<a href="#programs" class="inline-flex items-center gap-2 rounded-full bg-white/15 border border-white/35 text-white font-semibold text-sm px-5 py-2.5 hover:bg-white/25 transition">Upcoming programs</a>' +
+        '<a href="#serve" class="inline-flex items-center gap-2 rounded-full bg-white text-brand font-bold text-sm sm:text-base px-5 sm:px-6 py-2.5 sm:py-3 shadow-lift hover:scale-[1.03] transition-transform"><i class="fas fa-shield-halved text-xs" aria-hidden="true"></i> Join the Kingdom Workforce</a>' +
+        '<a href="#join" class="inline-flex items-center gap-2 rounded-full bg-white/15 border border-white/35 text-white font-semibold text-sm px-5 py-2.5 hover:bg-white/25 transition">Join the family <i class="fas fa-arrow-right text-xs"></i></a>' +
         '</div>' +
         '<p class="hero-anim hero-anim-4 font-verse italic text-white/90 text-lg sm:text-xl leading-relaxed border-l-4 border-brand-accent pl-4 sm:pl-5">“Your word is a lamp for my feet, a light on my path.” — Psalm 119:105</p>' +
         '</div>' +
@@ -140,17 +140,18 @@
       .join('');
 
     return (
-      '<article class="hero-slide hero-slide-event bg-gradient-to-br ' +
-      esc(slide.accent) +
-      '" data-logical="' +
+      '<article class="hero-slide hero-slide-event hero-flyer-mesh" data-logical="' +
       logicalIndex +
       '" aria-label="' +
       esc(slide.title) +
       '">' +
-      '<div class="max-w-7xl mx-auto px-3 sm:px-6 py-8 sm:py-10 lg:py-12 h-full">' +
-      '<div class="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-8 items-center min-h-[300px] sm:min-h-[340px] lg:min-h-[380px]">' +
-      '<div class="min-w-0 order-2 lg:order-1 text-white">' +
-      '<p class="hero-anim hero-anim-1 hero-eyebrow text-brand-accent font-semibold uppercase text-[10px] sm:text-xs mb-2">' +
+      '<div class="hero-flyer-bg" style="background-image:url(\'' +
+      esc(slide.image) +
+      '\')" aria-hidden="true"></div>' +
+      '<div class="hero-flyer-overlay" aria-hidden="true"></div>' +
+      '<div class="hero-flyer-content max-w-7xl mx-auto px-3 sm:px-6 py-10 sm:py-14 lg:py-16 h-full">' +
+      '<div class="max-w-2xl lg:max-w-3xl min-h-[min(60vh,480px)] sm:min-h-[min(65vh,520px)] lg:min-h-[min(72vh,560px)] flex flex-col justify-center text-white">' +
+      '<p class="hero-anim hero-anim-1 hero-eyebrow text-brand-accent font-semibold uppercase text-[10px] sm:text-xs mb-2 sm:mb-3">' +
       esc(slide.eyebrow) +
       '</p>' +
       '<h2 class="hero-anim hero-anim-2 hero-headline text-2xl sm:text-3xl md:text-4xl lg:text-[2.5rem] font-display font-semibold leading-[1.1] mb-2">' +
@@ -173,15 +174,7 @@
       '" class="hero-billboard-programs-link inline-flex items-center gap-2 rounded-full border-2 border-white/70 text-white font-semibold text-xs sm:text-sm px-4 py-2.5 hover:bg-white/12 transition-all duration-300 hover:scale-[1.02]">' +
       esc(slide.ctaLabel || 'View programs') +
       ' <i class="fas fa-arrow-right text-[10px]" aria-hidden="true"></i></a>' +
-      '</div></div>' +
-      '<div class="order-1 lg:order-2 flex justify-center lg:justify-end hero-flyer-wrap">' +
-      '<div class="hero-flyer-frame w-full max-w-[280px] sm:max-w-[320px] lg:max-w-[360px] xl:max-w-[400px]">' +
-      '<img src="' +
-      esc(slide.image) +
-      '" alt="' +
-      esc(slide.imageAlt || slide.title) +
-      '" class="hero-flyer-img w-full h-auto rounded-2xl shadow-lift border-2 border-white/30 object-contain bg-white/8" loading="lazy" />' +
-      '</div></div></div></div></article>'
+      '</div></div></div></article>'
     );
   }
 
