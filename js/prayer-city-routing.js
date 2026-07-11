@@ -6,6 +6,11 @@
   var STAY_KEY = 'prayerCityStayOnUsHub';
   var REGION_COOKIE = 'prayer_city_region';
   var COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+  // Cloudflare fronts the domain, so this same-origin endpoint reports the
+  // visitor's real country (loc=XX). Used as a reliable geo fallback in case the
+  // edge/CDN redirect does not fire for a given visitor.
+  var TRACE_URL = '/cdn-cgi/trace';
+  var GEO_DONE_KEY = 'prayerCityGeoChecked';
 
   function setRegionCookie(value) {
     var secure = location.protocol === 'https:' ? '; Secure' : '';
@@ -69,6 +74,54 @@
     } catch (ignore) {}
   }
 
+  function getRegionCookie() {
+    var m = document.cookie.match(/(?:^|; )prayer_city_region=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+
+  function onNigeriaPage() {
+    var path = (window.location.pathname || '').toLowerCase();
+    return path.indexOf('ddbs-nig') !== -1 || path.indexOf('nigeria-dashboard') !== -1;
+  }
+
+  function isRootUsPage() {
+    var path = (window.location.pathname || '').toLowerCase();
+    return path === '' || path === '/' || path === '/index.html';
+  }
+
+  /**
+   * Best-effort geo redirect for anonymous visitors on the US root page.
+   * Nigerian visitors are sent to the Nigeria hub. Respects an explicit US/NG
+   * choice (?stay= or the region cookie) and only checks geo once per session.
+   */
+  function maybeGeoRedirect() {
+    try {
+      if (onNigeriaPage() || !isRootUsPage()) return;
+      if (sessionStorage.getItem(STAY_KEY) === '1') return;
+      var region = getRegionCookie();
+      if (region === 'us') return;
+      if (region === 'ng') {
+        window.location.replace(NIGERIA_HUB);
+        return;
+      }
+      if (sessionStorage.getItem(GEO_DONE_KEY) === '1') return;
+      sessionStorage.setItem(GEO_DONE_KEY, '1');
+      if (typeof fetch !== 'function') return;
+      fetch(TRACE_URL, { cache: 'no-store' })
+        .then(function (r) {
+          return r && r.ok ? r.text() : '';
+        })
+        .then(function (txt) {
+          var m = /(?:^|\n)loc=([A-Z]{2})/.exec(txt || '');
+          if (m && m[1] === 'NG') {
+            setRegionCookie('ng');
+            window.location.replace(NIGERIA_HUB);
+          }
+        })
+        .catch(function () {});
+    } catch (ignore) {}
+  }
+
   global.PrayerCityRouting = {
     NIGERIA_HUB: NIGERIA_HUB,
     isNigeriaVolunteerPhone: isNigeriaVolunteerPhone,
@@ -78,5 +131,6 @@
     markStayOnNigeriaHub: markStayOnNigeriaHub,
     clearStayOnUsHub: clearStayOnUsHub,
     parseStayQuery: parseStayQuery,
+    maybeGeoRedirect: maybeGeoRedirect,
   };
 })(typeof window !== 'undefined' ? window : this);

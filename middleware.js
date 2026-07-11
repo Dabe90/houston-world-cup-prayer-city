@@ -41,6 +41,7 @@ export default function middleware(request) {
   else if (stay === 'ng') pref = 'ng';
 
   const country =
+    request.headers.get('cf-ipcountry') ||
     (request.geo && request.geo.country) ||
     request.headers.get('x-vercel-ip-country') ||
     '';

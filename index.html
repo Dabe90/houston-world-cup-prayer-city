@@ -60,6 +60,13 @@
     <script src="js/upcoming-programs-board.js"></script>
     <script src="js/prayer-city-super-user.js"></script>
     <script src="js/prayer-city-routing.js"></script>
+    <script>
+      // Route Nigerian visitors to the Nigeria hub as early as possible.
+      if (window.PrayerCityRouting) {
+        window.PrayerCityRouting.parseStayQuery();
+        window.PrayerCityRouting.maybeGeoRedirect();
+      }
+    </script>
 
     <style>
       body {
