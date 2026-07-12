@@ -549,6 +549,178 @@
             .join('')
         : '<li class="text-slate-500 text-xs">No units yet</li>';
     }
+    refreshPasswordButtonLabel();
+  }
+
+  function userHasPasswordProvider(user) {
+    var providers = (user && user.providerData) || [];
+    return providers.some(function (p) {
+      return p && p.providerId === 'password';
+    });
+  }
+
+  function refreshPasswordButtonLabel() {
+    var label = $('btn-open-password-label');
+    var title = $('ng-password-modal-title');
+    var hasPw = userHasPasswordProvider(auth && auth.currentUser);
+    if (label) label.textContent = hasPw ? 'Update password' : 'Set password';
+    if (title && $('ng-password-modal') && $('ng-password-modal').classList.contains('hidden')) {
+      title.textContent = hasPw ? 'Update password' : 'Set a password';
+    }
+  }
+
+  function setPassStatus(msg, type) {
+    var el = $('ng-pass-status');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.className =
+      'text-sm min-h-[1.25rem] pt-1 ' +
+      (type === 'error'
+        ? 'text-red-600'
+        : type === 'success'
+          ? 'text-emerald-700'
+          : type === 'warn'
+            ? 'text-amber-800'
+            : 'text-slate-600');
+  }
+
+  function openPasswordModal() {
+    var modal = $('ng-password-modal');
+    if (!modal) return;
+    setPassStatus('', 'info');
+    if ($('ng-new-pass')) $('ng-new-pass').value = '';
+    if ($('ng-new-pass2')) $('ng-new-pass2').value = '';
+    if ($('ng-current-pass')) $('ng-current-pass').value = '';
+    hide($('ng-current-pass-wrap'));
+    var hasPw = userHasPasswordProvider(auth && auth.currentUser);
+    if ($('ng-password-modal-title')) {
+      $('ng-password-modal-title').textContent = hasPw ? 'Update password' : 'Set a password';
+    }
+    if ($('ng-password-modal-help')) {
+      $('ng-password-modal-help').textContent = hasPw
+        ? 'Enter a new password below. If Firebase asks for your current password, that field will appear.'
+        : 'First time? Choose a new password below — no current password needed. After saving, you can sign in with email + password or keep using the email link.';
+    }
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closePasswordModal() {
+    var modal = $('ng-password-modal');
+    if (modal) modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  function sendPasswordResetLink(email, intoPassStatus) {
+    if (!auth) return Promise.reject(new Error('Auth not ready.'));
+    email = String(email || '').trim();
+    if (!email) return Promise.reject(new Error('Enter your email first.'));
+    return auth.sendPasswordResetEmail(email, {
+      url: EMAIL_LINK_CONTINUE_URL,
+      handleCodeInApp: false,
+    });
+  }
+
+  function saveLinkedPassword() {
+    var p1 = String(($('ng-new-pass') && $('ng-new-pass').value) || '');
+    var p2 = String(($('ng-new-pass2') && $('ng-new-pass2').value) || '');
+    if (p1.length < 6) {
+      setPassStatus('Use at least 6 characters.', 'error');
+      return;
+    }
+    if (p1 !== p2) {
+      setPassStatus('Passwords do not match.', 'error');
+      return;
+    }
+    var user = auth && auth.currentUser;
+    var email = user && user.email;
+    if (!user || !email) {
+      setPassStatus('Sign in first, then set your password.', 'error');
+      return;
+    }
+
+    function afterPasswordSuccess() {
+      setPassStatus(
+        'Password saved. Next time you can use email + password, or keep using the email link.',
+        'success'
+      );
+      if ($('ng-new-pass')) $('ng-new-pass').value = '';
+      if ($('ng-new-pass2')) $('ng-new-pass2').value = '';
+      if ($('ng-current-pass')) $('ng-current-pass').value = '';
+      hide($('ng-current-pass-wrap'));
+      refreshPasswordButtonLabel();
+      window.setTimeout(function () {
+        closePasswordModal();
+      }, 2200);
+    }
+
+    function handleRequiresRecentLogin() {
+      var curPw = String(($('ng-current-pass') && $('ng-current-pass').value) || '');
+      show($('ng-current-pass-wrap'));
+      if (curPw) {
+        setPassStatus('Verifying current password…', 'info');
+        var reCred = firebase.auth.EmailAuthProvider.credential(email, curPw);
+        return user
+          .reauthenticateWithCredential(reCred)
+          .then(function () {
+            return user.updatePassword(p1);
+          })
+          .then(afterPasswordSuccess)
+          .catch(function (e) {
+            setPassStatus(
+              (e && e.message) ||
+                'Current password incorrect. Try “Email me a password reset link” instead.',
+              'error'
+            );
+          });
+      }
+      setPassStatus(
+        'For security, enter your current password above — or tap “Email me a password reset link”.',
+        'warn'
+      );
+    }
+
+    setPassStatus('Saving…', 'info');
+    var cred = firebase.auth.EmailAuthProvider.credential(email, p1);
+    user
+      .linkWithCredential(cred)
+      .then(afterPasswordSuccess)
+      .catch(function (e) {
+        var code = e && e.code;
+        if (code === 'auth/provider-already-linked' || code === 'auth/credential-already-in-use') {
+          return user
+            .updatePassword(p1)
+            .then(afterPasswordSuccess)
+            .catch(function (e2) {
+              if (e2 && e2.code === 'auth/requires-recent-login') {
+                return handleRequiresRecentLogin();
+              }
+              setPassStatus(
+                (e2 && e2.message) || 'Could not update password. Try the reset link below.',
+                'error'
+              );
+            });
+        }
+        if (code === 'auth/requires-recent-login') {
+          return handleRequiresRecentLogin();
+        }
+        if (code === 'auth/weak-password') {
+          setPassStatus('Use a stronger password (at least 6 characters).', 'error');
+          return;
+        }
+        if (code === 'auth/email-already-in-use') {
+          setPassStatus(
+            'This email already has a password. Use Update password, or email yourself a reset link.',
+            'error'
+          );
+          return;
+        }
+        setPassStatus(
+          ((e && e.message) || 'Could not save password.') +
+            ' Try “Email me a password reset link” below.',
+          'error'
+        );
+      });
   }
 
   function programTileHtml(ev) {
@@ -2857,6 +3029,59 @@
           if ($('onboard-name')) $('onboard-name').value = p.name || '';
           applyUnitsToForm(normalizeProfileUnits(p));
         }
+      });
+    }
+    if ($('btn-open-password-modal')) {
+      $('btn-open-password-modal').addEventListener('click', openPasswordModal);
+    }
+    if ($('btn-close-ng-password-modal')) {
+      $('btn-close-ng-password-modal').addEventListener('click', closePasswordModal);
+    }
+    if ($('ng-password-modal-backdrop')) {
+      $('ng-password-modal-backdrop').addEventListener('click', closePasswordModal);
+    }
+    if ($('btn-ng-save-password')) {
+      $('btn-ng-save-password').addEventListener('click', saveLinkedPassword);
+    }
+    if ($('btn-ng-password-reset-email')) {
+      $('btn-ng-password-reset-email').addEventListener('click', function () {
+        var user = auth && auth.currentUser;
+        var email = (user && user.email) || '';
+        if (!email) {
+          setPassStatus('Sign in first.', 'error');
+          return;
+        }
+        setPassStatus('Sending password reset link…', 'info');
+        sendPasswordResetLink(email)
+          .then(function () {
+            setPassStatus(
+              'Check your inbox (and spam) for the reset link. Open it, choose a new password, then sign in here with email + password.',
+              'success'
+            );
+          })
+          .catch(function (e) {
+            setPassStatus((e && e.message) || 'Could not send reset link.', 'error');
+          });
+      });
+    }
+    if ($('btn-forgot-password')) {
+      $('btn-forgot-password').addEventListener('click', function () {
+        var email = ($('auth-email') && $('auth-email').value || '').trim();
+        if (!email) {
+          setAuthPanelStatus('Enter your email first, then tap Forgot password.', 'error');
+          return;
+        }
+        setAuthPanelStatus('Sending password reset link…', 'info');
+        sendPasswordResetLink(email)
+          .then(function () {
+            setAuthPanelStatus(
+              'Password reset link sent. Check inbox/spam, set a new password, then sign in with email + password.',
+              'success'
+            );
+          })
+          .catch(function (e) {
+            setAuthPanelStatus((e && e.message) || 'Could not send reset link.', 'error');
+          });
       });
     }
     if ($('sidebar-avatar-input')) {
