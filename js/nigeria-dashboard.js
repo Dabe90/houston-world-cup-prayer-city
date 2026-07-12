@@ -853,6 +853,13 @@
               esc(s.phone || '—') +
               '</p>' +
               (s.city ? '<p class="text-xs text-slate-600 mt-1">' + esc(s.city) + '</p>' : '') +
+              (s.birthday || s.maritalStatus
+                ? '<p class="text-xs text-slate-600 mt-1">' +
+                  (s.birthday ? 'Birthday: ' + esc(s.birthday) : '') +
+                  (s.birthday && s.maritalStatus ? ' · ' : '') +
+                  (s.maritalStatus ? 'Marital: ' + esc(s.maritalStatus) : '') +
+                  '</p>'
+                : '') +
               (s.interest ? '<p class="text-xs text-slate-600 mt-1">Interest: ' + esc(s.interest) + '</p>' : '') +
               (s.notes ? '<p class="text-xs text-slate-500 mt-2 italic">' + esc(s.notes) + '</p>' : '') +
               '</div>'
@@ -1134,6 +1141,8 @@
     var email = ($('signup-email') && $('signup-email').value || '').trim();
     var phone = ($('signup-phone') && $('signup-phone').value || '').trim();
     var city = ($('signup-city') && $('signup-city').value || '').trim();
+    var birthday = ($('signup-birthday') && $('signup-birthday').value || '').trim();
+    var maritalStatus = ($('signup-marital-status') && $('signup-marital-status').value || '').trim();
     var interest = ($('signup-interest') && $('signup-interest').value || '').trim();
     var notes = ($('signup-notes') && $('signup-notes').value || '').trim();
     var status = $('signup-status');
@@ -1141,6 +1150,14 @@
     if (!name || !email || !phone) {
       if (status) {
         status.textContent = 'Please fill in name, email, and phone.';
+        status.className = 'text-sm rounded-xl px-3 py-2 border border-red-200 bg-red-50 text-red-800';
+        status.classList.remove('hidden');
+      }
+      return;
+    }
+    if (!birthday || !maritalStatus) {
+      if (status) {
+        status.textContent = 'Please add your birthday and marital status.';
         status.className = 'text-sm rounded-xl px-3 py-2 border border-red-200 bg-red-50 text-red-800';
         status.classList.remove('hidden');
       }
@@ -1158,6 +1175,8 @@
         email: email,
         phone: phone,
         city: city,
+        birthday: birthday,
+        maritalStatus: maritalStatus,
         interest: interest,
         notes: notes,
       })

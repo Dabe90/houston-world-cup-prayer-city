@@ -177,6 +177,35 @@
     }).format(new Date());
   }
 
+  /** Keep a program on featured/hero lists until this many days after it ends. */
+  var PAST_GRACE_DAYS = 5;
+
+  function pad2(n) {
+    return String(n).padStart(2, '0');
+  }
+
+  function eventEndYmd(e) {
+    var endDay = e.endDay || e.day;
+    return e.year + '-' + pad2(e.month) + '-' + pad2(endDay);
+  }
+
+  function ymdToUtcMs(ymd) {
+    var p = String(ymd || '').split('-');
+    if (p.length !== 3) return 0;
+    return Date.UTC(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+  }
+
+  /** Days since the program ended (negative = still upcoming / in progress). */
+  function daysPastEnd(e, todayYmd) {
+    todayYmd = todayYmd || lagosTodayYmd();
+    return Math.floor((ymdToUtcMs(todayYmd) - ymdToUtcMs(eventEndYmd(e))) / 86400000);
+  }
+
+  /** Hide programs once they have been over for more than PAST_GRACE_DAYS. */
+  function isVisibleProgram(e, todayYmd) {
+    return daysPastEnd(e, todayYmd) <= PAST_GRACE_DAYS;
+  }
+
   function formatDateLabel(e) {
     var start = MONTH_NAMES[e.month] + ' ' + e.day + ', ' + e.year;
     if (e.endDay && e.endDay !== e.day) {
@@ -199,15 +228,18 @@
     var max = limit || 12;
     return sortEvents(
       EVENTS.filter(function (e) {
-        return e.dateKey >= today;
+        return isVisibleProgram(e, today) && eventEndYmd(e) >= today;
       })
     ).slice(0, max);
   }
 
   function byMonth(month) {
-    return sortEvents(EVENTS.filter(function (e) {
-      return e.month === month;
-    }));
+    var today = lagosTodayYmd();
+    return sortEvents(
+      EVENTS.filter(function (e) {
+        return e.month === month && isVisibleProgram(e, today);
+      })
+    );
   }
 
   function kindBadge(kind) {
@@ -321,40 +353,63 @@
     });
   }
 
-  /** Immediate past + next 4 upcoming (picture tile row). */
+  /** Recent past (within grace) + next upcoming — drops programs ended >5 days ago. */
   function featuredTiles() {
     var today = lagosTodayYmd();
-    var sorted = sortEvents(EVENTS);
-    var past = sorted.filter(function (e) {
-      return e.dateKey < today;
-    });
-    var immediatePast = past.length ? enrichEvent(Object.assign({}, past[past.length - 1], { slot: 'past' })) : null;
-    var upcoming = sortEvents(
+    var visible = sortEvents(
       EVENTS.filter(function (e) {
-        return e.dateKey >= today;
+        return isVisibleProgram(e, today);
+      })
+    );
+    var recentPast = visible.filter(function (e) {
+      return eventEndYmd(e) < today;
+    });
+    var liveOrUpcoming = visible.filter(function (e) {
+      return eventEndYmd(e) >= today;
+    });
+    var out = [];
+    if (recentPast.length) {
+      out.push(
+        enrichEvent(Object.assign({}, recentPast[recentPast.length - 1], { slot: 'past' }))
+      );
+    }
+    liveOrUpcoming.slice(0, 5).forEach(function (e) {
+      out.push(enrichEvent(Object.assign({}, e, { slot: 'upcoming' })));
+    });
+    return out;
+  }
+
+  /** Live / upcoming programs for the hero slider. */
+  function heroPrograms(limit) {
+    var today = lagosTodayYmd();
+    var max = limit || 6;
+    return sortEvents(
+      EVENTS.filter(function (e) {
+        return isVisibleProgram(e, today) && eventEndYmd(e) >= today;
       })
     )
-      .slice(0, 4)
+      .slice(0, max)
       .map(function (e) {
         return enrichEvent(Object.assign({}, e, { slot: 'upcoming' }));
       });
-    var out = [];
-    if (immediatePast) out.push(immediatePast);
-    return out.concat(upcoming);
   }
 
   global.DDBSNigeriaPrograms = {
     YEAR: YEAR,
     EVENTS: EVENTS,
     MONTH_NAMES: MONTH_NAMES,
+    PAST_GRACE_DAYS: PAST_GRACE_DAYS,
     upcoming: upcoming,
     byMonth: byMonth,
     featuredTiles: featuredTiles,
+    heroPrograms: heroPrograms,
     enrichEvent: enrichEvent,
     themeForEvent: themeForEvent,
     flyerForEvent: flyerForEvent,
     formatDateLabel: formatDateLabel,
     kindBadge: kindBadge,
     lagosTodayYmd: lagosTodayYmd,
+    eventEndYmd: eventEndYmd,
+    isVisibleProgram: isVisibleProgram,
   };
 })(typeof window !== 'undefined' ? window : this);

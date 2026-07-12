@@ -1,5 +1,6 @@
 /**
- * DDBS Nigeria hero billboard — welcome slide + upcoming program flyers.
+ * DDBS Nigeria hero billboard — permanent welcome slide + upcoming program flyers.
+ * Event slides follow the ministry calendar (hide programs ended more than 5 days ago).
  * Infinite forward loop (always slides left / content enters from right).
  */
 (function (global) {
@@ -7,10 +8,12 @@
   var WELCOME_MS = 6000;
   var TRANSITION_MS = 850;
 
-  var SLIDES = [
-    { type: 'welcome', duration: WELCOME_MS },
+  var WELCOME_SLIDE = { type: 'welcome', duration: WELCOME_MS };
+
+  /** Rich copy / flyer accents for known programs (matched by title). */
+  var PROGRAM_SLIDE_META = [
     {
-      type: 'event',
+      match: /recharge|leadership conference/i,
       duration: 6000,
       eyebrow: 'Leadership Conference · July 6–11, 2026',
       title: 'Recharge 2026',
@@ -25,11 +28,9 @@
       image: 'images/ddbs-nigeria/recharge-leadership-conference-2026.png',
       imageAlt: 'Recharge Leadership Conference 2026 flyer',
       accent: 'from-violet-600 via-indigo-700 to-brand',
-      ctaLabel: 'See full calendar',
-      ctaHref: '#programs',
     },
     {
-      type: 'event',
+      match: /how much do you know|couples game/i,
       duration: DEFAULT_MS,
       eyebrow: 'Mid-week Bible Study · Wednesday, July 15',
       title: 'How Much Do You Know',
@@ -40,11 +41,9 @@
       image: 'images/ddbs-nigeria/couples-game-how-much-do-you-know.png',
       imageAlt: 'How Much Do You Know couples game flyer',
       accent: 'from-rose-700 via-red-800 to-rose-900',
-      ctaLabel: 'View programs',
-      ctaHref: '#programs',
     },
     {
-      type: 'event',
+      match: /movie night/i,
       duration: DEFAULT_MS,
       eyebrow: 'Mid-week Bible Study · Wednesday, July 22',
       title: 'Movie Night',
@@ -55,11 +54,9 @@
       image: 'images/ddbs-nigeria/movie-night-july-2026.png',
       imageAlt: 'Movie Night July 2026 flyer',
       accent: 'from-red-800 via-rose-900 to-slate-900',
-      ctaLabel: 'View programs',
-      ctaHref: '#programs',
     },
     {
-      type: 'event',
+      match: /unstoppable generation/i,
       duration: DEFAULT_MS,
       eyebrow: 'Special Monthly Prayer · Friday, July 24',
       title: 'Unstoppable Generation',
@@ -70,11 +67,9 @@
       image: 'images/ddbs-nigeria/unstoppable-generation-prayer.png',
       imageAlt: 'Unstoppable Generation special monthly prayer flyer',
       accent: 'from-sky-600 via-blue-700 to-indigo-900',
-      ctaLabel: 'View programs',
-      ctaHref: '#programs',
     },
     {
-      type: 'event',
+      match: /five wines of marriage/i,
       duration: DEFAULT_MS,
       eyebrow: 'Special Bible Study · Friday, July 25',
       title: 'Five Wines of Marriage',
@@ -88,8 +83,6 @@
       image: 'images/ddbs-nigeria/five-wines-of-marriage.png',
       imageAlt: 'Five Wines of Marriage flyer',
       accent: 'from-rose-900 via-red-950 to-slate-900',
-      ctaLabel: 'View programs',
-      ctaHref: '#programs',
     },
   ];
 
@@ -101,6 +94,77 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
   }
+
+  function metaForEvent(ev) {
+    var title = String(ev.title || '');
+    for (var i = 0; i < PROGRAM_SLIDE_META.length; i++) {
+      if (PROGRAM_SLIDE_META[i].match.test(title)) return PROGRAM_SLIDE_META[i];
+    }
+    return null;
+  }
+
+  function slideFromEvent(ev) {
+    var meta = metaForEvent(ev);
+    var P = global.DDBSNigeriaPrograms;
+    var label = P && P.formatDateLabel ? P.formatDateLabel(ev) : ev.dateKey;
+    var kind = P && P.kindBadge ? P.kindBadge(ev.kind) : ev.kind === 'midweek' ? 'Wed Bible Study' : 'Special program';
+    var image = (meta && meta.image) || ev.flyer || ev.displayImage || ev.image;
+    return {
+      type: 'event',
+      duration: (meta && meta.duration) || DEFAULT_MS,
+      eyebrow: (meta && meta.eyebrow) || kind + ' · ' + label,
+      title: (meta && meta.title) || ev.title,
+      subtitle: (meta && meta.subtitle) || (ev.kind === 'midweek' ? 'Mid-week Bible Study' : 'Upcoming program'),
+      details: (meta && meta.details) || [label + ' (WAT)', 'DM @deardaughter_bs on Telegram for the link'],
+      invite:
+        (meta && meta.invite) ||
+        'You are invited — join Dear Daughter for this program. Follow @deardaughter_bs for the Telegram link.',
+      image: image,
+      imageAlt: (meta && meta.imageAlt) || ev.title,
+      accent: (meta && meta.accent) || 'from-brand via-indigo-800 to-slate-900',
+      ctaLabel: 'View programs',
+      ctaHref: '#programs',
+      dateKey: ev.dateKey,
+    };
+  }
+
+  /**
+   * Welcome slide is permanent. Remaining slides = next upcoming calendar programs
+   * (prefer specials with flyers, then fill with other upcoming).
+   */
+  function buildSlides() {
+    var slides = [WELCOME_SLIDE];
+    var P = global.DDBSNigeriaPrograms;
+    if (!P || !P.heroPrograms) {
+      return slides;
+    }
+    var programs = P.heroPrograms(12);
+    var withFlyer = [];
+    var rest = [];
+    programs.forEach(function (ev) {
+      if (ev.hasFlyer || metaForEvent(ev)) withFlyer.push(ev);
+      else rest.push(ev);
+    });
+    // Prefer specials / flyer programs first for the slider story
+    var specials = withFlyer.filter(function (e) {
+      return e.kind !== 'midweek';
+    });
+    var midweekFlyers = withFlyer.filter(function (e) {
+      return e.kind === 'midweek';
+    });
+    var ordered = specials.concat(midweekFlyers).concat(rest);
+    var seen = {};
+    ordered.forEach(function (ev) {
+      if (slides.length >= 7) return;
+      var key = ev.dateKey + '|' + ev.title;
+      if (seen[key]) return;
+      seen[key] = true;
+      slides.push(slideFromEvent(ev));
+    });
+    return slides;
+  }
+
+  var SLIDES = buildSlides();
 
   function slideHtml(slide, logicalIndex) {
     if (slide.type === 'welcome') {
@@ -220,6 +284,9 @@
     var root = document.querySelector(selector);
     if (!root) return null;
 
+    SLIDES = buildSlides();
+    if (!SLIDES.length) SLIDES = [WELCOME_SLIDE];
+
     var track = root.querySelector('[data-hero-track]');
     if (!track) return null;
     renderSlides(track);
@@ -268,60 +335,45 @@
     }
 
     function goNext() {
-      if (animating) return;
-      if (position >= count + 1) return;
+      if (animating || count < 2) return;
       animating = true;
       applyPosition(position + 1, true);
       afterTransition(function () {
         normalizeLoop();
-        schedule();
+        if (!paused && !reducedMotion) schedule();
       });
     }
 
     function goPrev() {
-      if (animating) return;
-      if (position <= 0) return;
+      if (animating || count < 2) return;
       animating = true;
       applyPosition(position - 1, true);
       afterTransition(function () {
         normalizeLoop();
-        schedule();
+        if (!paused && !reducedMotion) schedule();
       });
     }
 
-    function moveSteps(direction, remaining, onDone) {
-      if (remaining <= 0) {
-        if (onDone) onDone();
-        return;
-      }
+    function goToLogical(i) {
+      if (animating || i < 0 || i >= count) return;
+      clearTimeout(timer);
       animating = true;
-      applyPosition(position + (direction === 'next' ? 1 : -1), true);
+      applyPosition(i + 1, true);
       afterTransition(function () {
-        normalizeLoop();
-        moveSteps(direction, remaining - 1, onDone);
+        if (!paused && !reducedMotion) schedule();
       });
-    }
-
-    function goToLogical(target) {
-      if (timer) clearTimeout(timer);
-      var current = logicalIndex();
-      if (target === current) return;
-      var forward = (target - current + count) % count;
-      var backward = (current - target + count) % count;
-      if (forward <= backward) moveSteps('next', forward, schedule);
-      else moveSteps('prev', backward, schedule);
     }
 
     function schedule() {
-      if (timer) clearTimeout(timer);
-      if (reducedMotion || paused || animating) return;
+      clearTimeout(timer);
+      if (paused || reducedMotion || count < 2) return;
       var ms = SLIDES[logicalIndex()].duration || DEFAULT_MS;
       timer = setTimeout(goNext, ms);
     }
 
     function pause() {
       paused = true;
-      if (timer) clearTimeout(timer);
+      clearTimeout(timer);
     }
 
     function resume() {
@@ -329,24 +381,19 @@
       schedule();
     }
 
-    var prevBtn = root.querySelector('[data-hero-prev]');
-    var nextBtn = root.querySelector('[data-hero-next]');
-    if (prevBtn) {
-      prevBtn.addEventListener('click', function () {
-        if (timer) clearTimeout(timer);
+    root.querySelector('[data-hero-prev]') &&
+      root.querySelector('[data-hero-prev]').addEventListener('click', function () {
+        clearTimeout(timer);
         goPrev();
       });
-    }
-    if (nextBtn) {
-      nextBtn.addEventListener('click', function () {
-        if (timer) clearTimeout(timer);
+    root.querySelector('[data-hero-next]') &&
+      root.querySelector('[data-hero-next]').addEventListener('click', function () {
+        clearTimeout(timer);
         goNext();
       });
-    }
-    root.querySelector('[data-hero-dots]')?.addEventListener('click', function (e) {
+    root.addEventListener('click', function (e) {
       var dot = e.target.closest('[data-dot]');
       if (!dot) return;
-      if (timer) clearTimeout(timer);
       goToLogical(parseInt(dot.getAttribute('data-dot'), 10));
     });
     root.addEventListener('mouseenter', pause);
@@ -389,7 +436,7 @@
   }
 
   global.DDBSNigeriaHeroBillboard = {
-    SLIDES: SLIDES,
+    buildSlides: buildSlides,
     mount: mount,
   };
 

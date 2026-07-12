@@ -2227,6 +2227,8 @@ const submitNigeriaMemberSignup = onCall(
     const email = normalizeEmail(request.data?.email);
     const phoneRaw = String(request.data?.phone || '').trim();
     const city = String(request.data?.city || '').trim().slice(0, 120);
+    const birthday = String(request.data?.birthday || '').trim().slice(0, 20);
+    const maritalStatus = String(request.data?.maritalStatus || '').trim().slice(0, 40);
     const interest = String(request.data?.interest || '').trim().slice(0, 80);
     const notes = String(request.data?.notes || '').trim().slice(0, 500);
 
@@ -2240,6 +2242,20 @@ const submitNigeriaMemberSignup = onCall(
     if (!phone && !isNigeriaPhoneRegistered(phoneRaw)) {
       throw new HttpsError('invalid-argument', 'Please enter a valid Nigeria phone number.');
     }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(birthday)) {
+      throw new HttpsError('invalid-argument', 'Please enter your birthday.');
+    }
+    const allowedMarital = new Set([
+      'single',
+      'married',
+      'engaged',
+      'widowed',
+      'divorced',
+      'prefer-not-to-say',
+    ]);
+    if (!allowedMarital.has(maritalStatus)) {
+      throw new HttpsError('invalid-argument', 'Please select your marital status.');
+    }
 
     const db = admin.firestore();
     const docRef = db.collection('nigeria_member_signups').doc();
@@ -2248,6 +2264,8 @@ const submitNigeriaMemberSignup = onCall(
       email,
       phone: phone || phoneRaw,
       city,
+      birthday,
+      maritalStatus,
       interest,
       notes,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -2327,6 +2345,8 @@ const getNigeriaMemberSignups = onCall(async (request) => {
       email: d.email || '',
       phone: d.phone || '',
       city: d.city || '',
+      birthday: d.birthday || '',
+      maritalStatus: d.maritalStatus || '',
       interest: d.interest || '',
       notes: d.notes || '',
       createdAt,

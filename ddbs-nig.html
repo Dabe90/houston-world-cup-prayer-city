@@ -51,15 +51,15 @@
     };
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260711r" />
-  <link rel="stylesheet" href="css/billion-countdown.css?v=20260711r" />
-  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260711r" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260711s" />
+  <link rel="stylesheet" href="css/billion-countdown.css?v=20260711s" />
+  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260711s" />
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
-  <script src="js/firebase-config.js?v=20260711r"></script>
+  <script src="js/firebase-config.js?v=20260711s"></script>
   <style>
     /* Critical layout + Tailwind utilities we rely on even if the CDN fails */
     body { font-family: "Plus Jakarta Sans", system-ui, sans-serif; }
@@ -467,6 +467,24 @@
                       <label for="signup-city" class="block text-xs font-medium mb-1">City / state</label>
                       <input type="text" id="signup-city" name="city" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white" placeholder="e.g. Lagos" />
                     </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label for="signup-birthday" class="block text-xs font-medium mb-1">Birthday</label>
+                        <input type="date" id="signup-birthday" name="birthday" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white" />
+                      </div>
+                      <div>
+                        <label for="signup-marital-status" class="block text-xs font-medium mb-1">Marital status</label>
+                        <select id="signup-marital-status" name="maritalStatus" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white">
+                          <option value="">Select one</option>
+                          <option value="single">Single</option>
+                          <option value="married">Married</option>
+                          <option value="engaged">Engaged</option>
+                          <option value="widowed">Widowed</option>
+                          <option value="divorced">Divorced</option>
+                          <option value="prefer-not-to-say">Prefer not to say</option>
+                        </select>
+                      </div>
+                    </div>
                     <div>
                       <label for="signup-interest" class="block text-xs font-medium mb-1">Interest (optional)</label>
                       <select id="signup-interest" name="interest" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white">
@@ -676,17 +694,17 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="js/billion-countdown.js?v=20260711r"></script>
-  <script src="js/nigeria-units.js?v=20260711r"></script>
-  <script src="js/ddbs-nigeria-programs.js?v=20260711r"></script>
-  <script src="js/ddbs-nigeria-meeting-notes.js?v=20260711r"></script>
-  <script src="js/monthly-unit-report.js?v=20260711r"></script>
-  <script src="js/nigeria-dashboard-report.js?v=20260711r"></script>
-  <script src="js/prayer-city-super-user.js?v=20260711r"></script>
-  <script src="js/nigeria-gallery-manifest.js?v=20260711r"></script>
-  <script src="js/ddbs-nigeria-hero-billboard.js?v=20260711r"></script>
-  <script src="js/nigeria-landing.js?v=20260711r"></script>
-  <script src="js/nigeria-dashboard.js?v=20260711r"></script>
+  <script src="js/billion-countdown.js?v=20260711s"></script>
+  <script src="js/nigeria-units.js?v=20260711s"></script>
+  <script src="js/ddbs-nigeria-programs.js?v=20260711s"></script>
+  <script src="js/ddbs-nigeria-meeting-notes.js?v=20260711s"></script>
+  <script src="js/monthly-unit-report.js?v=20260711s"></script>
+  <script src="js/nigeria-dashboard-report.js?v=20260711s"></script>
+  <script src="js/prayer-city-super-user.js?v=20260711s"></script>
+  <script src="js/nigeria-gallery-manifest.js?v=20260711s"></script>
+  <script src="js/ddbs-nigeria-hero-billboard.js?v=20260711s"></script>
+  <script src="js/nigeria-landing.js?v=20260711s"></script>
+  <script src="js/nigeria-dashboard.js?v=20260711s"></script>
   <script>
     if (window.BillionCountdown) {
       if (document.getElementById("landing-billion-countdown")) {
