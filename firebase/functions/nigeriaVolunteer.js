@@ -64,6 +64,28 @@ function visionProgressSummary(plan) {
   return { total, done, doing, todo: Math.max(0, total - done - doing), percent: pct };
 }
 
+/** Sanitize photo URLs saved on vision boards and monthly reports. */
+function normalizeImageUrls(list, max = 12) {
+  if (!Array.isArray(list)) return [];
+  const out = [];
+  const seen = new Set();
+  for (const item of list) {
+    if (out.length >= max) break;
+    let url = '';
+    let caption = '';
+    if (typeof item === 'string') {
+      url = item.trim();
+    } else if (item && typeof item === 'object') {
+      url = String(item.url || item.src || '').trim();
+      caption = String(item.caption || '').trim().slice(0, 120);
+    }
+    if (!/^https:\/\//i.test(url) || seen.has(url)) continue;
+    seen.add(url);
+    out.push(caption ? { url, caption } : { url });
+  }
+  return out;
+}
+
 const unitVisionPlanSchema = z.object({
   milestones: z
     .array(
@@ -1550,6 +1572,7 @@ const submitNigeriaUnitReport = onCall(async (request) => {
     prayerRequests: String(data.prayerRequests || '').trim(),
     nextMonth: String(data.nextMonth || '').trim(),
     meetingNotesSummary: String(data.meetingNotesSummary || '').trim(),
+    photos: normalizeImageUrls(data.photos, 12),
     meetingsHeld: attendanceAnalytics.meetingsHeld,
     attendanceSummary: attendanceAnalytics,
     attendanceNarrative: buildAttendanceNarrative(attendanceAnalytics),
@@ -2108,6 +2131,10 @@ const saveNigeriaUnitVision = onCall(async (request) => {
     );
   }
 
+  const imageUrls =
+    request.data?.imageUrls != null || request.data?.photos != null
+      ? normalizeImageUrls(request.data?.imageUrls || request.data?.photos, 12)
+      : normalizeImageUrls(existing && existing.imageUrls, 12);
   const record = {
     unitId,
     unitLabel: unit ? unit.label : unitId,
@@ -2115,13 +2142,14 @@ const saveNigeriaUnitVision = onCall(async (request) => {
     plan,
     planText: formatVisionPlanText(plan),
     progress: visionProgressSummary(plan),
+    imageUrls,
     updatedByUid: uid,
     updatedByName: profile.name || '',
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     publishedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
   await db.collection('nigeria_unit_vision').doc(unitId).set(record, { merge: true });
-  return { ok: true, progress: record.progress };
+  return { ok: true, progress: record.progress, imageUrls };
 });
 
 /**

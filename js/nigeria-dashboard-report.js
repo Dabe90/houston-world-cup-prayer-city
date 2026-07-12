@@ -82,6 +82,18 @@
       '<div><label for="next-month" class="block text-sm font-medium text-slate-700 mb-1">Plans for next month</label>' +
       '<textarea id="next-month" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none resize-y"></textarea></div>' +
       '</div></section>' +
+      '<section class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">' +
+      '<div class="bg-gradient-to-r from-sky-500 to-indigo-600 px-5 py-3 text-white">' +
+      '<h2 class="font-semibold text-sm flex items-center gap-2"><i class="fas fa-images"></i> Report photos</h2></div>' +
+      '<div class="p-5 space-y-3">' +
+      '<p class="text-xs text-slate-500">Add photos from the month — they appear in the live preview, PDF, and final submitted report (up to 12, 5 MB each).</p>' +
+      '<input type="hidden" id="report-photos-json" value="[]" />' +
+      '<div id="report-photos-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>' +
+      '<label class="inline-flex items-center gap-2 text-xs font-semibold text-brand cursor-pointer">' +
+      '<input type="file" id="report-photo-input" class="hidden" accept="image/*" multiple />' +
+      '<span class="rounded-lg border border-brand/30 bg-brand/5 px-3 py-2 hover:bg-brand/10"><i class="fas fa-camera mr-1"></i>Upload photos</span></label>' +
+      '<p id="report-photos-status" class="text-xs text-slate-500"></p>' +
+      '</div></section>' +
       '<section class="bg-white rounded-2xl shadow-card border border-slate-100 p-5 space-y-3">' +
       '<h2 class="font-semibold text-slate-900 text-sm flex items-center gap-2"><i class="fas fa-paper-plane text-brand"></i> Send or save your report</h2>' +
       '<p id="report-action-hint" class="text-sm text-slate-600">Share with teammates to collaborate, then leader approves and submits.</p>' +
@@ -405,6 +417,7 @@
       challenges: data.challenges,
       prayerRequests: data.prayerRequests,
       nextMonth: data.nextMonth,
+      photos: data.photos || [],
     };
   }
 
@@ -436,6 +449,9 @@
         radio.checked = true;
         radio.dispatchEvent(new Event('change', { bubbles: true }));
       }
+    }
+    if (window.MonthlyUnitReport && MonthlyUnitReport.setPhotos) {
+      MonthlyUnitReport.setPhotos(form.photos || []);
     }
     updateUnitSectionSummary();
     if (window.MonthlyUnitReport && MonthlyUnitReport.updatePreview) MonthlyUnitReport.updatePreview();
@@ -726,6 +742,7 @@
         prayerRequests: form.prayerRequests,
         nextMonth: form.nextMonth,
         meetingNotesSummary: form.meetingNotesSummary,
+        photos: form.photos || [],
       })
       .then(function () {
         showReportStatus('Report submitted successfully!', 'success');
@@ -805,6 +822,86 @@
       .catch(function () {});
   }
 
+  function bindReportPhotoUploads(opts) {
+    var input = $('report-photo-input');
+    var statusEl = $('report-photos-status');
+    if (!input || input.dataset.bound) return;
+    input.dataset.bound = '1';
+    if (window.MonthlyUnitReport && MonthlyUnitReport.renderPhotoGrid) {
+      MonthlyUnitReport.renderPhotoGrid();
+    }
+    input.addEventListener('change', function () {
+      var files = Array.prototype.slice.call(input.files || []);
+      input.value = '';
+      var storage = opts && opts.storage;
+      var auth = opts && opts.auth;
+      var user = auth && auth.currentUser;
+      if (!storage || !user) {
+        if (statusEl) statusEl.textContent = 'Sign in required to upload photos.';
+        return;
+      }
+      var unitId = selectedUnitId() || 'unit';
+      var year = ($('report-year') && $('report-year').value) || 'year';
+      var month = ($('report-month') && $('report-month').value) || 'mm';
+      var period = year + '-' + String(month).padStart(2, '0');
+      var existing = (window.MonthlyUnitReport && MonthlyUnitReport.getPhotos()) || [];
+      var remaining = Math.max(0, 12 - existing.length);
+      if (!remaining) {
+        if (statusEl) statusEl.textContent = 'You can add up to 12 photos.';
+        return;
+      }
+      var chain = Promise.resolve(existing.slice());
+      files.slice(0, remaining).forEach(function (file) {
+        chain = chain.then(function (list) {
+          if (!file.type || !file.type.match(/^image\//)) return list;
+          if (file.size > 5 * 1024 * 1024) {
+            if (statusEl) statusEl.textContent = 'Each photo must be under 5 MB.';
+            return list;
+          }
+          if (statusEl) statusEl.textContent = 'Uploading ' + (file.name || 'photo') + '…';
+          var safe = String(file.name || 'photo')
+            .replace(/[^\w.\-]+/g, '_')
+            .slice(0, 40);
+          var path =
+            'nigeria_unit_media/' +
+            unitId +
+            '/reports/' +
+            period +
+            '/' +
+            Date.now() +
+            '_' +
+            user.uid.slice(0, 6) +
+            '_' +
+            safe;
+          return storage
+            .ref(path)
+            .put(file, { contentType: file.type })
+            .then(function () {
+              return storage.ref(path).getDownloadURL();
+            })
+            .then(function (url) {
+              list.push({ url: url });
+              return list;
+            });
+        });
+      });
+      chain
+        .then(function (list) {
+          if (window.MonthlyUnitReport && MonthlyUnitReport.setPhotos) {
+            MonthlyUnitReport.setPhotos(list);
+          }
+          if (window.MonthlyUnitReport && MonthlyUnitReport.updatePreview) {
+            MonthlyUnitReport.updatePreview();
+          }
+          draftDirty = true;
+          if (statusEl) statusEl.textContent = 'Photos ready — share or submit to include them in the final report.';
+        })
+        .catch(function (e) {
+          if (statusEl) statusEl.textContent = (e && e.message) || 'Photo upload failed.';
+        });
+    });
+  }
+
   function bindDashboardHooks(opts) {
     var summarizeBtn = $('btn-summarize-notes');
     if (summarizeBtn && !summarizeBtn.dataset.bound) {
@@ -863,6 +960,7 @@
     setUnitSectionOpen(!selectedUnitId());
     bindDashboardHooks(opts);
     bindCollabActions(opts);
+    bindReportPhotoUploads(opts);
     watchDraft(opts);
 
     loadAttendance(opts.functions, selectedUnitId()).then(function () {

@@ -1575,9 +1575,64 @@
     return html || '<p class="text-xs text-slate-400">No plan yet — click \u201cCreate my plan\u201d.</p>';
   }
 
+  function visionPhotosHtml(images, opts) {
+    opts = opts || {};
+    var list = Array.isArray(images) ? images : [];
+    var canEdit = opts.canEdit === true;
+    var tiles = list
+      .map(function (item, i) {
+        var url = typeof item === 'string' ? item : item && item.url;
+        if (!url) return '';
+        var cap = typeof item === 'object' && item.caption ? item.caption : '';
+        return (
+          '<figure class="vision-photo-tile relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100" data-photo-index="' +
+          i +
+          '">' +
+          '<img src="' +
+          escapeHtml(url) +
+          '" alt="" class="w-full h-28 object-cover" loading="lazy" />' +
+          (cap
+            ? '<figcaption class="text-[10px] text-slate-600 px-2 py-1 truncate">' +
+              escapeHtml(cap) +
+              '</figcaption>'
+            : '') +
+          (canEdit
+            ? '<button type="button" class="vision-photo-remove absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white text-xs hover:bg-red-600" data-photo-index="' +
+              i +
+              '" title="Remove"><i class="fas fa-xmark"></i></button>'
+            : '') +
+          '</figure>'
+        );
+      })
+      .filter(Boolean)
+      .join('');
+    if (!canEdit && !tiles) return '';
+    return (
+      '<div class="vision-photos mt-3">' +
+      '<div class="flex items-center justify-between gap-2 mb-1.5">' +
+      '<p class="text-xs font-semibold text-slate-600"><i class="fas fa-images text-brand mr-1"></i>Vision story photos</p>' +
+      (canEdit
+        ? '<label class="text-[11px] font-semibold text-brand cursor-pointer hover:underline">' +
+          '<input type="file" class="vision-photo-input hidden" accept="image/*" multiple />' +
+          '<i class="fas fa-camera mr-0.5"></i>Add photos</label>'
+        : '') +
+      '</div>' +
+      (canEdit
+        ? '<p class="text-[11px] text-slate-400 mb-2">Up to 8 photos (5 MB each). They appear on the shared board when you tap Share with team.</p>'
+        : '') +
+      '<div class="vision-photo-grid grid grid-cols-2 sm:grid-cols-3 gap-2">' +
+      (tiles ||
+        (canEdit
+          ? '<p class="col-span-full text-[11px] text-slate-400">No photos yet.</p>'
+          : '')) +
+      '</div></div>'
+    );
+  }
+
   function visionPanelHtml(c) {
     var vision = c.unitVision;
     var canEdit = c.canEditVision;
+    var images = (vision && (vision.imageUrls || vision.photos)) || [];
     if (!canEdit && (!vision || !vision.plan)) {
       return '';
     }
@@ -1589,7 +1644,8 @@
         '<p class="text-sm text-slate-700 whitespace-pre-wrap rounded-xl bg-slate-50 border border-slate-100 p-3 mb-3">' +
         escapeHtml(vision.visionText || '') +
         '</p>' +
-        '<div class="rounded-2xl border border-slate-200 bg-white p-4">' +
+        visionPhotosHtml(images, { canEdit: false }) +
+        '<div class="rounded-2xl border border-slate-200 bg-white p-4 mt-3">' +
         visionPlanCardsHtml(vision.plan, { canTrack: false }) +
         '</div></div>'
       );
@@ -1597,23 +1653,27 @@
     var initialCards = vision && vision.plan ? visionPlanCardsHtml(vision.plan, { canTrack: true }) : '';
     var initialReadable = (vision && vision.plan && planToEditableText(vision.plan)) || '';
     var planPayload = '';
+    var imagesPayload = '';
     try {
       planPayload = vision && vision.plan ? encodeURIComponent(JSON.stringify(vision.plan)) : '';
+      imagesPayload = images.length ? encodeURIComponent(JSON.stringify(images)) : '';
     } catch (ignore) {}
     return (
       '<div class="unit-vision mt-5 border-t border-slate-100 pt-4" data-unit-id="' +
       escapeHtml(c.unitId) +
       '"' +
       (planPayload ? ' data-live-plan="' + planPayload + '"' : '') +
+      (imagesPayload ? ' data-live-images="' + imagesPayload + '"' : '') +
       '>' +
       '<h4 class="text-sm font-bold text-slate-900 mb-1"><i class="fas fa-star text-brand mr-1"></i>My Vision Board</h4>' +
-      '<p class="text-xs text-slate-500 mb-3">Write where your unit is headed in the next 3 months. After you share the plan, use the progress bench to mark each milestone as not started, in progress, or done — so the team can see the vision being achieved.</p>' +
+      '<p class="text-xs text-slate-500 mb-3">Write where your unit is headed in the next 3 months. Add photos that tell the story, share the plan, then mark progress on the bench.</p>' +
       '<div class="grid gap-4 lg:grid-cols-2">' +
       '<div>' +
       '<label class="block text-xs font-semibold text-slate-600 mb-1">Your vision</label>' +
       '<textarea class="vision-text w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm min-h-[140px] focus:ring-2 focus:ring-ng-green outline-none" placeholder="Our unit will\u2026">' +
       escapeHtml((vision && vision.visionText) || '') +
       '</textarea>' +
+      visionPhotosHtml(images, { canEdit: true }) +
       '<div class="flex flex-wrap gap-2 mt-2">' +
       '<button type="button" class="btn-generate-vision text-xs font-semibold rounded-lg bg-brand text-white px-3 py-2 hover:bg-brand-light"><i class="fas fa-wand-magic-sparkles mr-1"></i>Create my plan</button>' +
       '</div>' +
@@ -1679,6 +1739,7 @@
       var planEl = panel.querySelector('.vision-plan');
       var viewEl = panel.querySelector('.vision-plan-view');
       var livePlan = readableToPlan(planEl ? planEl.value : '');
+      var liveImages = [];
       try {
         var packed = panel.getAttribute('data-live-plan');
         if (packed) {
@@ -1686,6 +1747,89 @@
           if (parsed && typeof parsed === 'object') livePlan = parsed;
         }
       } catch (ignore) {}
+      try {
+        var packedImg = panel.getAttribute('data-live-images');
+        if (packedImg) {
+          var parsedImg = JSON.parse(decodeURIComponent(packedImg));
+          if (Array.isArray(parsedImg)) liveImages = parsedImg;
+        }
+      } catch (ignore2) {}
+
+      function persistImagesAttr() {
+        try {
+          panel.setAttribute('data-live-images', encodeURIComponent(JSON.stringify(liveImages)));
+        } catch (ignore) {}
+      }
+
+      function renderPhotos() {
+        var wrapPhotos = panel.querySelector('.vision-photos');
+        if (!wrapPhotos) return;
+        var html = visionPhotosHtml(liveImages, { canEdit: true });
+        wrapPhotos.outerHTML = html;
+        bindPhotoControls();
+      }
+
+      function uploadVisionPhoto(file) {
+        if (!file || !file.type.match(/^image\//)) return Promise.resolve();
+        if (file.size > 5 * 1024 * 1024) {
+          if (statusEl) statusEl.textContent = 'Each photo must be under 5 MB.';
+          return Promise.resolve();
+        }
+        if (liveImages.length >= 8) {
+          if (statusEl) statusEl.textContent = 'You can add up to 8 photos on the vision board.';
+          return Promise.resolve();
+        }
+        var user = auth.currentUser;
+        if (!user || !storage) return Promise.resolve();
+        if (statusEl) statusEl.textContent = 'Uploading photo…';
+        var safe = String(file.name || 'photo')
+          .replace(/[^\w.\-]+/g, '_')
+          .slice(0, 40);
+        var path =
+          'nigeria_unit_media/' + unitId + '/vision/' + Date.now() + '_' + user.uid.slice(0, 6) + '_' + safe;
+        return storage
+          .ref(path)
+          .put(file, { contentType: file.type })
+          .then(function () {
+            return storage.ref(path).getDownloadURL();
+          })
+          .then(function (url) {
+            liveImages.push({ url: url });
+            persistImagesAttr();
+            renderPhotos();
+            if (statusEl) statusEl.textContent = 'Photo added — tap Share with team to publish the board story.';
+          })
+          .catch(function (e) {
+            if (statusEl) statusEl.textContent = (e && e.message) || 'Photo upload failed.';
+          });
+      }
+
+      function bindPhotoControls() {
+        var input = panel.querySelector('.vision-photo-input');
+        if (input && !input._bound) {
+          input._bound = true;
+          input.addEventListener('change', function () {
+            var files = Array.prototype.slice.call(input.files || []);
+            input.value = '';
+            var chain = Promise.resolve();
+            files.slice(0, 8 - liveImages.length).forEach(function (f) {
+              chain = chain.then(function () {
+                return uploadVisionPhoto(f);
+              });
+            });
+          });
+        }
+        panel.querySelectorAll('.vision-photo-remove').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var idx = parseInt(btn.getAttribute('data-photo-index'), 10);
+            if (!Number.isInteger(idx)) return;
+            liveImages.splice(idx, 1);
+            persistImagesAttr();
+            renderPhotos();
+            if (statusEl) statusEl.textContent = 'Photo removed. Share again to update the team board.';
+          });
+        });
+      }
 
       function renderView() {
         if (!viewEl) return;
@@ -1743,6 +1887,7 @@
                   unitId: unitId,
                   visionText: visionText,
                   plan: livePlan,
+                  imageUrls: liveImages,
                 })
                 .then(function () {
                   return persistProgress();
@@ -1805,6 +1950,7 @@
       }
 
       bindProgressButtons();
+      bindPhotoControls();
 
       if (genBtn) {
         genBtn.addEventListener('click', function () {
@@ -1873,10 +2019,15 @@
           if (statusEl) statusEl.textContent = 'Sharing…';
           shareBtn.disabled = true;
           functions
-            .httpsCallable('saveNigeriaUnitVision')({ unitId: unitId, visionText: visionText, plan: plan })
+            .httpsCallable('saveNigeriaUnitVision')({
+              unitId: unitId,
+              visionText: visionText,
+              plan: plan,
+              imageUrls: liveImages,
+            })
             .then(function () {
               livePlan = plan;
-              if (statusEl) statusEl.textContent = 'Shared — mark milestones on the progress bench as work moves forward.';
+              if (statusEl) statusEl.textContent = 'Shared — photos and plan are on the team vision board. Mark milestones as work moves forward.';
               return loadDashboard();
             })
             .catch(function (err) {
@@ -2296,6 +2447,8 @@
         {
           db: db,
           functions: functions,
+          storage: storage,
+          auth: auth,
         }
       );
     } else {
@@ -2309,6 +2462,8 @@
         {
           db: db,
           functions: functions,
+          storage: storage,
+          auth: auth,
         }
       );
     }

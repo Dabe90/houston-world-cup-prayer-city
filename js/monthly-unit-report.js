@@ -281,7 +281,67 @@
       prayerRequests: ($('prayer-requests') && $('prayer-requests').value.trim()) || '',
       nextMonth: ($('next-month') && $('next-month').value.trim()) || '',
       testimonies: ($('testimonies') && $('testimonies').value.trim()) || '',
+      photos: getPhotos(),
     };
+  }
+
+  function getPhotos() {
+    var el = $('report-photos-json');
+    if (!el) return [];
+    try {
+      var list = JSON.parse(el.value || '[]');
+      return Array.isArray(list) ? list : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function setPhotos(list) {
+    var el = $('report-photos-json');
+    if (!el) return;
+    var clean = (Array.isArray(list) ? list : [])
+      .map(function (item) {
+        if (typeof item === 'string') return { url: item };
+        return { url: (item && item.url) || '', caption: (item && item.caption) || '' };
+      })
+      .filter(function (p) {
+        return !!p.url;
+      })
+      .slice(0, 12);
+    el.value = JSON.stringify(clean);
+    renderPhotoGrid();
+  }
+
+  function renderPhotoGrid() {
+    var grid = $('report-photos-grid');
+    if (!grid) return;
+    var photos = getPhotos();
+    if (!photos.length) {
+      grid.innerHTML = '<p class="col-span-full text-xs text-slate-400">No photos yet.</p>';
+      return;
+    }
+    grid.innerHTML = photos
+      .map(function (p, i) {
+        return (
+          '<figure class="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100">' +
+          '<img src="' +
+          escapeHtml(p.url) +
+          '" alt="" class="w-full h-28 object-cover" loading="lazy" />' +
+          '<button type="button" class="report-photo-remove absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white text-xs" data-index="' +
+          i +
+          '" title="Remove"><i class="fas fa-xmark"></i></button></figure>'
+        );
+      })
+      .join('');
+    grid.querySelectorAll('.report-photo-remove').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var idx = parseInt(btn.getAttribute('data-index'), 10);
+        var next = getPhotos();
+        if (Number.isInteger(idx)) next.splice(idx, 1);
+        setPhotos(next);
+        updatePreview();
+      });
+    });
   }
 
   function validateForm(data) {
@@ -306,6 +366,41 @@
 
   function nl2br(s) {
     return escapeHtml(s).replace(/\n/g, '<br>');
+  }
+
+  function photosSectionHtml(photos) {
+    var list = Array.isArray(photos) ? photos : [];
+    var urls = list
+      .map(function (p) {
+        return typeof p === 'string' ? p : p && p.url;
+      })
+      .filter(Boolean);
+    if (!urls.length) return '';
+    var rows = '';
+    for (var i = 0; i < urls.length; i += 3) {
+      rows +=
+        '<tr>' +
+        urls
+          .slice(i, i + 3)
+          .map(function (url) {
+            return (
+              '<td style="padding:4px;width:33%;vertical-align:top;">' +
+              '<img src="' +
+              escapeHtml(url) +
+              '" alt="" crossorigin="anonymous" style="width:100%;height:120px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;" />' +
+              '</td>'
+            );
+          })
+          .join('') +
+        '</tr>';
+    }
+    return (
+      '<div style="margin-bottom:18px;">' +
+      '<h3 style="margin:0 0 8px;font-size:14px;color:#0f3d5c;font-family:Georgia,serif;">Photos from the month</h3>' +
+      '<table style="width:100%;border-collapse:collapse;">' +
+      rows +
+      '</table></div>'
+    );
   }
 
   function buildReportHtml(data, forPdf) {
@@ -377,6 +472,7 @@
       section('Challenges & needs', data.challenges, '◆') +
       section('Prayer requests', data.prayerRequests, '🙏') +
       section('Plans for next month', data.nextMonth, '→') +
+      photosSectionHtml(data.photos) +
       '<p style="margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:11px;color:#64748b;text-align:center;">' +
       'Houston World Cup Prayer City Movement · Generated ' +
       new Date().toLocaleDateString('en-US', {
@@ -408,6 +504,13 @@
     if (data.challenges) lines.push('', '--- Challenges ---', data.challenges);
     if (data.prayerRequests) lines.push('', '--- Prayer requests ---', data.prayerRequests);
     if (data.nextMonth) lines.push('', '--- Next month ---', data.nextMonth);
+    if (data.photos && data.photos.length) {
+      lines.push('', '--- Photos ---');
+      data.photos.forEach(function (p, i) {
+        var url = typeof p === 'string' ? p : p && p.url;
+        if (url) lines.push((i + 1) + '. ' + url);
+      });
+    }
     return lines.join('\n');
   }
 
@@ -776,5 +879,8 @@
     downloadPdf: downloadPdf,
     emailReport: emailReport,
     submitToCoordinator: submitToCoordinator,
+    getPhotos: getPhotos,
+    setPhotos: setPhotos,
+    renderPhotoGrid: renderPhotoGrid,
   };
 })(typeof window !== 'undefined' ? window : this);
