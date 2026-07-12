@@ -109,15 +109,18 @@ const NIGERIA_UNITS = [
   { id: 'communications-social', label: 'Communications & Social Media', day: 1, start: '08:00', end: '08:30' },
   { id: 'media', label: 'Media Team', day: 6, start: '19:00', end: '20:00' },
   { id: 'group1', label: 'Group 1', day: 0, start: '21:00', end: '21:15' },
+  { id: 'group2', label: 'Group 2', day: 1, start: '21:00', end: '21:15' },
   { id: 'group3', label: 'Group 3', day: 3, start: '21:00', end: '21:15' },
   { id: 'group4', label: 'Group 4', day: 4, start: '20:30', end: '20:45' },
+  { id: 'group5', label: 'Group 5', day: 5, start: '21:00', end: '21:15' },
+  { id: 'group6', label: 'Group 6', day: 6, start: '21:00', end: '21:15' },
   { id: 'workers-coordinator', label: 'Workers Coordinator', day: 3, start: '21:00', end: '21:30' },
 ];
 
 const WORKERS_COORDINATOR_UNIT_ID = 'workers-coordinator';
 const WORKFORCE_ACTIVE_STATUSES = ['pending_training', 'in_training'];
 const WORKFORCE_ENLIST_EXCLUDE = new Set([WORKERS_COORDINATOR_UNIT_ID]);
-const SIGNUP_VIEWER_UNIT_IDS = ['welcome-hospitality', 'growth-retention'];
+const SIGNUP_VIEWER_UNIT_IDS = ['welcome-hospitality', 'growth-retention', 'workers-coordinator'];
 
 function escapeHtml(s) {
   return String(s || '')
@@ -132,21 +135,13 @@ function isWorkersCoordinatorLeader(profile, isSuperUser) {
   return isLeaderOfUnit(profile, WORKERS_COORDINATOR_UNIT_ID, false);
 }
 
+/** Kingdom Workforce tab: Workers Coordinator leaders (and superusers) only. */
 function workforceAccessForProfile(profile, isSuperUser) {
   if (isSuperUser) {
     return { canView: true, canApprove: true, leaderUnitIds: null };
   }
-  const canApprove = isWorkersCoordinatorLeader(profile, false);
-  const leaderUnitIds = normalizeProfileUnits(profile)
-    .filter((u) => u.role === 'leader')
-    .map((u) => u.unitId);
-  // Workers Coordinator leaders must see every enlistment (not only their own
-  // unit id — workforce applicants never pick "Workers Coordinator" as a unit).
-  if (canApprove) {
+  if (isWorkersCoordinatorLeader(profile, false)) {
     return { canView: true, canApprove: true, leaderUnitIds: null };
-  }
-  if (leaderUnitIds.length) {
-    return { canView: true, canApprove: false, leaderUnitIds };
   }
   return { canView: false, canApprove: false, leaderUnitIds: [] };
 }
@@ -2472,7 +2467,7 @@ const getNigeriaWorkforceSignups = onCall(async (request) => {
     }
     access = workforceAccessForProfile(profileSnap.data(), false);
     if (!access.canView) {
-      throw new HttpsError('permission-denied', 'Unit leaders and Workers Coordinator only.');
+      throw new HttpsError('permission-denied', 'Workers Coordinator leaders only.');
     }
   }
 

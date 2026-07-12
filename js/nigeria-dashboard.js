@@ -454,7 +454,11 @@
 
   function canViewMemberSignupsLocal(profile, isSuperUser) {
     if (isSuperUser) return true;
-    var viewerUnits = { 'welcome-hospitality': true, 'growth-retention': true };
+    var viewerUnits = {
+      'welcome-hospitality': true,
+      'growth-retention': true,
+      'workers-coordinator': true,
+    };
     return normalizeProfileUnits(profile).some(function (u) {
       return u.role === 'leader' && viewerUnits[u.unitId];
     });
@@ -467,18 +471,8 @@
     var canApprove = normalizeProfileUnits(profile).some(function (u) {
       return u.unitId === 'workers-coordinator' && u.role === 'leader';
     });
-    var leaderUnitIds = normalizeProfileUnits(profile)
-      .filter(function (u) {
-        return u.role === 'leader';
-      })
-      .map(function (u) {
-        return u.unitId;
-      });
     if (canApprove) {
       return { canView: true, canApprove: true, leaderUnitIds: null };
-    }
-    if (leaderUnitIds.length) {
-      return { canView: true, canApprove: false, leaderUnitIds: leaderUnitIds };
     }
     return { canView: false, canApprove: false, leaderUnitIds: [] };
   }
