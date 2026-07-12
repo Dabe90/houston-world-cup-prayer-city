@@ -374,9 +374,27 @@
 }
 #units-cards .unit-card,
 #kingdom-workforce-list > div,
-#new-members-list > div {
+#new-members-list > div,
+#my-members-list > details {
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+#units-cards .unit-card-summary::-webkit-details-marker,
+#my-members-list .my-members-unit > summary::-webkit-details-marker {
+  display: none;
+}
+#units-cards .unit-card-summary,
+#my-members-list .my-members-unit > summary {
+  list-style: none;
+}
+#units-cards details.unit-card-collapse[open] > .unit-card-summary .unit-card-chevron,
+#my-members-list details.my-members-unit[open] > summary .my-members-chevron {
+  transform: rotate(90deg);
+}
+#units-cards .unit-card-chevron,
+#my-members-list .my-members-chevron {
+  transition: transform 0.15s ease;
+  display: inline-block;
 }
 #kingdom-workforce-list .btn-wf-in-training,
 #kingdom-workforce-list .btn-wf-approve {

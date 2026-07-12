@@ -576,51 +576,66 @@ function describeStrikes(missed, late) {
 }
 
 /**
- * Warning tiers based on strikes (missed OR late meetings) in the last 8 weeks:
- * 2 = warning, 3 = final warning, 4+ = workforce withdrawal notice.
+ * Warning tiers based on strikes (missed OR late meetings) in the last 8 weeks
+ * for a single unit. Multi-unit members are scored separately per unit — missing
+ * Unit A never triggers withdrawal messaging for Unit B.
  */
-function attendanceMissWarning(strikeStats) {
+function attendanceMissWarning(strikeStats, unitLabel) {
   const stats = strikeStats || { missed: 0, late: 0, strikes: 0, windowWeeks: STRIKE_WINDOW_WEEKS };
   const strikes = stats.strikes || 0;
   const detail = describeStrikes(stats.missed || 0, stats.late || 0);
+  const unitName = String(unitLabel || 'this unit').trim() || 'this unit';
   const base = {
     consecutiveMisses: strikes,
     strikes,
     missed: stats.missed || 0,
     late: stats.late || 0,
     windowWeeks: STRIKE_WINDOW_WEEKS,
+    unitLabel: unitName,
   };
   if (strikes >= 4) {
     return Object.assign({}, base, {
       tier: 'withdrawal',
       level: 'critical',
-      title: 'Workforce withdrawal notice',
+      title: 'Unit withdrawal notice — ' + unitName,
       message:
-        'In the last 8 weeks you have ' +
+        'In the last 8 weeks for ' +
+        unitName +
+        ' you have ' +
         detail +
-        '. Withdrawal from the Kingdom Workforce will be initiated soon unless you attend your next meetings on time. Please contact your unit leader immediately.',
+        '. Withdrawal from this unit may be initiated soon unless you attend the next ' +
+        unitName +
+        ' meetings on time. This does not affect your other units. Please contact your unit leader immediately.',
     });
   }
   if (strikes >= 3) {
     return Object.assign({}, base, {
       tier: 'final',
       level: 'critical',
-      title: 'Final attendance warning',
+      title: 'Final attendance warning — ' + unitName,
       message:
-        'In the last 8 weeks you have ' +
+        'In the last 8 weeks for ' +
+        unitName +
+        ' you have ' +
         detail +
-        '. This is your final warning — one more missed or late meeting and withdrawal from the Kingdom Workforce may be initiated.',
+        '. This is your final warning for this unit — one more missed or late ' +
+        unitName +
+        ' meeting and withdrawal from this unit may be initiated. Your other units are unaffected.',
     });
   }
   if (strikes >= 2) {
     return Object.assign({}, base, {
       tier: 'warning',
       level: 'warn',
-      title: 'Attendance warning',
+      title: 'Attendance warning — ' + unitName,
       message:
-        'In the last 8 weeks you have ' +
+        'In the last 8 weeks for ' +
+        unitName +
+        ' you have ' +
         detail +
-        '. Please attend your next meetings on time — steady attendance keeps the team strong.',
+        '. Please attend your next ' +
+        unitName +
+        ' meetings on time. This warning applies only to this unit.',
     });
   }
   return null;
@@ -739,7 +754,7 @@ async function computeUserAttendanceStats(db, uid, unitId, year, month) {
   const allPast = await pastMeetingsForUnit(db, unitId, 6);
   const consecutiveMisses = computeConsecutiveMisses(allPast, attendedKeys, excusedKeys);
   const strikeStats = computeStrikeWindowStats(allPast, attendedKeys, excusedKeys, checkedInAtByKey, now);
-  const missWarning = attendanceMissWarning(strikeStats);
+  const missWarning = attendanceMissWarning(strikeStats, unit.label);
 
   return {
     year,
@@ -847,7 +862,7 @@ async function computeUnitRoster(db, unitId, now = new Date()) {
     const att = attByUid[m.uid] || { keys: new Set(), at: {} };
     const excused = excusedByUid[m.uid] || new Set();
     const strikeStats = computeStrikeWindowStats(allPast, att.keys, excused, att.at, now);
-    const warning = attendanceMissWarning(strikeStats);
+    const warning = attendanceMissWarning(strikeStats, unit.label);
     return {
       uid: m.uid,
       name: m.name,
@@ -2058,8 +2073,9 @@ VERY IMPORTANT rules for the wording:
         schema: unitVisionPlanSchema,
       });
       if (output && Array.isArray(output.milestones) && output.milestones.length) {
+        // Always start milestones as "not started" — leaders mark progress after sharing.
         output.milestones = output.milestones.map((m) =>
-          Object.assign({}, m, { status: normalizeVisionStatus(m && m.status) })
+          Object.assign({}, m, { status: 'todo' })
         );
         return { plan: output, aiUsed: true, periodLabel };
       }

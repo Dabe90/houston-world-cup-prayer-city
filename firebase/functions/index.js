@@ -1187,9 +1187,9 @@ async function runDailyVolunteerRoleDigestsJob(opts = {}) {
 
       await sentRef.set(
         {
-          lastYmd: ymd,
-          lastSentAt: admin.firestore.FieldValue.serverTimestamp(),
-          roleIds: content.roleIds,
+        lastYmd: ymd,
+        lastSentAt: admin.firestore.FieldValue.serverTimestamp(),
+        roleIds: content.roleIds,
           failStreak: 0,
           lastFailYmd: admin.firestore.FieldValue.delete(),
         },
@@ -1199,7 +1199,7 @@ async function runDailyVolunteerRoleDigestsJob(opts = {}) {
       await new Promise((r) => setTimeout(r, 150));
     }
 
-  console.log(
+    console.log(
     `[sendDailyVolunteerRoleDigests] done ymd=${ymd} sent=${sent} skipped=${skipped} failed=${failed} dryRun=${dryRun} forceResend=${forceResend}`
   );
   return { ymd, sent, skipped, failed, dryRun, forceResend };

@@ -274,11 +274,12 @@
     document.querySelectorAll('.tab-btn').forEach(function (btn) {
       btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
     });
-    ['home', 'programs', 'units', 'new-members', 'kingdom-workforce', 'reports'].forEach(function (name) {
+    ['home', 'programs', 'units', 'my-members', 'new-members', 'kingdom-workforce', 'reports'].forEach(function (name) {
       var panel = $('tab-' + name);
       if (panel) panel.classList.toggle('hidden', name !== tab);
     });
     if (tab === 'programs') renderProgramsPanel();
+    if (tab === 'my-members' && dashboardData) renderMyMembersTab(dashboardData);
     if (tab === 'new-members' && dashboardData) renderNewMembersTab();
     if (tab === 'kingdom-workforce' && dashboardData) renderWorkforceTab();
     if (tab === 'reports' && dashboardData) renderReportsTab(dashboardData);
@@ -707,6 +708,24 @@
     } else {
       btn.classList.add('hidden');
       if (activeTab === 'new-members') switchTab('home');
+    }
+  }
+
+  function leaderUnitContexts(data) {
+    return (data && data.unitContexts ? data.unitContexts : []).filter(function (c) {
+      return c.isLeaderView === true || c.role === 'leader' || data.isSuperUser === true;
+    });
+  }
+
+  function updateMyMembersTabVisibility(data) {
+    var btn = $('tab-btn-my-members');
+    if (!btn) return;
+    var leaders = leaderUnitContexts(data);
+    if (leaders.length || (data && data.isSuperUser)) {
+      btn.classList.remove('hidden');
+    } else {
+      btn.classList.add('hidden');
+      if (activeTab === 'my-members') switchTab('home');
     }
   }
 
@@ -1406,7 +1425,7 @@
     var cur = normalizeVisionStatus(status);
     var opts = [
       { id: 'todo', label: 'Not started', icon: 'fa-circle', active: 'bg-slate-200 text-slate-700 border-slate-300' },
-      { id: 'doing', label: 'In progress', icon: 'fa-spinner', active: 'bg-amber-100 text-amber-800 border-amber-300' },
+      { id: 'doing', label: 'In progress', icon: 'fa-person-walking', active: 'bg-amber-100 text-amber-800 border-amber-300' },
       { id: 'done', label: 'Done', icon: 'fa-circle-check', active: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
     ];
     if (!canTrack) {
@@ -1680,45 +1699,87 @@
         bindProgressButtons();
       }
 
+      function applyMilestoneStatus(idx, next) {
+        if (!livePlan.milestones) livePlan.milestones = [];
+        if (!livePlan.milestones[idx]) return;
+        livePlan.milestones[idx] = Object.assign({}, livePlan.milestones[idx], { status: next });
+        if (planEl) planEl.value = planToEditableText(livePlan);
+        try {
+          panel.setAttribute('data-live-plan', encodeURIComponent(JSON.stringify(livePlan)));
+        } catch (ignore) {}
+        renderView();
+      }
+
       function bindProgressButtons() {
         if (!viewEl) return;
         viewEl.querySelectorAll('.vision-status-btn').forEach(function (btn) {
-          btn.addEventListener('click', function () {
+          btn.addEventListener('click', function (ev) {
+            if (ev && ev.preventDefault) ev.preventDefault();
+            if (ev && ev.stopPropagation) ev.stopPropagation();
             var idx = parseInt(btn.getAttribute('data-milestone-index'), 10);
             var next = btn.getAttribute('data-status');
             if (!Number.isInteger(idx) || !next) return;
             if (!livePlan.milestones || !livePlan.milestones.length) {
-              if (statusEl) statusEl.textContent = 'Share the plan with your team first, then mark progress.';
+              if (statusEl) statusEl.textContent = 'Create and share the plan first, then mark progress.';
               return;
             }
-            btn.disabled = true;
-            if (statusEl) statusEl.textContent = 'Updating progress…';
-            functions
-              .httpsCallable('updateNigeriaVisionProgress')({
+            var prev = normalizeVisionStatus(livePlan.milestones[idx] && livePlan.milestones[idx].status);
+            if (prev === next) {
+              if (statusEl) statusEl.textContent = 'Already marked “' + next + '”.';
+              return;
+            }
+            applyMilestoneStatus(idx, next);
+            if (statusEl) statusEl.textContent = 'Saving progress…';
+            function persistProgress() {
+              return functions.httpsCallable('updateNigeriaVisionProgress')({
                 unitId: unitId,
                 milestoneIndex: idx,
                 status: next,
+              });
+            }
+            function autoShareThenPersist() {
+              var visionText = visionTextEl ? visionTextEl.value.trim() : '';
+              if (visionText.length < 20) {
+                return Promise.reject(
+                  new Error('Write and share your vision first (at least a short paragraph), then mark progress.')
+                );
+              }
+              return functions
+                .httpsCallable('saveNigeriaUnitVision')({
+                  unitId: unitId,
+                  visionText: visionText,
+                  plan: livePlan,
+                })
+                .then(function () {
+                  return persistProgress();
+                });
+            }
+            persistProgress()
+              .catch(function (err) {
+                var msg = (err && err.message) || '';
+                if (/share a vision|plan first|not found/i.test(msg)) {
+                  return autoShareThenPersist();
+                }
+                return Promise.reject(err);
               })
               .then(function (res) {
-                if (res.data && res.data.plan) {
+                if (res && res.data && res.data.plan) {
                   livePlan = res.data.plan;
                   if (planEl) planEl.value = planToEditableText(livePlan);
-                } else if (livePlan.milestones && livePlan.milestones[idx]) {
-                  livePlan.milestones[idx].status = next;
+                  try {
+                    panel.setAttribute('data-live-plan', encodeURIComponent(JSON.stringify(livePlan)));
+                  } catch (ignore) {}
+                  renderView();
                 }
-                renderView();
-                var p = (res.data && res.data.progress) || visionProgressFromPlan(livePlan);
+                var p = (res && res.data && res.data.progress) || visionProgressFromPlan(livePlan);
                 if (statusEl) {
                   statusEl.textContent =
                     'Progress updated — ' + p.percent + '% on the bench. Your team can see this too.';
                 }
               })
               .catch(function (err) {
-                if (statusEl) {
-                  statusEl.textContent =
-                    (err && err.message) || 'Could not update progress. Share the plan first if you have not yet.';
-                }
-                btn.disabled = false;
+                applyMilestoneStatus(idx, prev);
+                if (statusEl) statusEl.textContent = (err && err.message) || 'Could not update progress. Try again.';
               });
           });
         });
@@ -2003,7 +2064,7 @@
         : '<div class="rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2 text-xs text-emerald-800 mb-2">Everyone is on track. 🎉</div>';
 
     return (
-      '<div class="team-roster mt-5 border-t border-slate-100 pt-4">' +
+      '<div class="team-roster mt-1">' +
       '<div class="flex items-center justify-between mb-1">' +
       '<h4 class="text-sm font-bold text-slate-900"><i class="fas fa-users text-brand mr-1"></i>Team roster</h4>' +
       '<span class="text-[11px] text-slate-500">' +
@@ -2012,12 +2073,49 @@
       (roster.length === 1 ? '' : 's') +
       '</span>' +
       '</div>' +
-      '<p class="text-xs text-slate-500 mb-2">Leaders only. See who is at risk of withdrawal or coming late so you can follow up and manage your WhatsApp group. Anyone who signs in picks their own role — use the buttons to make someone an assistant leader, change them back to a member, or remove someone who is not really on the team.</p>' +
+      '<p class="text-xs text-slate-500 mb-2">Attendance warnings apply only to this unit. Drop someone here if they should leave this unit only — their other units stay unchanged.</p>' +
       summary +
       '<div class="space-y-2">' +
       rows +
       '</div></div>'
     );
+  }
+
+  function renderMyMembersTab(data) {
+    var list = $('my-members-list');
+    if (!list) return;
+    var leaders = leaderUnitContexts(data);
+    if (!leaders.length) {
+      list.innerHTML = '<p class="text-slate-500">No unit leadership yet.</p>';
+      return;
+    }
+    list.innerHTML = leaders
+      .map(function (c, i) {
+        var rosterBlock = teamRosterHtml(c, data.isSuperUser === true);
+        if (!rosterBlock) {
+          rosterBlock =
+            '<p class="text-xs text-slate-500">No members listed for this unit yet.</p>';
+        }
+        var openAttr = leaders.length === 1 || i === 0 ? ' open' : '';
+        return (
+          '<details class="my-members-unit rounded-2xl border border-slate-200 bg-white overflow-hidden"' +
+          openAttr +
+          '>' +
+          '<summary class="cursor-pointer list-none px-4 py-3 flex items-center gap-2 bg-slate-50/80 hover:bg-slate-50">' +
+          '<i class="fas fa-chevron-right my-members-chevron text-slate-400 text-xs"></i>' +
+          '<span class="font-semibold text-slate-900 flex-1">' +
+          escapeHtml(c.unitLabel) +
+          '</span>' +
+          '<span class="text-[11px] text-slate-500">' +
+          ((c.teamRoster && c.teamRoster.length) || 0) +
+          ' members</span></summary>' +
+          '<div class="p-4 border-t border-slate-100">' +
+          rosterBlock +
+          '</div></details>'
+        );
+      })
+      .join('');
+    bindRosterManage(list);
   }
 
   function bindRosterManage(wrap) {
@@ -2053,6 +2151,7 @@
     if (!wrap) return;
     if (window.DDBSNigeriaMeetingNotes) DDBSNigeriaMeetingNotes.detachAll();
     var ctx = data.unitContexts || [];
+    var multi = ctx.length > 1;
     var notesHtml = window.DDBSNigeriaMeetingNotes
       ? DDBSNigeriaMeetingNotes.mountHtml
       : function () {
@@ -2060,7 +2159,7 @@
         };
     var profileName = data.profile && data.profile.name;
     wrap.innerHTML = ctx
-      .map(function (c) {
+      .map(function (c, idx) {
         var sched = unitScheduleLabel(c);
         var open = c.checkInOpen;
         var unitMeetings = meetingsForUnit(c);
@@ -2068,23 +2167,15 @@
         var meeting = meetingForNotes(c);
         var missWarn =
           c.attendanceStats && c.attendanceStats.missWarning
-            ? attendanceWarningBannerHtml(c.attendanceStats.missWarning)
+            ? attendanceWarningBannerHtml(c.attendanceStats.missWarning, c.unitLabel)
             : '';
         var uid = auth.currentUser && auth.currentUser.uid;
-        return (
-          '<div class="unit-card bg-white rounded-2xl shadow-card border border-slate-100 p-5" data-unit-id="' +
-          c.unitId +
-          '">' +
+        var leaderHint =
+          c.isLeaderView || c.role === 'leader'
+            ? '<p class="mt-4 text-xs text-slate-500 border-t border-slate-100 pt-3"><i class="fas fa-users text-brand mr-1"></i>Manage this unit’s roster in the <button type="button" class="text-brand font-semibold underline btn-goto-my-members">My members</button> tab.</p>'
+            : '';
+        var body =
           missWarn +
-          '<div class="flex flex-wrap items-center gap-2 mb-3">' +
-          '<h3 class="font-bold text-slate-900 flex-1">' +
-          c.unitLabel +
-          '</h3>' +
-          '<span class="text-xs font-semibold rounded-full px-2 py-1 ' +
-          (c.role === 'leader' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800') +
-          '">' +
-          (c.role === 'leader' ? 'Leader' : 'Member') +
-          '</span></div>' +
           '<p class="text-sm text-slate-600 mb-1">' +
           sched +
           '</p>' +
@@ -2104,9 +2195,48 @@
           '<p class="text-xs text-slate-500 mt-2 text-center">Opens 15 min before · closes 10 min after</p>' +
           absencePanelHtml(c) +
           lastMeetingDigestHtml(c, uid) +
-          teamRosterHtml(c, data.isSuperUser === true) +
+          leaderHint +
           visionPanelHtml(c) +
-          notesHtml(unitMeetings, defaultKey) +
+          notesHtml(unitMeetings, defaultKey);
+
+        var roleBadge =
+          '<span class="text-xs font-semibold rounded-full px-2 py-1 ' +
+          (c.role === 'leader' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800') +
+          '">' +
+          (c.role === 'leader' ? 'Leader' : 'Member') +
+          '</span>';
+
+        if (multi) {
+          return (
+            '<details class="unit-card unit-card-collapse bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden" data-unit-id="' +
+            c.unitId +
+            '"' +
+            (idx === 0 ? ' open' : '') +
+            '>' +
+            '<summary class="unit-card-summary cursor-pointer list-none px-5 py-4 flex flex-wrap items-center gap-2 hover:bg-slate-50/80">' +
+            '<i class="fas fa-chevron-right unit-card-chevron text-slate-400 text-xs"></i>' +
+            '<h3 class="font-bold text-slate-900 flex-1">' +
+            escapeHtml(c.unitLabel) +
+            '</h3>' +
+            roleBadge +
+            '</summary>' +
+            '<div class="unit-card-body px-5 pb-5 border-t border-slate-100 pt-3">' +
+            body +
+            '</div></details>'
+          );
+        }
+
+        return (
+          '<div class="unit-card bg-white rounded-2xl shadow-card border border-slate-100 p-5" data-unit-id="' +
+          c.unitId +
+          '">' +
+          '<div class="flex flex-wrap items-center gap-2 mb-3">' +
+          '<h3 class="font-bold text-slate-900 flex-1">' +
+          escapeHtml(c.unitLabel) +
+          '</h3>' +
+          roleBadge +
+          '</div>' +
+          body +
           '</div>'
         );
       })
@@ -2117,10 +2247,14 @@
         checkIn(btn.getAttribute('data-unit-id'));
       });
     });
+    wrap.querySelectorAll('.btn-goto-my-members').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        switchTab('my-members');
+      });
+    });
 
     bindVisionPanels(wrap);
     bindAbsencePanels(wrap);
-    bindRosterManage(wrap);
 
     if (window.DDBSNigeriaMeetingNotes) {
       ctx.forEach(function (c) {
@@ -2199,6 +2333,7 @@
     renderUnitsTab(data);
     renderReportsTab(data);
     renderProgramsPanel('upcoming');
+    updateMyMembersTabVisibility(data);
     updateNewMembersTabVisibility(data);
     updateWorkforceTabVisibility(data);
     switchTab(activeTab);
@@ -2538,7 +2673,7 @@
   function bind() {
     renderUnitOptions();
     var hashTab = (window.location.hash || '').replace('#', '');
-    if (['home', 'programs', 'units', 'new-members', 'kingdom-workforce', 'reports'].indexOf(hashTab) >= 0) {
+    if (['home', 'programs', 'units', 'my-members', 'new-members', 'kingdom-workforce', 'reports'].indexOf(hashTab) >= 0) {
       activeTab = hashTab;
     }
     document.querySelectorAll('.tab-btn').forEach(function (btn) {

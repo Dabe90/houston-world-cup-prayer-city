@@ -51,15 +51,15 @@
     };
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260711n" />
-  <link rel="stylesheet" href="css/billion-countdown.css?v=20260711n" />
-  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260711n" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260711o" />
+  <link rel="stylesheet" href="css/billion-countdown.css?v=20260711o" />
+  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260711o" />
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
-  <script src="js/firebase-config.js?v=20260711n"></script>
+  <script src="js/firebase-config.js?v=20260711o"></script>
   <style>
     /* Critical layout + Tailwind utilities we rely on even if the CDN fails */
     body { font-family: "Plus Jakarta Sans", system-ui, sans-serif; }
@@ -112,6 +112,7 @@
         <div class="bg-ng-green/10 px-5 py-4 border-b border-ng-green/10">
           <h2 class="font-semibold text-ng-green text-lg"><i class="fas fa-envelope mr-2"></i>Sign in — workers</h2>
           <p class="text-sm text-slate-600 mt-1">Already registered before? Use the <strong>same email</strong> from that registration — no need to sign up again. We&apos;ll email you a secure sign-in link (no password needed).</p>
+          <p class="text-xs text-slate-500 mt-2">You stay signed in on this device until you tap Sign out.</p>
         </div>
         <div class="p-5 space-y-4 w-full">
           <div id="auth-panel-status" class="hidden rounded-xl border px-3 py-2.5 text-sm" role="status" aria-live="polite"></div>
@@ -536,6 +537,7 @@
                   <ul id="sidebar-units" class="space-y-2 text-sm"></ul>
                 </div>
                 <button type="button" id="btn-edit-profile" class="w-full text-sm rounded-xl border border-slate-200 py-2.5 min-h-[44px] hover:bg-slate-50">Edit profile</button>
+                <p class="text-[11px] text-slate-400 text-center">Signed in on this device until you sign out.</p>
               </div>
             </details>
           </div>
@@ -550,6 +552,7 @@
             <button type="button" class="tab-btn active text-sm font-semibold px-3 sm:px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="home">Home</button>
             <button type="button" class="tab-btn text-sm font-semibold px-3 sm:px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="programs" id="tab-btn-programs">Programs</button>
             <button type="button" class="tab-btn text-sm font-semibold px-3 sm:px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="units">My units</button>
+            <button type="button" class="tab-btn text-sm font-semibold px-3 sm:px-4 py-2 rounded-full border border-slate-200 bg-white hidden" data-tab="my-members" id="tab-btn-my-members">My members</button>
             <button type="button" class="tab-btn text-sm font-semibold px-3 sm:px-4 py-2 rounded-full border border-slate-200 bg-white hidden" data-tab="new-members" id="tab-btn-new-members">New members</button>
             <button type="button" class="tab-btn text-sm font-semibold px-3 sm:px-4 py-2 rounded-full border border-slate-200 bg-white hidden" data-tab="kingdom-workforce" id="tab-btn-kingdom-workforce">Workforce</button>
             <button type="button" class="tab-btn text-sm font-semibold px-3 sm:px-4 py-2 rounded-full border border-slate-200 bg-white" data-tab="reports">Reports</button>
@@ -578,8 +581,16 @@
           </div>
 
           <div id="tab-units" class="tab-panel hidden space-y-4">
-            <p class="text-sm text-slate-600">Check in during your meeting window, request absence if needed, set your <strong>3-month unit vision</strong> (leaders), and capture shared notes.</p>
+            <p class="text-sm text-slate-600">Check in during your meeting window, request absence if needed, set your <strong>3-month unit vision</strong> (leaders), and capture shared notes. If you lead a unit, manage the roster in <strong>My members</strong>.</p>
             <div id="units-cards" class="space-y-4"></div>
+          </div>
+
+          <div id="tab-my-members" class="tab-panel hidden space-y-4">
+            <div class="ng-surface p-5">
+              <h3 class="font-semibold text-slate-900 mb-1"><i class="fas fa-users text-brand mr-2"></i>My members</h3>
+              <p class="text-xs text-slate-500 mb-4">Leaders only — see attendance progress per unit, message members, change roles, or drop someone from a unit. Warnings apply only to the unit they are defaulting.</p>
+              <div id="my-members-list" class="space-y-4 text-sm"></div>
+            </div>
           </div>
 
           <div id="tab-new-members" class="tab-panel hidden space-y-4">
@@ -634,17 +645,17 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="js/billion-countdown.js?v=20260711n"></script>
-  <script src="js/nigeria-units.js?v=20260711n"></script>
-  <script src="js/ddbs-nigeria-programs.js?v=20260711n"></script>
-  <script src="js/ddbs-nigeria-meeting-notes.js?v=20260711n"></script>
-  <script src="js/monthly-unit-report.js?v=20260711n"></script>
-  <script src="js/nigeria-dashboard-report.js?v=20260711n"></script>
-  <script src="js/prayer-city-super-user.js?v=20260711n"></script>
-  <script src="js/nigeria-gallery-manifest.js?v=20260711n"></script>
-  <script src="js/ddbs-nigeria-hero-billboard.js?v=20260711n"></script>
-  <script src="js/nigeria-landing.js?v=20260711n"></script>
-  <script src="js/nigeria-dashboard.js?v=20260711n"></script>
+  <script src="js/billion-countdown.js?v=20260711o"></script>
+  <script src="js/nigeria-units.js?v=20260711o"></script>
+  <script src="js/ddbs-nigeria-programs.js?v=20260711o"></script>
+  <script src="js/ddbs-nigeria-meeting-notes.js?v=20260711o"></script>
+  <script src="js/monthly-unit-report.js?v=20260711o"></script>
+  <script src="js/nigeria-dashboard-report.js?v=20260711o"></script>
+  <script src="js/prayer-city-super-user.js?v=20260711o"></script>
+  <script src="js/nigeria-gallery-manifest.js?v=20260711o"></script>
+  <script src="js/ddbs-nigeria-hero-billboard.js?v=20260711o"></script>
+  <script src="js/nigeria-landing.js?v=20260711o"></script>
+  <script src="js/nigeria-dashboard.js?v=20260711o"></script>
   <script>
     if (window.BillionCountdown) {
       if (document.getElementById("landing-billion-countdown")) {
