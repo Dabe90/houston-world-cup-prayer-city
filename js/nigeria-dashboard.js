@@ -219,9 +219,11 @@
       show($('setup-banner'));
       var banner = $('setup-banner');
       if (banner) {
+        banner.className =
+          'max-w-lg mx-auto m-4 sm:m-6 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 text-slate-700 text-sm text-center shadow-card';
         banner.innerHTML =
-          '<p class="font-semibold">Sign-in could not load on this network.</p>' +
-          '<p class="mt-2 text-amber-800/90">Please try again on mobile data or another Wi‑Fi, or open <a class="underline font-medium" href="https://prayercityhtx.com/ddbs-nig.html">prayercityhtx.com/ddbs-nig.html</a> directly. If it keeps failing, message us on Instagram <a href="https://www.instagram.com/deardaughter_bs" class="underline font-medium">@deardaughter_bs</a>.</p>';
+          '<p class="font-semibold text-slate-900"><i class="fas fa-wifi text-slate-400 mr-1.5"></i>Having trouble loading sign-in?</p>' +
+          '<p class="mt-2 text-slate-600 leading-relaxed">This network may be blocking our sign-in tools. Try mobile data or another Wi‑Fi, refresh, or open <a class="underline font-medium text-brand" href="https://prayercityhtx.com/ddbs-nig.html">prayercityhtx.com/ddbs-nig.html</a> directly. You can still browse programs below — or message us on Instagram <a href="https://www.instagram.com/deardaughter_bs" class="underline font-medium text-brand">@deardaughter_bs</a>.</p>';
       }
       return Promise.resolve(false);
     }

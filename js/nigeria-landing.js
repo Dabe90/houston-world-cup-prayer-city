@@ -89,23 +89,26 @@
       .map(function (u, i) {
         var schedule = NigeriaUnits.meetingScheduleLabel(u);
         return (
-          '<button type="button" class="ng-unit-card ng-card ng-reveal rounded-2xl bg-white border border-slate-100 p-5 shadow-card text-left w-full transition ring-offset-2 focus:outline-none focus:ring-2 focus:ring-brand/40" data-unit-id="' +
+          '<button type="button" class="ng-unit-card ng-card ng-reveal rounded-2xl bg-white border border-slate-100 p-4 sm:p-5 shadow-card text-left w-full transition ring-offset-2 focus:outline-none focus:ring-2 focus:ring-brand/40 min-h-[44px]" data-unit-id="' +
           esc(u.id) +
           '" aria-pressed="false" style="transition-delay:' +
           i * 0.05 +
           's">' +
-          '<div class="w-12 h-12 rounded-xl bg-gradient-to-br ' +
+          '<div class="flex items-start gap-3">' +
+          '<div class="w-11 h-11 sm:w-12 sm:h-12 shrink-0 rounded-xl bg-gradient-to-br ' +
           u.gradient +
-          ' text-white flex items-center justify-center mb-3 text-lg"><i class="fas ' +
+          ' text-white flex items-center justify-center text-base sm:text-lg"><i class="fas ' +
           u.icon +
-          '"></i></div>' +
-          '<h3 class="font-semibold text-slate-900">' +
+          '" aria-hidden="true"></i></div>' +
+          '<div class="min-w-0 flex-1">' +
+          '<h3 class="font-semibold text-slate-900 text-sm sm:text-base leading-snug">' +
           esc(u.label) +
           '</h3>' +
-          '<p class="text-xs font-semibold text-brand mt-2">' +
+          '<p class="text-xs font-semibold text-brand mt-1">' +
           esc(schedule) +
           '</p>' +
-          '<p class="text-xs text-slate-600 mt-2 leading-relaxed">' +
+          '</div></div>' +
+          '<p class="text-xs text-slate-600 mt-3 leading-relaxed">' +
           esc(u.summary || '') +
           '</p>' +
           '<p class="ng-unit-card-hint text-[10px] font-semibold text-brand mt-3 uppercase tracking-wide">Tap to select</p></button>'
@@ -324,7 +327,7 @@
       ? 'bg-gradient-to-t from-slate-900/75 via-transparent to-transparent'
       : 'bg-gradient-to-t from-slate-900/85 to-transparent';
     return (
-      '<article class="ng-program-card ng-card ng-reveal shrink-0 w-[280px] sm:w-[300px] rounded-2xl bg-white border border-slate-100 overflow-hidden shadow-card snap-start" style="transition-delay:' +
+      '<article class="ng-program-card ng-card ng-reveal shrink-0 w-[min(85vw,280px)] sm:w-[300px] rounded-2xl bg-white border border-slate-100 overflow-hidden shadow-card snap-start" style="transition-delay:' +
       (delay || 0) +
       's">' +
       '<div class="' +
