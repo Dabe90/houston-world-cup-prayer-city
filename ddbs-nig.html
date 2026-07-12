@@ -51,15 +51,15 @@
     };
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260711t" />
-  <link rel="stylesheet" href="css/billion-countdown.css?v=20260711t" />
-  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260711t" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260712a" />
+  <link rel="stylesheet" href="css/billion-countdown.css?v=20260712a" />
+  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260712a" />
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
-  <script src="js/firebase-config.js?v=20260711t"></script>
+  <script src="js/firebase-config.js?v=20260712a"></script>
   <style>
     /* Critical layout + Tailwind utilities we rely on even if the CDN fails */
     body { font-family: "Plus Jakarta Sans", system-ui, sans-serif; }
@@ -302,9 +302,18 @@
               <div id="ng-units-anchor" class="ng-reveal mb-5 sm:mb-6">
                 <p class="text-brand font-bold text-xs uppercase tracking-[0.2em] mb-2">Choose your unit</p>
                 <h3 class="font-display text-xl font-semibold text-slate-900">Where do you want to serve?</h3>
-                <p class="text-slate-600 mt-2 text-sm leading-relaxed">Tap a unit to select it, then open the New Workers&apos; form. You can choose more than one.</p>
+                <p class="text-slate-600 mt-2 text-sm leading-relaxed">Browse areas of service, pick one or more, then complete the New Workers&apos; form.</p>
+                <button type="button" id="ng-see-areas-btn" class="ng-see-areas-btn mt-5 inline-flex items-center justify-center gap-2.5 w-full sm:w-auto rounded-2xl bg-white border-2 border-ng-green/30 text-slate-900 font-bold text-sm sm:text-base px-6 py-3.5 min-h-[52px] shadow-card hover:border-ng-green hover:shadow-lift hover:bg-emerald-50/60 transition">
+                  <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-ng-green to-brand text-white flex items-center justify-center shrink-0" aria-hidden="true"><i class="fas fa-map-location-dot"></i></span>
+                  <span class="text-left leading-tight">
+                    See Areas to Serve
+                    <span class="block text-xs font-medium text-slate-500 mt-0.5">Tap to browse &amp; select units</span>
+                  </span>
+                  <i class="fas fa-chevron-right text-ng-green ml-auto sm:ml-2 text-sm" aria-hidden="true"></i>
+                </button>
+                <p id="ng-units-pick-summary" class="hidden mt-3 text-sm text-slate-600"></p>
               </div>
-              <div id="ng-landing-units" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"></div>
+              <div id="ng-landing-units" class="hidden" aria-hidden="true"></div>
               <div id="ng-workforce-details" class="ng-workforce-details ng-reveal hidden mt-6 sm:mt-8 rounded-2xl border border-slate-200 bg-white shadow-card overflow-hidden max-w-2xl">
                 <div class="bg-indigo-50 border-b border-indigo-100 px-5 py-3.5">
                   <h3 class="font-semibold text-slate-900 text-base sm:text-lg"><i class="fas fa-shield-halved text-brand mr-2" aria-hidden="true"></i>New Workers&apos; form</h3>
@@ -312,10 +321,13 @@
                 </div>
                 <form id="ng-workforce-form" class="p-5 sm:p-6 space-y-4">
                   <div>
-                    <p class="text-xs font-medium text-slate-500 mb-2">Selected unit(s)</p>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                      <p class="text-xs font-medium text-slate-500">Selected unit(s)</p>
+                      <button type="button" id="ng-workforce-change-units" class="text-xs font-semibold text-brand hover:underline">Change selection</button>
+                    </div>
                     <div id="ng-workforce-unit-picks" class="flex flex-wrap gap-2 min-h-[2rem]"></div>
                   </div>
-                  <p id="ng-workforce-unit-hint" class="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5 hidden">Select at least one unit above.</p>
+                  <p id="ng-workforce-unit-hint" class="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5 hidden">Select at least one unit — tap &ldquo;See Areas to Serve&rdquo; or Change selection.</p>
                   <div>
                     <label for="workforce-name" class="block text-sm font-medium text-slate-700 mb-1.5">Full name</label>
                     <input type="text" id="workforce-name" required class="ng-input w-full" placeholder="Your name" autocomplete="name" />
@@ -713,20 +725,42 @@
         <button type="button" id="ng-workforce-sticky-more" class="text-xs font-semibold text-brand hover:underline shrink-0">+ Add unit</button>
       </div>
     </div>
+
+    <div id="ng-units-modal" class="ng-units-modal hidden" role="dialog" aria-modal="true" aria-labelledby="ng-units-modal-title" aria-hidden="true">
+      <button type="button" id="ng-units-modal-backdrop" class="ng-units-modal-backdrop" aria-label="Close"></button>
+      <div class="ng-units-modal-panel" role="document">
+        <div class="ng-units-modal-header">
+          <div class="min-w-0">
+            <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-ng-green mb-1">Kingdom Workforce</p>
+            <h2 id="ng-units-modal-title" class="font-display text-lg sm:text-xl font-semibold text-slate-900 leading-snug">Areas to serve</h2>
+            <p class="text-xs text-slate-500 mt-1">Select one or more units, then confirm.</p>
+          </div>
+          <button type="button" id="ng-units-modal-close" class="shrink-0 w-10 h-10 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition flex items-center justify-center" aria-label="Close">
+            <i class="fas fa-times text-lg" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div id="ng-units-modal-list" class="ng-units-modal-list"></div>
+        <div class="ng-units-modal-footer">
+          <p id="ng-units-modal-count" class="text-xs text-slate-500 flex-1 min-w-0">None selected</p>
+          <button type="button" id="ng-units-modal-cancel" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 min-h-[48px]">Cancel</button>
+          <button type="button" id="ng-units-modal-confirm" class="rounded-xl bg-ng-green text-white font-bold px-5 py-2.5 text-sm hover:bg-emerald-700 transition min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed">Confirm selection</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="js/billion-countdown.js?v=20260711t"></script>
-  <script src="js/nigeria-units.js?v=20260711t"></script>
-  <script src="js/ddbs-nigeria-programs.js?v=20260711t"></script>
-  <script src="js/ddbs-nigeria-meeting-notes.js?v=20260711t"></script>
-  <script src="js/monthly-unit-report.js?v=20260711t"></script>
-  <script src="js/nigeria-dashboard-report.js?v=20260711t"></script>
-  <script src="js/prayer-city-super-user.js?v=20260711t"></script>
-  <script src="js/nigeria-gallery-manifest.js?v=20260711t"></script>
-  <script src="js/ddbs-nigeria-hero-billboard.js?v=20260711t"></script>
-  <script src="js/nigeria-landing.js?v=20260711t"></script>
-  <script src="js/nigeria-dashboard.js?v=20260711t"></script>
+  <script src="js/billion-countdown.js?v=20260712a"></script>
+  <script src="js/nigeria-units.js?v=20260712a"></script>
+  <script src="js/ddbs-nigeria-programs.js?v=20260712a"></script>
+  <script src="js/ddbs-nigeria-meeting-notes.js?v=20260712a"></script>
+  <script src="js/monthly-unit-report.js?v=20260712a"></script>
+  <script src="js/nigeria-dashboard-report.js?v=20260712a"></script>
+  <script src="js/prayer-city-super-user.js?v=20260712a"></script>
+  <script src="js/nigeria-gallery-manifest.js?v=20260712a"></script>
+  <script src="js/ddbs-nigeria-hero-billboard.js?v=20260712a"></script>
+  <script src="js/nigeria-landing.js?v=20260712a"></script>
+  <script src="js/nigeria-dashboard.js?v=20260712a"></script>
   <script>
     if (window.BillionCountdown) {
       if (document.getElementById("landing-billion-countdown")) {

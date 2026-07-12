@@ -79,55 +79,185 @@
     }).join('');
   }
 
-  function renderUnits() {
-    var grid = document.getElementById('ng-landing-units');
-    if (!grid || !global.NigeriaUnits) return;
-    var units = NigeriaUnits.enlistableUnits
+  function getEnlistableUnits() {
+    if (!global.NigeriaUnits) return [];
+    return NigeriaUnits.enlistableUnits
       ? NigeriaUnits.enlistableUnits()
       : NigeriaUnits.NIGERIA_UNITS || [];
-    grid.innerHTML = units
-      .map(function (u, i) {
+  }
+
+  var workforceSelected = {};
+  var unitsModalDraft = {};
+  var unitsModalLastFocus = null;
+
+  function updateUnitsPickSummary() {
+    var el = document.getElementById('ng-units-pick-summary');
+    if (!el) return;
+    var ids = Object.keys(workforceSelected);
+    if (!ids.length) {
+      el.classList.add('hidden');
+      el.textContent = '';
+      return;
+    }
+    el.classList.remove('hidden');
+    var labels = ids.map(function (id) {
+      return workforceSelected[id].label;
+    });
+    el.innerHTML =
+      '<span class="inline-flex items-center gap-1.5 text-ng-green font-semibold"><i class="fas fa-check-circle" aria-hidden="true"></i>' +
+      ids.length +
+      ' selected:</span> ' +
+      esc(labels.join(', '));
+  }
+
+  function renderUnitsModalList() {
+    var list = document.getElementById('ng-units-modal-list');
+    if (!list) return;
+    var units = getEnlistableUnits();
+    if (!units.length) {
+      list.innerHTML = '<p class="text-sm text-slate-500 p-4 text-center">No units available right now.</p>';
+      return;
+    }
+    list.innerHTML = units
+      .map(function (u) {
         var schedule = NigeriaUnits.meetingScheduleLabel(u);
+        var checked = !!unitsModalDraft[u.id];
         return (
-          '<button type="button" class="ng-unit-card ng-card ng-reveal rounded-2xl bg-white border border-slate-100 p-4 sm:p-5 shadow-card text-left w-full transition ring-offset-2 focus:outline-none focus:ring-2 focus:ring-brand/40 min-h-[44px]" data-unit-id="' +
+          '<label class="ng-unit-modal-row' +
+          (checked ? ' is-checked' : '') +
+          '" data-unit-id="' +
           esc(u.id) +
-          '" aria-pressed="false" style="transition-delay:' +
-          i * 0.05 +
-          's">' +
-          '<div class="flex items-start gap-3">' +
-          '<div class="w-11 h-11 sm:w-12 sm:h-12 shrink-0 rounded-xl bg-gradient-to-br ' +
-          u.gradient +
-          ' text-white flex items-center justify-center text-base sm:text-lg"><i class="fas ' +
-          u.icon +
-          '" aria-hidden="true"></i></div>' +
-          '<div class="min-w-0 flex-1">' +
-          '<h3 class="font-semibold text-slate-900 text-sm sm:text-base leading-snug">' +
+          '">' +
+          '<input type="checkbox" class="ng-unit-modal-check" value="' +
+          esc(u.id) +
+          '"' +
+          (checked ? ' checked' : '') +
+          ' />' +
+          '<span class="ng-unit-modal-icon bg-gradient-to-br ' +
+          esc(u.gradient || 'from-brand to-ng-green') +
+          '" aria-hidden="true"><i class="fas ' +
+          esc(u.icon || 'fa-users') +
+          '"></i></span>' +
+          '<span class="ng-unit-modal-body min-w-0">' +
+          '<span class="font-semibold text-slate-900 text-sm leading-snug block">' +
           esc(u.label) +
-          '</h3>' +
-          '<p class="text-xs font-semibold text-brand mt-1">' +
+          '</span>' +
+          '<span class="text-xs font-semibold text-brand mt-0.5 block">' +
           esc(schedule) +
-          '</p>' +
-          '</div></div>' +
-          '<p class="text-xs text-slate-600 mt-3 leading-relaxed">' +
+          '</span>' +
+          '<span class="text-xs text-slate-600 mt-1.5 leading-relaxed block">' +
           esc(u.summary || '') +
-          '</p>' +
-          '<p class="ng-unit-card-hint text-[10px] font-semibold text-brand mt-3 uppercase tracking-wide">Tap to select</p></button>'
+          '</span></span></label>'
         );
       })
       .join('');
-    grid.querySelectorAll('.ng-unit-card').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        toggleWorkforceUnit(btn.getAttribute('data-unit-id'));
+    list.querySelectorAll('.ng-unit-modal-check').forEach(function (input) {
+      input.addEventListener('change', function () {
+        var id = input.value;
+        if (input.checked) {
+          var u = NigeriaUnits.getUnit(id);
+          if (u) unitsModalDraft[id] = { id: u.id, label: u.label };
+        } else {
+          delete unitsModalDraft[id];
+        }
+        syncUnitsModalRowState();
+        updateUnitsModalCount();
       });
     });
-    syncUnitCardSelection();
+    updateUnitsModalCount();
+  }
+
+  function syncUnitsModalRowState() {
+    document.querySelectorAll('.ng-unit-modal-row[data-unit-id]').forEach(function (row) {
+      var id = row.getAttribute('data-unit-id');
+      var on = !!unitsModalDraft[id];
+      row.classList.toggle('is-checked', on);
+      var input = row.querySelector('.ng-unit-modal-check');
+      if (input) input.checked = on;
+    });
+  }
+
+  function updateUnitsModalCount() {
+    var countEl = document.getElementById('ng-units-modal-count');
+    var confirmBtn = document.getElementById('ng-units-modal-confirm');
+    var n = Object.keys(unitsModalDraft).length;
+    if (countEl) {
+      countEl.textContent = n === 0 ? 'None selected' : n === 1 ? '1 unit selected' : n + ' units selected';
+    }
+    if (confirmBtn) confirmBtn.disabled = n === 0;
+  }
+
+  function openUnitsModal() {
+    var modal = document.getElementById('ng-units-modal');
+    if (!modal) return;
+    unitsModalDraft = {};
+    Object.keys(workforceSelected).forEach(function (id) {
+      unitsModalDraft[id] = {
+        id: workforceSelected[id].id,
+        label: workforceSelected[id].label,
+      };
+    });
+    renderUnitsModalList();
+    unitsModalLastFocus = document.activeElement;
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('ng-units-modal-open');
+    requestAnimationFrame(function () {
+      modal.classList.add('is-open');
+    });
+    var closeBtn = document.getElementById('ng-units-modal-close');
+    if (closeBtn) {
+      try {
+        closeBtn.focus();
+      } catch (e) {}
+    }
+  }
+
+  function closeUnitsModal() {
+    var modal = document.getElementById('ng-units-modal');
+    if (!modal || modal.classList.contains('hidden')) return;
+    modal.classList.remove('is-open');
+    document.body.classList.remove('ng-units-modal-open');
+    modal.setAttribute('aria-hidden', 'true');
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      modal.classList.add('hidden');
+      if (unitsModalLastFocus && typeof unitsModalLastFocus.focus === 'function') {
+        try {
+          unitsModalLastFocus.focus();
+        } catch (e) {}
+      }
+    }
+    modal.addEventListener('transitionend', finish, { once: true });
+    setTimeout(finish, 280);
+  }
+
+  function confirmUnitsModal() {
+    var ids = Object.keys(unitsModalDraft);
+    if (!ids.length) return;
+    workforceSelected = {};
+    ids.forEach(function (id) {
+      workforceSelected[id] = {
+        id: unitsModalDraft[id].id,
+        label: unitsModalDraft[id].label,
+      };
+    });
+    closeUnitsModal();
     renderWorkforceUnitPicks();
+    updateUnitsPickSummary();
+    openWorkforcePanel({ requireUnits: false });
+  }
+
+  function renderUnits() {
+    renderWorkforceUnitPicks();
+    updateUnitsPickSummary();
     updateWorkforceSticky();
   }
 
   function highlightUnitsGrid() {
     var anchor = document.getElementById('ng-units-anchor');
-    var grid = document.getElementById('ng-landing-units');
     if (anchor) {
       try {
         anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -137,12 +267,7 @@
         anchor.classList.remove('ng-units-highlight');
       }, 2400);
     }
-    if (grid) {
-      grid.classList.add('ng-units-highlight');
-      setTimeout(function () {
-        grid.classList.remove('ng-units-highlight');
-      }, 2400);
-    }
+    openUnitsModal();
   }
 
   function isWorkforceFormOpen() {
@@ -173,31 +298,6 @@
       .join('');
   }
 
-  var workforceSelected = {};
-
-  function toggleWorkforceUnit(unitId) {
-    if (!unitId || !global.NigeriaUnits) return;
-    if (workforceSelected[unitId]) {
-      delete workforceSelected[unitId];
-    } else {
-      var u = NigeriaUnits.getUnit(unitId);
-      if (!u) return;
-      workforceSelected[unitId] = { id: u.id, label: u.label };
-    }
-    syncUnitCardSelection();
-    renderWorkforceUnitPicks();
-    openWorkforcePanel();
-  }
-
-  function syncUnitCardSelection() {
-    document.querySelectorAll('.ng-unit-card[data-unit-id]').forEach(function (card) {
-      var id = card.getAttribute('data-unit-id');
-      var on = !!workforceSelected[id];
-      card.classList.toggle('is-selected', on);
-      card.setAttribute('aria-pressed', on ? 'true' : 'false');
-    });
-  }
-
   function renderWorkforceUnitPicks() {
     var wrap = document.getElementById('ng-workforce-unit-picks');
     var hint = document.getElementById('ng-workforce-unit-hint');
@@ -205,8 +305,12 @@
     var ids = Object.keys(workforceSelected);
     if (!ids.length) {
       wrap.innerHTML =
-        '<span class="text-xs text-slate-500 italic">No units selected — tap unit cards above.</span>';
+        '<button type="button" id="ng-workforce-pick-empty" class="text-xs text-brand font-semibold hover:underline">No units selected — choose areas to serve</button>';
+      var emptyBtn = document.getElementById('ng-workforce-pick-empty');
+      if (emptyBtn) emptyBtn.addEventListener('click', openUnitsModal);
       if (hint) hint.classList.remove('hidden');
+      updateWorkforceSticky();
+      updateUnitsPickSummary();
       return;
     }
     if (hint) hint.classList.add('hidden');
@@ -214,7 +318,7 @@
       .map(function (id) {
         var u = workforceSelected[id];
         return (
-          '<span class="inline-flex items-center gap-1 rounded-full bg-brand/10 text-brand text-xs font-semibold px-3 py-1">' +
+          '<span class="inline-flex items-center gap-1 rounded-full bg-brand/10 text-brand text-xs font-semibold px-3 py-1.5">' +
           esc(u.label) +
           '<button type="button" class="ng-unit-pick-remove ml-1 text-brand/70 hover:text-brand leading-none" data-unit="' +
           esc(id) +
@@ -229,11 +333,12 @@
         e.preventDefault();
         e.stopPropagation();
         delete workforceSelected[btn.getAttribute('data-unit')];
-        syncUnitCardSelection();
         renderWorkforceUnitPicks();
+        updateUnitsPickSummary();
       });
     });
     updateWorkforceSticky();
+    updateUnitsPickSummary();
   }
 
   function getWorkforceUnitIds() {
@@ -268,6 +373,29 @@
     if (bar) bar.classList.add('hidden');
   }
 
+  function initUnitsModal() {
+    var seeBtn = document.getElementById('ng-see-areas-btn');
+    var backdrop = document.getElementById('ng-units-modal-backdrop');
+    var closeBtn = document.getElementById('ng-units-modal-close');
+    var cancelBtn = document.getElementById('ng-units-modal-cancel');
+    var confirmBtn = document.getElementById('ng-units-modal-confirm');
+    var changeBtn = document.getElementById('ng-workforce-change-units');
+    if (seeBtn) seeBtn.addEventListener('click', openUnitsModal);
+    if (backdrop) backdrop.addEventListener('click', closeUnitsModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeUnitsModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeUnitsModal);
+    if (confirmBtn) confirmBtn.addEventListener('click', confirmUnitsModal);
+    if (changeBtn) changeBtn.addEventListener('click', openUnitsModal);
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      var modal = document.getElementById('ng-units-modal');
+      if (modal && !modal.classList.contains('hidden')) {
+        e.preventDefault();
+        closeUnitsModal();
+      }
+    });
+  }
+
   function initWorkforceCollapse() {
     var toggle = document.getElementById('ng-workforce-toggle');
     var closeBtn = document.getElementById('ng-workforce-close');
@@ -284,9 +412,7 @@
     }
     if (closeBtn) closeBtn.addEventListener('click', closeWorkforcePanel);
     if (stickyMore) {
-      stickyMore.addEventListener('click', function () {
-        highlightUnitsGrid();
-      });
+      stickyMore.addEventListener('click', openUnitsModal);
     }
     if (window.location.hash === '#serve') {
       setTimeout(function () {
@@ -546,6 +672,7 @@
     renderPrograms();
     renderGallery();
     initSignupCollapse();
+    initUnitsModal();
     initWorkforceCollapse();
     initMobileNav();
     initReveal();
@@ -564,11 +691,12 @@
     closeSignupPanel: closeSignupPanel,
     openWorkforcePanel: openWorkforcePanel,
     closeWorkforcePanel: closeWorkforcePanel,
+    openUnitsModal: openUnitsModal,
     getWorkforceUnitIds: getWorkforceUnitIds,
     clearWorkforceUnits: function () {
       workforceSelected = {};
-      syncUnitCardSelection();
       renderWorkforceUnitPicks();
+      updateUnitsPickSummary();
       updateWorkforceSticky();
     },
     setVisible: function (show) {
@@ -577,11 +705,18 @@
       var mobileNav = document.getElementById('ng-mobile-nav');
       var countdown = document.getElementById('landing-billion-countdown');
       var stickyPicks = document.getElementById('ng-workforce-sticky-picks');
+      var unitsModal = document.getElementById('ng-units-modal');
       if (wrap) wrap.classList.toggle('hidden', !show);
       if (hero) hero.classList.toggle('hidden', !show);
       if (countdown) countdown.classList.toggle('hidden', !show);
       if (mobileNav) mobileNav.classList.toggle('hidden', !show);
       if (stickyPicks && !show) stickyPicks.classList.add('hidden');
+      if (unitsModal && !show) {
+        unitsModal.classList.add('hidden');
+        unitsModal.classList.remove('is-open');
+        unitsModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('ng-units-modal-open');
+      }
       document.body.classList.toggle('pb-[4.5rem]', show);
       document.body.classList.toggle('lg:pb-0', true);
     },
