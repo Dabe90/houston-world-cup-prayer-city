@@ -1254,6 +1254,22 @@
       .replace(/"/g, '&quot;');
   }
 
+  function isLikelyImageFile(file) {
+    if (!file) return false;
+    if (file.type && /^image\//i.test(file.type)) return true;
+    return /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(String(file.name || ''));
+  }
+
+  function imageUploadContentType(file) {
+    if (file && file.type && /^image\//i.test(file.type)) return file.type;
+    var name = String((file && file.name) || '').toLowerCase();
+    if (/\.png$/i.test(name)) return 'image/png';
+    if (/\.webp$/i.test(name)) return 'image/webp';
+    if (/\.gif$/i.test(name)) return 'image/gif';
+    if (/\.heic$/i.test(name) || /\.heif$/i.test(name)) return 'image/heic';
+    return 'image/jpeg';
+  }
+
   function attendanceWarningBannerHtml(warning, unitLabel) {
     if (!warning) return '';
     var critical = warning.level === 'critical';
@@ -1369,7 +1385,13 @@
 
   function absencePanelHtml(c) {
     var target = c.absenceTargetMeeting;
-    if (!target) return '';
+    if (!target) {
+      return (
+        '<div class="absence-panel mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3">' +
+        '<p class="text-xs font-semibold text-slate-700"><i class="fas fa-calendar-xmark mr-1"></i>Request absence</p>' +
+        '<p class="text-xs text-slate-500 mt-1">No upcoming meeting is scheduled for this unit yet.</p></div>'
+      );
+    }
     var quotas = c.absenceQuotas || {};
     var existing = c.absenceRequest;
     if (existing && existing.status === 'approved') {
@@ -1404,27 +1426,34 @@
     }
     if (!typeOptions || remaining <= 0) {
       return (
-        '<div class="absence-panel mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3">' +
-        '<p class="text-xs font-semibold text-slate-700">Absence requests</p>' +
-        '<p class="text-xs text-slate-500 mt-1">' +
+        '<details class="absence-panel mt-3 rounded-xl border border-slate-200 bg-white overflow-hidden" open>' +
+        '<summary class="absence-summary list-none cursor-pointer px-3 py-3">' +
+        '<span class="summary-row font-semibold text-sm text-slate-800"><i class="fas fa-calendar-xmark text-violet-600 mr-2"></i>Request absence' +
+        '<span class="ml-auto text-[10px] font-bold uppercase tracking-wide text-slate-400">Info</span></span></summary>' +
+        '<div class="px-3 pb-3 border-t border-slate-100 pt-2">' +
+        '<p class="text-xs text-slate-600 leading-relaxed">' +
         (remaining <= 0
           ? 'You have used both requests allowed in the last 8 weeks for this unit.'
-          : 'Planned requests open 2+ days before the meeting. Emergency requests open 15 minutes before until the meeting ends.') +
+          : 'Planned requests open <strong>2+ days before</strong> the meeting (' +
+            escapeHtml(target.dateYmd) +
+            '). Emergency requests open from <strong>15 minutes before</strong> until the meeting ends.') +
         '</p>' +
-        '<p class="text-xs text-slate-500 mt-1">' +
+        '<p class="text-xs text-slate-500 mt-2">' +
         escapeHtml(emergencyNote) +
-        '</p></div>'
+        '</p></div></details>'
       );
     }
     return (
-      '<div class="absence-panel mt-3 rounded-xl border border-violet-100 bg-violet-50/50 p-3" data-unit-id="' +
+      '<details class="absence-panel mt-3 rounded-xl border border-violet-200 bg-violet-50/40 overflow-hidden" open>' +
+      '<summary class="absence-summary list-none cursor-pointer px-3 py-3">' +
+      '<span class="summary-row font-semibold text-sm text-violet-900"><i class="fas fa-calendar-xmark mr-2"></i>Request absence — ' +
+      escapeHtml(target.dateYmd) +
+      '<span class="ml-auto text-[10px] font-bold uppercase tracking-wide text-violet-600">Open</span></span></summary>' +
+      '<div class="px-3 pb-3 border-t border-violet-100 pt-2" data-unit-id="' +
       escapeHtml(c.unitId) +
       '" data-meeting-key="' +
       escapeHtml(target.key) +
       '">' +
-      '<p class="text-xs font-bold text-violet-900 mb-1"><i class="fas fa-calendar-xmark mr-1"></i>Request absence — ' +
-      escapeHtml(target.dateYmd) +
-      '</p>' +
       '<p class="text-[11px] text-violet-800/90 mb-2">' +
       remaining +
       ' of ' +
@@ -1433,14 +1462,16 @@
       escapeHtml(emergencyNote) +
       '</p>' +
       (!c.canRequestEmergency && quotas.emergencyAvailable
-        ? '<p class="text-[11px] text-violet-700/80 mb-2">Need an emergency absence? The <strong>Emergency</strong> option appears here from 15 minutes before the meeting until it ends.</p>'
+        ? '<p class="text-[11px] text-violet-700/80 mb-2">Need an emergency absence? The <strong>Emergency</strong> option appears from 15 minutes before the meeting until it ends.</p>'
         : '') +
-      '<select class="absence-type w-full rounded-lg border border-violet-200 px-2 py-1.5 text-xs mb-2 bg-white">' +
+      '<label class="block text-[11px] font-medium text-violet-900 mb-1">Type</label>' +
+      '<select class="absence-type w-full rounded-lg border border-violet-200 px-2 py-2 text-sm mb-2 bg-white">' +
       typeOptions +
       '</select>' +
-      '<textarea class="absence-reason w-full rounded-lg border border-violet-200 px-2 py-1.5 text-xs min-h-[72px] mb-2" placeholder="Brief reason (required)"></textarea>' +
-      '<button type="button" class="btn-submit-absence text-xs font-semibold rounded-lg bg-violet-700 text-white px-3 py-2 hover:bg-violet-800">Submit absence request</button>' +
-      '<span class="absence-status text-xs text-slate-500 ml-2"></span></div>'
+      '<label class="block text-[11px] font-medium text-violet-900 mb-1">Reason</label>' +
+      '<textarea class="absence-reason w-full rounded-lg border border-violet-200 px-2 py-2 text-sm min-h-[80px] mb-2" placeholder="Brief reason (required)"></textarea>' +
+      '<button type="button" class="btn-submit-absence text-sm font-semibold rounded-lg bg-violet-700 text-white px-3 py-2.5 hover:bg-violet-800">Submit absence request</button>' +
+      '<p class="absence-status text-xs text-slate-500 mt-2 min-h-[1rem]"></p></div></details>'
     );
   }
 
@@ -1448,7 +1479,7 @@
     if (!wrap || !functions) return;
     wrap.querySelectorAll('.btn-submit-absence').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        var panel = btn.closest('.absence-panel');
+        var panel = btn.closest('[data-unit-id][data-meeting-key]') || btn.closest('.absence-panel');
         if (!panel) return;
         var unitId = panel.getAttribute('data-unit-id');
         var meetingKey = panel.getAttribute('data-meeting-key');
@@ -1462,6 +1493,7 @@
           return;
         }
         if (statusEl) statusEl.textContent = 'Submitting…';
+        btn.disabled = true;
         functions
           .httpsCallable('submitNigeriaAbsenceRequest')({
             unitId: unitId,
@@ -1475,6 +1507,7 @@
             return loadDashboard();
           })
           .catch(function (err) {
+            btn.disabled = false;
             if (statusEl) statusEl.textContent = (err && err.message) || 'Failed.';
             setStatus((err && err.message) || 'Absence request failed.', 'error');
           });
@@ -1963,9 +1996,9 @@
       }
 
       function uploadVisionPhoto(file) {
-        if (!file || !file.type.match(/^image\//)) return Promise.resolve();
-        if (file.size > 5 * 1024 * 1024) {
-          if (statusEl) statusEl.textContent = 'Each photo must be under 5 MB.';
+        if (!isLikelyImageFile(file)) return Promise.resolve();
+        if (file.size > 8 * 1024 * 1024) {
+          if (statusEl) statusEl.textContent = 'Each photo must be under 8 MB.';
           return Promise.resolve();
         }
         if (liveImages.length >= 8) {
@@ -1978,11 +2011,12 @@
         var safe = String(file.name || 'photo')
           .replace(/[^\w.\-]+/g, '_')
           .slice(0, 40);
+        var contentType = imageUploadContentType(file);
         var path =
           'nigeria_unit_media/' + unitId + '/vision/' + Date.now() + '_' + user.uid.slice(0, 6) + '_' + safe;
         return storage
           .ref(path)
-          .put(file, { contentType: file.type })
+          .put(file, { contentType: contentType })
           .then(function () {
             return storage.ref(path).getDownloadURL();
           })
@@ -2434,19 +2468,20 @@
           rosterBlock =
             '<p class="text-xs text-slate-500">No members listed for this unit yet.</p>';
         }
-        var openAttr = leaders.length === 1 || i === 0 ? ' open' : '';
+        var openAttr = ' open';
         return (
           '<details class="my-members-unit rounded-2xl border border-slate-200 bg-white overflow-hidden"' +
           openAttr +
           '>' +
-          '<summary class="cursor-pointer list-none px-4 py-3 flex items-center gap-2 bg-slate-50/80 hover:bg-slate-50">' +
+          '<summary class="cursor-pointer list-none px-4 py-3 bg-slate-50/80 hover:bg-slate-50">' +
+          '<span class="summary-row">' +
           '<i class="fas fa-chevron-right my-members-chevron text-slate-400 text-xs"></i>' +
-          '<span class="font-semibold text-slate-900 flex-1">' +
+          '<span class="font-semibold text-slate-900 flex-1 min-w-0">' +
           escapeHtml(c.unitLabel) +
           '</span>' +
-          '<span class="text-[11px] text-slate-500">' +
+          '<span class="text-[11px] text-slate-500 shrink-0">' +
           ((c.teamRoster && c.teamRoster.length) || 0) +
-          ' members</span></summary>' +
+          ' members</span></span></summary>' +
           '<div class="p-4 border-t border-slate-100">' +
           rosterBlock +
           '</div></details>'
@@ -2551,13 +2586,14 @@
             '"' +
             (idx === 0 ? ' open' : '') +
             '>' +
-            '<summary class="unit-card-summary cursor-pointer list-none px-5 py-4 flex flex-wrap items-center gap-2 hover:bg-slate-50/80">' +
+            '<summary class="unit-card-summary cursor-pointer list-none px-5 py-4 hover:bg-slate-50/80">' +
+            '<span class="summary-row">' +
             '<i class="fas fa-chevron-right unit-card-chevron text-slate-400 text-xs"></i>' +
-            '<h3 class="font-bold text-slate-900 flex-1">' +
+            '<h3 class="font-bold text-slate-900 flex-1 min-w-0">' +
             escapeHtml(c.unitLabel) +
             '</h3>' +
             roleBadge +
-            '</summary>' +
+            '</span></summary>' +
             '<div class="unit-card-body px-5 pb-5 border-t border-slate-100 pt-3">' +
             body +
             '</div></details>'
@@ -2900,7 +2936,7 @@
   }
 
   function uploadSidebarPhoto(file) {
-    if (!file || !file.type.match(/^image\//)) return;
+    if (!isLikelyImageFile(file)) return;
     if (file.size > 3 * 1024 * 1024) {
       if ($('sidebar-upload-status')) $('sidebar-upload-status').textContent = 'Max 3 MB.';
       return;
@@ -2912,7 +2948,7 @@
     var path = 'volunteer_photos/' + user.uid + '/avatar.jpg';
     storage
       .ref(path)
-      .put(file, { contentType: file.type })
+      .put(file, { contentType: imageUploadContentType(file) })
       .then(function () {
         return storage.ref(path).getDownloadURL();
       })

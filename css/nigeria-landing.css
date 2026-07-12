@@ -581,9 +581,21 @@ body.ng-units-modal-open {
 #my-members-list .my-members-unit > summary::-webkit-details-marker {
   display: none;
 }
+/* Safari: display:flex on <summary> breaks open/close — keep summary block, flex the inner row */
 #units-cards .unit-card-summary,
 #my-members-list .my-members-unit > summary {
   list-style: none;
+  display: block;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+#units-cards .unit-card-summary .summary-row,
+#my-members-list .my-members-unit > summary .summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
 }
 #units-cards details.unit-card-collapse[open] > .unit-card-summary .unit-card-chevron,
 #my-members-list details.my-members-unit[open] > summary .my-members-chevron {
@@ -593,6 +605,48 @@ body.ng-units-modal-open {
 #my-members-list .my-members-chevron {
   transition: transform 0.15s ease;
   display: inline-block;
+}
+#my-members-list .team-roster,
+#my-members-list .team-roster .space-y-2 {
+  display: block;
+  visibility: visible;
+  max-height: none;
+  overflow: visible;
+}
+.absence-panel .absence-summary {
+  list-style: none;
+  display: block;
+}
+.absence-panel .absence-summary::-webkit-details-marker {
+  display: none;
+}
+.absence-panel .absence-summary .summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+.absence-panel .btn-submit-absence {
+  min-height: 44px;
+  width: 100%;
+  margin-top: 0.25rem;
+}
+.absence-panel .absence-type,
+.absence-panel .absence-reason {
+  font-size: 16px;
+  min-height: 44px;
+}
+@media (max-width: 639px) {
+  #my-members-list .my-members-unit > summary,
+  #units-cards .unit-card-summary {
+    min-height: 48px;
+    padding-top: 0.875rem;
+    padding-bottom: 0.875rem;
+  }
+  #my-members-list .team-roster > .space-y-2 > div {
+    padding: 0.75rem;
+  }
 }
 #kingdom-workforce-list .btn-wf-in-training,
 #kingdom-workforce-list .btn-wf-approve {

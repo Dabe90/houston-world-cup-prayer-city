@@ -14,6 +14,22 @@
     return document.getElementById(id);
   }
 
+  function isLikelyImageFile(file) {
+    if (!file) return false;
+    if (file.type && /^image\//i.test(file.type)) return true;
+    return /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(String(file.name || ''));
+  }
+
+  function imageUploadContentType(file) {
+    if (file && file.type && /^image\//i.test(file.type)) return file.type;
+    var name = String((file && file.name) || '').toLowerCase();
+    if (/\.png$/i.test(name)) return 'image/png';
+    if (/\.webp$/i.test(name)) return 'image/webp';
+    if (/\.gif$/i.test(name)) return 'image/gif';
+    if (/\.heic$/i.test(name) || /\.heif$/i.test(name)) return 'image/heic';
+    return 'image/jpeg';
+  }
+
   function reportShellHtml() {
     return (
       '<div id="ng-report-root" class="space-y-4">' +
@@ -853,9 +869,9 @@
       var chain = Promise.resolve(existing.slice());
       files.slice(0, remaining).forEach(function (file) {
         chain = chain.then(function (list) {
-          if (!file.type || !file.type.match(/^image\//)) return list;
-          if (file.size > 5 * 1024 * 1024) {
-            if (statusEl) statusEl.textContent = 'Each photo must be under 5 MB.';
+          if (!isLikelyImageFile(file)) return list;
+          if (file.size > 8 * 1024 * 1024) {
+            if (statusEl) statusEl.textContent = 'Each photo must be under 8 MB.';
             return list;
           }
           if (statusEl) statusEl.textContent = 'Uploading ' + (file.name || 'photo') + '…';
@@ -875,7 +891,7 @@
             safe;
           return storage
             .ref(path)
-            .put(file, { contentType: file.type })
+            .put(file, { contentType: imageUploadContentType(file) })
             .then(function () {
               return storage.ref(path).getDownloadURL();
             })
