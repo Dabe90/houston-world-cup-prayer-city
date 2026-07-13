@@ -85,8 +85,8 @@
       icon: 'fa-hashtag',
       gradient: 'from-sky-500 to-blue-700',
       day: 1,
-      start: '08:00',
-      end: '08:30',
+      start: '20:00',
+      end: '20:30',
     },
     {
       id: 'media',
