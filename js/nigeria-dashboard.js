@@ -887,9 +887,16 @@
   }
 
   function leaderUnitContexts(data) {
-    return (data && data.unitContexts ? data.unitContexts : []).filter(function (c) {
+    var contexts = (data && data.unitContexts ? data.unitContexts : []).filter(function (c) {
       return c.isLeaderView === true || c.role === 'leader' || data.isSuperUser === true;
     });
+    if (data && data.isSuperUser) {
+      contexts = contexts.slice().sort(function (a, b) {
+        if (!!a.browseOnly !== !!b.browseOnly) return a.browseOnly ? 1 : -1;
+        return String(a.unitLabel || '').localeCompare(String(b.unitLabel || ''));
+      });
+    }
+    return contexts;
   }
 
   function updateMyMembersTabVisibility(data) {
@@ -2272,6 +2279,9 @@
     var warnWrap = $('home-attendance-warnings');
     if (warnWrap) {
       var warnings = (data.unitContexts || [])
+        .filter(function (c) {
+          return !c.browseOnly;
+        })
         .map(function (c) {
           var w = c.attendanceStats && c.attendanceStats.missWarning;
           if (!w) return '';
@@ -2296,7 +2306,9 @@
         : '<p class="text-sm text-slate-500">No programs scheduled.</p>';
     }
     if (meetings) {
-      var ctx = data.unitContexts || [];
+      var ctx = (data.unitContexts || []).filter(function (c) {
+        return !c.browseOnly;
+      });
       meetings.innerHTML = ctx.length
         ? ctx
             .map(function (c) {
@@ -2335,10 +2347,25 @@
       return '<span class="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 bg-orange-100 text-orange-700">Final warning</span>';
     if (tier === 'warning')
       return '<span class="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 bg-amber-100 text-amber-700">Warning</span>';
+    if (tier === 'pending')
+      return '<span class="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 bg-violet-100 text-violet-800">Pending hub</span>';
     return '<span class="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 bg-emerald-100 text-emerald-700">On track</span>';
   }
 
   function rosterManageControls(c, m, isSuperUser) {
+    if (m.pendingWorkforce) {
+      var statusLabel =
+        m.workforceStatus === 'approved'
+          ? 'Cleared — awaiting hub sign-in'
+          : m.workforceStatus === 'in_training'
+            ? 'In Workers Training'
+            : 'Workforce application';
+      return (
+        '<p class="text-[10px] text-violet-700 mt-1.5 font-medium">' +
+        escapeHtml(statusLabel) +
+        '. They appear here after they complete their hub profile.</p>'
+      );
+    }
     var canManage = isSuperUser || c.role === 'leader';
     if (!canManage) return '';
     if (!isSuperUser && m.role === 'leader') return '';
@@ -2370,8 +2397,11 @@
     if (!c.isLeaderView || !c.teamRoster || !c.teamRoster.length) return '';
     var roster = c.teamRoster;
     var atRisk = roster.filter(function (m) {
-      return m.tier && m.tier !== 'ok';
+      return m.tier && m.tier !== 'ok' && m.tier !== 'pending';
     });
+    var pendingCount = roster.filter(function (m) {
+      return m.pendingWorkforce || m.tier === 'pending';
+    }).length;
     var withdrawals = roster.filter(function (m) {
       return m.tier === 'withdrawal';
     });
@@ -2385,7 +2415,9 @@
               ? 'bg-orange-50/60 border-orange-100'
               : m.tier === 'warning'
                 ? 'bg-amber-50/50 border-amber-100'
-                : 'bg-white border-slate-100';
+                : m.tier === 'pending' || m.pendingWorkforce
+                  ? 'bg-violet-50/60 border-violet-100'
+                  : 'bg-white border-slate-100';
         return (
           '<div class="rounded-xl border ' +
           rowTone +
@@ -2400,22 +2432,31 @@
             : '') +
           rosterStatusBadge(m.tier) +
           '</div>' +
-          '<p class="text-[11px] text-slate-500 mt-0.5">' +
-          escapeHtml(String(m.missed || 0)) +
-          ' missed · ' +
-          escapeHtml(String(m.late || 0)) +
-          ' late · last 8 wks</p>' +
+          (m.pendingWorkforce
+            ? '<p class="text-[11px] text-violet-700 mt-0.5">Kingdom Workforce · not on hub attendance yet</p>'
+            : '<p class="text-[11px] text-slate-500 mt-0.5">' +
+              escapeHtml(String(m.missed || 0)) +
+              ' missed · ' +
+              escapeHtml(String(m.late || 0)) +
+              ' late · last 8 wks</p>') +
           (m.phone ? '<p class="text-[11px] text-slate-500">' + escapeHtml(m.phone) + '</p>' : '') +
+          (m.email && m.pendingWorkforce
+            ? '<p class="text-[11px] text-slate-500">' + escapeHtml(m.email) + '</p>'
+            : '') +
           (m.tier === 'withdrawal'
             ? '<p class="text-[11px] text-red-700 font-medium mt-1"><i class="fas fa-triangle-exclamation mr-1"></i>Withdrawal reached — you may remove them from the WhatsApp group.</p>'
             : '') +
           rosterManageControls(c, m, isSuperUser) +
           '</div>' +
-          (wa
+          (wa && !m.pendingWorkforce
             ? '<a href="' +
               wa +
               '" target="_blank" rel="noopener" class="shrink-0 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-2 py-1 hover:bg-emerald-100"><i class="fas fa-comment-dots mr-1"></i>Message</a>'
-            : '') +
+            : wa
+              ? '<a href="' +
+                wa +
+                '" target="_blank" rel="noopener" class="shrink-0 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-2 py-1 hover:bg-emerald-100"><i class="fas fa-comment-dots mr-1"></i>Message</a>'
+              : '') +
           '</div>'
         );
       })
@@ -2433,7 +2474,13 @@
           '</strong> member' +
           (atRisk.length === 1 ? '' : 's') +
           ' need a nudge to stay on track.</div>'
-        : '<div class="rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2 text-xs text-emerald-800 mb-2">Everyone is on track. 🎉</div>';
+        : pendingCount
+          ? '<div class="rounded-lg bg-violet-50 border border-violet-100 px-3 py-2 text-xs text-violet-800 mb-2"><strong>' +
+            pendingCount +
+            '</strong> workforce applicant' +
+            (pendingCount === 1 ? '' : 's') +
+            ' waiting to finish hub sign-in.</div>'
+          : '<div class="rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2 text-xs text-emerald-800 mb-2">Everyone is on track. 🎉</div>';
 
     return (
       '<div class="team-roster mt-1">' +
@@ -2523,7 +2570,9 @@
     var wrap = $('units-cards');
     if (!wrap) return;
     if (window.DDBSNigeriaMeetingNotes) DDBSNigeriaMeetingNotes.detachAll();
-    var ctx = data.unitContexts || [];
+    var ctx = (data.unitContexts || []).filter(function (c) {
+      return !c.browseOnly;
+    });
     var multi = ctx.length > 1;
     var notesHtml = window.DDBSNigeriaMeetingNotes
       ? DDBSNigeriaMeetingNotes.mountHtml
@@ -2717,7 +2766,7 @@
     switchTab(activeTab);
   }
 
-  function showOnboarding(volunteer, isSuperUser) {
+  function showOnboarding(volunteer, isSuperUser, suggestedUnits) {
     hide($('dash-shell'));
     hide($('auth-panel'));
     setPublicLanding(false);
@@ -2736,6 +2785,7 @@
     }
     var preview = loadPreviewProfile();
     if (preview) applyUnitsToForm(normalizeProfileUnits(preview));
+    else if (suggestedUnits && suggestedUnits.length) applyUnitsToForm(normalizeProfileUnits({ units: suggestedUnits }));
   }
 
   function showDashboardSafely(data) {
@@ -2775,7 +2825,11 @@
       return;
     }
     if (!data.hasProfile || !isProfileComplete(data.profile)) {
-      showOnboarding(data.volunteer || coordinatorVolunteer(), data.isSuperUser || isClientSuperUser());
+      showOnboarding(
+        data.volunteer || coordinatorVolunteer(),
+        data.isSuperUser || isClientSuperUser(),
+        data.suggestedUnits
+      );
       return;
     }
     if ((!data.unitContexts || !data.unitContexts.length) && data.profile) {

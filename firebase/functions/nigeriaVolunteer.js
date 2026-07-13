@@ -839,6 +839,43 @@ async function loadUnitMembers(db, unitId) {
 }
 
 /**
+ * People who enlisted for this unit via Kingdom Workforce but are not yet on
+ * the nigeria_volunteers roster (still in training / approved, awaiting hub profile).
+ */
+async function loadPendingWorkforceForUnit(db, unitId, existingEmails = new Set()) {
+  const snap = await db
+    .collection('nigeria_workforce_signups')
+    .where('unitIds', 'array-contains', unitId)
+    .limit(80)
+    .get();
+  const pending = [];
+  snap.forEach((doc) => {
+    const d = doc.data() || {};
+    const status = String(d.status || '');
+    if (!['pending_training', 'in_training', 'approved'].includes(status)) return;
+    const email = normalizeEmail(d.email);
+    if (email && existingEmails.has(email)) return;
+    pending.push({
+      uid: 'wf_' + doc.id,
+      signupId: doc.id,
+      name: String(d.name || '').trim() || (email ? email.split('@')[0] : 'Applicant'),
+      phone: String(d.phone || '').trim(),
+      email,
+      role: 'member',
+      pendingWorkforce: true,
+      workforceStatus: status,
+      missed: 0,
+      late: 0,
+      strikes: 0,
+      tier: 'pending',
+      level: 'pending',
+    });
+  });
+  pending.sort((a, b) => a.name.localeCompare(b.name));
+  return pending;
+}
+
+/**
  * Leader-only roster of every member in a unit, each with their 8-week strike
  * status (missed / late / withdrawal risk). Lets a leader see at a glance who
  * needs a nudge and who has hit the withdrawal notice (so they can remove them
@@ -848,7 +885,9 @@ async function computeUnitRoster(db, unitId, now = new Date()) {
   const unit = getUnit(unitId);
   if (!unit) return [];
   const members = await loadUnitMembers(db, unitId);
-  if (!members.length) return [];
+  const existingEmails = new Set(
+    members.map((m) => normalizeEmail(m.email)).filter(Boolean)
+  );
 
   const allPast = await pastMeetingsForUnit(db, unitId, 6);
 
@@ -884,6 +923,7 @@ async function computeUnitRoster(db, unitId, now = new Date()) {
       uid: m.uid,
       name: m.name,
       phone: m.phone,
+      email: m.email,
       role: m.role,
       missed: strikeStats.missed,
       late: strikeStats.late,
@@ -893,15 +933,17 @@ async function computeUnitRoster(db, unitId, now = new Date()) {
     };
   });
 
-  const tierRank = { withdrawal: 0, final: 1, warning: 2, ok: 3 };
+  const tierRank = { withdrawal: 0, final: 1, warning: 2, pending: 3, ok: 4 };
   roster.sort((a, b) => {
-    const ra = tierRank[a.tier] != null ? tierRank[a.tier] : 3;
-    const rb = tierRank[b.tier] != null ? tierRank[b.tier] : 3;
+    const ra = tierRank[a.tier] != null ? tierRank[a.tier] : 4;
+    const rb = tierRank[b.tier] != null ? tierRank[b.tier] : 4;
     if (ra !== rb) return ra - rb;
     if (b.strikes !== a.strikes) return b.strikes - a.strikes;
     return a.name.localeCompare(b.name);
   });
-  return roster;
+
+  const pending = await loadPendingWorkforceForUnit(db, unitId, existingEmails);
+  return roster.concat(pending);
 }
 
 async function computeUnitAttendanceForReport(db, unitId, year, month) {
@@ -1343,10 +1385,34 @@ const getNigeriaDashboard = onCall(async (request) => {
 
   const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
   if (!profileSnap.exists) {
+    let suggestedUnits = [];
+    try {
+      const email = normalizeEmail(access.email);
+      if (email) {
+        const onboardSnap = await db.collection('volunteer_onboarding').doc(email).get();
+        if (onboardSnap.exists) {
+          const raw = onboardSnap.data().nigeriaUnits;
+          if (Array.isArray(raw)) {
+            suggestedUnits = raw
+              .map((u) => {
+                const unit = getUnit(u && u.unitId);
+                if (!unit) return null;
+                return {
+                  unitId: unit.id,
+                  unitLabel: unit.label,
+                  role: u.role === 'leader' ? 'leader' : 'member',
+                };
+              })
+              .filter(Boolean);
+          }
+        }
+      }
+    } catch (ignore) {}
     return {
       hasProfile: false,
       eligible: true,
       isSuperUser: access.isSuperUser === true,
+      suggestedUnits,
       volunteer: {
         name: access.volunteer.name || '',
         email: access.email,
@@ -1479,7 +1545,53 @@ const getNigeriaDashboard = onCall(async (request) => {
     });
   }
 
-  const primary = unitContexts[0];
+  // Super users: also load every other unit so My members shows Group 2 etc.
+  // even when the coordinator is not personally enrolled on that unit.
+  if (isSuperUser) {
+    const seen = new Set(unitContexts.map((c) => c.unitId));
+    for (const unit of NIGERIA_UNITS) {
+      if (seen.has(unit.id)) continue;
+      const teamRoster = await computeUnitRoster(db, unit.id, now);
+      const nextMeeting = getNextMeeting(unit, now);
+      unitContexts.push({
+        unitId: unit.id,
+        unitLabel: unit.label,
+        role: 'leader',
+        unit: {
+          id: unit.id,
+          label: unit.label,
+          day: DAY_NAMES[unit.day],
+          start: unit.start,
+          end: unit.end,
+        },
+        nextMeeting: nextMeeting
+          ? {
+              key: nextMeeting.key,
+              dateYmd: nextMeeting.dateYmd,
+              startIso: nextMeeting.start.toISOString(),
+              endIso: nextMeeting.end.toISOString(),
+            }
+          : null,
+        checkInOpen: false,
+        attendanceStats: null,
+        latestReport: null,
+        unitVision: null,
+        lastMeetingDigest: null,
+        absenceQuotas: null,
+        absenceRequest: null,
+        absenceTargetMeeting: null,
+        canRequestPlanned: false,
+        canRequestEmergency: false,
+        canSubmitReport: true,
+        canEditVision: true,
+        isLeaderView: true,
+        teamRoster,
+        browseOnly: true,
+      });
+    }
+  }
+
+  const primary = unitContexts.find((c) => !c.browseOnly) || unitContexts[0];
   const recentAttSnap = await db
     .collection('nigeria_attendance')
     .where('uid', '==', uid)
@@ -2598,6 +2710,14 @@ const approveNigeriaWorkforceSignup = onCall(
     // eligible to sign in to the Nigeria dashboard with this same email.
     const applicantEmail = normalizeEmail(data.email);
     if (applicantEmail) {
+      const nigeriaUnits = (Array.isArray(data.units) ? data.units : [])
+        .map((u) => {
+          const unit = getUnit(u && u.unitId);
+          if (!unit) return null;
+          return { unitId: unit.id, unitLabel: unit.label, role: 'member' };
+        })
+        .filter(Boolean);
+
       await db
         .collection('volunteer_onboarding')
         .doc(applicantEmail)
@@ -2609,11 +2729,46 @@ const approveNigeriaWorkforceSignup = onCall(
             notes: data.notes || '',
             region: 'nigeria',
             source: 'nigeria_workforce',
-            nigeriaUnits: Array.isArray(data.units) ? data.units : [],
+            nigeriaUnits,
             onboardingUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
           },
           { merge: true }
         );
+
+      // If they already have a hub profile, merge the enlisted units onto it
+      // so leaders see them in My members immediately.
+      try {
+        const existingVol = await db
+          .collection('nigeria_volunteers')
+          .where('email', '==', applicantEmail)
+          .limit(1)
+          .get();
+        if (!existingVol.empty) {
+          const volDoc = existingVol.docs[0];
+          const current = normalizeProfileUnits(volDoc.data());
+          const byId = new Map(current.map((u) => [u.unitId, u]));
+          nigeriaUnits.forEach((u) => {
+            if (!byId.has(u.unitId)) byId.set(u.unitId, u);
+          });
+          const merged = [...byId.values()];
+          if (merged.length) {
+            const primary = merged[0];
+            await volDoc.ref.set(
+              {
+                units: merged,
+                unitIds: merged.map((u) => u.unitId),
+                unitId: primary.unitId,
+                unitLabel: primary.unitLabel,
+                role: primary.role,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              },
+              { merge: true }
+            );
+          }
+        }
+      } catch (mergeErr) {
+        console.warn('[approveWorkforce] merge units', mergeErr);
+      }
     }
 
     let clearedEmailSent = false;
