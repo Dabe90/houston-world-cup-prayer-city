@@ -843,36 +843,41 @@ async function loadUnitMembers(db, unitId) {
  * the nigeria_volunteers roster (still in training / approved, awaiting hub profile).
  */
 async function loadPendingWorkforceForUnit(db, unitId, existingEmails = new Set()) {
-  const snap = await db
-    .collection('nigeria_workforce_signups')
-    .where('unitIds', 'array-contains', unitId)
-    .limit(80)
-    .get();
-  const pending = [];
-  snap.forEach((doc) => {
-    const d = doc.data() || {};
-    const status = String(d.status || '');
-    if (!['pending_training', 'in_training', 'approved'].includes(status)) return;
-    const email = normalizeEmail(d.email);
-    if (email && existingEmails.has(email)) return;
-    pending.push({
-      uid: 'wf_' + doc.id,
-      signupId: doc.id,
-      name: String(d.name || '').trim() || (email ? email.split('@')[0] : 'Applicant'),
-      phone: String(d.phone || '').trim(),
-      email,
-      role: 'member',
-      pendingWorkforce: true,
-      workforceStatus: status,
-      missed: 0,
-      late: 0,
-      strikes: 0,
-      tier: 'pending',
-      level: 'pending',
+  try {
+    const snap = await db
+      .collection('nigeria_workforce_signups')
+      .where('unitIds', 'array-contains', unitId)
+      .limit(80)
+      .get();
+    const pending = [];
+    snap.forEach((doc) => {
+      const d = doc.data() || {};
+      const status = String(d.status || '');
+      if (!['pending_training', 'in_training', 'approved'].includes(status)) return;
+      const email = normalizeEmail(d.email);
+      if (email && existingEmails.has(email)) return;
+      pending.push({
+        uid: 'wf_' + doc.id,
+        signupId: doc.id,
+        name: String(d.name || '').trim() || (email ? email.split('@')[0] : 'Applicant'),
+        phone: String(d.phone || '').trim(),
+        email,
+        role: 'member',
+        pendingWorkforce: true,
+        workforceStatus: status,
+        missed: 0,
+        late: 0,
+        strikes: 0,
+        tier: 'pending',
+        level: 'pending',
+      });
     });
-  });
-  pending.sort((a, b) => a.name.localeCompare(b.name));
-  return pending;
+    pending.sort((a, b) => a.name.localeCompare(b.name));
+    return pending;
+  } catch (err) {
+    console.warn('[loadPendingWorkforceForUnit]', unitId, err && err.message);
+    return [];
+  }
 }
 
 /**
@@ -884,66 +889,71 @@ async function loadPendingWorkforceForUnit(db, unitId, existingEmails = new Set(
 async function computeUnitRoster(db, unitId, now = new Date()) {
   const unit = getUnit(unitId);
   if (!unit) return [];
-  const members = await loadUnitMembers(db, unitId);
-  const existingEmails = new Set(
-    members.map((m) => normalizeEmail(m.email)).filter(Boolean)
-  );
+  try {
+    const members = await loadUnitMembers(db, unitId);
+    const existingEmails = new Set(
+      members.map((m) => normalizeEmail(m.email)).filter(Boolean)
+    );
 
-  const allPast = await pastMeetingsForUnit(db, unitId, 6);
+    const allPast = await pastMeetingsForUnit(db, unitId, 6);
 
-  const attSnap = await db.collection('nigeria_attendance').where('unitId', '==', unitId).get();
-  const attByUid = {};
-  attSnap.forEach((doc) => {
-    const d = doc.data() || {};
-    if (!d.uid || !d.meetingKey) return;
-    const rec = attByUid[d.uid] || (attByUid[d.uid] = { keys: new Set(), at: {} });
-    rec.keys.add(d.meetingKey);
-    const at = d.checkedInAt && d.checkedInAt.toDate ? d.checkedInAt.toDate().getTime() : null;
-    if (at) rec.at[d.meetingKey] = at;
-  });
+    const attSnap = await db.collection('nigeria_attendance').where('unitId', '==', unitId).get();
+    const attByUid = {};
+    attSnap.forEach((doc) => {
+      const d = doc.data() || {};
+      if (!d.uid || !d.meetingKey) return;
+      const rec = attByUid[d.uid] || (attByUid[d.uid] = { keys: new Set(), at: {} });
+      rec.keys.add(d.meetingKey);
+      const at = d.checkedInAt && d.checkedInAt.toDate ? d.checkedInAt.toDate().getTime() : null;
+      if (at) rec.at[d.meetingKey] = at;
+    });
 
-  const absSnap = await db
-    .collection('nigeria_absence_requests')
-    .where('unitId', '==', unitId)
-    .where('status', '==', 'approved')
-    .get();
-  const excusedByUid = {};
-  absSnap.forEach((doc) => {
-    const d = doc.data() || {};
-    if (!d.uid || !d.meetingKey) return;
-    (excusedByUid[d.uid] || (excusedByUid[d.uid] = new Set())).add(d.meetingKey);
-  });
+    const absSnap = await db
+      .collection('nigeria_absence_requests')
+      .where('unitId', '==', unitId)
+      .where('status', '==', 'approved')
+      .get();
+    const excusedByUid = {};
+    absSnap.forEach((doc) => {
+      const d = doc.data() || {};
+      if (!d.uid || !d.meetingKey) return;
+      (excusedByUid[d.uid] || (excusedByUid[d.uid] = new Set())).add(d.meetingKey);
+    });
 
-  const roster = members.map((m) => {
-    const att = attByUid[m.uid] || { keys: new Set(), at: {} };
-    const excused = excusedByUid[m.uid] || new Set();
-    const strikeStats = computeStrikeWindowStats(allPast, att.keys, excused, att.at, now);
-    const warning = attendanceMissWarning(strikeStats, unit.label);
-    return {
-      uid: m.uid,
-      name: m.name,
-      phone: m.phone,
-      email: m.email,
-      role: m.role,
-      missed: strikeStats.missed,
-      late: strikeStats.late,
-      strikes: strikeStats.strikes,
-      tier: warning ? warning.tier : 'ok',
-      level: warning ? warning.level : 'ok',
-    };
-  });
+    const roster = members.map((m) => {
+      const att = attByUid[m.uid] || { keys: new Set(), at: {} };
+      const excused = excusedByUid[m.uid] || new Set();
+      const strikeStats = computeStrikeWindowStats(allPast, att.keys, excused, att.at, now);
+      const warning = attendanceMissWarning(strikeStats, unit.label);
+      return {
+        uid: m.uid,
+        name: m.name,
+        phone: m.phone,
+        email: m.email,
+        role: m.role,
+        missed: strikeStats.missed,
+        late: strikeStats.late,
+        strikes: strikeStats.strikes,
+        tier: warning ? warning.tier : 'ok',
+        level: warning ? warning.level : 'ok',
+      };
+    });
 
-  const tierRank = { withdrawal: 0, final: 1, warning: 2, pending: 3, ok: 4 };
-  roster.sort((a, b) => {
-    const ra = tierRank[a.tier] != null ? tierRank[a.tier] : 4;
-    const rb = tierRank[b.tier] != null ? tierRank[b.tier] : 4;
-    if (ra !== rb) return ra - rb;
-    if (b.strikes !== a.strikes) return b.strikes - a.strikes;
-    return a.name.localeCompare(b.name);
-  });
+    const tierRank = { withdrawal: 0, final: 1, warning: 2, pending: 3, ok: 4 };
+    roster.sort((a, b) => {
+      const ra = tierRank[a.tier] != null ? tierRank[a.tier] : 4;
+      const rb = tierRank[b.tier] != null ? tierRank[b.tier] : 4;
+      if (ra !== rb) return ra - rb;
+      if (b.strikes !== a.strikes) return b.strikes - a.strikes;
+      return a.name.localeCompare(b.name);
+    });
 
-  const pending = await loadPendingWorkforceForUnit(db, unitId, existingEmails);
-  return roster.concat(pending);
+    const pending = await loadPendingWorkforceForUnit(db, unitId, existingEmails);
+    return roster.concat(pending);
+  } catch (err) {
+    console.warn('[computeUnitRoster]', unitId, err && err.message);
+    return [];
+  }
 }
 
 async function computeUnitAttendanceForReport(db, unitId, year, month) {
@@ -1499,7 +1509,12 @@ const getNigeriaDashboard = onCall(async (request) => {
     const isUnitLeader = membership.role === 'leader' || isSuperUser;
     let teamRoster = null;
     if (isUnitLeader) {
-      teamRoster = await computeUnitRoster(db, membership.unitId, now);
+      try {
+        teamRoster = await computeUnitRoster(db, membership.unitId, now);
+      } catch (rosterErr) {
+        console.warn('[getNigeriaDashboard] roster', membership.unitId, rosterErr && rosterErr.message);
+        teamRoster = [];
+      }
     }
 
     unitContexts.push({
@@ -1545,50 +1560,54 @@ const getNigeriaDashboard = onCall(async (request) => {
     });
   }
 
-  // Super users: also load every other unit so My members shows Group 2 etc.
-  // even when the coordinator is not personally enrolled on that unit.
+  // Super users who are not enrolled on a Group still need to see that Group's
+  // roster (e.g. after greenlighting a Group 2 worker). Only Groups 1–6 — not
+  // every ministry unit — so the dashboard stays fast.
   if (isSuperUser) {
     const seen = new Set(unitContexts.map((c) => c.unitId));
-    for (const unit of NIGERIA_UNITS) {
-      if (seen.has(unit.id)) continue;
-      const teamRoster = await computeUnitRoster(db, unit.id, now);
-      const nextMeeting = getNextMeeting(unit, now);
-      unitContexts.push({
-        unitId: unit.id,
-        unitLabel: unit.label,
-        role: 'leader',
-        unit: {
-          id: unit.id,
-          label: unit.label,
-          day: DAY_NAMES[unit.day],
-          start: unit.start,
-          end: unit.end,
-        },
-        nextMeeting: nextMeeting
-          ? {
-              key: nextMeeting.key,
-              dateYmd: nextMeeting.dateYmd,
-              startIso: nextMeeting.start.toISOString(),
-              endIso: nextMeeting.end.toISOString(),
-            }
-          : null,
-        checkInOpen: false,
-        attendanceStats: null,
-        latestReport: null,
-        unitVision: null,
-        lastMeetingDigest: null,
-        absenceQuotas: null,
-        absenceRequest: null,
-        absenceTargetMeeting: null,
-        canRequestPlanned: false,
-        canRequestEmergency: false,
-        canSubmitReport: true,
-        canEditVision: true,
-        isLeaderView: true,
-        teamRoster,
-        browseOnly: true,
-      });
-    }
+    const groupUnits = NIGERIA_UNITS.filter((u) => /^group[1-6]$/.test(u.id) && !seen.has(u.id));
+    const groupContexts = await Promise.all(
+      groupUnits.map(async (unit) => {
+        const teamRoster = await computeUnitRoster(db, unit.id, now);
+        const nextMeeting = getNextMeeting(unit, now);
+        return {
+          unitId: unit.id,
+          unitLabel: unit.label,
+          role: 'leader',
+          unit: {
+            id: unit.id,
+            label: unit.label,
+            day: DAY_NAMES[unit.day],
+            start: unit.start,
+            end: unit.end,
+          },
+          nextMeeting: nextMeeting
+            ? {
+                key: nextMeeting.key,
+                dateYmd: nextMeeting.dateYmd,
+                startIso: nextMeeting.start.toISOString(),
+                endIso: nextMeeting.end.toISOString(),
+              }
+            : null,
+          checkInOpen: false,
+          attendanceStats: null,
+          latestReport: null,
+          unitVision: null,
+          lastMeetingDigest: null,
+          absenceQuotas: null,
+          absenceRequest: null,
+          absenceTargetMeeting: null,
+          canRequestPlanned: false,
+          canRequestEmergency: false,
+          canSubmitReport: true,
+          canEditVision: true,
+          isLeaderView: true,
+          teamRoster,
+          browseOnly: true,
+        };
+      })
+    );
+    unitContexts.push(...groupContexts);
   }
 
   const primary = unitContexts.find((c) => !c.browseOnly) || unitContexts[0];

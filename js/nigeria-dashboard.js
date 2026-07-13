@@ -887,16 +887,12 @@
   }
 
   function leaderUnitContexts(data) {
-    var contexts = (data && data.unitContexts ? data.unitContexts : []).filter(function (c) {
-      return c.isLeaderView === true || c.role === 'leader' || data.isSuperUser === true;
+    // Super users: show units they lead / are on, plus Group browse cards.
+    // Do NOT treat every membership as a My members section (that flooded the tab).
+    return (data && data.unitContexts ? data.unitContexts : []).filter(function (c) {
+      if (c.browseOnly) return data && data.isSuperUser === true;
+      return c.isLeaderView === true || c.role === 'leader';
     });
-    if (data && data.isSuperUser) {
-      contexts = contexts.slice().sort(function (a, b) {
-        if (!!a.browseOnly !== !!b.browseOnly) return a.browseOnly ? 1 : -1;
-        return String(a.unitLabel || '').localeCompare(String(b.unitLabel || ''));
-      });
-    }
-    return contexts;
   }
 
   function updateMyMembersTabVisibility(data) {
@@ -2508,6 +2504,12 @@
       list.innerHTML = '<p class="text-slate-500">No unit leadership yet.</p>';
       return;
     }
+    // Your units first, then Group browse cards; only auto-open the first real unit
+    // (and Group cards that already have people).
+    leaders = leaders.slice().sort(function (a, b) {
+      if (!!a.browseOnly !== !!b.browseOnly) return a.browseOnly ? 1 : -1;
+      return String(a.unitLabel || '').localeCompare(String(b.unitLabel || ''));
+    });
     list.innerHTML = leaders
       .map(function (c, i) {
         var rosterBlock = teamRosterHtml(c, data.isSuperUser === true);
@@ -2515,7 +2517,8 @@
           rosterBlock =
             '<p class="text-xs text-slate-500">No members listed for this unit yet.</p>';
         }
-        var openAttr = ' open';
+        var hasPeople = c.teamRoster && c.teamRoster.length;
+        var openAttr = !c.browseOnly && i === 0 ? ' open' : hasPeople && c.browseOnly ? ' open' : '';
         return (
           '<details class="my-members-unit rounded-2xl border border-slate-200 bg-white overflow-hidden"' +
           openAttr +
