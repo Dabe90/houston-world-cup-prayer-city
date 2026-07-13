@@ -24,12 +24,12 @@ const NIGERIA_UNITS = [
   { id: 'growth-retention', label: 'Growth & Retention', day: 6, start: '20:00', end: '21:00' },
   { id: 'communications-social', label: 'Communications & Social Media', day: 1, start: '08:00', end: '08:30' },
   { id: 'media', label: 'Media Team', day: 6, start: '19:00', end: '20:00' },
-  { id: 'group1', label: 'Group 1', day: 0, start: '21:00', end: '21:15' },
-  { id: 'group2', label: 'Group 2', day: 1, start: '21:00', end: '21:15' },
+  { id: 'group1', label: 'Group 1', day: 1, start: '21:00', end: '21:15' },
+  { id: 'group2', label: 'Group 2', day: 0, start: '17:00', end: '17:15' },
   { id: 'group3', label: 'Group 3', day: 3, start: '21:00', end: '21:15' },
   { id: 'group4', label: 'Group 4', day: 4, start: '20:30', end: '20:45' },
-  { id: 'group5', label: 'Group 5', day: 5, start: '21:00', end: '21:15' },
-  { id: 'group6', label: 'Group 6', day: 6, start: '21:00', end: '21:15' },
+  { id: 'group5', label: 'Group 5', day: 1, start: '21:00', end: '21:15' },
+  { id: 'group6', label: 'Group 6', day: 1, start: '21:00', end: '21:15' },
   { id: 'workers-coordinator', label: 'Workers Coordinator', day: 3, start: '21:00', end: '21:30' },
 ];
 
