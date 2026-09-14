@@ -311,6 +311,9 @@
       return { key: 'testimony', image: THEME_IMAGES.testimony };
     }
     if (t.indexOf('christmas') >= 0) return { key: 'christmas', image: THEME_IMAGES.christmas };
+    if (t.indexOf('alive') >= 0 || t.indexOf('hangout') >= 0) {
+      return { key: 'testimony', image: THEME_IMAGES.testimony };
+    }
     if (t.indexOf('women') >= 0) return { key: 'women', image: THEME_IMAGES.women };
     if (t.indexOf('tech') >= 0) return { key: 'tech', image: THEME_IMAGES.tech };
     if (t.indexOf('medical') >= 0) return { key: 'medical', image: THEME_IMAGES.medical };

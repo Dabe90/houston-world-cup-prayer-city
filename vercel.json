@@ -2,11 +2,29 @@
   "redirects": [
     { "source": "/dashboard.html", "destination": "/", "permanent": true },
     { "source": "/volunteer", "destination": "/volunteer/", "permanent": true },
-    { "source": "/cod", "destination": "/cod/", "permanent": true }
+    { "source": "/cod", "destination": "/cod/", "permanent": true },
+    { "source": "/ng", "destination": "/ddbs-nig.html", "permanent": false },
+    { "source": "/ng/", "destination": "/ddbs-nig.html", "permanent": false },
+    { "source": "/nigeria", "destination": "/ddbs-nig.html", "permanent": false },
+    { "source": "/nigeria/", "destination": "/ddbs-nig.html", "permanent": false }
   ],
   "rewrites": [
     { "source": "/cod", "destination": "/cod/index.html" },
-    { "source": "/cod/", "destination": "/cod/index.html" }
+    { "source": "/cod/", "destination": "/cod/index.html" },
+    { "source": "/cod/yearbook", "destination": "/cod/yearbook/index.html" },
+    { "source": "/cod/yearbook/", "destination": "/cod/yearbook/index.html" },
+    { "source": "/cod/yearbook/2023", "destination": "/cod/yearbook/2023/index.html" },
+    { "source": "/cod/yearbook/2023/", "destination": "/cod/yearbook/2023/index.html" },
+    { "source": "/cod/yearbook/2024", "destination": "/cod/yearbook/2024/index.html" },
+    { "source": "/cod/yearbook/2024/", "destination": "/cod/yearbook/2024/index.html" },
+    { "source": "/cod/yearbook/2025", "destination": "/cod/yearbook/2025/index.html" },
+    { "source": "/cod/yearbook/2025/", "destination": "/cod/yearbook/2025/index.html" },
+    { "source": "/cod/yearbook/2026", "destination": "/cod/yearbook/2026/index.html" },
+    { "source": "/cod/yearbook/2026/", "destination": "/cod/yearbook/2026/index.html" },
+    { "source": "/alive", "destination": "/alive.html" },
+    { "source": "/alive/", "destination": "/alive.html" },
+    { "source": "/alive-hangout", "destination": "/alive.html" },
+    { "source": "/alive-hangout/", "destination": "/alive.html" }
   ],
   "headers": [
     {
