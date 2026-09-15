@@ -1,7 +1,7 @@
 (function () {
   var EDITION = '2027-06';
   var TARGET = new Date('2027-06-12T09:00:00+01:00');
-  var SHARE_URL = 'https://prayercityhtx.com/alive';
+  var SHARE_URL = 'https://prayercityhtx.com/alive?d=12jun2027';
   var SHARE_TEXT =
     'Alive Hangout — Saturday 12 June 2027. The outdoor Christian getaway for men, women, married & singles. Games, food, dance, guest ministers, and a call to holiness. Registration is compulsory: ' +
     SHARE_URL;

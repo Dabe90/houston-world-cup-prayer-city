@@ -201,15 +201,32 @@ a {
 
 .alive-hero h1 {
   margin: 0.85rem 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
   font-family: var(--alive-display);
   font-weight: 600;
-  font-size: clamp(4.2rem, 16vw, 8.6rem);
-  line-height: 0.86;
+  line-height: 0.9;
   letter-spacing: -0.04em;
   color: var(--alive-ink);
 }
+.alive-h1-event {
+  font-size: clamp(3.6rem, 14vw, 7.8rem);
+  line-height: 0.86;
+}
 .alive-hero h1 em {
   font-style: italic;
+  color: var(--alive-gold);
+}
+.alive-h1-date {
+  display: block;
+  font-family: var(--alive-sans);
+  font-size: clamp(1.35rem, 4.4vw, 2.2rem);
+  font-weight: 800;
+  font-style: normal;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
   color: var(--alive-gold);
 }
 
