@@ -4,6 +4,8 @@
  */
 (function (global) {
   var TZ = 'Africa/Lagos';
+  /** Attendance + absence windows start here (Lagos). No June / earlier meetings. */
+  var HUB_POLICY_START_YMD = '2026-07-12';
 
   /** @type {Array<{id:string,label:string,summary:string,icon:string,gradient:string,day:number,start:string,end:string,endNextDay?:boolean,enlistHidden?:boolean}>} */
   var NIGERIA_UNITS = [
@@ -169,9 +171,21 @@
       end: '21:30',
       enlistHidden: true,
     },
+    {
+      id: 'internal-leaders',
+      label: 'Internal Leaders Meeting',
+      summary: 'Weekly internal leadership check-in — prayer, coordination, and follow-through across Dear Daughter Nigeria.',
+      icon: 'fa-people-group',
+      gradient: 'from-slate-800 to-indigo-900',
+      day: 0,
+      start: '21:30',
+      end: '22:30',
+      enlistHidden: true,
+      attendanceStartYmd: '2026-09-13',
+    },
   ];
 
-  var WORKFORCE_ENLIST_EXCLUDE = { 'workers-coordinator': true };
+  var WORKFORCE_ENLIST_EXCLUDE = { 'workers-coordinator': true, 'internal-leaders': true };
 
   var DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -352,16 +366,19 @@
     return null;
   }
 
-  /** Recent + upcoming occurrences for shared meeting notes picker */
+  /** Recent + upcoming occurrences for shared meeting notes picker.
+   * Biased toward past dates so leads can reopen notes from earlier meetings.
+   */
   function meetingsForNotes(unit, windowSize) {
-    windowSize = windowSize || 8;
+    windowSize = windowSize || 16;
     var now = new Date();
     var parts = lagosParts(now);
     var year = parseInt(parts.year, 10);
     var month = parseInt(parts.month, 10);
     var meetings = [];
     var m;
-    for (m = month - 2; m <= month + 2; m++) {
+    // Look back farther so older notes stay reachable from the picker.
+    for (m = month - 5; m <= month + 2; m++) {
       var y = year;
       var mo = m;
       if (mo < 1) {
@@ -376,6 +393,11 @@
     meetings.sort(function (a, b) {
       return a.start - b.start;
     });
+    // Hub went live Jul 2026 — don't offer June (or earlier) meetings in notes / pickers.
+    meetings = meetings.filter(function (mtg) {
+      var startYmd = unit.attendanceStartYmd || HUB_POLICY_START_YMD;
+      return String(mtg.dateYmd || '') >= startYmd;
+    });
     var nowMs = now.getTime();
     var pivot = 0;
     for (var i = 0; i < meetings.length; i++) {
@@ -385,7 +407,8 @@
       }
       pivot = i + 1;
     }
-    var start = Math.max(0, pivot - 3);
+    var pastKeep = Math.max(8, Math.floor(windowSize * 0.7));
+    var start = Math.max(0, pivot - pastKeep);
     return meetings.slice(start, start + windowSize);
   }
 
@@ -399,6 +422,7 @@
       });
     },
     DAY_NAMES: DAY_NAMES,
+    HUB_POLICY_START_YMD: HUB_POLICY_START_YMD,
     getUnit: getUnit,
     meetingScheduleLabel: meetingScheduleLabel,
     meetingKey: meetingKey,

@@ -51,15 +51,15 @@
     };
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260713c" />
-  <link rel="stylesheet" href="css/billion-countdown.css?v=20260713c" />
-  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260713c" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260713m" />
+  <link rel="stylesheet" href="css/billion-countdown.css?v=20260713m" />
+  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260915a" />
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
-  <script src="js/firebase-config.js?v=20260713c"></script>
+  <script src="js/firebase-config.js?v=20260713m"></script>
   <style>
     /* Critical layout + Tailwind utilities we rely on even if the CDN fails */
     body { font-family: "Plus Jakarta Sans", system-ui, sans-serif; }
@@ -68,6 +68,73 @@
     .sidebar-sticky { position: sticky; top: 3.75rem; max-height: calc(100vh - 4.5rem); overflow-y: auto; }
     .tab-btn.active { background: #008751; color: #fff; border-color: #008751; }
     .tw-fallback #setup-banner { display: block !important; }
+  </style>
+  <script>
+    // Avoid homepage flash when a signed-in worker refreshes the hub.
+    (function () {
+      try {
+        var qs = window.location.search || '';
+        if (/[?&]landing=1(?:&|$)/.test(qs)) {
+          sessionStorage.setItem('ddbsNgHubView', 'landing');
+          return;
+        }
+        var preferDash = sessionStorage.getItem('ddbsNgHubView') === 'dash';
+        var hasAuth = false;
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && k.indexOf('firebase:authUser:') === 0) {
+            var v = localStorage.getItem(k);
+            if (v && v !== 'null' && v.length > 20) {
+              hasAuth = true;
+              break;
+            }
+          }
+        }
+        if (preferDash || hasAuth) {
+          document.documentElement.classList.add('ddbs-hub-boot-dash');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    html.ddbs-hub-boot-dash #ng-public-landing,
+    html.ddbs-hub-boot-dash #hero-billboard,
+    html.ddbs-hub-boot-dash #landing-billion-countdown,
+    html.ddbs-hub-boot-dash #ng-mobile-nav {
+      display: none !important;
+    }
+    html.ddbs-hub-boot-dash #site-top-nav .md\:flex,
+    html.ddbs-hub-boot-dash #site-top-nav [data-ng-scroll-auth],
+    html.ddbs-hub-boot-dash #site-top-nav a[href="#serve"] {
+      display: none !important;
+    }
+    #btn-view-public-homepage {
+      display: none !important;
+    }
+    #btn-view-public-homepage.is-ng-visible {
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+    }
+    body.ddbs-on-dashboard #site-top-nav a[href="#serve"],
+    body.ddbs-on-dashboard #site-top-nav [data-ng-scroll-auth],
+    body.ddbs-on-dashboard #site-top-nav .md\:flex {
+      display: none !important;
+    }
+    #hub-boot-loading {
+      display: none;
+      min-height: 50vh;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 3rem 1.25rem;
+      color: #64748b;
+      font-size: 0.875rem;
+    }
+    html.ddbs-hub-boot-dash #hub-boot-loading {
+      display: flex;
+    }
   </style>
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800 overflow-x-hidden font-sans antialiased pb-[4.5rem] lg:pb-0">
@@ -80,7 +147,7 @@
   <div id="app-main">
 
     <!-- Nav -->
-    <nav class="ng-nav sticky top-0 z-50">
+    <nav id="site-top-nav" class="ng-nav sticky top-0 z-50">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 min-h-14 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0">
           <a href="/" class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-ng-green flex items-center justify-center text-white text-xs font-bold shrink-0" title="Prayer City">DD</a>
@@ -90,6 +157,7 @@
           </div>
         </div>
         <div class="hidden md:flex items-center gap-1 text-xs font-medium">
+          <a href="/alive" class="text-slate-600 hover:text-ng-green px-2.5 py-1.5 rounded-lg hover:bg-white/80 transition">Alive Hangout</a>
           <a href="#programs" class="text-slate-600 hover:text-ng-green px-2.5 py-1.5 rounded-lg hover:bg-white/80 transition">Programs</a>
           <a href="#mandate" class="text-slate-600 hover:text-ng-green px-2.5 py-1.5 rounded-lg hover:bg-white/80 transition">Vision</a>
           <a href="#about" class="text-slate-600 hover:text-ng-green px-2.5 py-1.5 rounded-lg hover:bg-white/80 transition">About</a>
@@ -97,6 +165,8 @@
           <a href="#join" class="text-slate-600 hover:text-ng-green px-2.5 py-1.5 rounded-lg hover:bg-white/80 transition">Join</a>
         </div>
         <div class="flex items-center gap-2 shrink-0">
+          <button type="button" id="btn-open-dashboard" class="hidden text-xs font-bold text-white bg-brand hover:bg-brand-light px-3 py-2 rounded-full transition shadow-sm">My dashboard</button>
+          <button type="button" id="btn-view-public-homepage" class="text-xs font-bold text-white bg-ng-green hover:bg-emerald-700 px-4 py-2 rounded-full transition shadow-sm">Homepage</button>
           <button type="button" data-ng-scroll-auth class="text-xs font-semibold text-brand hover:text-ng-green px-3 py-2 rounded-lg hover:bg-white/80 transition hidden sm:inline-flex">Sign in</button>
           <a href="#serve" class="text-xs font-bold text-white bg-ng-green hover:bg-emerald-700 px-4 py-2 rounded-full transition shadow-sm">Serve</a>
           <button type="button" id="btn-signout" class="hidden text-xs font-medium text-slate-500 hover:text-red-600 px-2 py-1.5">Sign out</button>
@@ -106,6 +176,10 @@
 
     <!-- Sign-in & dashboard (near top so you don't scroll the whole page) -->
     <section id="auth-checking" class="hidden" aria-hidden="true"></section>
+    <div id="hub-boot-loading" aria-live="polite">
+      <i class="fas fa-spinner fa-spin text-ng-green text-xl" aria-hidden="true"></i>
+      <p>Loading your dashboard…</p>
+    </div>
 
     <section id="auth-panel" class="hidden max-w-md mx-auto px-4 py-5 sm:py-6 w-full">
       <div class="ng-surface overflow-hidden w-full">
@@ -260,6 +334,22 @@
               <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">Already registered? Use that <strong>same email</strong> — email link or password.</p>
             </button>
           </div>
+        </div>
+      </section>
+
+      <section id="alive-hangout" class="bg-slate-950 text-white py-8 sm:py-10 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6">
+          <a href="/alive" class="group block rounded-3xl overflow-hidden border border-amber-400/30 bg-gradient-to-br from-emerald-950 via-slate-950 to-amber-950 p-5 sm:p-8 shadow-lift hover:border-amber-300/60 transition">
+            <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-300 mb-1">Save the date</p>
+            <p class="font-display text-5xl sm:text-6xl font-semibold text-amber-200 leading-none">12 June 2027</p>
+            <h2 class="font-display text-3xl sm:text-4xl font-semibold leading-tight mt-3">Alive Hangout</h2>
+            <p class="mt-3 text-sm sm:text-base text-white/80 max-w-2xl leading-relaxed">
+              The outdoor getaway for men, women, married, and singles — games, food, dance, guest ministers, and a call to be <strong class="text-amber-200">alive in Christ and dead to sin</strong>.
+            </p>
+            <span class="mt-5 inline-flex items-center gap-2 rounded-full bg-amber-300 text-slate-950 font-bold text-sm px-5 py-2.5 min-h-[44px] group-hover:scale-[1.02] transition-transform">
+              Register now <i class="fas fa-arrow-right text-xs" aria-hidden="true"></i>
+            </span>
+          </a>
         </div>
       </section>
 
@@ -598,7 +688,7 @@
                 </div>
                 <button type="button" id="btn-edit-profile" class="w-full text-sm rounded-xl border border-slate-200 py-2.5 min-h-[44px] hover:bg-slate-50">Edit profile</button>
                 <button type="button" id="btn-open-password-modal" class="w-full text-sm rounded-xl border border-slate-200 py-2.5 min-h-[44px] hover:bg-slate-50"><i class="fas fa-key mr-1 text-slate-400"></i><span id="btn-open-password-label">Set password</span></button>
-                <p class="text-[11px] text-slate-400 text-center">Signed in on this device until you sign out. Set a password to sign in without an email link next time.</p>
+                <p id="sidebar-password-hint" class="text-[11px] text-slate-400 text-center">Signed in on this device until you sign out. Set a password to sign in without an email link next time.</p>
               </div>
             </details>
           </div>
@@ -621,10 +711,15 @@
 
           <div id="tab-home" class="tab-panel space-y-4">
             <div id="home-attendance-warnings" class="space-y-3 hidden"></div>
-            <div>
-              <h3 class="font-semibold text-slate-900 mb-1">Ministry spotlight</h3>
-              <p class="text-xs text-slate-500 mb-3">Upcoming programs</p>
-              <div id="home-upcoming-programs" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+            <div id="home-my-actions" class="ng-surface p-5 hidden">
+              <div class="flex flex-wrap items-start justify-between gap-2 mb-3">
+                <div>
+                  <h3 class="font-semibold text-slate-900"><i class="fas fa-list-check text-ng-green mr-2"></i>My open actions</h3>
+                  <p class="text-xs text-slate-500 mt-1">Assigned to you from unit meeting notes. You’ll also get email when assigned and 2 days before the due date.</p>
+                </div>
+                <button type="button" class="btn-goto-units text-xs font-semibold text-brand underline">Open units</button>
+              </div>
+              <div id="home-my-actions-list" class="space-y-2 text-sm"></div>
             </div>
             <div id="home-unit-snapshot" class="ng-surface p-5">
               <h3 class="font-semibold text-slate-900 mb-3"><i class="fas fa-calendar-check text-ng-green mr-2"></i>Next unit meetings</h3>
@@ -649,7 +744,7 @@
           <div id="tab-my-members" class="tab-panel hidden space-y-4">
             <div class="ng-surface p-5">
               <h3 class="font-semibold text-slate-900 mb-1"><i class="fas fa-users text-brand mr-2"></i>My members</h3>
-              <p class="text-xs text-slate-500 mb-4">Leaders only — see attendance progress per unit, message members, change roles, or drop someone from a unit. Warnings apply only to the unit they are defaulting.</p>
+              <p class="text-xs text-slate-500 mb-4">Leaders only — see attendance progress per unit, message members, and change roles or remove someone from a unit.</p>
               <div id="my-members-list" class="space-y-4 text-sm"></div>
             </div>
           </div>
@@ -671,6 +766,29 @@
           </div>
 
           <div id="tab-reports" class="tab-panel hidden space-y-4">
+            <div id="all-reports-board" class="hidden ng-surface p-5 space-y-4">
+              <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div class="min-w-0">
+                  <h3 class="font-semibold text-slate-900"><i class="fas fa-folder-open text-ng-green mr-2"></i>All unit reports</h3>
+                  <p class="text-xs text-slate-500 mt-1">Submitted monthly reports — tap <strong>Bolt</strong> for the web deck, <strong>Present</strong> for the PPT-style view, or download PDF / PPT file.</p>
+                </div>
+                <div class="flex flex-wrap items-end gap-2 shrink-0">
+                  <label class="text-xs text-slate-600">
+                    Year
+                    <select id="all-reports-year" class="mt-1 block rounded-lg border border-slate-200 px-2 py-1.5 text-sm bg-white"></select>
+                  </label>
+                  <label class="text-xs text-slate-600">
+                    Month
+                    <select id="all-reports-month" class="mt-1 block rounded-lg border border-slate-200 px-2 py-1.5 text-sm bg-white">
+                      <option value="">All months</option>
+                    </select>
+                  </label>
+                  <button type="button" id="btn-refresh-all-reports" class="rounded-lg bg-ng-green hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 min-h-[36px]">Refresh</button>
+                </div>
+              </div>
+              <p id="all-reports-status" class="text-xs text-slate-500"></p>
+              <div id="all-reports-list" class="space-y-3"></div>
+            </div>
             <div id="reports-panels"></div>
             <p id="reports-member-note" class="hidden text-sm text-slate-500 text-center">Leader reports appear here when submitted.</p>
           </div>
@@ -682,6 +800,7 @@
       <p class="font-medium text-slate-600">Dear Daughter Bible Study Group Nigeria</p>
       <p class="mt-2">
         <a href="https://www.instagram.com/deardaughter_bs" target="_blank" rel="noopener" class="text-brand hover:underline">@deardaughter_bs</a>
+        · <a href="/alive" class="text-brand hover:underline">Alive Hangout 2027</a>
         · <a href="/?stay=us" class="text-brand hover:underline">US dashboard</a>
         · <a href="monthly-report.html" class="text-brand hover:underline">Monthly report</a>
       </p>
@@ -758,17 +877,18 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="js/billion-countdown.js?v=20260713c"></script>
-  <script src="js/nigeria-units.js?v=20260713c"></script>
-  <script src="js/ddbs-nigeria-programs.js?v=20260713c"></script>
-  <script src="js/ddbs-nigeria-meeting-notes.js?v=20260713c"></script>
-  <script src="js/monthly-unit-report.js?v=20260713c"></script>
-  <script src="js/nigeria-dashboard-report.js?v=20260713c"></script>
-  <script src="js/prayer-city-super-user.js?v=20260713c"></script>
-  <script src="js/nigeria-gallery-manifest.js?v=20260713c"></script>
-  <script src="js/ddbs-nigeria-hero-billboard.js?v=20260713c"></script>
-  <script src="js/nigeria-landing.js?v=20260713c"></script>
-  <script src="js/nigeria-dashboard.js?v=20260713c"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+  <script src="js/billion-countdown.js?v=20260713m"></script>
+  <script src="js/nigeria-units.js?v=20260915a"></script>
+  <script src="js/ddbs-nigeria-programs.js?v=20260713m"></script>
+  <script src="js/ddbs-nigeria-meeting-notes.js?v=20260915a"></script>
+  <script src="js/monthly-unit-report.js?v=20260815h"></script>
+  <script src="js/nigeria-dashboard-report.js?v=20260914a"></script>
+  <script src="js/prayer-city-super-user.js?v=20260713n"></script>
+  <script src="js/nigeria-gallery-manifest.js?v=20260713m"></script>
+  <script src="js/ddbs-nigeria-hero-billboard.js?v=20260713m"></script>
+  <script src="js/nigeria-landing.js?v=20260713m"></script>
+  <script src="js/nigeria-dashboard.js?v=20260915a"></script>
   <script>
     if (window.BillionCountdown) {
       if (document.getElementById("landing-billion-countdown")) {
