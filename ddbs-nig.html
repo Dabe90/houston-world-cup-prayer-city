@@ -51,9 +51,9 @@
     };
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260713m" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260915b" />
   <link rel="stylesheet" href="css/billion-countdown.css?v=20260713m" />
-  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260915a" />
+  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260915b" />
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -165,6 +165,7 @@
           <a href="#join" class="text-slate-600 hover:text-ng-green px-2.5 py-1.5 rounded-lg hover:bg-white/80 transition">Join</a>
         </div>
         <div class="flex items-center gap-2 shrink-0">
+          <a href="/alive" class="md:hidden text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-100 px-2.5 py-2 rounded-full">Alive</a>
           <button type="button" id="btn-open-dashboard" class="hidden text-xs font-bold text-white bg-brand hover:bg-brand-light px-3 py-2 rounded-full transition shadow-sm">My dashboard</button>
           <button type="button" id="btn-view-public-homepage" class="text-xs font-bold text-white bg-ng-green hover:bg-emerald-700 px-4 py-2 rounded-full transition shadow-sm">Homepage</button>
           <button type="button" data-ng-scroll-auth class="text-xs font-semibold text-brand hover:text-ng-green px-3 py-2 rounded-lg hover:bg-white/80 transition hidden sm:inline-flex">Sign in</button>
@@ -807,7 +808,8 @@
     </footer>
 
     <nav id="ng-mobile-nav" class="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200/80 shadow-[0_-4px_20px_rgba(15,61,92,0.06)]" aria-label="Quick navigation">
-      <div class="grid grid-cols-5 max-w-lg mx-auto">
+      <div class="grid grid-cols-6 max-w-lg mx-auto">
+        <a href="/alive" class="ng-mobile-nav-link flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold text-slate-600"><i class="fas fa-sun text-base" aria-hidden="true"></i><span>Alive</span></a>
         <a href="#getting-started" class="ng-mobile-nav-link flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold text-slate-600"><i class="fas fa-compass text-base" aria-hidden="true"></i><span>Start</span></a>
         <a href="#programs" class="ng-mobile-nav-link flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold text-slate-600"><i class="fas fa-calendar-days text-base" aria-hidden="true"></i><span>Programs</span></a>
         <a href="#join" class="ng-mobile-nav-link flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold text-slate-600"><i class="fas fa-user-plus text-base" aria-hidden="true"></i><span>Join</span></a>

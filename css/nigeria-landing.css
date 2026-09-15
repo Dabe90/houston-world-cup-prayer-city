@@ -509,6 +509,9 @@ body.ng-units-modal-open {
   border-bottom: 1px solid rgba(15, 61, 92, 0.06);
 }
 #ng-mobile-nav .ng-mobile-nav-link { min-height: 44px; }
+#ng-mobile-nav {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
 
 /* Forms — ng-input/ng-surface/ng-submit (used on auth, onboard, dashboard) */
 .ng-surface {
@@ -576,7 +579,7 @@ body.ng-units-modal-open {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  padding-bottom: 0.25rem;
+  padding-bottom: 0.45rem;
   margin-left: -0.25rem;
   margin-right: -0.25rem;
   padding-left: 0.25rem;
@@ -586,14 +589,17 @@ body.ng-units-modal-open {
   z-index: 30;
   background: linear-gradient(to bottom, #f1f5f9 70%, rgba(241, 245, 249, 0));
   padding-top: 0.25rem;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
 }
 #dash-tabs::-webkit-scrollbar { display: none; }
 #dash-tabs .tab-btn {
   flex: 0 0 auto;
   white-space: nowrap;
-  min-height: 40px;
+  min-height: 44px;
   font-size: 0.8125rem;
-  padding: 0.5rem 0.875rem;
+  padding: 0.5rem 0.95rem;
+  scroll-snap-align: start;
 }
 #units-cards .unit-card,
 #kingdom-workforce-list > div,
@@ -671,6 +677,24 @@ body.ng-units-modal-open {
   }
   #my-members-list .team-roster > .space-y-2 > div {
     padding: 0.75rem;
+  }
+  #site-top-nav a[href="/alive"] {
+    min-height: 36px;
+  }
+  #programs-month-filter,
+  .vision-plan-view textarea,
+  .absence-panel textarea,
+  .absence-panel input,
+  .absence-panel select {
+    font-size: 16px;
+    max-width: 100%;
+  }
+  #tab-home .ng-surface,
+  #tab-units .ng-surface,
+  #tab-my-members .ng-surface,
+  #tab-reports .ng-surface,
+  #tab-programs .ng-surface {
+    overflow-wrap: anywhere;
   }
 }
 #kingdom-workforce-list .btn-wf-in-training,
@@ -1375,6 +1399,21 @@ body.ng-units-modal-open {
   }
   .meeting-notes.mn-locked .mn-resp-option {
     opacity: 0.85;
+  }
+  .meeting-notes .mn-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+  }
+  .meeting-notes .mn-footer-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+  .meeting-notes .mn-footer .mn-btn,
+  .meeting-notes .mn-footer [data-cmd="add"] {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
   }
 }
 

@@ -34,3 +34,16 @@
   font-size: 1rem;
   max-width: 100%;
 }
+
+@media (max-width: 719px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+  select,
+  textarea {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  button,
+  .btn {
+    -webkit-tap-highlight-color: transparent;
+  }
+}

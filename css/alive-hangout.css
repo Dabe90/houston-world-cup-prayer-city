@@ -837,23 +837,97 @@ a {
 }
 
 @media (max-width: 719px) {
+  html {
+    overflow-x: hidden;
+  }
+  .alive-nav {
+    padding: calc(0.7rem + env(safe-area-inset-top, 0px)) 0.85rem 0.7rem;
+    gap: 0.55rem;
+  }
+  .alive-nav-cta {
+    min-height: 40px;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.75rem;
+  }
+  .alive-hero {
+    min-height: 0;
+  }
+  .alive-hero-inner {
+    width: min(1120px, calc(100% - 1.5rem));
+    padding: 1.6rem 0 1.6rem;
+  }
+  .alive-h1-event {
+    font-size: clamp(2.35rem, 12vw, 3.6rem);
+    line-height: 0.9;
+  }
+  .alive-h1-date {
+    font-size: clamp(1.05rem, 4.6vw, 1.45rem);
+  }
+  .alive-date-lockup {
+    margin-top: 1rem;
+    padding: 0.85rem 1rem 0.9rem;
+    max-width: 100%;
+  }
+  .alive-date-day {
+    font-size: clamp(2.6rem, 16vw, 4.4rem);
+  }
+  .alive-hero-sub {
+    font-size: 1.02rem;
+    line-height: 1.5;
+  }
+  .alive-hero-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+  }
+  .alive-hero-actions .alive-btn {
+    width: 100%;
+  }
+  .alive-count-cell {
+    padding: 0.65rem 0.15rem 0.55rem;
+  }
+  .alive-count-cell b {
+    font-size: 1.25rem;
+  }
+  .alive-wrap {
+    width: min(1120px, calc(100% - 1.5rem));
+  }
+  .alive-section {
+    padding: 2.4rem 0;
+  }
+  .alive-section.alive-register {
+    padding-bottom: 5.5rem;
+  }
+  .alive-letter-card,
+  .alive-form {
+    padding: 1.05rem 0.95rem 1.1rem;
+  }
+  .alive-verse {
+    font-size: 1.08rem;
+    padding: 1rem;
+  }
   .alive-sticky-bar {
     display: flex;
+    align-items: center;
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
     z-index: 50;
-    padding: 0.7rem 0.9rem calc(0.7rem + env(safe-area-inset-bottom));
+    padding: 0.65rem 0.8rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
     background: rgba(250, 246, 238, 0.96);
     border-top: 1px solid var(--alive-line);
-    gap: 0.6rem;
+    gap: 0.55rem;
   }
   .alive-sticky-bar .alive-btn {
     flex: 1;
+    min-height: 48px;
   }
   .alive-sticky-date {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
+    white-space: normal;
+    line-height: 1.2;
+    max-width: 7.5rem;
   }
   .alive-count {
     max-width: none;
@@ -862,8 +936,57 @@ a {
   .alive-rhythm div {
     grid-template-columns: 1fr;
   }
+  .alive-rhythm div {
+    padding: 0.9rem 0.95rem;
+  }
   .alive-rhythm b {
-    margin-bottom: -0.35rem;
+    margin-bottom: 0.15rem;
+  }
+  .alive-photo-row {
+    gap: 0.5rem;
+  }
+  .alive-photo-row figure,
+  .alive-photo-row img {
+    min-height: 140px;
+  }
+  .alive-photo-row figure:nth-child(1),
+  .alive-photo-row figure:nth-child(1) img {
+    min-height: 190px;
+  }
+  .alive-faq summary {
+    min-height: 48px;
+    font-size: 0.95rem;
+    gap: 0.7rem;
+  }
+  .alive-form input,
+  .alive-form select,
+  .alive-form textarea {
+    font-size: 16px;
+    min-height: 48px;
+  }
+  .alive-form .alive-btn {
+    width: 100%;
+  }
+  .alive-share button,
+  .alive-share a {
+    flex: 1 1 calc(50% - 0.55rem);
+    text-align: center;
+  }
+  .alive-footer {
+    padding: 1.6rem 0.75rem calc(6.4rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 390px) {
+  .alive-brand-copy strong {
+    font-size: 0.82rem;
+  }
+  .alive-nav-cta {
+    padding: 0.4rem 0.65rem;
+  }
+  .alive-sticky-date {
+    max-width: 6.2rem;
+    font-size: 0.7rem;
   }
 }
 
