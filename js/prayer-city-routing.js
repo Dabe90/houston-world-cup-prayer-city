@@ -1,16 +1,12 @@
 /**
- * Route Nigerian volunteers to ddbs-nig.html after sign-in (one sign-in for the whole site).
+ * Nigeria hub helpers — explicit links / post-login only.
+ * No anonymous geo auto-routing (everyone can open the US root freely).
  */
 (function (global) {
-  var NIGERIA_HUB = 'ddbs-nig.html';
+  var NIGERIA_HUB = '/ng';
   var STAY_KEY = 'prayerCityStayOnUsHub';
   var REGION_COOKIE = 'prayer_city_region';
   var COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
-  // Cloudflare fronts the domain, so this same-origin endpoint reports the
-  // visitor's real country (loc=XX). Used as a reliable geo fallback in case the
-  // edge/CDN redirect does not fire for a given visitor.
-  var TRACE_URL = '/cdn-cgi/trace';
-  var GEO_DONE_KEY = 'prayerCityGeoChecked';
 
   function setRegionCookie(value) {
     var secure = location.protocol === 'https:' ? '; Secure' : '';
@@ -38,6 +34,19 @@
 
   function shouldAutoRouteToNigeria(volunteerData, email) {
     if (sessionStorage.getItem(STAY_KEY) === '1') return false;
+    if (getRegionCookie() === 'us') return false;
+    try {
+      var stay = new URLSearchParams(window.location.search).get('stay');
+      if (stay === 'us') return false;
+    } catch (ignore) {}
+    // Super users use both hubs — never force them off the US dashboard.
+    if (
+      global.PrayerCitySuperUser &&
+      typeof global.PrayerCitySuperUser.isSuperUser === 'function' &&
+      global.PrayerCitySuperUser.isSuperUser(email)
+    ) {
+      return false;
+    }
     if (
       volunteerData &&
       (volunteerData.nigeriaHub === true || volunteerData.region === 'nigeria')
@@ -66,7 +75,6 @@
     var url = NIGERIA_HUB;
     var search = extraSearch != null ? extraSearch : window.location.search || '';
     var hash = extraHash != null ? extraHash : window.location.hash || '';
-    // Avoid duplicating ?stay= when we already have a cookie destination.
     try {
       if (search) {
         var params = new URLSearchParams(search.charAt(0) === '?' ? search.slice(1) : search);
@@ -78,12 +86,19 @@
     return url + search + hash;
   }
 
+  function isNigeriaHubPath(pathname) {
+    var path = String(pathname || '').toLowerCase().replace(/\/+$/, '') || '/';
+    return (
+      path === '/ng' ||
+      path === '/nigeria' ||
+      path.indexOf('ddbs-nig') !== -1 ||
+      path.indexOf('nigeria-dashboard') !== -1
+    );
+  }
+
   function maybeRedirectToNigeriaHub(volunteerData, email) {
     if (!shouldAutoRouteToNigeria(volunteerData, email)) return false;
-    var path = (window.location.pathname || '').toLowerCase();
-    if (path.indexOf('ddbs-nig') !== -1 || path.indexOf('nigeria-dashboard') !== -1) {
-      return false;
-    }
+    if (isNigeriaHubPath(window.location.pathname)) return false;
     window.location.assign(nigeriaHubUrl());
     return true;
   }
@@ -93,6 +108,9 @@
       var stay = new URLSearchParams(window.location.search).get('stay');
       if (stay === 'us') markStayOnUsHub();
       else if (stay === 'ng') markStayOnNigeriaHub();
+      else if (getRegionCookie() === 'us') {
+        sessionStorage.setItem(STAY_KEY, '1');
+      }
     } catch (ignore) {}
   }
 
@@ -102,57 +120,15 @@
   }
 
   function onNigeriaPage() {
-    var path = (window.location.pathname || '').toLowerCase();
-    return path.indexOf('ddbs-nig') !== -1 || path.indexOf('nigeria-dashboard') !== -1;
-  }
-
-  function isRootUsPage() {
-    var path = (window.location.pathname || '').toLowerCase();
-    return path === '' || path === '/' || path === '/index.html';
-  }
-
-  function looksLikeNigeriaDevice() {
-    try {
-      var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-      return tz === 'Africa/Lagos';
-    } catch (e) {
-      return false;
-    }
+    return isNigeriaHubPath(window.location.pathname);
   }
 
   /**
-   * Best-effort geo redirect for anonymous visitors on the US root page.
-   * Nigerian visitors are sent to the Nigeria hub. Respects an explicit US/NG
-   * choice (?stay= or the region cookie) and only checks geo once per session.
-   * Also uses Africa/Lagos timezone when Cloudflare country is unavailable.
+   * Geo auto-routing disabled — visitors choose US (/) or Nigeria (/ng).
+   * Kept as a no-op so older pages that call it do not break.
    */
   function maybeGeoRedirect() {
-    try {
-      if (onNigeriaPage() || !isRootUsPage()) return;
-      if (sessionStorage.getItem(STAY_KEY) === '1') return;
-      var region = getRegionCookie();
-      if (region === 'us') return;
-      if (region === 'ng' || looksLikeNigeriaDevice()) {
-        if (region !== 'ng') setRegionCookie('ng');
-        window.location.replace(nigeriaHubUrl());
-        return;
-      }
-      if (sessionStorage.getItem(GEO_DONE_KEY) === '1') return;
-      sessionStorage.setItem(GEO_DONE_KEY, '1');
-      if (typeof fetch !== 'function') return;
-      fetch(TRACE_URL, { cache: 'no-store' })
-        .then(function (r) {
-          return r && r.ok ? r.text() : '';
-        })
-        .then(function (txt) {
-          var m = /(?:^|\n)loc=([A-Z]{2})/.exec(txt || '');
-          if (m && m[1] === 'NG') {
-            setRegionCookie('ng');
-            window.location.replace(nigeriaHubUrl());
-          }
-        })
-        .catch(function () {});
-    } catch (ignore) {}
+    /* intentionally empty */
   }
 
   global.PrayerCityRouting = {
@@ -164,6 +140,8 @@
     markStayOnNigeriaHub: markStayOnNigeriaHub,
     clearStayOnUsHub: clearStayOnUsHub,
     parseStayQuery: parseStayQuery,
+    getRegionCookie: getRegionCookie,
+    onNigeriaPage: onNigeriaPage,
     maybeGeoRedirect: maybeGeoRedirect,
   };
 })(typeof window !== 'undefined' ? window : this);

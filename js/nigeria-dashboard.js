@@ -4464,6 +4464,9 @@
   };
 
   document.addEventListener('DOMContentLoaded', function () {
+    if (window.PrayerCityRouting && PrayerCityRouting.markStayOnNigeriaHub) {
+      PrayerCityRouting.markStayOnNigeriaHub();
+    }
     initFirebase().then(function (ok) {
       if (!ok) return;
       bind();
