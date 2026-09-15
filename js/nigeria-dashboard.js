@@ -29,6 +29,10 @@
     if (el) el.classList.add('hidden');
   }
 
+  function hubPolicyStartYmd() {
+    return (window.NigeriaUnits && NigeriaUnits.HUB_POLICY_START_YMD) || '2026-09-14';
+  }
+
   function clearHubBootLoading() {
     try {
       document.documentElement.classList.remove('ddbs-hub-boot-dash');
@@ -451,8 +455,8 @@
         maxRequests: 2,
         usedInWindow: 0,
         remaining: 2,
-        windowStartYmd: '2026-07-12',
-        windowEndYmd: '2026-09-05',
+        windowStartYmd: hubPolicyStartYmd(),
+        windowEndYmd: '2026-11-08',
         emergencyWindowWeeks: 12,
         emergencyMax: 1,
         emergencyUsedInWindow: 0,
@@ -1414,34 +1418,17 @@
       }
       return 'You were present' + (when ? ' — checked in at ' + when + ' WAT' : '') + '.';
     }
-    return 'You were absent — you did not check in for this meeting.';
-  }
-
-  function formatDigestAttendanceForUser(digest, uid) {
-    if (!digest || !Array.isArray(digest.roster)) return '';
-    var row = digest.roster.find(function (r) {
-      return r.uid === uid;
-    });
-    if (!row) return 'Attendance not recorded for this meeting.';
-    if (row.present) {
-      var when = '';
-      if (row.checkedInAt && row.checkedInAt.toDate) {
-        when = row.checkedInAt.toDate().toLocaleString('en-GB', {
-          weekday: 'short',
-          day: 'numeric',
-          month: 'short',
-          hour: '2-digit',
-          minute: '2-digit',
-        });
-      }
-      return 'You were present' + (when ? ' — checked in at ' + when + ' WAT' : '') + '.';
-    }
     if (row.excused) {
       return (
         'Excused absence — your ' +
         (row.absenceType === 'emergency' ? 'emergency' : 'planned') +
         ' request was approved.'
       );
+    }
+    var digestYmd = String(digest.meetingDateYmd || digest.dateYmd || '');
+    var missFrom = (window.NigeriaUnits && NigeriaUnits.ATTENDANCE_MISS_START_YMD) || '2026-09-15';
+    if (digestYmd && digestYmd < missFrom) {
+      return 'Attendance tracking restarted on 14 Sep 2026.';
     }
     return 'You were absent — you did not check in for this meeting.';
   }
@@ -1468,13 +1455,13 @@
     if (!quotas) return '';
     var start = quotas.windowStartYmd || '';
     var end = quotas.windowEndYmd || '';
-    if (!start || !end) return 'Current 8-week period (from 12 Jul 2026).';
+    if (!start || !end) return 'Current 8-week period (from 14 Sep 2026).';
     return 'Period: ' + formatMeetingYmd(start) + ' – ' + formatMeetingYmd(end);
   }
 
   function absencePanelHtml(c) {
     var target = c.absenceTargetMeeting;
-    if (target && target.dateYmd && String(target.dateYmd) < '2026-07-12') {
+    if (target && target.dateYmd && String(target.dateYmd) < hubPolicyStartYmd()) {
       target = null;
     }
     if (!target) {
@@ -1503,7 +1490,7 @@
     var remaining = quotas.remaining != null ? quotas.remaining : 2;
     var periodLine = formatQuotaPeriod(quotas);
     var emergencyNote = quotas.emergencyAvailable
-      ? 'Emergency slot available (one per 12-week period from 12 Jul 2026).'
+      ? 'Emergency slot available (one per 12-week period from 14 Sep 2026).'
       : 'Emergency slot used — resets ' +
         (quotas.emergencyResetsAt
           ? new Date(quotas.emergencyResetsAt).toLocaleDateString('en-GB', {
@@ -2211,6 +2198,9 @@
   function lastMeetingDigestHtml(c, uid) {
     var digest = c.lastMeetingDigest;
     if (!digest) return '';
+    var ymd = String(digest.meetingDateYmd || digest.dateYmd || '');
+    var missFrom = (window.NigeriaUnits && NigeriaUnits.ATTENDANCE_MISS_START_YMD) || '2026-09-15';
+    if (ymd && ymd < missFrom) return '';
     var attLine = formatDigestAttendanceForUser(digest, uid);
     var notes = String(digest.notesContent || '').trim();
     return (
@@ -2940,6 +2930,9 @@
     var rows = m.checkIns
       .slice()
       .reverse()
+      .filter(function (ci) {
+        return ci.status === 'present' || ci.status === 'excused' || ci.status === 'missed';
+      })
       .map(function (ci) {
         var when = formatCheckInTime(ci.checkedInAtIso);
         var label =
@@ -2961,6 +2954,7 @@
         );
       })
       .join('');
+    if (!rows) return '';
     return (
       '<details class="mt-2 rounded-lg border border-slate-100 bg-slate-50/70">' +
       '<summary class="cursor-pointer list-none px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 flex items-center justify-between gap-2">' +
@@ -2975,7 +2969,7 @@
   function meetingAttendanceHtml(meetings) {
     if (!meetings || !meetings.length) {
       return (
-        '<p class="text-xs text-slate-500 mt-3">No tracked meetings yet (attendance starts from 12 Jul 2026).</p>'
+        '<p class="text-xs text-slate-500 mt-3">No tracked meetings yet (attendance starts from 14 Sep 2026).</p>'
       );
     }
     return (

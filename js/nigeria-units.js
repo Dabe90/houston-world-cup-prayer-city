@@ -4,8 +4,9 @@
  */
 (function (global) {
   var TZ = 'Africa/Lagos';
-  /** Attendance + absence windows start here (Lagos). No June / earlier meetings. */
-  var HUB_POLICY_START_YMD = '2026-07-12';
+  /** Attendance + absence windows start here (Lagos). Restarted 14 Sep 2026. */
+  var HUB_POLICY_START_YMD = '2026-09-14';
+  var ATTENDANCE_MISS_START_YMD = '2026-09-15';
 
   /** @type {Array<{id:string,label:string,summary:string,icon:string,gradient:string,day:number,start:string,end:string,endNextDay?:boolean,enlistHidden?:boolean}>} */
   var NIGERIA_UNITS = [
@@ -181,7 +182,7 @@
       start: '21:30',
       end: '22:30',
       enlistHidden: true,
-      attendanceStartYmd: '2026-09-13',
+      attendanceStartYmd: '2026-09-14',
     },
   ];
 
@@ -393,7 +394,7 @@
     meetings.sort(function (a, b) {
       return a.start - b.start;
     });
-    // Hub went live Jul 2026 — don't offer June (or earlier) meetings in notes / pickers.
+    // Don't offer meetings before the attendance restart.
     meetings = meetings.filter(function (mtg) {
       var startYmd = unit.attendanceStartYmd || HUB_POLICY_START_YMD;
       return String(mtg.dateYmd || '') >= startYmd;
@@ -423,6 +424,7 @@
     },
     DAY_NAMES: DAY_NAMES,
     HUB_POLICY_START_YMD: HUB_POLICY_START_YMD,
+    ATTENDANCE_MISS_START_YMD: ATTENDANCE_MISS_START_YMD,
     getUnit: getUnit,
     meetingScheduleLabel: meetingScheduleLabel,
     meetingKey: meetingKey,

@@ -4,10 +4,16 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const { z } = require('zod');
 const admin = require('firebase-admin');
-const { isSuperUserEmail, normalizeEmail } = require('./lib/adminAuth');
+const {
+  isSuperUserEmail,
+  normalizeEmail,
+  canViewAllNigeriaUnitReports,
+  NIGERIA_REPORT_OVERVIEW_EMAILS,
+} = require('./lib/adminAuth');
 const { generateStructured } = require('./genkit/generateWithRetry');
 
 const { sendMailViaAppsScript } = require('./lib/mailTransport');
+const { loadOpenActionsForUser } = require('./nigeriaActionReminders');
 
 const googleGenaiApiKey = defineSecret('GOOGLE_GENAI_API_KEY');
 const appsScriptSelfServeMailUrl = defineSecret('APPS_SCRIPT_SELF_SERVE_MAIL_URL');
@@ -137,11 +143,13 @@ const NIGERIA_UNITS = [
   { id: 'group5', label: 'Group 5', day: 1, start: '21:00', end: '21:15' },
   { id: 'group6', label: 'Group 6', day: 1, start: '21:00', end: '21:15' },
   { id: 'workers-coordinator', label: 'Workers Coordinator', day: 3, start: '21:00', end: '21:30' },
+  { id: 'internal-leaders', label: 'Internal Leaders Meeting', day: 0, start: '21:30', end: '22:30' },
 ];
 
 const WORKERS_COORDINATOR_UNIT_ID = 'workers-coordinator';
+const INTERNAL_LEADERS_UNIT_ID = 'internal-leaders';
 const WORKFORCE_ACTIVE_STATUSES = ['pending_training', 'in_training'];
-const WORKFORCE_ENLIST_EXCLUDE = new Set([WORKERS_COORDINATOR_UNIT_ID]);
+const WORKFORCE_ENLIST_EXCLUDE = new Set([WORKERS_COORDINATOR_UNIT_ID, INTERNAL_LEADERS_UNIT_ID]);
 const SIGNUP_VIEWER_UNIT_IDS = ['welcome-hospitality', 'growth-retention', 'workers-coordinator'];
 
 function escapeHtml(s) {
@@ -223,7 +231,7 @@ function buildWorkforceWelcomeMail({ name, units }) {
     `Important: You will not have hub sign-in access until you complete training and your Workers Coordinator greenlights you in the system.\n\n` +
     `We are glad you said yes to serve.\n\n` +
     `Dear Daughter Bible Study Group Nigeria\n` +
-    `https://prayercityhtx.com/ddbs-nig.html`;
+    `https://prayercityhtx.com/ng`;
   const htmlBody =
     `<div style="font-family:system-ui,sans-serif;color:#1e293b;max-width:520px;line-height:1.55">` +
     `<p>Hi <strong>${escapeHtml(first)}</strong>,</p>` +
@@ -274,12 +282,12 @@ function buildWorkforceApprovedMail({ name }) {
     `Hi ${first},\n\n` +
     `Your Workers Coordinator has greenlit your Kingdom Workforce training — welcome to active service!\n\n` +
     `You may now complete volunteer registration (if you have not already) and sign in to the DDBS Nigeria hub with the same email, using your Nigeria (+234) phone on file.\n\n` +
-    `Hub: https://prayercityhtx.com/ddbs-nig.html\n\n` +
+    `Hub: https://prayercityhtx.com/ng\n\n` +
     `Dear Daughter Nigeria`;
   const htmlBody =
     `<p>Hi <strong>${escapeHtml(first)}</strong>,</p>` +
     `<p>Your <strong>Workers Coordinator</strong> has cleared you after Workers Training Class. You may now register (if needed) and <strong>sign in to the DDBS Nigeria hub</strong> with your email and Nigeria (+234) phone.</p>` +
-    `<p><a href="https://prayercityhtx.com/ddbs-nig.html">Open DDBS Nigeria hub</a></p>`;
+    `<p><a href="https://prayercityhtx.com/ng">Open DDBS Nigeria hub</a></p>`;
   return { subject, plainBody, htmlBody };
 }
 
@@ -335,7 +343,7 @@ function buildWelcomeSignupMail({ name }) {
     `We teach the undiluted Word of God to all nations of the world — and we are glad you said yes.\n\n` +
     `Our Welcome & Hospitality and Growth teams will reach out soon with next steps, Telegram links, and how to plug into mid-week Bible Study and programs.\n\n` +
     `Follow us: https://www.instagram.com/deardaughter_bs\n` +
-    `Hub: https://prayercityhtx.com/ddbs-nig.html\n\n` +
+    `Hub: https://prayercityhtx.com/ng\n\n` +
     `With love,\nDear Daughter Nigeria`;
   const htmlBody =
     `<p>Hi <strong>${first}</strong>,</p>` +
@@ -343,7 +351,7 @@ function buildWelcomeSignupMail({ name }) {
     `<p>We teach the undiluted Word of God to all nations of the world — and we are glad you said yes.</p>` +
     `<p>Our Welcome &amp; Hospitality and Growth teams will reach out soon with next steps, Telegram links, and how to plug into mid-week Bible Study and programs.</p>` +
     `<p><a href="https://www.instagram.com/deardaughter_bs">@deardaughter_bs</a> · ` +
-    `<a href="https://prayercityhtx.com/ddbs-nig.html">DDBS Nigeria hub</a></p>` +
+    `<a href="https://prayercityhtx.com/ng">DDBS Nigeria hub</a></p>` +
     `<p>With love,<br/>Dear Daughter Nigeria</p>`;
   return { subject, plainBody, htmlBody };
 }
@@ -410,6 +418,60 @@ const EMERGENCY_WINDOW_MS = 12 * 7 * 24 * 60 * 60 * 1000;
 const EMERGENCY_MAX_PER_WINDOW = 1;
 const PLANNED_ABSENCE_MIN_MS = 2 * 24 * 60 * 60 * 1000;
 
+/**
+ * Attendance restart (Lagos YMD). Check-in dates begin here.
+ * Misses / “absent” only count from the next day so this reset does not
+ * mark the house absent for earlier meetings.
+ */
+const HUB_POLICY_START_YMD = '2026-09-14';
+const ATTENDANCE_TRACKING_START_YMD = HUB_POLICY_START_YMD;
+const ATTENDANCE_MISS_START_YMD = '2026-09-15';
+/** Units that start attendance later than the hub-wide policy date. */
+const UNIT_ATTENDANCE_START_YMD = {
+  'internal-leaders': '2026-09-14',
+};
+
+function policyEpochStartDate() {
+  return lagosLocalToDate(HUB_POLICY_START_YMD, '00:00');
+}
+
+function trackingStartYmd(unitId) {
+  return UNIT_ATTENDANCE_START_YMD[unitId] || HUB_POLICY_START_YMD;
+}
+
+function meetingUnitId(m) {
+  if (!m) return '';
+  if (m.unitId) return m.unitId;
+  const key = String(m.key || '');
+  const cut = key.lastIndexOf('_');
+  return cut > 0 ? key.slice(0, cut) : '';
+}
+
+function meetingInTrackingPeriod(m) {
+  if (!m || !m.dateYmd) return false;
+  return String(m.dateYmd) >= trackingStartYmd(meetingUnitId(m));
+}
+
+function meetingCountsAsAbsence(m) {
+  return !!(m && meetingInTrackingPeriod(m) && String(m.dateYmd) >= ATTENDANCE_MISS_START_YMD);
+}
+
+/** Fixed consecutive windows from HUB_POLICY_START_YMD (not a lookback into the past). */
+function currentPolicyWindow(now, windowMs) {
+  const epoch = policyEpochStartDate().getTime();
+  const t = (now || new Date()).getTime();
+  if (t < epoch) {
+    return { start: new Date(epoch), end: new Date(epoch + windowMs), index: 0 };
+  }
+  const index = Math.floor((t - epoch) / windowMs);
+  const startMs = epoch + index * windowMs;
+  return {
+    start: new Date(startMs),
+    end: new Date(startMs + windowMs),
+    index,
+  };
+}
+
 function isWithinCheckInWindow(meeting, now = new Date()) {
   const open = new Date(meeting.start.getTime() - CHECK_IN_OPEN_MIN_BEFORE * 60000);
   const close = new Date(meeting.end.getTime() + CHECK_IN_CLOSE_MIN_AFTER * 60000);
@@ -430,7 +492,13 @@ function meetingsInMonth(unit, year, month) {
       }
       let endDt = lagosLocalToDate(endYmd, unit.end);
       if (endDt <= start) endDt = new Date(endDt.getTime() + 86400000);
-      out.push({ key: meetingKey(unit.id, dateYmd), dateYmd, start, end: endDt });
+      out.push({
+        unitId: unit.id,
+        key: meetingKey(unit.id, dateYmd),
+        dateYmd,
+        start,
+        end: endDt,
+      });
     }
     d.setUTCDate(d.getUTCDate() + 1);
   }
@@ -550,24 +618,17 @@ const STRIKE_WINDOW_WEEKS = 8;
 const STRIKE_WINDOW_MS = STRIKE_WINDOW_WEEKS * 7 * 86400000;
 /** A check-in only counts as "late" once this many minutes past the start have passed. */
 const LATE_GRACE_MS = 5 * 60 * 1000;
-/**
- * First Lagos calendar day that counts for misses / late / warnings.
- * Dashboard launched 2026-07-11; tracking begins the next day so nobody is
- * penalized for meetings before the hub was in use.
- */
-const ATTENDANCE_TRACKING_START_YMD = '2026-07-12';
-
-function meetingInTrackingPeriod(m) {
-  return !!(m && m.dateYmd && String(m.dateYmd) >= ATTENDANCE_TRACKING_START_YMD);
-}
 
 /**
  * Counts, within the last 8 weeks, how many meetings a member missed and how
  * many they joined late (checked in after the meeting had already started).
  * Excused absences never count. Each miss or late arrival is one "strike".
+ * The window never starts before HUB_POLICY_START_YMD, and misses are not
+ * counted before ATTENDANCE_MISS_START_YMD.
  */
 function computeStrikeWindowStats(allPast, attendedKeys, excusedKeys, checkedInAtByKey, now) {
-  const windowStart = now.getTime() - STRIKE_WINDOW_MS;
+  const epochMs = policyEpochStartDate().getTime();
+  const windowStart = Math.max(now.getTime() - STRIKE_WINDOW_MS, epochMs);
   let missed = 0;
   let late = 0;
   (allPast || []).forEach((m) => {
@@ -577,7 +638,7 @@ function computeStrikeWindowStats(allPast, attendedKeys, excusedKeys, checkedInA
     if (attendedKeys.has(m.key)) {
       const at = checkedInAtByKey[m.key];
       if (at && at > m.start.getTime() + LATE_GRACE_MS) late += 1;
-    } else {
+    } else if (meetingCountsAsAbsence(m)) {
       missed += 1;
     }
   });
@@ -674,8 +735,8 @@ async function loadExcusedMeetingKeys(db, uid, unitId) {
 }
 
 async function getAbsenceQuotas(db, uid, unitId, now = new Date()) {
-  const windowStart8 = new Date(now.getTime() - ABSENCE_WINDOW_MS);
-  const windowStart12 = new Date(now.getTime() - EMERGENCY_WINDOW_MS);
+  const win8 = currentPolicyWindow(now, ABSENCE_WINDOW_MS);
+  const win12 = currentPolicyWindow(now, EMERGENCY_WINDOW_MS);
   const snap = await db
     .collection('nigeria_absence_requests')
     .where('uid', '==', uid)
@@ -684,16 +745,27 @@ async function getAbsenceQuotas(db, uid, unitId, now = new Date()) {
 
   let usedInWindow = 0;
   let emergencyUsedInWindow = 0;
-  let lastEmergencyAt = null;
 
   snap.docs.forEach((doc) => {
     const d = doc.data();
     const created = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate() : null;
-    if (!created) return;
-    if (created >= windowStart8) usedInWindow++;
-    if (d.type === 'emergency' && created >= windowStart12) {
-      emergencyUsedInWindow++;
-      if (!lastEmergencyAt || created > lastEmergencyAt) lastEmergencyAt = created;
+    // Prefer meeting date when present so June / pre-hub requests never burn the new period.
+    const meetingYmd = d.meetingDateYmd ? String(d.meetingDateYmd) : '';
+    if (meetingYmd && meetingYmd < HUB_POLICY_START_YMD) return;
+    if (!created && !meetingYmd) return;
+
+    const in8 =
+      created
+        ? created >= win8.start && created < win8.end
+        : meetingYmd >= ymdInLagos(win8.start) && meetingYmd < ymdInLagos(win8.end);
+    if (in8) usedInWindow++;
+
+    if (d.type === 'emergency') {
+      const in12 =
+        created
+          ? created >= win12.start && created < win12.end
+          : meetingYmd >= ymdInLagos(win12.start) && meetingYmd < ymdInLagos(win12.end);
+      if (in12) emergencyUsedInWindow++;
     }
   });
 
@@ -703,13 +775,17 @@ async function getAbsenceQuotas(db, uid, unitId, now = new Date()) {
     maxRequests: ABSENCE_MAX_PER_WINDOW,
     usedInWindow,
     remaining: Math.max(0, ABSENCE_MAX_PER_WINDOW - usedInWindow),
+    windowStartsAt: win8.start.toISOString(),
+    windowEndsAt: win8.end.toISOString(),
+    windowStartYmd: ymdInLagos(win8.start),
+    windowEndYmd: ymdInLagos(new Date(win8.end.getTime() - 86400000)),
     emergencyWindowWeeks: 12,
     emergencyMax: EMERGENCY_MAX_PER_WINDOW,
     emergencyUsedInWindow,
     emergencyAvailable,
-    emergencyResetsAt: lastEmergencyAt
-      ? new Date(lastEmergencyAt.getTime() + EMERGENCY_WINDOW_MS).toISOString()
-      : null,
+    emergencyWindowStartsAt: win12.start.toISOString(),
+    emergencyWindowEndsAt: win12.end.toISOString(),
+    emergencyResetsAt: win12.end.toISOString(),
   };
 }
 
@@ -763,7 +839,9 @@ async function computeUserAttendanceStats(db, uid, unitId, year, month) {
   const excusedKeys = await loadExcusedMeetingKeys(db, uid, unitId);
 
   const attendedPast = pastScheduled.filter((m) => meetingPresentOrExcused(m.key, attendedKeys, excusedKeys));
-  const missedPast = pastScheduled.filter((m) => !meetingPresentOrExcused(m.key, attendedKeys, excusedKeys));
+  const missedPast = pastScheduled.filter(
+    (m) => meetingCountsAsAbsence(m) && !meetingPresentOrExcused(m.key, attendedKeys, excusedKeys)
+  );
   const rate = pastScheduled.length
     ? Math.round((attendedPast.length / pastScheduled.length) * 100)
     : null;
@@ -888,7 +966,7 @@ async function loadPendingWorkforceForUnit(db, unitId, existingEmails = new Set(
  */
 async function computeUnitRoster(db, unitId, now = new Date()) {
   const unit = getUnit(unitId);
-  if (!unit) return [];
+  if (!unit) return { roster: [], recentMeetings: [] };
   try {
     const members = await loadUnitMembers(db, unitId);
     const existingEmails = new Set(
@@ -896,16 +974,25 @@ async function computeUnitRoster(db, unitId, now = new Date()) {
     );
 
     const allPast = await pastMeetingsForUnit(db, unitId, 6);
+    const recentMeetingsList = allPast.slice(-8);
 
     const attSnap = await db.collection('nigeria_attendance').where('unitId', '==', unitId).get();
     const attByUid = {};
+    const attByMeeting = {};
     attSnap.forEach((doc) => {
       const d = doc.data() || {};
       if (!d.uid || !d.meetingKey) return;
       const rec = attByUid[d.uid] || (attByUid[d.uid] = { keys: new Set(), at: {} });
       rec.keys.add(d.meetingKey);
-      const at = d.checkedInAt && d.checkedInAt.toDate ? d.checkedInAt.toDate().getTime() : null;
-      if (at) rec.at[d.meetingKey] = at;
+      const atMs = d.checkedInAt && d.checkedInAt.toDate ? d.checkedInAt.toDate().getTime() : null;
+      if (atMs) rec.at[d.meetingKey] = atMs;
+      const list = attByMeeting[d.meetingKey] || (attByMeeting[d.meetingKey] = []);
+      list.push({
+        uid: d.uid,
+        name: String(d.name || '').trim() || 'Member',
+        checkedInAtMs: atMs,
+        checkedInAtIso: atMs ? new Date(atMs).toISOString() : null,
+      });
     });
 
     const absSnap = await db
@@ -914,10 +1001,17 @@ async function computeUnitRoster(db, unitId, now = new Date()) {
       .where('status', '==', 'approved')
       .get();
     const excusedByUid = {};
+    const excusedByMeeting = {};
     absSnap.forEach((doc) => {
       const d = doc.data() || {};
       if (!d.uid || !d.meetingKey) return;
       (excusedByUid[d.uid] || (excusedByUid[d.uid] = new Set())).add(d.meetingKey);
+      const list = excusedByMeeting[d.meetingKey] || (excusedByMeeting[d.meetingKey] = []);
+      list.push({
+        uid: d.uid,
+        name: String(d.name || '').trim() || 'Member',
+        type: d.type || 'planned',
+      });
     });
 
     const roster = members.map((m) => {
@@ -925,6 +1019,26 @@ async function computeUnitRoster(db, unitId, now = new Date()) {
       const excused = excusedByUid[m.uid] || new Set();
       const strikeStats = computeStrikeWindowStats(allPast, att.keys, excused, att.at, now);
       const warning = attendanceMissWarning(strikeStats, unit.label);
+      const checkIns = recentMeetingsList.map((mtg) => {
+        const present = att.keys.has(mtg.key);
+        const isExcused = excused.has(mtg.key);
+        const atMs = att.at[mtg.key] || null;
+        const late = !!(present && atMs && atMs > mtg.start.getTime() + LATE_GRACE_MS);
+        return {
+          meetingKey: mtg.key,
+          dateYmd: mtg.dateYmd,
+          dayName: mtg.dayName || DAY_NAMES[unit.day],
+          status: present
+            ? 'present'
+            : isExcused
+              ? 'excused'
+              : meetingCountsAsAbsence(mtg)
+                ? 'missed'
+                : 'pending',
+          checkedInAtIso: atMs ? new Date(atMs).toISOString() : null,
+          late,
+        };
+      });
       return {
         uid: m.uid,
         name: m.name,
@@ -936,6 +1050,7 @@ async function computeUnitRoster(db, unitId, now = new Date()) {
         strikes: strikeStats.strikes,
         tier: warning ? warning.tier : 'ok',
         level: warning ? warning.level : 'ok',
+        checkIns,
       };
     });
 
@@ -948,17 +1063,74 @@ async function computeUnitRoster(db, unitId, now = new Date()) {
       return a.name.localeCompare(b.name);
     });
 
+    const memberByUid = new Map(members.map((m) => [m.uid, m]));
+    const recentMeetings = recentMeetingsList
+      .slice()
+      .reverse()
+      .map((mtg) => {
+        const present = (attByMeeting[mtg.key] || [])
+          .map((p) => {
+            const mem = memberByUid.get(p.uid);
+            return {
+              uid: p.uid,
+              name: (mem && mem.name) || p.name,
+              checkedInAtIso: p.checkedInAtIso,
+              late: !!(p.checkedInAtMs && p.checkedInAtMs > mtg.start.getTime() + LATE_GRACE_MS),
+            };
+          })
+          .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+        const excused = (excusedByMeeting[mtg.key] || [])
+          .map((e) => {
+            const mem = memberByUid.get(e.uid);
+            return {
+              uid: e.uid,
+              name: (mem && mem.name) || e.name,
+              type: e.type,
+            };
+          })
+          .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+        const presentIds = new Set(present.map((p) => p.uid));
+        const excusedIds = new Set(excused.map((e) => e.uid));
+        const absent = meetingCountsAsAbsence(mtg)
+          ? members
+              .filter((m) => !presentIds.has(m.uid) && !excusedIds.has(m.uid))
+              .map((m) => ({ uid: m.uid, name: m.name }))
+              .sort((a, b) => String(a.name).localeCompare(String(b.name)))
+          : [];
+        return {
+          meetingKey: mtg.key,
+          dateYmd: mtg.dateYmd,
+          dayName: mtg.dayName || DAY_NAMES[unit.day],
+          startIso: mtg.start.toISOString(),
+          presentCount: present.length,
+          memberCount: members.length,
+          present,
+          excused,
+          absent,
+        };
+      });
+
     const pending = await loadPendingWorkforceForUnit(db, unitId, existingEmails);
-    return roster.concat(pending);
+    return { roster: roster.concat(pending), recentMeetings };
   } catch (err) {
     console.warn('[computeUnitRoster]', unitId, err && err.message);
-    return [];
+    return { roster: [], recentMeetings: [] };
   }
 }
 
 async function computeUnitAttendanceForReport(db, unitId, year, month) {
-  const unit = getUnit(unitId);
-  if (!unit) return null;
+  const empty = {
+    memberCount: 0,
+    meetingsHeld: 0,
+    totalCheckIns: 0,
+    averageAttendancePerMeeting: 0,
+    averageAttendanceRate: null,
+    highestAttendance: null,
+    lowestAttendance: null,
+    meetingBreakdown: [],
+  };
+  const unit = getUnit(String(unitId || '').trim());
+  if (!unit) return empty;
 
   const scheduled = meetingsInMonth(unit, year, month);
   const now = new Date();
@@ -1171,8 +1343,8 @@ const setNigeriaMemberRole = onCall(async (request) => {
       .set({ nigeriaHub: units.length > 0 }, { merge: true });
   } catch (ignore) {}
 
-  const roster = await computeUnitRoster(db, unitId, new Date());
-  return { ok: true, roster };
+  const result = await computeUnitRoster(db, unitId, new Date());
+  return { ok: true, roster: result.roster || [] };
 });
 
 const recordNigeriaAttendance = onCall(async (request) => {
@@ -1306,6 +1478,12 @@ const submitNigeriaAbsenceRequest = onCall(async (request) => {
 
   const meeting = meetingFromKey(unitId, meetingKeyStr);
   if (!meeting) throw new HttpsError('invalid-argument', 'Invalid meeting.');
+  if (!meetingInTrackingPeriod(meeting)) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Absence requests only apply to meetings on or after 14 September 2026.'
+    );
+  }
 
   const now = new Date();
   if (now > meeting.end) {
@@ -1341,13 +1519,13 @@ const submitNigeriaAbsenceRequest = onCall(async (request) => {
   if (quotas.remaining <= 0) {
     throw new HttpsError(
       'resource-exhausted',
-      'You have used both absence requests allowed in the last 8 weeks for this unit.'
+      'You have used both absence requests allowed in this 8-week period for this unit.'
     );
   }
   if (type === 'emergency' && !quotas.emergencyAvailable) {
     throw new HttpsError(
       'resource-exhausted',
-      'Your emergency absence request resets after 12 weeks. You have already used it for this period.'
+      'Your emergency absence slot for this 12-week period is already used. It resets at the start of the next period.'
     );
   }
 
@@ -1375,7 +1553,9 @@ const submitNigeriaAbsenceRequest = onCall(async (request) => {
   return { ok: true, request: record, absenceQuotas: await getAbsenceQuotas(db, uid, unitId, now), stats };
 });
 
-const getNigeriaDashboard = onCall(async (request) => {
+const getNigeriaDashboard = onCall(
+  { timeoutSeconds: 120, memory: '512MiB' },
+  async (request) => {
   const uid = requireAuth(request);
   const db = admin.firestore();
 
@@ -1461,25 +1641,17 @@ const getNigeriaDashboard = onCall(async (request) => {
     const reportSnap = await db.collection('nigeria_unit_reports').doc(reportId).get();
     const latestReport = reportSnap.exists ? reportSnap.data() : null;
 
-    const visionSnap = await db.collection('nigeria_unit_vision').doc(membership.unitId).get();
-    const unitVision = visionSnap.exists ? visionSnap.data() : null;
-
-    const digestSnap = await db
-      .collection('nigeria_meeting_digests')
-      .where('unitId', '==', membership.unitId)
-      .limit(24)
-      .get();
-    let lastMeetingDigest = null;
-    if (digestSnap.docs.length) {
-      const digests = digestSnap.docs
-        .map((d) => d.data())
-        .sort((a, b) => {
-          const ta = a.meetingEndAt && a.meetingEndAt.toMillis ? a.meetingEndAt.toMillis() : 0;
-          const tb = b.meetingEndAt && b.meetingEndAt.toMillis ? b.meetingEndAt.toMillis() : 0;
-          return tb - ta;
-        });
-      lastMeetingDigest = digests[0] || null;
+    let unitVision = null;
+    try {
+      const visionSnap = await db.collection('nigeria_unit_vision').doc(membership.unitId).get();
+      unitVision = visionSnap.exists ? visionSnap.data() : null;
+    } catch (visionErr) {
+      console.warn('[getNigeriaDashboard] vision', membership.unitId, visionErr && visionErr.message);
     }
+
+    // Digests + full rosters are deferred — they made reloads time out for multi-unit /
+    // super users after check-in. Rosters load via getNigeriaMyMembersRosters.
+    const lastMeetingDigest = null;
 
     let checkInOpen = false;
     let absenceTarget = nextMeeting;
@@ -1491,6 +1663,24 @@ const getNigeriaDashboard = onCall(async (request) => {
           checkInOpen = true;
           absenceTarget = prev;
         }
+      }
+    }
+    // Never offer absence for meetings before the attendance restart (14 Sep 2026).
+    if (absenceTarget && !meetingInTrackingPeriod(absenceTarget)) {
+      absenceTarget = getNextMeeting(unit, policyEpochStartDate()) || null;
+      checkInOpen = !!(absenceTarget && isWithinCheckInWindow(absenceTarget, now));
+    }
+
+    let alreadyCheckedIn = false;
+    if (checkInOpen && absenceTarget) {
+      try {
+        const attSnap = await db
+          .collection('nigeria_attendance')
+          .doc(uid + '_' + absenceTarget.key)
+          .get();
+        alreadyCheckedIn = attSnap.exists;
+      } catch (attErr) {
+        console.warn('[getNigeriaDashboard] checkedIn', membership.unitId, attErr && attErr.message);
       }
     }
 
@@ -1507,10 +1697,20 @@ const getNigeriaDashboard = onCall(async (request) => {
     const canRequestEmergency = absenceTarget ? canSubmitEmergencyAbsence(absenceTarget, now) : false;
 
     const isUnitLeader = membership.role === 'leader' || isSuperUser;
+
     let teamRoster = null;
-    if (isUnitLeader) {
+    let rosterDeferred = false;
+    let meetingAttendance = null;
+    if (isUnitLeader && isSuperUser) {
+      // Super users load rosters lazily — bundling every Group made dashboard
+      // check-in time out. Regular unit leaders get their one roster inline.
+      rosterDeferred = true;
+    } else if (isUnitLeader) {
       try {
-        teamRoster = await computeUnitRoster(db, membership.unitId, now);
+        const result = await computeUnitRoster(db, membership.unitId, now);
+        teamRoster = Array.isArray(result) ? result : (result && result.roster) || [];
+        meetingAttendance =
+          result && !Array.isArray(result) ? result.recentMeetings || [] : [];
       } catch (rosterErr) {
         console.warn('[getNigeriaDashboard] roster', membership.unitId, rosterErr && rosterErr.message);
         teamRoster = [];
@@ -1537,6 +1737,7 @@ const getNigeriaDashboard = onCall(async (request) => {
           }
         : null,
       checkInOpen,
+      alreadyCheckedIn,
       attendanceStats: stats,
       latestReport,
       unitVision,
@@ -1557,82 +1758,99 @@ const getNigeriaDashboard = onCall(async (request) => {
       canEditVision: isUnitLeader,
       isLeaderView: isUnitLeader,
       teamRoster,
+      rosterDeferred,
+      meetingAttendance,
     });
   }
 
   // Super users who are not enrolled on a Group still need to see that Group's
   // roster (e.g. after greenlighting a Group 2 worker). Only Groups 1–6 — not
-  // every ministry unit — so the dashboard stays fast.
+  // every ministry unit. Rosters load lazily via getNigeriaMyMembersRosters.
   if (isSuperUser) {
     const seen = new Set(unitContexts.map((c) => c.unitId));
     const groupUnits = NIGERIA_UNITS.filter((u) => /^group[1-6]$/.test(u.id) && !seen.has(u.id));
-    const groupContexts = await Promise.all(
-      groupUnits.map(async (unit) => {
-        const teamRoster = await computeUnitRoster(db, unit.id, now);
-        const nextMeeting = getNextMeeting(unit, now);
-        return {
-          unitId: unit.id,
-          unitLabel: unit.label,
-          role: 'leader',
-          unit: {
-            id: unit.id,
-            label: unit.label,
-            day: DAY_NAMES[unit.day],
-            start: unit.start,
-            end: unit.end,
-          },
-          nextMeeting: nextMeeting
-            ? {
-                key: nextMeeting.key,
-                dateYmd: nextMeeting.dateYmd,
-                startIso: nextMeeting.start.toISOString(),
-                endIso: nextMeeting.end.toISOString(),
-              }
-            : null,
-          checkInOpen: false,
-          attendanceStats: null,
-          latestReport: null,
-          unitVision: null,
-          lastMeetingDigest: null,
-          absenceQuotas: null,
-          absenceRequest: null,
-          absenceTargetMeeting: null,
-          canRequestPlanned: false,
-          canRequestEmergency: false,
-          canSubmitReport: true,
-          canEditVision: true,
-          isLeaderView: true,
-          teamRoster,
-          browseOnly: true,
-        };
-      })
-    );
-    unitContexts.push(...groupContexts);
+    for (const unit of groupUnits) {
+      const nextMeeting = getNextMeeting(unit, now);
+      unitContexts.push({
+        unitId: unit.id,
+        unitLabel: unit.label,
+        role: 'leader',
+        unit: {
+          id: unit.id,
+          label: unit.label,
+          day: DAY_NAMES[unit.day],
+          start: unit.start,
+          end: unit.end,
+        },
+        nextMeeting: nextMeeting
+          ? {
+              key: nextMeeting.key,
+              dateYmd: nextMeeting.dateYmd,
+              startIso: nextMeeting.start.toISOString(),
+              endIso: nextMeeting.end.toISOString(),
+            }
+          : null,
+        checkInOpen: false,
+        alreadyCheckedIn: false,
+        attendanceStats: null,
+        latestReport: null,
+        unitVision: null,
+        lastMeetingDigest: null,
+        absenceQuotas: null,
+        absenceRequest: null,
+        absenceTargetMeeting: null,
+        canRequestPlanned: false,
+        canRequestEmergency: false,
+        canSubmitReport: true,
+        canEditVision: true,
+        isLeaderView: true,
+        teamRoster: null,
+        rosterDeferred: true,
+        browseOnly: true,
+      });
+    }
   }
 
   const primary = unitContexts.find((c) => !c.browseOnly) || unitContexts[0];
-  const recentAttSnap = await db
-    .collection('nigeria_attendance')
-    .where('uid', '==', uid)
-    .orderBy('checkedInAt', 'desc')
-    .limit(8)
-    .get();
+  let recentAttendance = [];
+  try {
+    const recentAttSnap = await db
+      .collection('nigeria_attendance')
+      .where('uid', '==', uid)
+      .orderBy('checkedInAt', 'desc')
+      .limit(8)
+      .get();
+    recentAttendance = recentAttSnap.docs.map((d) => {
+      const v = d.data();
+      return {
+        meetingKey: v.meetingKey,
+        meetingDateYmd: v.meetingDateYmd,
+        unitId: v.unitId,
+        unitLabel: v.unitLabel,
+        checkedInAt: v.checkedInAt,
+      };
+    });
+  } catch (recentErr) {
+    console.warn('[getNigeriaDashboard] recentAttendance', recentErr && recentErr.message);
+  }
 
-  const recentAttendance = recentAttSnap.docs.map((d) => {
-    const v = d.data();
-    return {
-      meetingKey: v.meetingKey,
-      meetingDateYmd: v.meetingDateYmd,
-      unitId: v.unitId,
-      unitLabel: v.unitLabel,
-      checkedInAt: v.checkedInAt,
-    };
-  });
+  let myOpenActions = [];
+  try {
+    const actionUnitIds = unitContexts.map((c) => c.unitId);
+    const boards = await loadOpenActionsForUser(db, uid, actionUnitIds);
+    myOpenActions = boards.myOpenActions || [];
+    unitContexts.forEach((c) => {
+      c.teamOpenActions = (boards.teamByUnit && boards.teamByUnit[c.unitId]) || [];
+    });
+  } catch (actionErr) {
+    console.warn('[getNigeriaDashboard] openActions', actionErr && actionErr.message);
+  }
 
   return {
     hasProfile: true,
     eligible: true,
     isSuperUser,
+    canViewAllUnitReports: canViewAllNigeriaUnitReports(access.email || profile.email),
     canViewMemberSignups: canViewMemberSignups(profile, isSuperUser),
     workforceAccess: workforceAccessForProfile(profile, isSuperUser),
     profile: {
@@ -1643,13 +1861,100 @@ const getNigeriaDashboard = onCall(async (request) => {
     unit: primary ? primary.unit : null,
     nextMeeting: primary ? primary.nextMeeting : null,
     checkInOpen: primary ? primary.checkInOpen : false,
+    alreadyCheckedIn: primary ? primary.alreadyCheckedIn : false,
     attendanceStats: primary ? primary.attendanceStats : null,
     latestReport: primary ? primary.latestReport : null,
     recentAttendance,
+    myOpenActions,
+  };
+  }
+);
+
+const getNigeriaMyMembersRosters = onCall(
+  { timeoutSeconds: 120, memory: '512MiB' },
+  async (request) => {
+    const uid = requireAuth(request);
+    const db = admin.firestore();
+    const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
+    const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+    if (!profileSnap.exists) {
+      throw new HttpsError('failed-precondition', 'Profile required.');
+    }
+    const profile = profileSnap.data();
+    const profileUnits = normalizeProfileUnits(profile);
+    const isSuperUser = access.isSuperUser === true || profile.isSuperUser === true;
+    const now = new Date();
+
+    const unitIds = new Set();
+    profileUnits.forEach((m) => {
+      if (m.role === 'leader' || isSuperUser) unitIds.add(m.unitId);
+    });
+    if (isSuperUser) {
+      NIGERIA_UNITS.filter((u) => /^group[1-6]$/.test(u.id)).forEach((u) => unitIds.add(u.id));
+    }
+
+    const requested = Array.isArray(request.data?.unitIds)
+      ? request.data.unitIds.map(String).filter((id) => unitIds.has(id))
+      : Array.from(unitIds);
+
+    const rosters = {};
+    const meetingAttendance = {};
+    await Promise.all(
+      requested.map(async (unitId) => {
+        try {
+          const result = await computeUnitRoster(db, unitId, now);
+          rosters[unitId] = result.roster || [];
+          meetingAttendance[unitId] = result.recentMeetings || [];
+        } catch (err) {
+          console.warn('[getNigeriaMyMembersRosters]', unitId, err && err.message);
+          rosters[unitId] = [];
+          meetingAttendance[unitId] = [];
+        }
+      })
+    );
+
+    return { ok: true, rosters, meetingAttendance };
+  }
+);
+
+/** Lightweight name list for meeting-notes Responsibility picker (any unit member). */
+const getNigeriaUnitMemberOptions = onCall(async (request) => {
+  const uid = requireAuth(request);
+  const db = admin.firestore();
+  const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
+  const unitId = String(request.data?.unitId || '').trim();
+  if (!unitId || !getUnit(unitId)) {
+    throw new HttpsError('invalid-argument', 'Valid unitId required.');
+  }
+  const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+  if (!profileSnap.exists) {
+    throw new HttpsError('failed-precondition', 'Profile required.');
+  }
+  const profile = profileSnap.data();
+  const isSuperUser = access.isSuperUser === true || profile.isSuperUser === true;
+  const profileUnits = normalizeProfileUnits(profile);
+  if (!isSuperUser && !profileUnits.some((u) => u.unitId === unitId)) {
+    throw new HttpsError('permission-denied', 'Not a member of that unit.');
+  }
+  const members = await loadUnitMembers(db, unitId);
+  members.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+  return {
+    ok: true,
+    members: members.map((m) => ({
+      uid: m.uid,
+      name: m.name,
+      role: m.role,
+    })),
   };
 });
 
-const submitNigeriaUnitReport = onCall(async (request) => {
+const submitNigeriaUnitReport = onCall(
+  {
+    cors: true,
+    timeoutSeconds: 120,
+    secrets: [appsScriptSelfServeMailUrl, selfServeMailSecret],
+  },
+  async (request) => {
   const uid = requireAuth(request);
   const db = admin.firestore();
   const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
@@ -1680,12 +1985,20 @@ const submitNigeriaUnitReport = onCall(async (request) => {
     }
   }
 
-  const attendanceAnalytics = await computeUnitAttendanceForReport(
-    db,
-    leaderUnit.unitId,
-    year,
-    month
-  );
+  const attendanceAnalytics =
+    (await computeUnitAttendanceForReport(db, leaderUnit.unitId, year, month)) || {
+      memberCount: 0,
+      meetingsHeld: 0,
+      totalCheckIns: 0,
+      averageAttendancePerMeeting: 0,
+      averageAttendanceRate: null,
+      highestAttendance: null,
+      lowestAttendance: null,
+      meetingBreakdown: [],
+    };
+
+  const formMeetingsHeld = String(data.meetingsHeld || '').trim();
+  const formAttendance = String(data.attendance || '').trim();
 
   const reportId = leaderUnit.unitId + '_' + year + '_' + String(month).padStart(2, '0');
   const report = {
@@ -1704,9 +2017,10 @@ const submitNigeriaUnitReport = onCall(async (request) => {
     nextMonth: String(data.nextMonth || '').trim(),
     meetingNotesSummary: String(data.meetingNotesSummary || '').trim(),
     photos: normalizeImageUrls(data.photos, 12),
-    meetingsHeld: attendanceAnalytics.meetingsHeld,
+    // Prefer the leader's typed report fields; fall back to computed attendance stats.
+    meetingsHeld: formMeetingsHeld || attendanceAnalytics.meetingsHeld || 0,
     attendanceSummary: attendanceAnalytics,
-    attendanceNarrative: buildAttendanceNarrative(attendanceAnalytics),
+    attendanceNarrative: formAttendance || buildAttendanceNarrative(attendanceAnalytics),
     submittedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 
@@ -1717,11 +2031,56 @@ const submitNigeriaUnitReport = onCall(async (request) => {
       submittedAt: admin.firestore.FieldValue.serverTimestamp(),
       submittedByUid: uid,
       submittedByName: profile.name || '',
+      form: mergeReportForms(draftSnap.exists ? draftSnap.data().form || {} : {}, {
+        meetingsHeld: formMeetingsHeld,
+        attendance: formAttendance,
+        activities: String(data.activities || '').trim(),
+        highlights: String(data.highlights || '').trim(),
+        testimonies: String(data.testimonies || '').trim(),
+        challenges: String(data.challenges || '').trim(),
+        prayerRequests: String(data.prayerRequests || '').trim(),
+        nextMonth: String(data.nextMonth || '').trim(),
+        meetingNotesSummary: String(data.meetingNotesSummary || '').trim(),
+      }),
     },
     { merge: true }
   );
-  return { ok: true, reportId, attendanceAnalytics };
-});
+
+  const submittedForm = mergeReportForms(draftSnap.exists ? draftSnap.data().form || {} : {}, {
+    meetingsHeld: formMeetingsHeld,
+    attendance: formAttendance,
+    activities: report.activities,
+    highlights: report.highlights,
+    testimonies: report.testimonies,
+    challenges: report.challenges,
+    prayerRequests: report.prayerRequests,
+    nextMonth: report.nextMonth,
+    meetingNotesSummary: report.meetingNotesSummary,
+  });
+  const leaders = await loadUnitLeaders(db, leaderUnit.unitId);
+  const recipients = [];
+  leaders.forEach((leader) => recipients.push(leader));
+  NIGERIA_REPORT_OVERVIEW_EMAILS.forEach((email) => {
+    recipients.push({ email, name: email.split('@')[0] });
+  });
+  const mailStats = await sendUnitReportNoticeMails({
+    recipients,
+    kind: 'submitted',
+    unitLabel: leaderUnit.unitLabel,
+    period: reportPeriodLabel(year, month),
+    actorName: profile.name || 'A unit leader',
+    form: submittedForm,
+  });
+
+  return {
+    ok: true,
+    reportId,
+    attendanceAnalytics,
+    emailedTo: mailStats.emailed,
+    emailFailed: mailStats.failed,
+  };
+  }
+);
 
 function reportDraftId(unitId, year, month) {
   return `${unitId}_${year}_${String(month).padStart(2, '0')}`;
@@ -1736,10 +2095,164 @@ function isUnitLeader(profile, unitId, isSuperUser) {
   return normalizeProfileUnits(profile).some((u) => u.unitId === unitId && u.role === 'leader');
 }
 
-const shareNigeriaUnitReportDraft = onCall(async (request) => {
+function mergeReportForms(existing, incoming) {
+  const prev = existing && typeof existing === 'object' ? existing : {};
+  const next = incoming && typeof incoming === 'object' ? incoming : {};
+  const out = { ...prev };
+  Object.keys(next).forEach((key) => {
+    const val = next[key];
+    if (val == null) return;
+    if (typeof val === 'string') {
+      const trimmed = val.trim();
+      // Never let a blank field wipe a previously saved answer.
+      if (!trimmed && String(prev[key] || '').trim()) return;
+      out[key] = val;
+      return;
+    }
+    if (Array.isArray(val)) {
+      if (!val.length && Array.isArray(prev[key]) && prev[key].length) return;
+      out[key] = val;
+      return;
+    }
+    out[key] = val;
+  });
+  return out;
+}
+
+function reportFormHasContent(form) {
+  if (!form || typeof form !== 'object') return false;
+  return [
+    'activities',
+    'highlights',
+    'testimonies',
+    'challenges',
+    'prayerRequests',
+    'nextMonth',
+    'meetingNotesSummary',
+    'meetingsHeld',
+    'attendance',
+  ].some((k) => String(form[k] || '').trim());
+}
+
+const REPORT_MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+function reportPeriodLabel(year, month) {
+  return (REPORT_MONTH_NAMES[month - 1] || String(month)) + ' ' + year;
+}
+
+function buildUnitReportNoticeMail({
+  recipientName,
+  kind,
+  unitLabel,
+  period,
+  actorName,
+  form,
+}) {
+  const first = String(recipientName || 'Leader').trim().split(/\s+/)[0] || 'Leader';
+  const shared = kind === 'shared';
+  const subject = shared
+    ? `Shared unit report — ${unitLabel} (${period})`
+    : `Submitted unit report — ${unitLabel} (${period})`;
+  const headline = shared
+    ? `${actorName} shared the ${unitLabel} report for ${period} with unit leaders. Open Reports on the hub to add details or approve it.`
+    : `${actorName} submitted the ${unitLabel} report for ${period}. A copy is below.`;
+  const formBits = form && typeof form === 'object' ? form : {};
+  function block(title, body) {
+    const text = String(body || '').trim();
+    if (!text) return '';
+    return `\n--- ${title} ---\n${text}\n`;
+  }
+  const plainBody =
+    `Hi ${first},\n\n` +
+    headline +
+    `\n\nUnit: ${unitLabel}\nPeriod: ${period}\n` +
+    block('Activities', formBits.activities) +
+    block('Highlights', formBits.highlights) +
+    block('Challenges', formBits.challenges) +
+    `\nOpen Reports: https://prayercityhtx.com/ng#reports\n\nDear Daughter Bible Study Group Nigeria`;
+  function htmlBlock(title, body) {
+    const text = String(body || '').trim();
+    if (!text) return '';
+    return (
+      `<h3 style="margin:16px 0 6px;font-size:14px;color:#0f3d5c">${escapeHtml(title)}</h3>` +
+      `<p style="white-space:pre-wrap;margin:0;line-height:1.5">${escapeHtml(text)}</p>`
+    );
+  }
+  const htmlBody =
+    `<div style="font-family:system-ui,sans-serif;color:#1e293b;max-width:640px;line-height:1.55">` +
+    `<p>Hi <strong>${escapeHtml(first)}</strong>,</p>` +
+    `<p>${escapeHtml(headline)}</p>` +
+    `<p style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px 16px">` +
+    `<strong>${escapeHtml(unitLabel)}</strong><br>Period: ${escapeHtml(period)}<br>` +
+    `${shared ? 'Shared' : 'Submitted'} by: ${escapeHtml(actorName)}</p>` +
+    htmlBlock('Activities', formBits.activities) +
+    htmlBlock('Highlights', formBits.highlights) +
+    htmlBlock('Challenges', formBits.challenges) +
+    `<p style="margin-top:20px"><a href="https://prayercityhtx.com/ng#reports" style="display:inline-block;background:#008751;color:#fff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:10px">Open Reports</a></p>` +
+    `<p style="font-size:12px;color:#64748b">Dear Daughter Bible Study Group Nigeria</p></div>`;
+  return { subject, plainBody, htmlBody };
+}
+
+async function sendUnitReportNoticeMails({ recipients, kind, unitLabel, period, actorName, form }) {
+  const scriptUrl = appsScriptSelfServeMailUrl.value();
+  const secret = selfServeMailSecret.value();
+  const emailed = [];
+  const failed = [];
+  const seen = new Set();
+  for (const rec of recipients || []) {
+    const email = normalizeEmail(rec.email);
+    if (!email || !email.includes('@') || seen.has(email)) continue;
+    seen.add(email);
+    const name = rec.name || email.split('@')[0];
+    const mail = buildUnitReportNoticeMail({
+      recipientName: name,
+      kind,
+      unitLabel,
+      period,
+      actorName,
+      form,
+    });
+    try {
+      const mailRes = await sendMailViaAppsScript({
+        scriptUrl,
+        secret,
+        email,
+        subject: mail.subject,
+        plainBody: mail.plainBody,
+        htmlBody: mail.htmlBody,
+      });
+      if (mailRes.ok) emailed.push({ email, name });
+      else failed.push({ email, error: mailRes.error || 'mail_failed' });
+    } catch (err) {
+      failed.push({ email, error: String(err && err.message ? err.message : err) });
+    }
+  }
+  return { emailed, failed };
+}
+
+const shareNigeriaUnitReportDraft = onCall(
+  {
+    cors: true,
+    timeoutSeconds: 120,
+    secrets: [appsScriptSelfServeMailUrl, selfServeMailSecret],
+  },
+  async (request) => {
   const uid = requireAuth(request);
   const db = admin.firestore();
-  const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
+  await assertNigeriaVolunteerAccess(db, uid, request.auth);
   const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
   if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Profile required.');
   const profile = profileSnap.data();
@@ -1755,6 +2268,18 @@ const shareNigeriaUnitReportDraft = onCall(async (request) => {
 
   const draftId = reportDraftId(unitId, year, month);
   const unit = getUnit(unitId);
+  const existingSnap = await db.collection('nigeria_unit_report_drafts').doc(draftId).get();
+  const existingForm = existingSnap.exists ? existingSnap.data().form || {} : {};
+  const mergedForm = mergeReportForms(existingForm, form);
+
+  // Protect against blank overwrites when the client sends an empty form.
+  if (reportFormHasContent(existingForm) && !reportFormHasContent(mergedForm)) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Share blocked — your form looks empty, but a filled draft already exists. Reload shared report details, then share again.'
+    );
+  }
+
   const contribution = {
     uid,
     name: profile.name || 'Member',
@@ -1769,7 +2294,15 @@ const shareNigeriaUnitReportDraft = onCall(async (request) => {
       reportMonth: month,
       unitLabel: unit ? unit.label : unitId,
       status: 'shared',
-      form,
+      form: mergedForm,
+      formHistory: admin.firestore.FieldValue.arrayUnion({
+        at: new Date().toISOString(),
+        byUid: uid,
+        byName: profile.name || '',
+        action: 'share',
+        activitiesLen: String(mergedForm.activities || '').length,
+        notesLen: String(mergedForm.meetingNotesSummary || '').length,
+      }),
       sharedAt: admin.firestore.FieldValue.serverTimestamp(),
       sharedByUid: uid,
       sharedByName: profile.name || '',
@@ -1783,7 +2316,24 @@ const shareNigeriaUnitReportDraft = onCall(async (request) => {
     },
     { merge: true }
   );
-  return { ok: true, draftId, status: 'shared' };
+
+  const leaders = await loadUnitLeaders(db, unitId);
+  const mailStats = await sendUnitReportNoticeMails({
+    recipients: leaders,
+    kind: 'shared',
+    unitLabel: unit ? unit.label : unitId,
+    period: reportPeriodLabel(year, month),
+    actorName: profile.name || 'A unit leader',
+    form: mergedForm,
+  });
+
+  return {
+    ok: true,
+    draftId,
+    status: 'shared',
+    emailedTo: mailStats.emailed,
+    emailFailed: mailStats.failed,
+  };
 });
 
 const contributeNigeriaUnitReportDraft = onCall(async (request) => {
@@ -1810,6 +2360,7 @@ const contributeNigeriaUnitReportDraft = onCall(async (request) => {
     throw new HttpsError('failed-precondition', 'Report is not open for teammate edits.');
   }
 
+  const mergedForm = mergeReportForms(draftSnap.data().form || {}, form);
   const contribution = {
     uid,
     name: profile.name || 'Member',
@@ -1819,7 +2370,7 @@ const contributeNigeriaUnitReportDraft = onCall(async (request) => {
 
   await db.collection('nigeria_unit_report_drafts').doc(draftId).set(
     {
-      form,
+      form: mergedForm,
       contributions: admin.firestore.FieldValue.arrayUnion(contribution),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       lastUpdatedByUid: uid,
@@ -1853,7 +2404,7 @@ const approveNigeriaUnitReportDraft = onCall(async (request) => {
     throw new HttpsError('failed-precondition', 'Nothing to approve — share the report with teammates first.');
   }
 
-  const approvedForm = form || draftSnap.data().form || {};
+  const approvedForm = mergeReportForms(draftSnap.data().form || {}, form || {});
   await db.collection('nigeria_unit_report_drafts').doc(draftId).set(
     {
       status: 'approved',
@@ -1933,10 +2484,40 @@ function formatNotesSummaryOutput(output) {
   return lines.join('\n').trim();
 }
 
+function notesPayloadToText(data) {
+  if (!data) return '';
+  if (Array.isArray(data.actions) && data.actions.length) {
+    return data.actions
+      .map((a) => {
+        const parts = [`[${a.status || 'Open'}]`, a.actionDescription || '(no description)'];
+        if (a.responsibilityName) parts.push('Resp: ' + a.responsibilityName);
+        if (a.dateDue) parts.push('Due: ' + a.dateDue);
+        if (a.category) parts.push('Cat: ' + a.category);
+        if (a.comments) parts.push('Notes: ' + a.comments);
+        if (a.dateCompleted) parts.push('Done: ' + a.dateCompleted);
+        return parts.join(' · ');
+      })
+      .join('\n');
+  }
+  return String(data.content || '').trim();
+}
+
 function buildSimpleNotesSummary(notes, unitLabel, period) {
   if (!notes.length) return `No shared meeting notes for ${unitLabel} in ${period}.`;
   const bullets = [];
   notes.forEach((n) => {
+    if (Array.isArray(n.actions) && n.actions.length) {
+      n.actions.forEach((a) => {
+        const t = String(a.actionDescription || '').trim();
+        if (!t) return;
+        const bit =
+          t +
+          (a.responsibilityName ? ` (${a.responsibilityName})` : '') +
+          (a.status ? ` [${a.status}]` : '');
+        bullets.push(bit);
+      });
+      return;
+    }
     String(n.content || '')
       .split('\n')
       .forEach((line) => {
@@ -1986,7 +2567,7 @@ const summarizeNigeriaMeetingNotesForReport = onCall(
     const notesBlock = notes
       .map(
         (n) =>
-          `Meeting ${n.meetingDateYmd || n.meetingKey} (by ${n.updatedByName || 'member'}):\n${String(n.content || '').slice(0, 4000)}`
+          `Meeting ${n.meetingDateYmd || n.meetingKey} (by ${n.updatedByName || 'member'}):\n${notesPayloadToText(n).slice(0, 4000)}`
       )
       .join('\n\n');
 
@@ -2175,7 +2756,7 @@ function buildStarterVisionPlan(visionText, unitLabel, startDate) {
 }
 
 const generateNigeriaUnitVision = onCall(
-  { cors: true, timeoutSeconds: 120, secrets: [googleGenaiApiKey] },
+  { cors: true, timeoutSeconds: 60, memory: '512MiB', secrets: [googleGenaiApiKey] },
   async (request) => {
     const uid = requireAuth(request);
     const db = admin.firestore();
@@ -2200,7 +2781,11 @@ const generateNigeriaUnitVision = onCall(
       ' – ' +
       periodEnd.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 
-    try {
+    const starter = buildStarterVisionPlan(visionText, unitLabel, periodStart);
+
+    // Keep AI attempts short — client often times out around 60s and leaders need a
+    // reliable plan even when Gemini is slow.
+    const aiPromise = (async () => {
       process.env.GOOGLE_GENAI_API_KEY = googleGenaiApiKey.value();
       const { output } = await generateStructured({
         prompt: `You are helping a church volunteer team leader plan the next three months for the "${unitLabel}" team. The planning period is ${periodLabel}.
@@ -2220,23 +2805,43 @@ VERY IMPORTANT rules for the wording:
 - Write warmly and kindly, as if speaking to a friend at church.
 - Keep sentences short and encouraging.`,
         schema: unitVisionPlanSchema,
+        models: ['gemini-2.0-flash'],
+        maxAttemptsPerModel: 1,
       });
-      if (output && Array.isArray(output.milestones) && output.milestones.length) {
-        // Always start milestones as "not started" — leaders mark progress after sharing.
-        output.milestones = output.milestones.map((m) =>
-          Object.assign({}, m, { status: 'todo' })
-        );
-        return { plan: output, aiUsed: true, periodLabel };
-      }
-      return { plan: buildStarterVisionPlan(visionText, unitLabel, periodStart), aiUsed: false, periodLabel };
-    } catch (e) {
-      console.warn('[generateNigeriaUnitVision] falling back to starter plan:', String(e && e.message || e).slice(0, 200));
-      return { plan: buildStarterVisionPlan(visionText, unitLabel, periodStart), aiUsed: false, periodLabel };
+      return output;
+    })();
+
+    let timedOut = false;
+    const raced = await Promise.race([
+      aiPromise.then((output) => ({ ok: true, output })).catch((e) => ({ ok: false, error: e })),
+      new Promise((resolve) =>
+        setTimeout(() => {
+          timedOut = true;
+          resolve({ ok: false, error: new Error('vision_ai_timeout') });
+        }, 12000)
+      ),
+    ]);
+
+    if (raced && raced.ok && raced.output && Array.isArray(raced.output.milestones) && raced.output.milestones.length) {
+      const plan = Object.assign({}, raced.output, {
+        milestones: raced.output.milestones.map((m) => Object.assign({}, m, { status: 'todo' })),
+      });
+      return { plan, aiUsed: true, periodLabel };
     }
+
+    if (!timedOut && raced && raced.error) {
+      console.warn(
+        '[generateNigeriaUnitVision] falling back to starter plan:',
+        String((raced.error && raced.error.message) || raced.error).slice(0, 200)
+      );
+    }
+    return { plan: starter, aiUsed: false, periodLabel };
   }
 );
 
-const saveNigeriaUnitVision = onCall(async (request) => {
+const saveNigeriaUnitVision = onCall(
+  { cors: true, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
   const uid = requireAuth(request);
   const db = admin.firestore();
   const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
@@ -2246,15 +2851,29 @@ const saveNigeriaUnitVision = onCall(async (request) => {
   const unitId = String(request.data?.unitId || '').trim();
   const visionText = String(request.data?.visionText || '').trim().slice(0, 4000);
   let plan = request.data?.plan;
-  if (!unitId || visionText.length < 20 || !plan || typeof plan !== 'object') {
-    throw new HttpsError('invalid-argument', 'Unit, vision text, and plan are required.');
+  if (!unitId || visionText.length < 20) {
+    throw new HttpsError('invalid-argument', 'Unit and vision text are required.');
   }
   const isSuperUser = access.isSuperUser === true || profile.isSuperUser === true;
   assertUnitLeader(profile, unitId, isSuperUser);
 
   const unit = getUnit(unitId);
+  const unitLabel = unit ? unit.label : unitId;
   const existingSnap = await db.collection('nigeria_unit_vision').doc(unitId).get();
   const existing = existingSnap.exists ? existingSnap.data() : null;
+
+  // If the leader only wrote a vision, auto-build a starter plan so share/update always works.
+  const hasPlan =
+    plan &&
+    typeof plan === 'object' &&
+    ((Array.isArray(plan.milestones) && plan.milestones.length) ||
+      (Array.isArray(plan.roadmap) && plan.roadmap.length));
+  if (!hasPlan) {
+    plan = existing && existing.plan
+      ? existing.plan
+      : buildStarterVisionPlan(visionText, unitLabel, new Date());
+  }
+
   plan = mergeMilestoneProgress(existing && existing.plan, plan);
   if (Array.isArray(plan.milestones)) {
     plan.milestones = plan.milestones.map((m) =>
@@ -2268,7 +2887,7 @@ const saveNigeriaUnitVision = onCall(async (request) => {
       : normalizeImageUrls(existing && existing.imageUrls, 12);
   const record = {
     unitId,
-    unitLabel: unit ? unit.label : unitId,
+    unitLabel,
     visionText,
     plan,
     planText: formatVisionPlanText(plan),
@@ -2280,14 +2899,17 @@ const saveNigeriaUnitVision = onCall(async (request) => {
     publishedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
   await db.collection('nigeria_unit_vision').doc(unitId).set(record, { merge: true });
-  return { ok: true, progress: record.progress, imageUrls };
-});
+  return { ok: true, progress: record.progress, imageUrls, plan };
+  }
+);
 
 /**
  * Leaders mark milestone progress on the vision board (todo / doing / done)
  * without rewriting the whole plan. The whole team sees the progress bench.
  */
-const updateNigeriaVisionProgress = onCall(async (request) => {
+const updateNigeriaVisionProgress = onCall(
+  { cors: true, timeoutSeconds: 30, memory: '256MiB' },
+  async (request) => {
   const uid = requireAuth(request);
   const db = admin.firestore();
   const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
@@ -2440,6 +3062,217 @@ const submitNigeriaMemberSignup = onCall(
     };
   }
 );
+
+const ALIVE_HANGOUT_EDITION = '2027-06';
+const ALIVE_STREAMS = new Set(['brother', 'sister', 'married', 'single']);
+const ALIVE_HEARD_FROM = new Set(['instagram', 'bible-study', 'friend', 'jesus-march', 'other', '']);
+
+function normalizeHangoutPhone(phoneRaw) {
+  const ng = normalizeNigeriaPhone(phoneRaw) || phoneFromRegistration(phoneRaw);
+  if (ng) return ng;
+  const digits = String(phoneRaw || '').replace(/\D/g, '');
+  if (digits.length >= 10 && digits.length <= 15) {
+    if (digits.startsWith('00')) return '+' + digits.slice(2);
+    if (digits.startsWith('234')) return '+' + digits;
+    return '+' + digits;
+  }
+  return null;
+}
+
+function aliveHangoutRsvpId(edition, email) {
+  return (
+    String(edition || ALIVE_HANGOUT_EDITION) +
+    '_' +
+    Buffer.from(String(email || ''))
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '')
+      .slice(0, 80)
+  );
+}
+
+function buildAliveHangoutMail({ name, returning }) {
+  const first = String(name || 'friend').trim().split(/\s+/)[0] || 'friend';
+  const subject = returning
+    ? 'Your Alive Hangout 2027 details were updated'
+    : 'You are registered — Alive Hangout, Saturday 12 June 2027';
+  const plainBody =
+    'Hi ' +
+    first +
+    ',\n\n' +
+    'Registration is compulsory. You are registered for Alive Hangout — Dear Daughter Nigeria, Saturday 12 June 2027.\n\n' +
+    'This is the outdoor getaway for men, women, married couples, and singles: games, food, dance, guest ministers, special presentations, and teaching on righteousness, sexual purity, and being alive in Christ (dead to sin).\n\n' +
+    'We will email and WhatsApp the outdoor venue to everyone on this list. Keep Saturday 12 June 2027 open.\n\n' +
+    'Share the page: https://prayercityhtx.com/alive\n' +
+    'Nigeria hub: https://prayercityhtx.com/ng\n\n' +
+    'Romans 6:11 — Reckon yourselves dead indeed unto sin, but alive unto God through Jesus Christ our Lord.\n\n' +
+    'Dear Daughter Bible Study Group Nigeria\n';
+  const htmlBody =
+    '<div style="font-family:Georgia,serif;color:#12352a;max-width:640px;line-height:1.6;background:#f6f1e4;padding:28px">' +
+    '<p style="letter-spacing:0.18em;text-transform:uppercase;font-size:11px;color:#9a7420;font-weight:700;margin:0 0 8px">Alive Hangout · Saturday 12 June 2027</p>' +
+    '<h1 style="font-size:28px;margin:0 0 16px;color:#07140f">You are registered.</h1>' +
+    '<p>Hi <strong>' +
+    escapeHtml(first) +
+    '</strong>,</p>' +
+    '<p>Your registration is complete. Welcome to <strong>Alive Hangout</strong> — our outdoor Christian getaway for men, women, married couples, and singles.</p>' +
+    '<p style="background:#fff;border:1px solid #e7dcc4;border-radius:12px;padding:14px 16px">' +
+    '<strong>Saturday, 12 June 2027</strong><br>' +
+    'Games. Food. Dance. Guest ministers. Special presentations.<br>' +
+    'We teach righteousness, sexual purity, and a life that is <em>alive in Christ and dead to sin</em>.</p>' +
+    '<p>The outdoor venue will come to this email and your WhatsApp. Keep Saturday 12 June 2027 open.</p>' +
+    '<p style="margin:24px 0"><a href="https://prayercityhtx.com/alive" style="display:inline-block;background:#d4af37;color:#07140f;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:999px">Open the hangout page</a></p>' +
+    '<p style="font-size:14px;color:#4b5d54">Romans 6:11 · Dear Daughter Bible Study Group Nigeria</p></div>';
+  return { subject, plainBody, htmlBody };
+}
+
+const submitAliveHangoutRsvp = onCall(
+  {
+    cors: true,
+    invoker: 'public',
+    secrets: [appsScriptSelfServeMailUrl, selfServeMailSecret],
+  },
+  async (request) => {
+    if (String(request.data?.website || '').trim()) {
+      return { ok: true, message: 'Thank you.' };
+    }
+
+    const edition = String(request.data?.edition || ALIVE_HANGOUT_EDITION)
+      .trim()
+      .slice(0, 12);
+    const useEdition = edition === ALIVE_HANGOUT_EDITION ? edition : ALIVE_HANGOUT_EDITION;
+    const name = String(request.data?.name || '').trim().slice(0, 120);
+    const email = normalizeEmail(request.data?.email);
+    const phoneRaw = String(request.data?.phone || '').trim();
+    const city = String(request.data?.city || '').trim().slice(0, 120);
+    const stream = String(request.data?.stream || '').trim().toLowerCase();
+    const church = String(request.data?.church || '').trim().slice(0, 120);
+    const heardFromRaw = String(request.data?.heardFrom || '').trim().toLowerCase();
+    const heardFrom = ALIVE_HEARD_FROM.has(heardFromRaw) ? heardFromRaw : '';
+    const notes = String(request.data?.notes || '').trim().slice(0, 500);
+    const wantToServe = request.data?.wantToServe === true;
+    let partySize = Number(request.data?.partySize || 1);
+    if (!Number.isFinite(partySize)) partySize = 1;
+    partySize = Math.min(8, Math.max(1, Math.round(partySize)));
+
+    if (!name || name.length < 2) {
+      throw new HttpsError('invalid-argument', 'Please enter your full name.');
+    }
+    if (!email || !email.includes('@')) {
+      throw new HttpsError('invalid-argument', 'Please enter a valid email.');
+    }
+    const phone = normalizeHangoutPhone(phoneRaw);
+    if (!phone) {
+      throw new HttpsError('invalid-argument', 'Please enter a valid phone / WhatsApp number.');
+    }
+    if (!ALIVE_STREAMS.has(stream)) {
+      throw new HttpsError('invalid-argument', 'Please choose who you are coming as.');
+    }
+
+    const db = admin.firestore();
+    const docRef = db.collection('alive_hangout_rsvps').doc(aliveHangoutRsvpId(useEdition, email));
+    const existing = await docRef.get();
+    const returning = existing.exists;
+    const record = {
+      edition: useEdition,
+      name,
+      email,
+      phone,
+      city,
+      stream,
+      partySize,
+      church,
+      heardFrom,
+      notes,
+      wantToServe,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+    if (!returning) {
+      record.createdAt = admin.firestore.FieldValue.serverTimestamp();
+      record.confirmEmailSent = false;
+    }
+    await docRef.set(record, { merge: true });
+
+    const mail = buildAliveHangoutMail({ name, returning });
+    let confirmEmailSent = false;
+    let confirmEmailError = '';
+    try {
+      const mailRes = await sendMailViaAppsScript({
+        scriptUrl: appsScriptSelfServeMailUrl.value(),
+        secret: selfServeMailSecret.value(),
+        email,
+        subject: mail.subject,
+        plainBody: mail.plainBody,
+        htmlBody: mail.htmlBody,
+      });
+      confirmEmailSent = mailRes.ok === true;
+      if (!mailRes.ok) confirmEmailError = mailRes.error || 'mail_failed';
+    } catch (e) {
+      confirmEmailError = String(e.message || e);
+    }
+
+    await docRef.set(
+      {
+        confirmEmailSent,
+        confirmEmailError: confirmEmailError || admin.firestore.FieldValue.delete(),
+      },
+      { merge: true }
+    );
+
+    return {
+      ok: true,
+      id: docRef.id,
+      returning,
+      confirmEmailSent,
+      message: returning
+        ? confirmEmailSent
+          ? 'You were already on the list — we updated your details and emailed you.'
+          : 'You were already on the list — we updated your details.'
+        : confirmEmailSent
+          ? 'You are registered. Check your email — we will send the outdoor venue.'
+          : 'You are registered. Watch this number — we will send the outdoor venue.',
+    };
+  }
+);
+
+const getAliveHangoutRsvps = onCall(async (request) => {
+  requireAuth(request);
+  const email = normalizeEmail(request.auth?.token?.email);
+  if (!canViewAllNigeriaUnitReports(email)) {
+    throw new HttpsError('permission-denied', 'Nigeria coordinators only.');
+  }
+
+  const edition = String(request.data?.edition || ALIVE_HANGOUT_EDITION).trim() || ALIVE_HANGOUT_EDITION;
+  const snap = await admin
+    .firestore()
+    .collection('alive_hangout_rsvps')
+    .where('edition', '==', edition)
+    .orderBy('createdAt', 'desc')
+    .limit(200)
+    .get();
+
+  const rsvps = snap.docs.map((doc) => {
+    const d = doc.data();
+    const createdAt = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toISOString() : null;
+    return {
+      id: doc.id,
+      name: d.name || '',
+      email: d.email || '',
+      phone: d.phone || '',
+      city: d.city || '',
+      stream: d.stream || '',
+      partySize: d.partySize || 1,
+      church: d.church || '',
+      heardFrom: d.heardFrom || '',
+      notes: d.notes || '',
+      wantToServe: d.wantToServe === true,
+      createdAt,
+      confirmEmailSent: d.confirmEmailSent === true,
+    };
+  });
+
+  return { edition, rsvps, count: rsvps.length };
+});
 
 const getNigeriaMemberSignups = onCall(async (request) => {
   const uid = requireAuth(request);
@@ -2843,12 +3676,291 @@ const markNigeriaWorkforceInTraining = onCall(async (request) => {
   return { ok: true };
 });
 
+/**
+ * Email a filled monthly unit report copy to the reporter (and optional CC).
+ * Replaces broken FormSubmit "send to my email" on the Nigeria hub.
+ */
+const emailNigeriaUnitReportCopy = onCall(
+  {
+    cors: true,
+    timeoutSeconds: 60,
+    secrets: [appsScriptSelfServeMailUrl, selfServeMailSecret],
+  },
+  async (request) => {
+    const uid = requireAuth(request);
+    const db = admin.firestore();
+    await assertNigeriaVolunteerAccess(db, uid, request.auth);
+    const data = request.data || {};
+
+    const reporterName = String(data.reporterName || '').trim().slice(0, 120);
+    const reporterEmail = normalizeEmail(data.reporterEmail || request.auth.token.email);
+    const unitDisplay = String(data.unitDisplay || data.unitId || 'Unit').trim().slice(0, 120);
+    const year = parseInt(data.reportYear, 10);
+    const month = parseInt(data.reportMonth, 10);
+    const activities = String(data.activities || '').trim();
+
+    if (!reporterName) throw new HttpsError('invalid-argument', 'Name is required.');
+    if (!reporterEmail || !reporterEmail.includes('@')) {
+      throw new HttpsError('invalid-argument', 'A valid email is required.');
+    }
+    if (!year || !month) throw new HttpsError('invalid-argument', 'Reporting month is required.');
+    if (!activities) throw new HttpsError('invalid-argument', 'Please describe what your unit did this month.');
+
+    const monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    const period = (monthNames[month - 1] || String(month)) + ' ' + year;
+
+    function block(title, body) {
+      const text = String(body || '').trim();
+      if (!text) return '';
+      return '\n--- ' + title + ' ---\n' + text + '\n';
+    }
+
+    const plainBody =
+      'Hi ' +
+      reporterName.split(/\s+/)[0] +
+      ',\n\n' +
+      'Here is your Dear Daughter Nigeria unit report copy.\n\n' +
+      'Unit: ' +
+      unitDisplay +
+      '\nPeriod: ' +
+      period +
+      '\nSubmitted by: ' +
+      reporterName +
+      '\nEmail: ' +
+      reporterEmail +
+      (data.reporterPhone ? '\nPhone: ' + String(data.reporterPhone).trim() : '') +
+      '\nMeetings / gatherings: ' +
+      (String(data.meetingsHeld || '').trim() || '—') +
+      '\nAttendance: ' +
+      (String(data.attendance || '').trim() || '—') +
+      block('Meeting notes summary', data.meetingNotesSummary) +
+      block('Activities', activities) +
+      block('Highlights', data.highlights) +
+      block('Testimonies', data.testimonies) +
+      block('Challenges', data.challenges) +
+      block('Prayer requests', data.prayerRequests) +
+      block('Plans for next month', data.nextMonth) +
+      '\nOpen the hub anytime: https://prayercityhtx.com/ng\n\n' +
+      'Dear Daughter Bible Study Group Nigeria\n';
+
+    function htmlBlock(title, body) {
+      const text = String(body || '').trim();
+      if (!text) return '';
+      return (
+        '<h3 style="margin:18px 0 6px;font-size:14px;color:#0f3d5c">' +
+        escapeHtml(title) +
+        '</h3><p style="white-space:pre-wrap;margin:0;line-height:1.5">' +
+        escapeHtml(text) +
+        '</p>'
+      );
+    }
+
+    const htmlBody =
+      '<div style="font-family:system-ui,sans-serif;color:#1e293b;max-width:640px;line-height:1.5">' +
+      '<p>Hi <strong>' +
+      escapeHtml(reporterName.split(/\s+/)[0]) +
+      '</strong>,</p>' +
+      '<p>Here is your <strong>Dear Daughter Nigeria</strong> unit report copy.</p>' +
+      '<p style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px 16px">' +
+      '<strong>' +
+      escapeHtml(unitDisplay) +
+      '</strong><br>Period: ' +
+      escapeHtml(period) +
+      '<br>Submitted by: ' +
+      escapeHtml(reporterName) +
+      '</p>' +
+      htmlBlock('Meetings / gatherings', data.meetingsHeld || '—') +
+      htmlBlock('Attendance', data.attendance || '—') +
+      htmlBlock('Meeting notes summary', data.meetingNotesSummary) +
+      htmlBlock('Activities', activities) +
+      htmlBlock('Highlights', data.highlights) +
+      htmlBlock('Testimonies', data.testimonies) +
+      htmlBlock('Challenges', data.challenges) +
+      htmlBlock('Prayer requests', data.prayerRequests) +
+      htmlBlock('Plans for next month', data.nextMonth) +
+      '<p style="margin-top:20px"><a href="https://prayercityhtx.com/ng" style="display:inline-block;background:#008751;color:#fff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:10px">Open Nigeria hub</a></p>' +
+      '<p style="font-size:12px;color:#64748b">Dear Daughter Bible Study Group Nigeria</p></div>';
+
+    const subject = 'Your unit report — ' + unitDisplay + ' (' + period + ')';
+    const mailRes = await sendMailViaAppsScript({
+      scriptUrl: appsScriptSelfServeMailUrl.value(),
+      secret: selfServeMailSecret.value(),
+      email: reporterEmail,
+      subject,
+      plainBody,
+      htmlBody,
+    });
+
+    if (!mailRes || !mailRes.ok) {
+      throw new HttpsError(
+        'internal',
+        (mailRes && mailRes.error) || 'Could not send the report email. Try Download PDF instead.'
+      );
+    }
+
+    return { ok: true, emailedTo: reporterEmail };
+  }
+);
+
+/**
+ * Overview: list submitted monthly reports across all Nigeria units.
+ * Restricted to super users + designated overview emails.
+ */
+/**
+ * Read-only: list recent shared/approved/submitted drafts across the caller's units.
+ * Used so multi-unit members can find a teammate's shared report without guessing unit/month.
+ * Never writes. Never returns drafts for units the caller cannot access.
+ */
+const listMyNigeriaUnitReportDrafts = onCall(async (request) => {
+  const uid = requireAuth(request);
+  const db = admin.firestore();
+  const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
+  const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+  if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Profile required.');
+  const profile = profileSnap.data();
+  const memberships = normalizeProfileUnits(profile);
+  const unitIds = memberships.map((u) => u.unitId).filter(Boolean);
+  if (!unitIds.length && profile.unitId) unitIds.push(String(profile.unitId));
+  // Super-users with an empty profile still need a path — keep it narrow (no full catalog scan).
+  if (access.isSuperUser && !unitIds.length && profile.unitId) {
+    unitIds.push(String(profile.unitId));
+  }
+
+  const uniqueUnitIds = [...new Set(unitIds)];
+  if (!uniqueUnitIds.length) {
+    return { ok: true, drafts: [], count: 0 };
+  }
+  const now = new Date();
+  const monthsBack = 6;
+  const reads = [];
+  uniqueUnitIds.forEach((unitId) => {
+    for (let i = 0; i < monthsBack; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1;
+      const draftId = reportDraftId(unitId, year, month);
+      reads.push(
+        db
+          .collection('nigeria_unit_report_drafts')
+          .doc(draftId)
+          .get()
+          .then((snap) => ({ draftId, unitId, year, month, snap }))
+          .catch(() => null)
+      );
+    }
+  });
+
+  const rows = await Promise.all(reads);
+  const drafts = [];
+  rows.forEach((row) => {
+    if (!row || !row.snap || !row.snap.exists) return;
+    const d = row.snap.data() || {};
+    const status = String(d.status || '');
+    if (!['shared', 'approved', 'submitted'].includes(status)) return;
+    if (!reportFormHasContent(d.form)) return;
+    if (!access.isSuperUser && !memberHasUnit(profile, d.unitId || row.unitId)) return;
+    const unit = getUnit(d.unitId || row.unitId);
+    drafts.push({
+      draftId: row.draftId,
+      unitId: d.unitId || row.unitId,
+      unitLabel: d.unitLabel || (unit && unit.label) || row.unitId,
+      reportYear: d.reportYear || row.year,
+      reportMonth: d.reportMonth || row.month,
+      status,
+      sharedByName: d.sharedByName || '',
+      approvedByName: d.approvedByName || '',
+      lastUpdatedByName: d.lastUpdatedByName || '',
+      form: d.form || {},
+      contributions: Array.isArray(d.contributions) ? d.contributions.slice(-12) : [],
+    });
+  });
+
+  drafts.sort((a, b) => {
+    if (b.reportYear !== a.reportYear) return b.reportYear - a.reportYear;
+    if (b.reportMonth !== a.reportMonth) return b.reportMonth - a.reportMonth;
+    return String(a.unitLabel).localeCompare(String(b.unitLabel));
+  });
+
+  return { ok: true, drafts, count: drafts.length };
+});
+
+const listNigeriaUnitReports = onCall(async (request) => {
+  const uid = requireAuth(request);
+  const email = normalizeEmail(request.auth?.token?.email);
+  if (!canViewAllNigeriaUnitReports(email)) {
+    throw new HttpsError('permission-denied', 'You do not have access to all-unit reports.');
+  }
+
+  const db = admin.firestore();
+  await assertNigeriaVolunteerAccess(db, uid, request.auth);
+
+  const yearFilter = parseInt(request.data?.reportYear, 10) || 0;
+  const monthFilter = parseInt(request.data?.reportMonth, 10) || 0;
+
+  const snap = await db.collection('nigeria_unit_reports').limit(250).get();
+  const reports = [];
+  snap.forEach((doc) => {
+    const d = doc.data() || {};
+    const year = parseInt(d.reportYear, 10) || 0;
+    const month = parseInt(d.reportMonth, 10) || 0;
+    if (yearFilter && year !== yearFilter) return;
+    if (monthFilter && month !== monthFilter) return;
+    reports.push({
+      id: doc.id,
+      unitId: d.unitId || '',
+      unitLabel: d.unitLabel || d.unitId || 'Unit',
+      reportYear: year,
+      reportMonth: month,
+      leaderName: d.leaderName || '',
+      leaderPhone: d.leaderPhone || '',
+      activities: d.activities || '',
+      highlights: d.highlights || '',
+      testimonies: d.testimonies || '',
+      challenges: d.challenges || '',
+      prayerRequests: d.prayerRequests || '',
+      nextMonth: d.nextMonth || '',
+      meetingNotesSummary: d.meetingNotesSummary || '',
+      meetingsHeld: d.meetingsHeld != null ? d.meetingsHeld : '',
+      attendanceNarrative: d.attendanceNarrative || '',
+      photos: Array.isArray(d.photos) ? d.photos.slice(0, 12) : [],
+      submittedAt: d.submittedAt || null,
+    });
+  });
+
+  reports.sort((a, b) => {
+    if (b.reportYear !== a.reportYear) return b.reportYear - a.reportYear;
+    if (b.reportMonth !== a.reportMonth) return b.reportMonth - a.reportMonth;
+    return String(a.unitLabel).localeCompare(String(b.unitLabel));
+  });
+
+  return {
+    ok: true,
+    reports,
+    count: reports.length,
+  };
+});
+
 module.exports = {
   saveNigeriaProfile,
   setNigeriaMemberRole,
   recordNigeriaAttendance,
   submitNigeriaAbsenceRequest,
   getNigeriaDashboard,
+  getNigeriaMyMembersRosters,
+  getNigeriaUnitMemberOptions,
   submitNigeriaUnitReport,
   shareNigeriaUnitReportDraft,
   contributeNigeriaUnitReportDraft,
@@ -2860,11 +3972,20 @@ module.exports = {
   updateNigeriaVisionProgress,
   getPrayerCityAccess,
   submitNigeriaMemberSignup,
+  submitAliveHangoutRsvp,
+  getAliveHangoutRsvps,
   getNigeriaMemberSignups,
   submitNigeriaWorkforceSignup,
   getNigeriaWorkforceSignups,
   approveNigeriaWorkforceSignup,
   markNigeriaWorkforceInTraining,
+  emailNigeriaUnitReportCopy,
+  listNigeriaUnitReports,
+  listMyNigeriaUnitReportDrafts,
   computeUnitAttendanceForReport,
   computeUserAttendanceStats,
+  computeUnitRoster,
+  loadUnitLeaders,
+  NIGERIA_UNITS,
+  INTERNAL_LEADERS_UNIT_ID,
 };
