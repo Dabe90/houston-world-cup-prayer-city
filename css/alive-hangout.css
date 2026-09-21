@@ -154,7 +154,7 @@ a {
   position: absolute;
   inset: 0;
   background:
-    url("https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=1800&q=80&auto=format&fit=crop") center/cover no-repeat;
+    url("../images/alive-hangout/goldenhour.jpg") center 35%/cover no-repeat;
 }
 
 .alive-hero-media::after {
@@ -596,54 +596,67 @@ a {
   line-height: 1.5;
 }
 
-.alive-photo-row {
+/* Simple scene gallery — flow layout only, never absolute/height:100% stacking. */
+.alive-scenes {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.55rem;
-  margin-top: 1.6rem;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+  margin-top: 1.5rem;
+  width: 100%;
+}
+
+.alive-scene,
+.alive-banner {
+  margin: 0;
   width: 100%;
   max-width: 100%;
-}
-.alive-photo-row figure {
-  margin: 0;
-  border-radius: 1rem;
+  border-radius: 1.15rem;
   overflow: hidden;
-  min-width: 0;
-  width: 100%;
-  background: var(--alive-sand);
-  aspect-ratio: 1 / 1;
+  background: #fff;
+  border: 1px solid var(--alive-line);
+  box-shadow: 0 10px 28px rgba(47, 61, 52, 0.06);
 }
-.alive-photo-row .alive-photo-hero {
-  grid-column: 1 / -1;
-  aspect-ratio: 16 / 10;
-}
-.alive-photo-row img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+
+.alive-scene img,
+.alive-banner img {
   display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  vertical-align: middle;
+}
+
+.alive-banner {
+  margin-top: 1.4rem;
+}
+
+.alive-banner img {
+  aspect-ratio: 16 / 9;
+}
+
+.alive-scene figcaption,
+.alive-banner figcaption {
+  margin: 0;
+  padding: 0.7rem 0.95rem 0.8rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--alive-gold-soft);
+  background: #fff;
+}
+
+.alive-scene-solo {
+  align-self: start;
+}
+
+.alive-photo-row {
+  display: none;
 }
 
 .alive-lifestyle-shot {
-  margin: 0;
-  border-radius: 1.15rem;
-  overflow: hidden;
-  background: var(--alive-sand);
-  aspect-ratio: 4 / 3;
-  width: 100%;
-  max-width: 100%;
-}
-.alive-lifestyle-shot img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.alive-faq {
-  max-width: 100%;
-  position: relative;
-  z-index: 1;
+  display: none;
 }
 .alive-faq details {
   border-bottom: 1px solid var(--alive-line);
@@ -686,7 +699,7 @@ a {
 .alive-register {
   background:
     linear-gradient(180deg, rgba(231, 240, 232, 0.7), rgba(250, 246, 238, 1)),
-    url("https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=1600&q=70&auto=format&fit=crop") center/cover;
+    url("../images/alive-hangout/goldenhour.jpg") center/cover;
   border-top: 1px solid var(--alive-line);
 }
 
@@ -824,10 +837,12 @@ a {
     grid-template-columns: 1.15fr 0.85fr;
     align-items: start;
   }
-  .alive-lifestyle-shot {
+  .alive-scenes {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.9rem;
+  }
+  .alive-scene-solo img {
     aspect-ratio: 3 / 4;
-    min-height: 100%;
-    align-self: stretch;
   }
   .alive-grid-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -841,20 +856,6 @@ a {
   }
   .alive-letter-card {
     padding: 2rem 1.8rem;
-  }
-  .alive-photo-row {
-    grid-template-columns: 1.4fr 1fr 1fr;
-    gap: 0.7rem;
-  }
-  .alive-photo-row .alive-photo-hero {
-    grid-column: auto;
-    grid-row: span 1;
-    aspect-ratio: auto;
-    min-height: 280px;
-  }
-  .alive-photo-row figure {
-    aspect-ratio: auto;
-    min-height: 280px;
   }
 }
 
@@ -1193,21 +1194,18 @@ a {
     margin-bottom: 0.15rem;
   }
 
-  .alive-photo-row {
-    grid-template-columns: 1fr 1fr;
-    gap: 0.45rem;
+  .alive-scenes {
+    gap: 0.7rem;
   }
 
-  .alive-photo-row figure {
-    border-radius: 0.85rem;
-    min-height: 0;
-    aspect-ratio: 1 / 1;
+  .alive-scene img,
+  .alive-banner img {
+    height: auto !important;
+    max-width: 100%;
   }
 
-  .alive-photo-row .alive-photo-hero {
-    grid-column: 1 / -1;
-    aspect-ratio: 16 / 10;
-    min-height: 0;
+  .alive-scene-solo {
+    margin-top: 0.35rem;
   }
 
   .alive-faq summary {
