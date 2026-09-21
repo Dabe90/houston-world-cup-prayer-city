@@ -154,7 +154,7 @@ a {
   position: absolute;
   inset: 0;
   background:
-    url("../images/alive-hangout/goldenhour.jpg") center 35%/cover no-repeat;
+    url("../images/alive-hangout/nigeria-gathering.jpg") center 30%/cover no-repeat;
 }
 
 .alive-hero-media::after {
@@ -698,8 +698,8 @@ a {
 
 .alive-register {
   background:
-    linear-gradient(180deg, rgba(231, 240, 232, 0.7), rgba(250, 246, 238, 1)),
-    url("../images/alive-hangout/goldenhour.jpg") center/cover;
+    linear-gradient(180deg, rgba(231, 240, 232, 0.78), rgba(250, 246, 238, 1)),
+    url("../images/alive-hangout/nigeria-abuja-friends.jpg") center 40%/cover;
   border-top: 1px solid var(--alive-line);
 }
 
