@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student portal — Class of David</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/cod/academy.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="/cod/"><img src="/cod/logo.png" alt="" width="40" height="40" /><span>Class of David</span></a>
+      <nav class="nav-links">
+        <a href="/cod/course-outline.html">Outline</a>
+        <span id="user-badge" class="badge"></span>
+        <button type="button" class="btn btn-outline" id="btn-out">Sign out</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap hero">
+    <div id="gate" class="card"><p>Loading…</p></div>
+    <div id="portal" hidden>
+      <p class="kicker">Student portal</p>
+      <h1 id="welcome">Welcome</h1>
+      <p style="color:var(--muted);" id="year-line"></p>
+
+      <div class="card" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 12px;">Published assignments</h2>
+        <div id="assignments"><p style="color:var(--muted);">Loading assignments…</p></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;" id="submit-panel" hidden>
+        <h2 style="font-family:var(--head);margin:0 0 12px;">Submit work</h2>
+        <p id="submit-for" style="color:var(--muted);"></p>
+        <label for="submit-body">Your response (link or written answer)</label>
+        <textarea id="submit-body"></textarea>
+        <label for="submit-link">Optional file / video URL</label>
+        <input id="submit-link" type="url" placeholder="https://…" />
+        <button class="btn btn-primary" type="button" id="btn-submit-work">Submit assignment</button>
+        <div id="submit-msg" class="msg info" hidden style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-firebase.js"></script>
+  <script>
+    (function () {
+      var gate = document.getElementById("gate");
+      var portal = document.getElementById("portal");
+      var selectedAssignmentId = null;
+      var profile = null;
+
+      function redirectLogin() {
+        window.location.href = "/cod/login.html";
+      }
+
+      document.getElementById("btn-out").addEventListener("click", function () {
+        window.COD_FIREBASE.auth().signOut().then(redirectLogin);
+      });
+
+      function renderAssignments(list) {
+        var root = document.getElementById("assignments");
+        if (!list.length) {
+          root.innerHTML = "<p style='color:var(--muted);'>No published assignments yet for your year. Check back after coordinators submit tasks to the President.</p>";
+          return;
+        }
+        var html = "<table><thead><tr><th>Code</th><th>Title</th><th>Due</th><th></th></tr></thead><tbody>";
+        list.forEach(function (a) {
+          html +=
+            "<tr><td><code>" + (a.code || "") + "</code></td><td>" + (a.title || "") +
+            "</td><td>" + (a.dueDate || "TBA") +
+            "</td><td><button type='button' class='btn btn-outline btn-pick' data-id='" + a.id + "'>Submit</button></td></tr>" +
+            "<tr><td colspan='4' style='font-size:0.88rem;color:var(--muted);'>" + (a.bodyHtml || a.body || "") + "</td></tr>";
+        });
+        html += "</tbody></table>";
+        root.innerHTML = html;
+        root.querySelectorAll(".btn-pick").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            selectedAssignmentId = btn.getAttribute("data-id");
+            var a = list.filter(function (x) { return x.id === selectedAssignmentId; })[0];
+            document.getElementById("submit-panel").hidden = false;
+            document.getElementById("submit-for").textContent = "Submitting for: " + (a && a.title);
+          });
+        });
+      }
+
+      document.getElementById("btn-submit-work").addEventListener("click", function () {
+        if (!selectedAssignmentId || !profile) return;
+        var body = document.getElementById("submit-body").value.trim();
+        var link = document.getElementById("submit-link").value.trim();
+        if (!body && !link) return;
+        var msg = document.getElementById("submit-msg");
+        msg.hidden = false;
+        msg.className = "msg info";
+        msg.textContent = "Uploading…";
+        window.COD_FIREBASE.collections
+          .submissions()
+          .add({
+            assignmentId: selectedAssignmentId,
+            studentUid: profile.uid,
+            studentId: profile.studentId,
+            studentName: (profile.first || "") + " " + (profile.last || ""),
+            body: body,
+            link: link,
+            year: profile.currentYear || 1,
+            status: "submitted",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          })
+          .then(function () {
+            msg.className = "msg ok";
+            msg.textContent = "Submitted. Your coordinator will mark it and may forward marked work to the President.";
+            document.getElementById("submit-body").value = "";
+            document.getElementById("submit-link").value = "";
+          })
+          .catch(function (err) {
+            msg.className = "msg err";
+            msg.textContent = err.message || String(err);
+          });
+      });
+
+      if (!window.COD_FIREBASE.init()) {
+        gate.innerHTML = "<p class='msg err'>Firebase not configured.</p>";
+        return;
+      }
+
+      window.COD_FIREBASE.auth().onAuthStateChanged(function (user) {
+        if (!user) return redirectLogin();
+        window.COD_FIREBASE.resolveRole(user).then(function (role) {
+          if (role === "admin") {
+            window.location.href = "/cod/admin.html";
+            return;
+          }
+          if (role === "coordinator") {
+            window.location.href = "/cod/coordinator.html";
+            return;
+          }
+          return window.COD_FIREBASE.getProfile(user.uid).then(function (p) {
+            profile = p || {};
+            profile.uid = user.uid;
+            gate.hidden = true;
+            portal.hidden = false;
+            document.getElementById("welcome").textContent =
+              "Welcome, " + (profile.first || "Beloved");
+            document.getElementById("user-badge").textContent = profile.studentId || "Student";
+            var y = profile.currentYear || 1;
+            var yMeta = window.COD_DATA.yearByNumber(y);
+            document.getElementById("year-line").textContent =
+              "Year " + y + ": " + (yMeta ? yMeta.title : "") + " · Cohort " + (profile.cohort || "");
+
+            return window.COD_FIREBASE.db()
+              .collection("cod_assignments")
+              .where("year", "==", Number(y))
+              .where("status", "==", "published")
+              .get()
+              .then(function (snap) {
+                var list = [];
+                snap.forEach(function (doc) {
+                  var d = doc.data();
+                  d.id = doc.id;
+                  list.push(d);
+                });
+                list.sort(function (a, b) {
+                  return (a.seq || 0) - (b.seq || 0);
+                });
+                renderAssignments(list);
+              });
+          });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

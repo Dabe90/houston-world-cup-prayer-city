@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Class of David Yearbooks — Dear Daughter Bible Study</title>
+  <meta name="description" content="Class of David yearbooks from Dear Daughter Bible Study: graduating sets, testimonies, and each cohort's presentation." />
+  <link rel="canonical" href="https://prayercityhtx.com/cod/yearbook/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Prayer City HTX" />
+  <meta property="og:url" content="https://prayercityhtx.com/cod/yearbook/" />
+  <meta property="og:title" content="Class of David Yearbooks — Dear Daughter Bible Study" />
+  <meta property="og:description" content="Class of David yearbooks from Dear Daughter Bible Study: graduating sets, testimonies, and each cohort's presentation." />
+  <meta property="og:image" content="https://prayercityhtx.com/cod/logo.png" />
+  <meta property="og:image:width" content="984" />
+  <meta property="og:image:height" content="1024" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Class of David Yearbooks — Dear Daughter Bible Study" />
+  <meta name="twitter:description" content="Class of David yearbooks from Dear Daughter Bible Study: graduating sets, testimonies, and each cohort's presentation." />
+  <meta name="twitter:image" content="https://prayercityhtx.com/cod/logo.png" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>" />
+  <meta name="theme-color" content="#f3eee4" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f3eee4;
+      --fg: #1a2744;
+      --muted: #5a6578;
+      --faint: #8a93a3;
+      --primary: #8b3a4a;
+      --accent: linear-gradient(115deg, #c4a35a 0%, #a85a68 45%, #8b3a4a 78%, #6e2e3c 100%);
+      --hair: rgba(26, 39, 68, 0.12);
+      --radius: 18px;
+      --shadow: 0 40px 90px -48px rgba(26, 39, 68, 0.35);
+      --head: "Cormorant Garamond", Georgia, serif;
+      --body: "Source Sans 3", system-ui, sans-serif;
+      --page-max: 1100px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--body);
+      color: var(--fg);
+      background: var(--bg);
+      line-height: 1.6;
+    }
+    a { color: var(--primary); font-weight: 600; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap {
+      width: min(var(--page-max), calc(100vw - 40px));
+      margin-inline: auto;
+      padding: clamp(32px, 6vh, 64px) 0 clamp(48px, 8vh, 80px);
+    }
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 28px;
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+    .back svg { width: 1em; height: 1em; }
+    .kicker {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin: 0 0 10px;
+    }
+    h1 {
+      font-family: var(--head);
+      font-size: clamp(2.2rem, 5vw, 3.4rem);
+      letter-spacing: -0.03em;
+      margin: 0 0 12px;
+      line-height: 1.05;
+    }
+    .intro { color: var(--muted); max-width: 58ch; margin: 0 0 36px; font-size: 1.05rem; }
+    .year-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+    }
+    .year-card {
+      display: flex;
+      flex-direction: column;
+      padding: 22px;
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid var(--hair);
+      box-shadow: var(--shadow);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .year-card:hover {
+      transform: translateY(-3px);
+      border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+    }
+    .year-card h2 {
+      font-family: var(--head);
+      font-size: 1.8rem;
+      margin: 0 0 6px;
+    }
+    .year-card .tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 10px;
+    }
+    .year-card p {
+      margin: 0 0 18px;
+      font-size: 0.95rem;
+      color: var(--muted);
+      flex: 1;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 11px 18px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #faf6ef;
+      font-weight: 700;
+      font-size: 0.92rem;
+      text-decoration: none;
+      align-self: flex-start;
+    }
+    .btn:hover { text-decoration: none; transform: translateY(-1px); }
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.6);
+      color: var(--fg);
+      border: 1px solid var(--hair);
+    }
+    .featured { border-color: color-mix(in srgb, var(--primary) 35%, transparent); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="/cod/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      Back to Class of David
+    </a>
+    <p class="kicker">Dear Daughter Bible Study Group</p>
+    <h1>Class of David <span style="background:var(--accent);-webkit-background-clip:text;background-clip:text;color:transparent">Yearbooks</span></h1>
+    <p class="intro">
+      Browse Bolt presentations from each graduating set — leadership, testimonies, and the original yearbook pages.
+      Use arrow keys or the controls inside each deck to move through slides.
+    </p>
+    <div class="year-grid">
+      <article class="year-card featured">
+        <p class="tag">Latest · Interactive</p>
+        <h2>2025/2026</h2>
+        <p>Glory Carriers — full interactive yearbook with graduate profiles, coordinator blessings, and celebration highlights.</p>
+        <a class="btn" href="/cod/yearbook/2026/">Open yearbook →</a>
+      </article>
+      <article class="year-card">
+        <p class="tag">Graduating set · 2025</p>
+        <h2>2024/2025</h2>
+        <p>Soar Higher — graduation July 2025 with leadership team and student yearbook pages.</p>
+        <a class="btn btn-outline" href="/cod/yearbook/2025/">View presentation →</a>
+      </article>
+      <article class="year-card">
+        <p class="tag">Graduating set · 2024</p>
+        <h2>2023/2024</h2>
+        <p>Arise (Isaiah 60:1) — second graduating set with coordinator and student testimonies.</p>
+        <a class="btn btn-outline" href="/cod/yearbook/2024/">View presentation →</a>
+      </article>
+      <article class="year-card">
+        <p class="tag">First graduating set · 2023</p>
+        <h2>2022/2023</h2>
+        <p>Eagle Generation — the inaugural Class of David cohort. President Abe Damilola’s charge and graduate stories.</p>
+        <a class="btn btn-outline" href="/cod/yearbook/2023/">View presentation →</a>
+      </article>
+    </div>
+  </div>
+</body>
+</html>

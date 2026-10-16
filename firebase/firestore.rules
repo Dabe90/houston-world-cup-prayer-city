@@ -22,8 +22,22 @@ service cloud.firestore {
     function nigeriaCanAccessUnit(unitId) {
       return isNigeriaSuperUser()
         || (nigeriaProfileExists()
-            && ((nigeriaVolunteer().unitIds != null && unitId in nigeriaVolunteer().unitIds)
-                || nigeriaVolunteer().unitId == unitId));
+            && (
+              nigeriaVolunteer().unitId == unitId
+              || (nigeriaVolunteer().unitIds != null && unitId in nigeriaVolunteer().unitIds)
+              || (nigeriaVolunteer().units is list
+                  && nigeriaVolunteer().units.size() > 0
+                  && nigeriaVolunteer().units[0].keys().hasAny(['unitId'])
+                  && (
+                    (nigeriaVolunteer().units.size() >= 1 && nigeriaVolunteer().units[0].unitId == unitId)
+                    || (nigeriaVolunteer().units.size() >= 2 && nigeriaVolunteer().units[1].unitId == unitId)
+                    || (nigeriaVolunteer().units.size() >= 3 && nigeriaVolunteer().units[2].unitId == unitId)
+                    || (nigeriaVolunteer().units.size() >= 4 && nigeriaVolunteer().units[3].unitId == unitId)
+                    || (nigeriaVolunteer().units.size() >= 5 && nigeriaVolunteer().units[4].unitId == unitId)
+                    || (nigeriaVolunteer().units.size() >= 6 && nigeriaVolunteer().units[5].unitId == unitId)
+                  )
+                 )
+            ));
     }
 
     // Populated by Cloud Functions only. Clients never read this directly.
@@ -94,7 +108,14 @@ service cloud.firestore {
 
     // Collaborative monthly report draft — share, contribute, approve via Cloud Functions.
     match /nigeria_unit_report_drafts/{draftId} {
-      allow read: if request.auth != null && nigeriaCanAccessUnit(resource.data.unitId);
+      // Allow missing-doc gets (resource == null) via draftId prefix so clients can
+      // safely probe months. Existing docs still require unit membership.
+      // draftId shape: "{unitId}_{yyyy}_{mm}" — unit ids use hyphens, not underscores.
+      allow read: if request.auth != null && (
+        isNigeriaSuperUser()
+        || nigeriaCanAccessUnit(draftId.split('_')[0])
+        || (resource != null && nigeriaCanAccessUnit(resource.data.unitId))
+      );
       allow write: if false;
     }
 
@@ -103,12 +124,39 @@ service cloud.firestore {
     }
 
     // Shared notes for a unit meeting — all members of that unit can read/write.
+    // noteId shape: "{unitId}__{meetingKey}". Allow get on missing docs so the
+    // client can open an empty editor for a meeting date that has no notes yet.
     match /nigeria_unit_meeting_notes/{noteId} {
-      allow read: if request.auth != null && (isNigeriaSuperUser() || nigeriaCanAccessUnit(resource.data.unitId));
+      allow read: if request.auth != null && (
+        isNigeriaSuperUser()
+        || nigeriaCanAccessUnit(noteId.split('__')[0])
+        || (resource != null && nigeriaCanAccessUnit(resource.data.unitId))
+      );
       allow create, update: if request.auth != null
         && request.resource.data.updatedByUid == request.auth.uid
         && (isNigeriaSuperUser() || nigeriaCanAccessUnit(request.resource.data.unitId));
       allow delete: if false;
+    }
+
+    // Flat open-action index (Cloud Functions write). Members can read their own
+    // and their unit's actions for dashboard boards.
+    match /nigeria_meeting_actions/{actionId} {
+      allow read: if request.auth != null && (
+        isNigeriaSuperUser()
+        || resource.data.responsibilityUid == request.auth.uid
+        || (resource.data.responsibilityUids is list
+            && request.auth.uid in resource.data.responsibilityUids)
+        || nigeriaCanAccessUnit(resource.data.unitId)
+      );
+      allow write: if false;
+    }
+
+    match /nigeria_action_reminder_sent/{sentId} {
+      allow read, write: if false;
+    }
+
+    match /nigeria_action_assign_sent/{sentId} {
+      allow read, write: if false;
     }
 
     match /nigeria_unit_vision/{unitId} {
@@ -123,6 +171,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /nigeria_leader_attendance_sent/{sentId} {
+      allow read, write: if false;
+    }
+
     match /nigeria_absence_requests/{requestId} {
       allow read, write: if false;
     }
@@ -132,8 +184,135 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /alive_hangout_rsvps/{rsvpId} {
+      allow read, write: if false;
+    }
+
     match /nigeria_workforce_signups/{signupId} {
       allow read, write: if false;
+    }
+
+    // —— Class of David (COD) academy ——
+    function isCodAdmin() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && (
+          request.auth.token.email == 'ddbs.htx@gmail.com'
+          || request.auth.token.email == 'abuxberkeley@gmail.com'
+        );
+    }
+
+    function codSettingsExists() {
+      return exists(/databases/$(database)/documents/cod_settings/config);
+    }
+
+    function codCoordinatorListed() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && codSettingsExists()
+        && get(/databases/$(database)/documents/cod_settings/config).data.coordinatorEmails.hasAny([request.auth.token.email]);
+    }
+
+    function codUserDoc() {
+      return get(/databases/$(database)/documents/cod_users/$(request.auth.uid)).data;
+    }
+
+    function codUserExists() {
+      return exists(/databases/$(database)/documents/cod_users/$(request.auth.uid));
+    }
+
+    function isCodCoordinator() {
+      return request.auth != null
+        && (
+          isCodAdmin()
+          || codCoordinatorListed()
+          || (codUserExists() && codUserDoc().role == 'coordinator')
+        );
+    }
+
+    function isCodStaff() {
+      return isCodAdmin() || isCodCoordinator();
+    }
+
+    match /cod_meta/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && docId == 'cohort_2027'
+        && request.resource.data.keys().hasOnly(['studentCounter', 'cohort'])
+        && request.resource.data.studentCounter == 1;
+      allow update: if request.auth != null
+        && docId == 'cohort_2027'
+        && request.resource.data.studentCounter == resource.data.studentCounter + 1
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentCounter']);
+      allow delete: if false;
+    }
+
+    match /cod_settings/{docId} {
+      allow read: if request.auth != null;
+      allow write: if isCodAdmin();
+    }
+
+    match /cod_users/{userId} {
+      allow read: if request.auth != null
+        && (request.auth.uid == userId || isCodAdmin());
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && (
+          (
+            request.resource.data.role == 'student'
+            && request.resource.data.studentId is string
+            && request.resource.data.studentId.size() >= 8
+          )
+          || (
+            request.resource.data.role == 'pending_coordinator'
+            && request.resource.data.coordinatorId is string
+            && request.resource.data.coordinatorId.size() > 0
+          )
+        );
+      allow update: if request.auth != null
+        && (
+          isCodAdmin()
+          || (request.auth.uid == userId && request.resource.data.role == resource.data.role)
+          || (request.auth.uid == userId
+              && codCoordinatorListed()
+              && request.resource.data.role == 'coordinator')
+        );
+      allow delete: if false;
+    }
+
+    match /cod_assignment_drafts/{draftId} {
+      allow read: if isCodAdmin()
+        || (request.auth != null && resource.data.coordinatorUid == request.auth.uid);
+      allow create: if isCodCoordinator()
+        && request.resource.data.coordinatorUid == request.auth.uid;
+      allow update: if isCodAdmin()
+        || (isCodCoordinator() && resource.data.coordinatorUid == request.auth.uid);
+      allow delete: if false;
+    }
+
+    match /cod_assignments/{assignmentId} {
+      allow read: if request.auth != null
+        && (isCodStaff() || resource.data.status == 'published');
+      allow create, update: if isCodAdmin();
+      allow delete: if false;
+    }
+
+    match /cod_submissions/{submissionId} {
+      allow read: if request.auth != null
+        && (resource.data.studentUid == request.auth.uid || isCodStaff());
+      allow create: if request.auth != null
+        && request.resource.data.studentUid == request.auth.uid
+        && request.resource.data.status == 'submitted';
+      allow update: if isCodStaff()
+        || (request.auth != null && resource.data.studentUid == request.auth.uid);
+      allow delete: if false;
+    }
+
+    match /cod_admin_inbox/{inboxId} {
+      allow read, update: if isCodAdmin();
+      allow create: if isCodCoordinator();
+      allow delete: if false;
     }
   }
 }

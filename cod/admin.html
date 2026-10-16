@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>President — Class of David admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/cod/academy.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="/cod/"><img src="/cod/logo.png" alt="" width="40" height="40" /><span>Class of David</span></a>
+      <nav class="nav-links">
+        <button type="button" class="btn btn-outline" id="btn-out">Sign out</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap hero">
+    <div id="gate" class="card">Loading…</div>
+    <div id="portal" hidden>
+      <p class="kicker">President dashboard</p>
+      <h1>Assignment review &amp; publish</h1>
+
+      <div class="card" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);">Pending coordinator registrations</h2>
+        <p style="font-size:0.88rem;color:var(--muted);">Approve coordinators who registered at <a href="/cod/coordinator-register.html">coordinator register</a>.</p>
+        <div id="pending-coords"></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);">Coordinator emails (allowlist)</h2>
+        <p style="font-size:0.88rem;color:var(--muted);">One email per line. Approving a registration adds their email here automatically.</p>
+        <textarea id="coord-emails" style="min-height:100px;"></textarea>
+        <button class="btn btn-primary" type="button" id="btn-save-emails">Save allowlist</button>
+        <div id="email-msg" class="msg info" hidden style="margin-top:10px;"></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);">Drafts awaiting template</h2>
+        <div id="draft-queue"></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);">Inbox — marked work from coordinators</h2>
+        <div id="inbox"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-firebase.js"></script>
+  <script>
+    (function () {
+      var tpl = window.COD_DATA.assignmentTemplate;
+
+      document.getElementById("btn-out").addEventListener("click", function () {
+        window.COD_FIREBASE.auth().signOut().then(function () {
+          window.location.href = "/cod/coordinator-login.html";
+        });
+      });
+
+      function formatBody(draft) {
+        var y = window.COD_DATA.yearByNumber(draft.year);
+        return (
+          "<h3>" + (draft.title || "") + "</h3>" +
+          "<p><strong>Code:</strong> " + (draft.code || "") + "</p>" +
+          "<p><strong>Year:</strong> " + draft.year + " — " + (y ? y.title : "") + "</p>" +
+          "<p><strong>Due:</strong> " + (draft.dueDate || "TBA") + "</p>" +
+          "<hr/><h4>Objective</h4><p>" + (draft.rawBody || "").replace(/\n/g, "<br/>") + "</p>" +
+          "<p style='font-size:0.85rem;color:#666;'>Template sections: " + tpl.sections.join(" · ") + "</p>"
+        );
+      }
+
+      function loadDrafts() {
+        return window.COD_FIREBASE.collections
+          .drafts()
+          .where("status", "==", "submitted_to_president")
+          .get()
+          .then(function (snap) {
+            var root = document.getElementById("draft-queue");
+            if (snap.empty) {
+              root.innerHTML = "<p style='color:var(--muted);'>No drafts waiting.</p>";
+              return;
+            }
+            var html = "";
+            snap.forEach(function (doc) {
+              var d = doc.data();
+              html +=
+                "<div style='border:1px solid var(--hair);border-radius:12px;padding:14px;margin-bottom:12px;'>" +
+                "<strong>" + (d.code || d.title) + "</strong> from " + (d.coordinatorName || "Coordinator") +
+                "<div style='margin:10px 0;font-size:0.9rem;'>" + formatBody(d) + "</div>" +
+                "<label>Formatted HTML for students</label>" +
+                "<textarea class='pub-body' data-id='" + doc.id + "' style='min-height:140px;'>" + formatBody(d) + "</textarea>" +
+                "<button type='button' class='btn btn-primary btn-publish' data-id='" + doc.id + "'>Publish to students</button>" +
+                "</div>";
+            });
+            root.innerHTML = html;
+            root.querySelectorAll(".btn-publish").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                var id = btn.getAttribute("data-id");
+                var ta = root.querySelector(".pub-body[data-id='" + id + "']");
+                window.COD_FIREBASE.collections.drafts().doc(id).get().then(function (snap) {
+                  var d = snap.data();
+                  var pub = {
+                    year: d.year,
+                    seq: d.seq,
+                    code: d.code,
+                    title: d.title,
+                    dueDate: d.dueDate,
+                    bodyHtml: ta.value,
+                    status: "published",
+                    publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    draftId: id,
+                    coordinatorId: d.coordinatorId,
+                  };
+                  return window.COD_FIREBASE.collections.assignments().add(pub).then(function () {
+                    return window.COD_FIREBASE.collections.drafts().doc(id).update({
+                      status: "published",
+                      publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    });
+                  });
+                }).then(function () {
+                  loadDrafts();
+                });
+              });
+            });
+          });
+      }
+
+      function loadInbox() {
+        return window.COD_FIREBASE.collections
+          .adminInbox()
+          .orderBy("forwardedAt", "desc")
+          .limit(30)
+          .get()
+          .then(function (snap) {
+            var root = document.getElementById("inbox");
+            if (snap.empty) {
+              root.innerHTML = "<p style='color:var(--muted);'>Inbox empty.</p>";
+              return;
+            }
+            var html = "<table><thead><tr><th>Student</th><th>Coordinator</th><th>Mark</th><th>Status</th></tr></thead><tbody>";
+            snap.forEach(function (doc) {
+              var d = doc.data();
+              html +=
+                "<tr><td>" + (d.studentName || d.studentId) + "</td><td>" + (d.coordinatorName || "") +
+                "</td><td style='white-space:pre-wrap;font-size:0.85rem;'>" + (d.coordinatorMark || "") +
+                "</td><td>" + (d.status || "new") + "</td></tr>";
+            });
+            html += "</tbody></table>";
+            root.innerHTML = html;
+          })
+          .catch(function () {
+            document.getElementById("inbox").innerHTML =
+              "<p class='msg info'>Deploy Firestore index if inbox query fails — or open Firebase console.</p>";
+          });
+      }
+
+      function loadPendingCoordinators() {
+        return window.COD_FIREBASE.db()
+          .collection("cod_users")
+          .where("role", "==", "pending_coordinator")
+          .get()
+          .then(function (snap) {
+            var root = document.getElementById("pending-coords");
+            if (snap.empty) {
+              root.innerHTML = "<p style='color:var(--muted);'>No pending registrations.</p>";
+              return;
+            }
+            var html =
+              "<table><thead><tr><th>Name</th><th>Email</th><th>Coordinator</th><th></th></tr></thead><tbody>";
+            snap.forEach(function (doc) {
+              var d = doc.data();
+              html +=
+                "<tr><td>" + (d.name || (d.first || "") + " " + (d.last || "")) +
+                "</td><td>" + (d.email || "") +
+                "</td><td>" + (d.coordinatorId || "") +
+                "</td><td><button type='button' class='btn btn-primary btn-approve' data-uid='" +
+                doc.id + "' data-email='" + (d.email || "") + "'>Approve</button></td></tr>";
+            });
+            html += "</tbody></table>";
+            root.innerHTML = html;
+            root.querySelectorAll(".btn-approve").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                var uid = btn.getAttribute("data-uid");
+                var email = String(btn.getAttribute("data-email") || "").toLowerCase();
+                btn.disabled = true;
+                window.COD_FIREBASE.getSettings().then(function (s) {
+                  var list = (s.coordinatorEmails || []).slice();
+                  if (email && list.indexOf(email) < 0) list.push(email);
+                  return window.COD_FIREBASE.settingsRef()
+                    .set(
+                      {
+                        coordinatorEmails: list,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                      },
+                      { merge: true }
+                    )
+                    .then(function () {
+                      return window.COD_FIREBASE.usersRef(uid).update({
+                        role: "coordinator",
+                        approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                      });
+                    })
+                    .then(function () {
+                      document.getElementById("coord-emails").value = list.join("\n");
+                      loadPendingCoordinators();
+                    });
+                });
+              });
+            });
+          });
+      }
+
+      function loadSettings() {
+        return window.COD_FIREBASE.getSettings().then(function (s) {
+          var list = s.coordinatorEmails || [];
+          document.getElementById("coord-emails").value = list.join("\n");
+        });
+      }
+
+      document.getElementById("btn-save-emails").addEventListener("click", function () {
+        var lines = document.getElementById("coord-emails").value
+          .split(/\r?\n/)
+          .map(function (l) {
+            return l.trim().toLowerCase();
+          })
+          .filter(Boolean);
+        var msg = document.getElementById("email-msg");
+        window.COD_FIREBASE.settingsRef()
+          .set(
+            {
+              coordinatorEmails: lines,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          )
+          .then(function () {
+            msg.hidden = false;
+            msg.className = "msg ok";
+            msg.textContent = "Saved " + lines.length + " coordinator email(s).";
+          });
+      });
+
+      if (!window.COD_FIREBASE.init()) {
+        document.getElementById("gate").innerHTML = "<p class='msg err'>Firebase not configured.</p>";
+        return;
+      }
+
+      window.COD_FIREBASE.auth().onAuthStateChanged(function (user) {
+        if (!user) {
+          window.location.href = "/cod/coordinator-login.html";
+          return;
+        }
+        window.COD_FIREBASE.resolveRole(user).then(function (role) {
+          if (role !== "admin") {
+            document.getElementById("gate").innerHTML =
+              "<p class='msg err'>President access only.</p>";
+            return;
+          }
+          document.getElementById("gate").hidden = true;
+          document.getElementById("portal").hidden = false;
+          window.COD_FIREBASE.ensureSettingsSeed();
+          loadSettings();
+          loadPendingCoordinators();
+          loadDrafts();
+          loadInbox();
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -3,10 +3,9 @@
     { "source": "/dashboard.html", "destination": "/", "permanent": true },
     { "source": "/volunteer", "destination": "/volunteer/", "permanent": true },
     { "source": "/cod", "destination": "/cod/", "permanent": true },
-    { "source": "/ng", "destination": "/ddbs-nig.html", "permanent": false },
-    { "source": "/ng/", "destination": "/ddbs-nig.html", "permanent": false },
-    { "source": "/nigeria", "destination": "/ddbs-nig.html", "permanent": false },
-    { "source": "/nigeria/", "destination": "/ddbs-nig.html", "permanent": false }
+    { "source": "/training", "destination": "/training/", "permanent": true },
+    { "source": "/nigeria", "destination": "/ng", "permanent": true },
+    { "source": "/nigeria/", "destination": "/ng", "permanent": true }
   ],
   "rewrites": [
     { "source": "/cod", "destination": "/cod/index.html" },
@@ -21,10 +20,31 @@
     { "source": "/cod/yearbook/2025/", "destination": "/cod/yearbook/2025/index.html" },
     { "source": "/cod/yearbook/2026", "destination": "/cod/yearbook/2026/index.html" },
     { "source": "/cod/yearbook/2026/", "destination": "/cod/yearbook/2026/index.html" },
+    { "source": "/cod/course-outline", "destination": "/cod/course-outline.html" },
+    { "source": "/cod/course-outline/", "destination": "/cod/course-outline.html" },
+    { "source": "/cod/register", "destination": "/cod/register.html" },
+    { "source": "/cod/register/", "destination": "/cod/register.html" },
+    { "source": "/cod/login", "destination": "/cod/login.html" },
+    { "source": "/cod/login/", "destination": "/cod/login.html" },
+    { "source": "/cod/student", "destination": "/cod/student.html" },
+    { "source": "/cod/student/", "destination": "/cod/student.html" },
+    { "source": "/cod/coordinator-login", "destination": "/cod/coordinator-login.html" },
+    { "source": "/cod/coordinator-login/", "destination": "/cod/coordinator-login.html" },
+    { "source": "/cod/coordinator-register", "destination": "/cod/coordinator-register.html" },
+    { "source": "/cod/coordinator-register/", "destination": "/cod/coordinator-register.html" },
+    { "source": "/cod/coordinator-pending", "destination": "/cod/coordinator-pending.html" },
+    { "source": "/cod/coordinator-pending/", "destination": "/cod/coordinator-pending.html" },
+    { "source": "/cod/coordinator", "destination": "/cod/coordinator.html" },
+    { "source": "/cod/coordinator/", "destination": "/cod/coordinator.html" },
+    { "source": "/cod/admin", "destination": "/cod/admin.html" },
+    { "source": "/cod/admin/", "destination": "/cod/admin.html" },
     { "source": "/alive", "destination": "/alive.html" },
     { "source": "/alive/", "destination": "/alive.html" },
     { "source": "/alive-hangout", "destination": "/alive.html" },
-    { "source": "/alive-hangout/", "destination": "/alive.html" }
+    { "source": "/alive-hangout/", "destination": "/alive.html" },
+    { "source": "/ng", "destination": "/ddbs-nig.html" },
+    { "source": "/ng/", "destination": "/ddbs-nig.html" },
+    { "source": "/training/", "destination": "/training/index.html" }
   ],
   "headers": [
     {

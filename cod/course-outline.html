@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Course outline — Class of David 2026/2027</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/cod/academy.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="/cod/"><img src="/cod/logo.png" alt="" width="40" height="40" /><span>Class of David</span></a>
+      <nav class="nav-links">
+        <a href="/cod/">Home</a>
+        <a class="active" href="/cod/course-outline.html">Course outline</a>
+        <a href="/cod/register.html">Register</a>
+        <a href="/cod/login.html">Student login</a>
+        <a href="/cod/coordinator-login.html">Coordinator login</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap hero">
+    <p class="kicker">University-level standard · 9 months</p>
+    <h1>Course outline</h1>
+    <p style="color:var(--muted);max-width:640px;">
+      Each <strong>year</strong> in Class of David equals <strong>one month</strong> of intensive formation.
+      You will receive assignments through your student portal as coordinators publish them.
+    </p>
+
+    <div class="card" style="margin-top:24px;" id="years-list"></div>
+
+    <div class="card" style="margin-top:20px;">
+      <p class="kicker">Assignment workflow</p>
+      <h2 style="font-family:var(--head);margin:0 0 12px;">How tasks reach you</h2>
+      <ol style="color:var(--muted);padding-left:20px;">
+        <li>Coordinators draft assignments and send them to the President for template formatting.</li>
+        <li>Published tasks appear on your student dashboard (naming: <code>Y1-A01-topic</code>).</li>
+        <li>You submit before the due date; coordinators mark work and forward marked copies to the President.</li>
+      </ol>
+    </div>
+  </main>
+
+  <footer><div class="wrap">Class of David · Dear Daughter Bible Study Group</div></footer>
+  <script src="/js/cod-data.js"></script>
+  <script>
+    (function () {
+      var root = document.getElementById("years-list");
+      (window.COD_DATA.YEARS || []).forEach(function (y) {
+        var owners = window.COD_DATA.ASSIGNMENT_OWNERS[y.year] || [];
+        var ownerText = owners.length
+          ? owners.map(function (o) {
+              return o.name + " (" + o.count + " assignment" + (o.count > 1 ? "s" : "") + ")";
+            }).join(" · ")
+          : "Assignments TBA";
+        var teach = y.teachers.map(function (t) { return t.name; }).join(" & ");
+        var row = document.createElement("div");
+        row.className = "year-row";
+        row.innerHTML =
+          '<div class="year-num">' + y.year + '</div>' +
+          '<div><strong style="font-family:var(--head);font-size:1.25rem;">' + y.title + '</strong>' +
+          '<p style="margin:6px 0 0;color:var(--muted);font-size:0.92rem;">' + y.monthLabel + ' · Instructor: ' + teach + '</p>' +
+          '<p style="margin:6px 0 0;font-size:0.88rem;color:var(--faint);">Assignments: ' + ownerText + '</p></div>' +
+          '<span class="badge">' + y.monthLabel + '</span>';
+        root.appendChild(row);
+      });
+    })();
+  </script>
+</body>
+</html>

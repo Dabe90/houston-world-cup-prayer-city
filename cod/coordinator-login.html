@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coordinator login — Class of David</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/cod/academy.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="/cod/"><img src="/cod/logo.png" alt="" width="40" height="40" /><span>Class of David</span></a>
+      <nav class="nav-links">
+        <a href="/cod/login.html">Student login</a>
+        <a class="active" href="/cod/coordinator-login.html">Coordinator login</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap hero">
+    <p class="kicker">Coordinators &amp; President</p>
+    <h1>Coordinator login</h1>
+    <p style="color:var(--muted);max-width:520px;">
+      Cecilia, Veronica, Amarachi, Elizabeth, and the President use this portal to draft assignments,
+      submit them for template formatting, and forward marked student work.
+    </p>
+
+    <div class="card" style="max-width:460px;margin-top:20px;">
+      <div id="msg" class="msg info" hidden></div>
+      <form id="login-form">
+        <label for="who">I am signing in as</label>
+        <select id="who" required>
+          <option value="">Select coordinator</option>
+          <option value="damilola">Abe Damilola (President)</option>
+          <option value="cecilia">Cecilia Alabede</option>
+          <option value="veronica">Veronica Ekoja</option>
+          <option value="amarachi">Nnodum Amarachi</option>
+          <option value="elizabeth">Ojenor Elizabeth</option>
+        </select>
+        <label for="email">Email</label>
+        <input id="email" type="email" required autocomplete="username" />
+        <label for="password">Password</label>
+        <input id="password" type="password" required autocomplete="current-password" />
+        <button class="btn btn-primary" type="submit">Sign in</button>
+      </form>
+      <p style="margin-top:16px;font-size:0.95rem;color:var(--muted);">
+        New coordinator? <a href="/cod/coordinator-register.html"><strong>Register here</strong></a> — the President approves your account.
+      </p>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-firebase.js"></script>
+  <script>
+    (function () {
+      var form = document.getElementById("login-form");
+      var msg = document.getElementById("msg");
+      function show(t, k) {
+        msg.hidden = false;
+        msg.className = "msg " + k;
+        msg.textContent = t;
+      }
+      if (!window.COD_FIREBASE.init()) {
+        show("Firebase not configured.", "err");
+        return;
+      }
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var email = document.getElementById("email").value.trim();
+        var password = document.getElementById("password").value;
+        var who = document.getElementById("who").value;
+        window.COD_FIREBASE.auth()
+          .signInWithEmailAndPassword(email, password)
+          .then(function (cred) {
+            return window.COD_FIREBASE.ensureCoordinatorProfile(cred.user, who).then(function () {
+              return window.COD_FIREBASE.resolveRole(cred.user);
+            });
+          })
+          .then(function (role) {
+            if (role === "admin") window.location.href = "/cod/admin.html";
+            else if (role === "coordinator") window.location.href = "/cod/coordinator.html";
+            else if (role === "pending_coordinator") window.location.href = "/cod/coordinator-pending.html";
+            else show("This account is not authorized as a coordinator.", "err");
+          })
+          .catch(function (err) {
+            show(err.message || "Sign-in failed.", "err");
+          });
+      });
+    })();
+  </script>
+</body>
+</html>

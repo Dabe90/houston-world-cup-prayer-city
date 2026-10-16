@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coordinator portal — Class of David</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/cod/academy.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="/cod/"><img src="/cod/logo.png" alt="" width="40" height="40" /><span>Class of David</span></a>
+      <nav class="nav-links">
+        <button type="button" class="btn btn-outline" id="btn-out">Sign out</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap hero">
+    <div id="gate" class="card">Loading…</div>
+    <div id="portal" hidden>
+      <p class="kicker">Coordinator portal</p>
+      <h1 id="coord-name">Coordinator</h1>
+      <p style="color:var(--muted);" id="quota-line"></p>
+
+      <div class="grid-2" style="margin-top:20px;align-items:start;">
+        <div class="card">
+          <h2 style="font-family:var(--head);margin:0 0 10px;">Draft new assignment</h2>
+          <p style="font-size:0.88rem;color:var(--muted);">Send raw content to the President. It will be formatted to the COD template before students see it.</p>
+          <label for="draft-year">Year (month)</label>
+          <select id="draft-year"></select>
+          <label for="draft-title">Working title</label>
+          <input id="draft-title" placeholder="e.g. Sanctified living journal week 1" />
+          <label for="draft-slug">Short slug (for code)</label>
+          <input id="draft-slug" placeholder="sanctified-journal" />
+          <label for="draft-seq">Assignment number in that year</label>
+          <input id="draft-seq" type="number" min="1" value="1" />
+          <label for="draft-due">Due date</label>
+          <input id="draft-due" type="date" />
+          <label for="draft-body">Assignment content (objectives, scripture, instructions…)</label>
+          <textarea id="draft-body" style="min-height:200px;"></textarea>
+          <button class="btn btn-primary" type="button" id="btn-save-draft">Save draft</button>
+          <button class="btn btn-outline" type="button" id="btn-send-president">Send to President for template</button>
+          <div id="draft-msg" class="msg info" hidden style="margin-top:10px;"></div>
+        </div>
+
+        <div class="card">
+          <h2 style="font-family:var(--head);margin:0 0 10px;">Mark student submissions</h2>
+          <div id="submissions"><p style="color:var(--muted);">Loading…</p></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 10px;">Your drafts</h2>
+        <div id="my-drafts"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-firebase.js"></script>
+  <script>
+    (function () {
+      var user = null;
+      var profile = null;
+      var lastDraftId = null;
+
+      document.getElementById("btn-out").addEventListener("click", function () {
+        window.COD_FIREBASE.auth().signOut().then(function () {
+          window.location.href = "/cod/coordinator-login.html";
+        });
+      });
+
+      function showDraftMsg(t, k) {
+        var el = document.getElementById("draft-msg");
+        el.hidden = false;
+        el.className = "msg " + k;
+        el.textContent = t;
+      }
+
+      function fillYearSelect() {
+        var sel = document.getElementById("draft-year");
+        (window.COD_DATA.YEARS || []).forEach(function (y) {
+          var opt = document.createElement("option");
+          opt.value = y.year;
+          opt.textContent = "Year " + y.year + " — " + y.title;
+          sel.appendChild(opt);
+        });
+      }
+
+      function loadDrafts() {
+        if (!user) return;
+        return window.COD_FIREBASE.collections
+          .drafts()
+          .where("coordinatorUid", "==", user.uid)
+          .get()
+          .then(function (snap) {
+            var root = document.getElementById("my-drafts");
+            if (snap.empty) {
+              root.innerHTML = "<p style='color:var(--muted);'>No drafts yet.</p>";
+              return;
+            }
+            var html = "<table><thead><tr><th>Code</th><th>Status</th><th>Updated</th></tr></thead><tbody>";
+            snap.forEach(function (doc) {
+              var d = doc.data();
+              html += "<tr><td>" + (d.code || d.title) + "</td><td>" + (d.status || "draft") + "</td><td>" + (d.updatedAt ? "recent" : "") + "</td></tr>";
+            });
+            html += "</tbody></table>";
+            root.innerHTML = html;
+          });
+      }
+
+      function loadSubmissions() {
+        return window.COD_FIREBASE.collections
+          .submissions()
+          .where("status", "==", "submitted")
+          .limit(40)
+          .get()
+          .then(function (snap) {
+            var root = document.getElementById("submissions");
+            if (snap.empty) {
+              root.innerHTML = "<p style='color:var(--muted);'>No pending submissions.</p>";
+              return;
+            }
+            var html = "";
+            snap.forEach(function (doc) {
+              var d = doc.data();
+              html +=
+                "<div style='border-bottom:1px solid var(--hair);padding:12px 0;'>" +
+                "<strong>" + (d.studentName || d.studentId) + "</strong> · assignment " + (d.assignmentId || "") +
+                "<p style='font-size:0.88rem;color:var(--muted);white-space:pre-wrap;'>" + (d.body || "") + "</p>" +
+                (d.link ? "<p><a href='" + d.link + "' target='_blank' rel='noopener'>Open link</a></p>" : "") +
+                "<label>Mark / feedback</label><textarea class='mark-ta' data-id='" + doc.id + "'></textarea>" +
+                "<button type='button' class='btn btn-outline btn-mark' data-id='" + doc.id + "'>Save mark</button> " +
+                "<button type='button' class='btn btn-primary btn-forward' data-id='" + doc.id + "'>Send marked work to President</button>" +
+                "</div>";
+            });
+            root.innerHTML = html;
+            root.querySelectorAll(".btn-mark").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                var id = btn.getAttribute("data-id");
+                var ta = root.querySelector(".mark-ta[data-id='" + id + "']");
+                window.COD_FIREBASE.collections.submissions().doc(id).update({
+                  coordinatorMark: ta.value,
+                  markedBy: profile.coordinatorId || user.uid,
+                  markedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                  status: "marked",
+                });
+              });
+            });
+            root.querySelectorAll(".btn-forward").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                var id = btn.getAttribute("data-id");
+                var ta = root.querySelector(".mark-ta[data-id='" + id + "']");
+                window.COD_FIREBASE.collections.submissions().doc(id).get().then(function (snap) {
+                  var d = snap.data();
+                  return window.COD_FIREBASE.collections.adminInbox().add({
+                    type: "marked_submission",
+                    submissionId: id,
+                    studentId: d.studentId,
+                    studentName: d.studentName,
+                    assignmentId: d.assignmentId,
+                    coordinatorMark: ta.value || d.coordinatorMark || "",
+                    coordinatorId: profile.coordinatorId,
+                    coordinatorName: profile.name,
+                    forwardedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: "new",
+                  }).then(function () {
+                    return window.COD_FIREBASE.collections.submissions().doc(id).update({
+                      status: "forwarded_to_president",
+                      forwardedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    });
+                  });
+                }).then(function () {
+                  loadSubmissions();
+                });
+              });
+            });
+          });
+      }
+
+      function draftPayload(status) {
+        var year = Number(document.getElementById("draft-year").value);
+        var seq = Number(document.getElementById("draft-seq").value) || 1;
+        var slug = document.getElementById("draft-slug").value.trim();
+        var title = document.getElementById("draft-title").value.trim();
+        return {
+          year: year,
+          seq: seq,
+          slug: slug,
+          title: title,
+          code: window.COD_DATA.formatAssignmentCode(year, seq, slug || title),
+          dueDate: document.getElementById("draft-due").value || "",
+          rawBody: document.getElementById("draft-body").value,
+          status: status || "coordinator_draft",
+          coordinatorUid: user.uid,
+          coordinatorId: profile.coordinatorId || "",
+          coordinatorName: profile.name || "",
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        };
+      }
+
+      document.getElementById("btn-save-draft").addEventListener("click", function () {
+        var data = draftPayload("coordinator_draft");
+        var p = lastDraftId
+          ? window.COD_FIREBASE.collections.drafts().doc(lastDraftId).set(data, { merge: true })
+          : window.COD_FIREBASE.collections.drafts().add(data).then(function (ref) {
+              lastDraftId = ref.id;
+            });
+        p.then(function () {
+          showDraftMsg("Draft saved.", "ok");
+          loadDrafts();
+        }).catch(function (e) {
+          showDraftMsg(e.message, "err");
+        });
+      });
+
+      document.getElementById("btn-send-president").addEventListener("click", function () {
+        var data = draftPayload("submitted_to_president");
+        data.submittedAt = firebase.firestore.FieldValue.serverTimestamp();
+        var p = lastDraftId
+          ? window.COD_FIREBASE.collections.drafts().doc(lastDraftId).set(data, { merge: true })
+          : window.COD_FIREBASE.collections.drafts().add(data).then(function (ref) {
+              lastDraftId = ref.id;
+            });
+        p.then(function () {
+          showDraftMsg("Sent to President for template formatting.", "ok");
+          loadDrafts();
+        }).catch(function (e) {
+          showDraftMsg(e.message, "err");
+        });
+      });
+
+      if (!window.COD_FIREBASE.init()) {
+        document.getElementById("gate").innerHTML = "<p class='msg err'>Firebase not configured.</p>";
+        return;
+      }
+
+      fillYearSelect();
+
+      window.COD_FIREBASE.auth().onAuthStateChanged(function (u) {
+        if (!u) {
+          window.location.href = "/cod/coordinator-login.html";
+          return;
+        }
+        user = u;
+        window.COD_FIREBASE.resolveRole(u).then(function (role) {
+          if (role === "admin") {
+            window.location.href = "/cod/admin.html";
+            return;
+          }
+          if (role !== "coordinator") {
+            document.getElementById("gate").innerHTML =
+              "<p class='msg err'>Not authorized. Use coordinator login.</p>";
+            return;
+          }
+          return window.COD_FIREBASE.getProfile(u.uid).then(function (p) {
+            profile = p || {};
+            document.getElementById("gate").hidden = true;
+            document.getElementById("portal").hidden = false;
+            document.getElementById("coord-name").textContent = profile.name || "Coordinator";
+            var quota = window.COD_DATA.assignmentQuotaForCoordinator(profile.coordinatorId);
+            document.getElementById("quota-line").textContent = quota.length
+              ? "Your assignment slots: " +
+                quota.map(function (q) {
+                  return "Year " + q.year + " (" + q.expectedCount + ")";
+                }).join(", ")
+              : "Assignment slots will appear once your coordinator ID is set.";
+            loadDrafts();
+            loadSubmissions();
+          });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

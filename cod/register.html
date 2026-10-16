@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student registration — Class of David</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/cod/academy.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="/cod/"><img src="/cod/logo.png" alt="" width="40" height="40" /><span>Class of David</span></a>
+      <nav class="nav-links">
+        <a href="/cod/course-outline.html">Course outline</a>
+        <a class="active" href="/cod/register.html">Register</a>
+        <a href="/cod/login.html">Student login</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap hero">
+    <p class="kicker">Cohort 2026/2027</p>
+    <h1>Student registration</h1>
+    <p style="color:var(--muted);">Create your account. You will receive a unique <strong>Student ID</strong> (example: <code>COD2027-0001</code>).</p>
+
+    <div class="grid-2" style="margin-top:24px;align-items:start;">
+      <div class="card">
+        <div id="msg" class="msg info" hidden></div>
+        <form id="reg-form">
+          <label for="first">First name</label>
+          <input id="first" name="first" required autocomplete="given-name" />
+          <label for="last">Last name</label>
+          <input id="last" name="last" required autocomplete="family-name" />
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required autocomplete="email" />
+          <label for="password">Password (8+ characters)</label>
+          <input id="password" name="password" type="password" required minlength="8" autocomplete="new-password" />
+          <label for="phone">Phone</label>
+          <input id="phone" name="phone" type="tel" autocomplete="tel" />
+          <label for="country">Country</label>
+          <input id="country" name="country" />
+          <label for="state">State / region</label>
+          <input id="state" name="state" />
+          <label for="expectations">What do you expect from Class of David?</label>
+          <textarea id="expectations" name="expectations"></textarea>
+          <label for="emergencyName">Emergency contact name</label>
+          <input id="emergencyName" name="emergencyName" />
+          <label for="emergencyPhone">Emergency contact phone</label>
+          <input id="emergencyPhone" name="emergencyPhone" type="tel" />
+          <button class="btn btn-primary" type="submit" id="btn-submit">Create account</button>
+        </form>
+      </div>
+      <div class="card">
+        <p class="kicker">Already registered?</p>
+        <p style="color:var(--muted);">Sign in on the student portal to view assignments for your current year.</p>
+        <p><a class="btn btn-outline" href="/cod/login.html">Go to student login →</a></p>
+        <hr style="border:none;border-top:1px solid var(--hair);margin:20px 0;" />
+        <p style="font-size:0.88rem;color:var(--faint);">
+          Prefer the Google Form? <a href="/cod/#register">Use the main registration section</a> — your coordinator will link your email to your Student ID.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-firebase.js"></script>
+  <script>
+    (function () {
+      var form = document.getElementById("reg-form");
+      var msg = document.getElementById("msg");
+      var btn = document.getElementById("btn-submit");
+
+      function show(text, kind) {
+        msg.hidden = false;
+        msg.className = "msg " + (kind || "info");
+        msg.textContent = text;
+      }
+
+      if (!window.COD_FIREBASE.init()) {
+        show("Firebase is not configured. Contact ddbs.htx@gmail.com.", "err");
+        btn.disabled = true;
+        return;
+      }
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        btn.disabled = true;
+        show("Creating your account…", "info");
+        var payload = {
+          first: document.getElementById("first").value,
+          last: document.getElementById("last").value,
+          email: document.getElementById("email").value,
+          password: document.getElementById("password").value,
+          phone: document.getElementById("phone").value,
+          country: document.getElementById("country").value,
+          state: document.getElementById("state").value,
+          expectations: document.getElementById("expectations").value,
+          emergencyName: document.getElementById("emergencyName").value,
+          emergencyPhone: document.getElementById("emergencyPhone").value,
+        };
+        window.COD_FIREBASE.registerStudent(payload)
+          .then(function (res) {
+            show(
+              "Welcome! Your Student ID is " +
+                res.studentId +
+                ". Redirecting to your portal…",
+              "ok"
+            );
+            setTimeout(function () {
+              window.location.href = "/cod/student.html";
+            }, 1800);
+          })
+          .catch(function (err) {
+            btn.disabled = false;
+            var code = err && err.code;
+            if (code === "auth/email-already-in-use") {
+              show("That email is already registered. Use student login.", "err");
+            } else {
+              show(err.message || String(err), "err");
+            }
+          });
+      });
+    })();
+  </script>
+</body>
+</html>
