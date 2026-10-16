@@ -193,6 +193,52 @@
     return snap.exists ? snap.data() : null;
   }
 
+  function friendlyAuthError(err) {
+    var code = err && err.code;
+    var msg = err && err.message;
+    if (code === "auth/user-not-found") {
+      return "No password login exists for this email yet. Use Forgot password below (after we enable your account), or email ddbs.htx@gmail.com for help.";
+    }
+    if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+      return "Wrong email or password. Use Forgot password to set a new one.";
+    }
+    if (code === "auth/too-many-requests") {
+      return "Too many tries. Wait a few minutes, then use Forgot password.";
+    }
+    if (code === "auth/invalid-email") return "That email address looks invalid.";
+    return msg || String(err);
+  }
+
+  async function sendPasswordReset(email) {
+    var fx = init();
+    if (!fx) throw new Error("Firebase is not configured.");
+    var e = String(email || "").trim();
+    if (!e) throw new Error("Enter your email first.");
+    await fx.auth.sendPasswordResetEmail(e);
+    return e;
+  }
+
+  async function signInPresident(email, password) {
+    var fx = init();
+    if (!fx) throw new Error("Firebase is not configured.");
+    var e = String(email || "").trim().toLowerCase();
+    if (!(global.COD_DATA && global.COD_DATA.isAdminEmail(e))) {
+      throw new Error("Use your president email: ddbs.htx@gmail.com or abuxberkeley@gmail.com");
+    }
+    var cred = await fx.auth.signInWithEmailAndPassword(e, password);
+    await usersRef(cred.user.uid).set(
+      {
+        role: "admin",
+        coordinatorId: "damilola",
+        email: e,
+        name: "Abe Damilola",
+        updatedAt: global.firebase.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+    return cred.user;
+  }
+
   function publishedAssignmentsQuery(year) {
     return init()
       .db.collection("cod_assignments")
@@ -219,6 +265,9 @@
     registerCoordinator: registerCoordinator,
     ensureCoordinatorProfile: ensureCoordinatorProfile,
     getProfile: getProfile,
+    friendlyAuthError: friendlyAuthError,
+    sendPasswordReset: sendPasswordReset,
+    signInPresident: signInPresident,
     publishedAssignmentsQuery: publishedAssignmentsQuery,
     collections: {
       drafts: function () {

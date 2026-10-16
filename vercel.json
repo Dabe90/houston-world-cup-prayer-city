@@ -38,6 +38,8 @@
     { "source": "/cod/coordinator/", "destination": "/cod/coordinator.html" },
     { "source": "/cod/admin", "destination": "/cod/admin.html" },
     { "source": "/cod/admin/", "destination": "/cod/admin.html" },
+    { "source": "/cod/president-login", "destination": "/cod/president-login.html" },
+    { "source": "/cod/president-login/", "destination": "/cod/president-login.html" },
     { "source": "/alive", "destination": "/alive.html" },
     { "source": "/alive/", "destination": "/alive.html" },
     { "source": "/alive-hangout", "destination": "/alive.html" },

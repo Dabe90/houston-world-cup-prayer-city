@@ -30,6 +30,9 @@
         <input id="password" type="password" required autocomplete="current-password" />
         <button class="btn btn-primary" type="submit">Sign in</button>
       </form>
+      <p style="margin-top:14px;">
+        <button type="button" class="btn btn-outline" id="btn-forgot" style="width:100%;">Forgot password</button>
+      </p>
       <p style="margin-top:16px;font-size:0.9rem;color:var(--muted);">
         New student? <a href="/cod/register.html">Register here</a>
       </p>
@@ -64,6 +67,21 @@
           else window.location.href = "/cod/student.html";
         });
       });
+      document.getElementById("btn-forgot").addEventListener("click", function () {
+        var email = document.getElementById("email").value.trim();
+        if (!email) {
+          show("Enter your email first.", "err");
+          return;
+        }
+        window.COD_FIREBASE.sendPasswordReset(email)
+          .then(function (e) {
+            show("Check " + e + " for a password reset link.", "ok");
+          })
+          .catch(function (err) {
+            show(window.COD_FIREBASE.friendlyAuthError(err), "err");
+          });
+      });
+
       form.addEventListener("submit", function (e) {
         e.preventDefault();
         var email = document.getElementById("email").value.trim();
@@ -71,7 +89,7 @@
         window.COD_FIREBASE.auth()
           .signInWithEmailAndPassword(email, password)
           .catch(function (err) {
-            show(err.message || "Sign-in failed.", "err");
+            show(window.COD_FIREBASE.friendlyAuthError(err), "err");
           });
       });
     })();
