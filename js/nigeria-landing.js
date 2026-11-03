@@ -649,10 +649,6 @@
   }
 
   function scrollToAuth() {
-    if (window.NigeriaDashboard && NigeriaDashboard.openAuthPanel) {
-      NigeriaDashboard.openAuthPanel();
-      return;
-    }
     try {
       sessionStorage.setItem('ngAuthPanelOpen', '1');
     } catch (e) {}
@@ -660,13 +656,26 @@
     if (auth) {
       auth.classList.remove('hidden');
       auth.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
     }
-    var checking = document.getElementById('auth-checking');
-    if (checking) checking.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    var status = document.getElementById('auth-panel-status');
+    if (status && !(window.NigeriaDashboard && window.__ngDashReady)) {
+      status.className = 'rounded-xl border px-3 py-2.5 text-sm border-slate-200 bg-slate-50 text-slate-600';
+      status.textContent = 'Loading sign-in…';
+    }
+    var ready = window.NgBoot && NgBoot.whenReady ? NgBoot.whenReady() : Promise.resolve(true);
+    ready.then(function () {
+      if (window.NigeriaDashboard && NigeriaDashboard.openAuthPanel) {
+        NigeriaDashboard.openAuthPanel();
+      }
+    });
   }
 
   function init() {
+    setTimeout(function () {
+      document.querySelectorAll('.hero-mesh, .ng-alive-bg').forEach(function (el) {
+        el.classList.add('ng-photo');
+      });
+    }, 1200);
     renderAliveStrip();
     renderUnits();
     renderPrograms();

@@ -3549,12 +3549,17 @@
     var monthSel = $('all-reports-month');
     if (!yearSel || yearSel.options.length) return;
     var now = new Date();
+    // Default to previous calendar month so newly submitted monthly reports are visible
+    // (leaders usually file last month's report early in the new month).
+    var defaultMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    var defaultYear = defaultMonthDate.getFullYear();
+    var defaultMonth = defaultMonthDate.getMonth() + 1;
     var y = now.getFullYear();
     for (var yr = y; yr >= y - 2; yr--) {
       var opt = document.createElement('option');
       opt.value = String(yr);
       opt.textContent = String(yr);
-      if (yr === y) opt.selected = true;
+      if (yr === defaultYear) opt.selected = true;
       yearSel.appendChild(opt);
     }
     if (monthSel && monthSel.options.length <= 1) {
@@ -3575,6 +3580,7 @@
         var mOpt = document.createElement('option');
         mOpt.value = String(i + 1);
         mOpt.textContent = name;
+        if (i + 1 === defaultMonth) mOpt.selected = true;
         monthSel.appendChild(mOpt);
       });
     }
@@ -4279,6 +4285,13 @@
   function bind() {
     renderUnitOptions();
     var hashTab = (window.location.hash || '').replace('#', '');
+    try {
+      var storedTab = sessionStorage.getItem('ngHubTab');
+      if (storedTab) {
+        sessionStorage.removeItem('ngHubTab');
+        if (!hashTab) hashTab = storedTab;
+      }
+    } catch (e) {}
     if (['home', 'programs', 'units', 'my-members', 'new-members', 'kingdom-workforce', 'reports'].indexOf(hashTab) >= 0) {
       activeTab = hashTab;
     }
@@ -4457,16 +4470,29 @@
     openAuthPanel: showAuthPanel,
   };
 
-  document.addEventListener('DOMContentLoaded', function () {
+  var dashboardStarted = false;
+  function startDashboard() {
+    if (dashboardStarted) return;
+    dashboardStarted = true;
     if (window.PrayerCityRouting && PrayerCityRouting.markStayOnNigeriaHub) {
       PrayerCityRouting.markStayOnNigeriaHub();
     }
-    initFirebase().then(function (ok) {
-      if (!ok) return;
-      bind();
-      if (wantsAuthPanelVisible() && !auth.currentUser) {
-        showAuthPanel(false);
-      }
-    });
-  });
+    initFirebase()
+      .then(function (ok) {
+        if (!ok) {
+          window.__ngDashFailed = true;
+          return;
+        }
+        bind();
+        window.__ngDashReady = true;
+        if (wantsAuthPanelVisible() && !auth.currentUser) {
+          showAuthPanel(false);
+        }
+      })
+      .catch(function () {
+        window.__ngDashFailed = true;
+      });
+  }
+  if (window.__ngDomReady || document.readyState === 'complete') startDashboard();
+  else document.addEventListener('DOMContentLoaded', startDashboard);
 })();

@@ -234,6 +234,13 @@ service cloud.firestore {
       return isCodAdmin() || isCodCoordinator();
     }
 
+    function isCodAttendanceOfficer() {
+      return request.auth != null
+        && codUserExists()
+        && codUserDoc().role == 'coordinator'
+        && codUserDoc().coordinatorId == 'amarachi';
+    }
+
     match /cod_meta/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
@@ -254,10 +261,13 @@ service cloud.firestore {
 
     match /cod_users/{userId} {
       allow read: if request.auth != null
-        && (request.auth.uid == userId || isCodAdmin());
+        && (
+          request.auth.uid == userId
+          || isCodStaff()
+        );
       allow create: if request.auth != null
         && request.auth.uid == userId
-        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.email.lower() == request.auth.token.email.lower()
         && (
           (
             request.resource.data.role == 'student'
@@ -313,6 +323,51 @@ service cloud.firestore {
       allow read, update: if isCodAdmin();
       allow create: if isCodCoordinator();
       allow delete: if false;
+    }
+
+    match /cod_announcements/{announcementId} {
+      allow read: if request.auth != null;
+      allow create: if isCodStaff()
+        && request.resource.data.subject is string
+        && request.resource.data.subject.size() > 0
+        && request.resource.data.body is string
+        && request.resource.data.body.size() > 0
+        && request.resource.data.createdByUid == request.auth.uid
+        && request.resource.data.audience in ['all', 'students', 'coordinators', 'coordinator', 'student'];
+      allow update, delete: if isCodAdmin()
+        || (isCodCoordinator() && resource.data.createdByUid == request.auth.uid);
+    }
+
+    match /cod_class_attendance/{sessionId} {
+      allow read: if request.auth != null;
+      allow create, update: if isCodAttendanceOfficer();
+      allow delete: if false;
+    }
+
+    // Anonymous page-reach counts. Writes come from our own /api/visit.
+    match /site_visits/{visitId} {
+      allow read: if isNigeriaSuperUser();
+      allow create: if request.resource.data.keys().hasOnly(['path', 'phase', 'country', 'createdAt', 'session', 'screen', 'net', 'dcl', 'resp'])
+        && request.resource.data.path in ['/', '/ng', '/index.html', '/ddbs-nig.html']
+        && request.resource.data.phase in ['arrived', 'readable']
+        && request.resource.data.country is string
+        && request.resource.data.country.size() <= 2
+        && request.resource.data.session is string
+        && request.resource.data.session.size() > 0
+        && request.resource.data.session.size() < 30
+        && request.resource.data.screen in ['phone', 'wide']
+        && request.resource.data.net is string
+        && request.resource.data.net.size() < 12
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.createdAt > request.time - duration.value(5, 'm')
+        && request.resource.data.createdAt < request.time + duration.value(2, 'm')
+        && request.resource.data.dcl is int
+        && request.resource.data.dcl >= 0
+        && request.resource.data.dcl <= 120000
+        && request.resource.data.resp is int
+        && request.resource.data.resp >= 0
+        && request.resource.data.resp <= 120000;
+      allow update, delete: if false;
     }
   }
 }

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Visitor counts — Prayer City</title>
+  <link rel="stylesheet" href="css/site-readable.css?v=20261103q" />
+  <style>
+    body { max-width: 52rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+    h1 { font-size: 1.6rem; margin: 0 0 0.35rem; }
+    p { color: #475569; }
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { text-align: left; padding: 0.55rem 0.7rem; border-bottom: 1px solid #e2e8f0; font-size: 0.92rem; }
+    th:nth-child(n+2), td:nth-child(n+2) { text-align: right; }
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.1rem; margin: 1rem 0; }
+    a { color: #008751; }
+  </style>
+</head>
+<body>
+  <p><a href="/ng">Nigeria hub</a></p>
+  <h1>Visitor counts</h1>
+  <p id="status">Checking your sign-in…</p>
+  <div id="summary" class="card" hidden></div>
+  <div id="table-wrap" hidden>
+    <table>
+      <thead>
+        <tr>
+          <th>Country</th>
+          <th>Arrived</th>
+          <th>Readable</th>
+          <th>Could read</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js?v=20261101a"></script>
+  <script>
+    var SUPER = { 'ddbs.htx@gmail.com': 1, 'abuxberkeley@gmail.com': 1 };
+    var statusEl = document.getElementById('status');
+    firebase.initializeApp(window.__FIREBASE_CONFIG__);
+    firebase.auth().onAuthStateChanged(function (user) {
+      var email = String((user && user.email) || '').toLowerCase();
+      if (!SUPER[email]) {
+        statusEl.textContent = 'Sign in as an organizer on the Nigeria hub, then open this page again.';
+        return;
+      }
+      var since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+      firebase.firestore().collection('site_visits')
+        .where('createdAt', '>', since)
+        .orderBy('createdAt', 'desc')
+        .limit(2000)
+        .get()
+        .then(function (snap) {
+          var byCountry = {};
+          var sessions = {};
+          snap.forEach(function (doc) {
+            var row = doc.data() || {};
+            var country = row.country || 'Unknown';
+            var session = row.session || doc.id;
+            var key = country + '|' + session + '|' + (row.path || '') + '|' + (row.phase || '');
+            if (sessions[key]) return;
+            sessions[key] = 1;
+            if (!byCountry[country]) byCountry[country] = { arrived: 0, readable: 0 };
+            if (row.phase === 'readable') byCountry[country].readable += 1;
+            else if (row.phase === 'arrived') byCountry[country].arrived += 1;
+          });
+          var names = Object.keys(byCountry).sort(function (a, b) {
+            return (byCountry[b].arrived + byCountry[b].readable) - (byCountry[a].arrived + byCountry[a].readable);
+          });
+          var arrived = 0;
+          var readable = 0;
+          var body = document.getElementById('rows');
+          names.forEach(function (name) {
+            var item = byCountry[name];
+            arrived += item.arrived;
+            readable += item.readable;
+            var rate = item.arrived ? Math.round((item.readable / item.arrived) * 100) : 0;
+            var tr = document.createElement('tr');
+            [name, String(item.arrived), String(item.readable), rate + '%'].forEach(function (text) {
+              var td = document.createElement('td');
+              td.textContent = text;
+              tr.appendChild(td);
+            });
+            body.appendChild(tr);
+          });
+          var overall = arrived ? Math.round((readable / arrived) * 100) : 0;
+          statusEl.textContent = 'Last 14 days. A person is counted once per visit, not by name.';
+          var summary = document.getElementById('summary');
+          summary.hidden = false;
+          summary.textContent = arrived + ' visits reached the page. ' + readable + ' of them became readable (' + overall + '%).';
+          document.getElementById('table-wrap').hidden = names.length === 0;
+          if (!names.length) statusEl.textContent = 'No visits recorded in the last 14 days yet.';
+        })
+        .catch(function () {
+          statusEl.textContent = 'The counts could not be loaded. Try again in a moment.';
+        });
+    });
+  </script>
+</body>
+</html>

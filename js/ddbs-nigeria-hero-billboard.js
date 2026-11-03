@@ -200,9 +200,9 @@
       '" aria-label="' +
       esc(slide.title) +
       '">' +
-      '<div class="hero-flyer-bg" style="background-image:url(\'' +
-      esc(slide.image) +
-      '\')" aria-hidden="true"></div>' +
+      '<div class="hero-flyer-bg"' +
+      (slide.image ? ' data-bg="' + esc(slide.image) + '"' : '') +
+      ' aria-hidden="true"></div>' +
       '<div class="hero-flyer-overlay" aria-hidden="true"></div>' +
       '<div class="hero-flyer-content max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-5 h-full flex items-center">' +
       '<div class="max-w-2xl min-w-0 flex flex-col justify-center text-white">' +
@@ -304,8 +304,26 @@
       return position - 1;
     }
 
+    var aheadTimer = null;
+    function paintOne(index) {
+      var slides = track.querySelectorAll('.hero-slide');
+      var slide = slides[index];
+      if (!slide) return;
+      var bg = slide.querySelector('.hero-flyer-bg');
+      if (!bg || bg.getAttribute('data-loaded') === '1') return;
+      var url = bg.getAttribute('data-bg');
+      if (!url) return;
+      bg.style.backgroundImage = 'url("' + String(url).replace(/"/g, '\\"') + '")';
+      bg.setAttribute('data-loaded', '1');
+    }
+
     function applyPosition(pos, animate) {
       position = pos;
+      paintOne(pos);
+      clearTimeout(aheadTimer);
+      aheadTimer = setTimeout(function () {
+        paintOne(pos + 1);
+      }, 1600);
       track.style.transition = animate
         ? 'transform ' + TRANSITION_MS + 'ms cubic-bezier(0.22, 1, 0.36, 1)'
         : 'none';

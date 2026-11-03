@@ -3,14 +3,15 @@
  */
 (function (global) {
   var LINKS = [
-    { href: '/', label: 'US volunteer dashboard', icon: 'fa-house' },
-    { href: 'ddbs-nig.html', label: 'DDBS Nigeria', icon: 'fa-flag' },
+    { href: '/?stay=us', label: 'US volunteer dashboard', icon: 'fa-house' },
+    { href: '/ng', label: 'DDBS Nigeria', icon: 'fa-flag' },
     { href: 'monthly-report.html', label: 'Monthly reports', icon: 'fa-file-lines' },
     { href: 'monthly-report.html?region=nigeria', label: 'Nigeria monthly report', icon: 'fa-chart-line' },
     { href: 'digest-intelligence-ops.html', label: 'Digest intelligence', icon: 'fa-robot' },
     { href: 'volunteer-hub.html', label: 'Volunteer hub', icon: 'fa-users' },
     { href: 'gallery.html', label: 'Gallery', icon: 'fa-images' },
     { href: 'faq.html', label: 'FAQ', icon: 'fa-circle-question' },
+    { href: '/visit-stats.html', label: 'Visitor counts', icon: 'fa-chart-line' },
   ];
 
   var SUPER_USER_EMAILS = {

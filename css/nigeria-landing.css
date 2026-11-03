@@ -43,11 +43,14 @@ body {
 }
 .hero-mesh {
   height: 100%;
+  background: linear-gradient(135deg, rgba(0, 60, 40, 0.82) 0%, rgba(15, 61, 92, 0.78) 45%, rgba(0, 100, 60, 0.75) 100%);
+  background-size: cover;
+  background-position: center 28%;
+}
+.hero-mesh.ng-photo {
   background:
     linear-gradient(135deg, rgba(0, 60, 40, 0.82) 0%, rgba(15, 61, 92, 0.78) 45%, rgba(0, 100, 60, 0.75) 100%),
     url("../images/prayer-city-day2-team.jpeg") center 30% / cover no-repeat;
-  background-size: cover;
-  background-position: center 28%;
 }
 .hero-mesh::after {
   content: "";
@@ -198,10 +201,13 @@ body {
   animation: ngShimmer 4s linear infinite;
 }
 .ng-alive-bg {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(240, 253, 244, 0.88) 50%, rgba(232, 244, 252, 0.9) 100%);
+  opacity: 0.5;
+}
+.ng-alive-bg.ng-photo {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(240, 253, 244, 0.88) 50%, rgba(232, 244, 252, 0.9) 100%),
     url("../images/prayer-city-day2-team.jpeg") center/cover;
-  opacity: 0.5;
 }
 .ng-alive-photo { animation: ngPhotoFloat 5s ease-in-out infinite; }
 .ng-alive-photo:nth-child(2) { animation-delay: -0.8s; }
