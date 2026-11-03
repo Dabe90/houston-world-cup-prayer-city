@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>President login — Class of David</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/cod/academy.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="/cod/academy.css?v=20261103m" />
 </head>
 <body>
   <header class="nav">
@@ -13,6 +13,7 @@
       <a class="brand" href="/cod/"><img src="/cod/logo.png" alt="" width="40" height="40" /><span>Class of David</span></a>
       <nav class="nav-links">
         <a href="/cod/coordinator-login.html">Coordinator login</a>
+        <span data-cod-auth-nav id="cod-auth-nav"></span>
       </nav>
     </div>
   </header>
@@ -22,17 +23,30 @@
     <h1>Sign in to admin</h1>
     <p style="color:var(--muted);max-width:520px;">
       Use <strong>ddbs.htx@gmail.com</strong> or <strong>abuxberkeley@gmail.com</strong>.
-      First time? Click <strong>Forgot password</strong> — Firebase will email you a link to set your password.
+      First time? Click <strong>Forgot password</strong>. The link comes from <strong>ddbs.htx@gmail.com</strong> (Daughter Team), not Firebase noreply — check spam if needed.
     </p>
 
     <div class="card" style="max-width:460px;margin-top:20px;">
       <div id="msg" class="msg info" hidden></div>
+
+      <div id="reset-panel" hidden>
+        <h2 style="font-family:var(--head);font-size:1.25rem;margin:0 0 8px;">Set your new password</h2>
+        <p style="font-size:0.9rem;color:var(--muted);margin:0 0 14px;">You opened the link from your email. Choose a password (6+ characters), then continue to admin.</p>
+        <form id="reset-form">
+          <label for="new-password">New password</label>
+          <input id="new-password" type="password" required minlength="6" autocomplete="new-password" />
+          <label for="new-password2">Confirm new password</label>
+          <input id="new-password2" type="password" required minlength="6" autocomplete="new-password" />
+          <button class="btn btn-primary" type="submit" id="btn-save-password">Save password &amp; sign in</button>
+        </form>
+      </div>
+
       <form id="login-form">
         <label for="email">Email</label>
         <input id="email" type="email" required autocomplete="username" placeholder="ddbs.htx@gmail.com" />
         <label for="password">Password</label>
         <input id="password" type="password" required autocomplete="current-password" />
-        <button class="btn btn-primary" type="submit">Sign in to admin</button>
+        <button class="btn btn-primary" type="submit" id="btn-signin">Sign in to admin</button>
       </form>
       <p style="margin-top:14px;font-size:0.95rem;">
         <button type="button" class="btn btn-outline" id="btn-forgot" style="width:100%;">Forgot password — email me a reset link</button>
@@ -43,12 +57,13 @@
     </div>
   </main>
 
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="/js/firebase-config.js"></script>
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js?v=20261101a"></script>
   <script src="/js/cod-data.js"></script>
   <script src="/js/cod-firebase.js"></script>
+  <script src="/js/cod-auth-bar.js"></script>
   <script>
     (function () {
       var form = document.getElementById("login-form");
@@ -62,12 +77,84 @@
         show("Firebase is not configured.", "err");
         return;
       }
+      var loginForm = document.getElementById("login-form");
+      var resetPanel = document.getElementById("reset-panel");
+      var resetOobCode = "";
+
+      function stripActionParamsFromUrl() {
+        if (!window.history || !window.history.replaceState) return;
+        var clean = window.location.pathname + window.location.search.replace(/[?&](mode|oobCode|apiKey|lang|continueUrl)=[^&]*/gi, "").replace(/^\?&/, "?").replace(/\?$/, "");
+        window.history.replaceState({}, document.title, clean || window.location.pathname);
+      }
+
       window.COD_FIREBASE.auth().onAuthStateChanged(function (user) {
         if (!user) return;
         window.COD_FIREBASE.resolveRole(user).then(function (role) {
           if (role === "admin") window.location.href = "/cod/admin.html";
         });
       });
+
+      var action = window.COD_FIREBASE.parseAuthActionParams(window.location);
+      if (action.mode === "resetPassword" && action.oobCode) {
+        resetOobCode = action.oobCode;
+        loginForm.hidden = true;
+        resetPanel.hidden = false;
+        show("Checking your reset link…", "info");
+        window.COD_FIREBASE.verifyPasswordResetCode(resetOobCode)
+          .then(function (email) {
+            document.getElementById("email").value = email;
+            show("Link OK for " + email + ". Enter your new password below.", "ok");
+          })
+          .catch(function (err) {
+            resetPanel.hidden = true;
+            loginForm.hidden = false;
+            show(
+              (err && err.message) ||
+                "This reset link expired or was already used. Click Forgot password for a fresh link.",
+              "err"
+            );
+          });
+      }
+
+      document.getElementById("reset-form").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var p1 = document.getElementById("new-password").value;
+        var p2 = document.getElementById("new-password2").value;
+        if (p1 !== p2) {
+          show("Passwords do not match.", "err");
+          return;
+        }
+        if (!resetOobCode) {
+          show("Reset session missing. Use Forgot password again.", "err");
+          return;
+        }
+        show("Saving your new password…", "info");
+        window.COD_FIREBASE.confirmPasswordResetWithCode(resetOobCode, p1)
+          .then(function () {
+            stripActionParamsFromUrl();
+            var email = document.getElementById("email").value.trim();
+            return window.COD_FIREBASE.signInPresident(email, p1);
+          })
+          .then(function () {
+            show("Password saved. Opening admin…", "ok");
+            window.location.href = "/cod/admin.html";
+          })
+          .catch(function (err) {
+            var code = err && err.code;
+            if (code === "auth/weak-password") {
+              show("Use a stronger password (at least 6 characters).", "err");
+              return;
+            }
+            if (code === "auth/expired-action-code" || code === "auth/invalid-action-code") {
+              show("This link expired. Request a new one with Forgot password.", "err");
+              resetPanel.hidden = true;
+              loginForm.hidden = false;
+              return;
+            }
+            show((err && err.message) || window.COD_FIREBASE.friendlyAuthError(err), "err");
+          });
+      });
+
       document.getElementById("btn-forgot").addEventListener("click", function () {
         var email = document.getElementById("email").value.trim();
         if (!email) {
@@ -78,26 +165,32 @@
         window.COD_FIREBASE.sendPasswordReset(email)
           .then(function (e) {
             show(
-              "If an account exists for " +
+              "Sent to " +
                 e +
-                ", check your inbox (and spam) for a password reset link from Firebase.",
+                ". Allow 1–2 minutes. Look for: “Set your Prayer City dashboard password — Daughter Team” from ddbs.htx@gmail.com. Check spam and mark Not spam if needed.",
               "ok"
             );
           })
           .catch(function (err) {
-            show(window.COD_FIREBASE.friendlyAuthError(err), "err");
+            show((err && err.message) || window.COD_FIREBASE.friendlyAuthError(err), "err");
           });
       });
       form.addEventListener("submit", function (e) {
         e.preventDefault();
         var email = document.getElementById("email").value.trim();
         var password = document.getElementById("password").value;
+        var btn = document.getElementById("btn-signin");
+        btn.disabled = true;
+        show("Signing in…", "info");
         window.COD_FIREBASE.signInPresident(email, password)
           .then(function () {
             window.location.href = "/cod/admin.html";
           })
           .catch(function (err) {
-            show(window.COD_FIREBASE.friendlyAuthError(err), "err");
+            show((err && err.message) || window.COD_FIREBASE.friendlyAuthError(err), "err");
+          })
+          .finally(function () {
+            btn.disabled = false;
           });
       });
     })();

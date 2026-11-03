@@ -6,31 +6,26 @@
   <meta name="theme-color" content="#008751" />
   <link rel="icon" type="image/png" href="images/favicon.png" />
   <title>DDBS Nigeria — Dear Daughter Bible Study Group</title>
-  <meta name="description" content="Dear Daughter Bible Study Group Nigeria — global light since 2017, one billion souls for Christ, Jesus March, and the undiluted Word." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="canonical" href="https://prayercityhtx.com/ng" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Prayer City HTX" />
+  <meta property="og:url" content="https://prayercityhtx.com/ng" />
+  <meta property="og:title" content="DDBS Nigeria — Dear Daughter Bible Study Group" />
+  <meta property="og:description" content="Dear Daughter Bible Study Group Nigeria: global light since 2017, Jesus March, and the undiluted Word for the nations." />
+  <meta property="og:image" content="https://prayercityhtx.com/images/ddbs-nigeria/who-we-are-jesus-march.png" />
+  <meta property="og:image:width" content="766" />
+  <meta property="og:image:height" content="1024" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="DDBS Nigeria — Dear Daughter Bible Study Group" />
+  <meta name="twitter:description" content="Dear Daughter Bible Study Group Nigeria: global light since 2017, Jesus March, and the undiluted Word for the nations." />
+  <meta name="twitter:image" content="https://prayercityhtx.com/images/ddbs-nigeria/who-we-are-jesus-march.png" />
+  <meta name="description" content="Dear Daughter Bible Study Group Nigeria: global light since 2017, Jesus March, and the undiluted Word for the nations." />
+  <link rel="stylesheet" href="css/site-readable.css?v=20261103n" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" /></noscript>
+  <script src="js/load-tailwind.js?v=20261103n"></script>
   <script>
-    // If the Tailwind CDN is blocked/slow (common on some networks), keep the page usable.
-    (function () {
-      var failed = false;
-      function showFallbackNote() {
-        if (failed) return;
-        failed = true;
-        document.documentElement.classList.add('tw-fallback');
-      }
-      window.addEventListener('error', function (ev) {
-        var t = ev && ev.target;
-        if (t && t.src && String(t.src).indexOf('cdn.tailwindcss.com') !== -1) showFallbackNote();
-      }, true);
-      setTimeout(function () {
-        if (!window.tailwind) showFallbackNote();
-      }, 8000);
-    })();
-  </script>
-  <script>
-    tailwind.config = {
+    if (typeof loadTailwind === 'function') loadTailwind({
       theme: {
         extend: {
           colors: {
@@ -48,21 +43,22 @@
           },
         },
       },
-    };
+    });
+    else document.documentElement.classList.add('tw-fallback');
   </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'" />
   <link rel="stylesheet" href="css/mobile.css?v=20260915b" />
   <link rel="stylesheet" href="css/billion-countdown.css?v=20260713m" />
-  <link rel="stylesheet" href="css/nigeria-landing.css?v=20260915b" />
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
-  <script src="js/firebase-config.js?v=20260713m"></script>
+  <link rel="stylesheet" href="css/nigeria-landing.css?v=20261103n" />
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-storage-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-functions-compat.js"></script>
+  <script src="js/firebase-config.js?v=20261101a"></script>
   <style>
     /* Critical layout + Tailwind utilities we rely on even if the CDN fails */
-    body { font-family: "Plus Jakarta Sans", system-ui, sans-serif; }
+    body { font-family: system-ui, "Segoe UI", Roboto, "Plus Jakarta Sans", sans-serif; }
     .hidden { display: none !important; }
     .app-shell { min-height: calc(100vh - 4rem); }
     .sidebar-sticky { position: sticky; top: 3.75rem; max-height: calc(100vh - 4.5rem); overflow-y: auto; }
@@ -508,7 +504,7 @@
               <div class="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                 <div class="ng-reveal">
                   <p class="text-ng-green font-bold text-xs uppercase tracking-[0.2em] mb-2">Who we are</p>
-                  <h2 class="font-display text-2xl sm:text-3xl font-semibold text-slate-900 leading-tight">Dear Daughter Bible Study Group</h2>
+                  <h1 class="font-display text-2xl sm:text-3xl font-semibold text-slate-900 leading-tight">Dear Daughter Bible Study Group</h1>
                   <p class="mt-4 text-slate-700 leading-relaxed text-sm sm:text-base">
                     A community of <strong>believers who teach the Word of God</strong>. We are a <strong class="text-brand">global light</strong> called to shine all over the world — online, on the streets, and in every nation.
                   </p>
@@ -666,7 +662,7 @@
           <div class="ng-surface p-4 sm:p-5 space-y-3 sm:space-y-4">
             <div class="flex sm:block items-center gap-3 sm:text-center">
               <div class="relative inline-block shrink-0 mx-auto">
-                <img id="sidebar-avatar-img" class="hidden w-16 h-16 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-ng-green/20" alt="" />
+                <img id="sidebar-avatar-img" class="hidden w-16 h-16 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-ng-green/20" alt="Your profile photo" />
                 <div id="sidebar-avatar-initial" class="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-ng-green text-white text-xl sm:text-3xl font-bold flex items-center justify-center border-4 border-ng-green/20"></div>
                 <label class="absolute bottom-0 right-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-brand text-white flex items-center justify-center cursor-pointer shadow-md" title="Upload photo">
                   <i class="fas fa-camera text-[10px] sm:text-xs"></i>
@@ -803,7 +799,7 @@
         <a href="https://www.instagram.com/deardaughter_bs" target="_blank" rel="noopener" class="text-brand hover:underline">@deardaughter_bs</a>
         · <a href="/alive" class="text-brand hover:underline">Alive Hangout 2027</a>
         · <a href="/?stay=us" class="text-brand hover:underline">US dashboard</a>
-        · <a href="monthly-report.html" class="text-brand hover:underline">Monthly report</a>
+        · <a href="/ng#reports" class="text-brand hover:underline" onclick="try{sessionStorage.setItem('ngHubTab','reports')}catch(e){}">Monthly report</a>
       </p>
     </footer>
 
@@ -884,14 +880,14 @@
   <script src="js/nigeria-units.js?v=20260915d"></script>
   <script src="js/ddbs-nigeria-programs.js?v=20260713m"></script>
   <script src="js/ddbs-nigeria-meeting-notes.js?v=20260915a"></script>
-  <script src="js/monthly-unit-report.js?v=20260815h"></script>
-  <script src="js/nigeria-dashboard-report.js?v=20260914a"></script>
+  <script src="js/monthly-unit-report.js?v=20261007d"></script>
+  <script src="js/nigeria-dashboard-report.js?v=20261007d"></script>
   <script src="js/prayer-city-super-user.js?v=20260713n"></script>
   <script src="js/prayer-city-routing.js?v=20260915c"></script>
   <script src="js/nigeria-gallery-manifest.js?v=20260713m"></script>
   <script src="js/ddbs-nigeria-hero-billboard.js?v=20260713m"></script>
   <script src="js/nigeria-landing.js?v=20260713m"></script>
-  <script src="js/nigeria-dashboard.js?v=20260915d"></script>
+  <script src="js/nigeria-dashboard.js?v=20261007d"></script>
   <script>
     if (window.BillionCountdown) {
       if (document.getElementById("landing-billion-countdown")) {

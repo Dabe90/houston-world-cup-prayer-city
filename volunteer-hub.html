@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="robots" content="noindex, follow" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f3d5c" />
   <link rel="icon" type="image/png" href="images/favicon.png" />
   <link rel="apple-touch-icon" href="images/favicon.png" />
   <title>Volunteer hub — Prayer City</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/site-readable.css?v=20261103n" />
+  <script src="js/load-tailwind.js?v=20261103n"></script>
   <script>
-    tailwind.config = {
+    if (typeof loadTailwind === 'function') loadTailwind({
       theme: {
         extend: {
           colors: {
@@ -18,28 +20,28 @@
           boxShadow: { card: '0 4px 24px rgba(15, 61, 92, 0.08)' },
         },
       },
-    };
+    });
+    else document.documentElement.classList.add('tw-fallback');
   </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'" />
   <link rel="stylesheet" href="css/mobile.css" />
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
-  <script src="js/firebase-config.js"></script>
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-functions-compat.js"></script>
+  <script src="js/firebase-config.js?v=20261021i"></script>
   <script src="js/site-assets.js"></script>
   <script src="js/volunteer-role-guides.js"></script>
   <script src="js/virtual-session.js"></script>
   <script src="js/serve-day-flow.js"></script>
   <style>
     body { font-family: system-ui, sans-serif; }
+    #setup-banner { display: none !important; }
   </style>
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800 overflow-x-hidden">
 
-  <div id="setup-banner" class="hidden max-w-3xl mx-auto m-6 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900">
-    <p class="font-semibold">Configure <code class="bg-white px-1 rounded">js/firebase-config.js</code> and deploy Firestore rules (public read for <code class="bg-white px-1">volunteer_directory</code>).</p>
-  </div>
+  <div id="setup-banner" hidden style="display:none" class="max-w-3xl mx-auto m-6 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900"></div>
 
   <div id="hub-main">
     <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
@@ -55,7 +57,7 @@
             <span class="text-slate-300 hidden sm:inline">|</span>
             <a href="monthly-report.html" class="text-sm font-medium text-slate-600 hover:text-brand transition">Monthly report</a>
             <span class="text-slate-300 hidden sm:inline">|</span>
-            <a href="ddbs-nig.html" class="text-sm font-medium text-emerald-700 hover:text-emerald-900 transition">DDBS Nig</a>
+            <a href="/ng" class="text-sm font-medium text-emerald-700 hover:text-emerald-900 transition">DDBS Nig</a>
             <span class="text-slate-300 hidden sm:inline">|</span>
             <span class="text-sm font-semibold text-brand px-2 py-1 rounded-lg bg-brand-soft">Volunteer hub</span>
           </div>
@@ -222,7 +224,7 @@
           Email:
           <a href="mailto:ddbs.htx@gmail.com" class="text-brand font-semibold hover:underline">ddbs.htx@gmail.com</a>
         </p>
-        <p class="text-slate-500 text-xs mt-1">Houston World Cup Prayer City · Dear Daughter Bible Study Group</p>
+        <p class="text-slate-500 text-xs mt-1">Prayer City HTX · Dear Daughter Bible Study Group</p>
       </div>
       <a href="contact.html" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-sm font-semibold hover:bg-brand-light transition shadow-sm focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2">
         <i class="fas fa-envelope" aria-hidden="true"></i> Contact us
@@ -239,8 +241,7 @@
 
       var cfg = window.__FIREBASE_CONFIG__ || {};
       if (!cfg.apiKey || cfg.apiKey === 'REPLACE_ME') {
-        document.getElementById('setup-banner').classList.remove('hidden');
-        document.getElementById('hub-main').classList.add('hidden');
+        window.location.replace('/');
         return;
       }
 
@@ -541,7 +542,7 @@
             var img = r.photoURL
               ? '<img src="' +
                 r.photoURL.replace(/"/g, '&quot;') +
-                '" alt="" class="w-16 h-16 rounded-xl object-cover border border-slate-100" />'
+                '" alt="' + (r.name || "Volunteer").replace(/"/g, "&quot;") + '" class="w-16 h-16 rounded-xl object-cover border border-slate-100" />'
               : '<div class="w-16 h-16 rounded-xl bg-brand-soft text-brand font-bold text-xl flex items-center justify-center border border-slate-100">' +
                 initial +
                 '</div>';
@@ -853,7 +854,7 @@
         fetch(SELF_SERVE_SIGNIN_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email }),
+          body: JSON.stringify({ email: email, continueUrl: EMAIL_LINK_CONTINUE_URL }),
         })
           .then(function (r) {
             return r.text().then(function (t) {

@@ -2,11 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#8b3a4a" />
   <title>Course outline — Class of David 2026/2027</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>" />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/cod/academy.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="/cod/academy.css?v=20261103m" />
+  <style>
+    .outline-card { scroll-margin-top: 88px; }
+    .teacher-stack { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+    .teacher-chip {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px 8px 8px; border-radius: 999px;
+      border: 1px solid var(--hair); background: #fff;
+    }
+    .teacher-chip img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+    .teacher-chip-meta { display: flex; flex-direction: column; gap: 4px; line-height: 1.2; }
+    .instructor-tag {
+      display: inline-block;
+      width: fit-content;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--primary);
+      background: #f5ebe0;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .session-line { font-size: 0.88rem; color: var(--muted); margin-top: 8px; }
+  </style>
 </head>
 <body>
   <header class="nav">
@@ -15,57 +40,113 @@
       <nav class="nav-links">
         <a href="/cod/">Home</a>
         <a class="active" href="/cod/course-outline.html">Course outline</a>
-        <a href="/cod/register.html">Register</a>
-        <a href="/cod/login.html">Student login</a>
-        <a href="/cod/coordinator-login.html">Coordinator login</a>
+        <a href="/cod/register.html" data-cod-hide-when-signed-in>Create portal account</a>
+        <a href="/cod/students" data-cod-hide-when-signed-in>Student login</a>
+        <span data-cod-auth-nav id="cod-auth-nav"></span>
       </nav>
     </div>
   </header>
 
   <main class="wrap hero">
-    <p class="kicker">University-level standard · 9 months</p>
+    <p class="kicker">University-level standard · 9 months · WAT</p>
     <h1>Course outline</h1>
-    <p style="color:var(--muted);max-width:640px;">
-      Each <strong>year</strong> in Class of David equals <strong>one month</strong> of intensive formation.
-      You will receive assignments through your student portal as coordinators publish them.
+    <p style="color:var(--muted);max-width:680px;">
+      Live class every <strong>third Saturday</strong> (<span id="class-time-line"></span>).
+      <strong>Tuesday prayer at 10:00 PM WAT.</strong>
+      Assignments appear in your student portal when they are published.
     </p>
 
     <div class="card" style="margin-top:24px;" id="years-list"></div>
 
     <div class="card" style="margin-top:20px;">
-      <p class="kicker">Assignment workflow</p>
-      <h2 style="font-family:var(--head);margin:0 0 12px;">How tasks reach you</h2>
+      <p class="kicker">Your assignments</p>
+      <h2 style="font-family:var(--head);margin:0 0 12px;">How tasks work</h2>
       <ol style="color:var(--muted);padding-left:20px;">
-        <li>Coordinators draft assignments and send them to the President for template formatting.</li>
-        <li>Published tasks appear on your student dashboard (naming: <code>Y1-A01-topic</code>).</li>
-        <li>You submit before the due date; coordinators mark work and forward marked copies to the President.</li>
+        <li>Published tasks appear on your student dashboard (naming: <code>DearDaughter_COD07_HW1</code>).</li>
+        <li>Open a task, complete it, and submit before the due date.</li>
       </ol>
+      <p style="font-size:0.88rem;color:var(--faint);margin-top:12px;">
+        Reference only (prior cohort): <a href="/cod/yearbook/2024/">2023/2024 yearbook — Arise</a>.
+        Detailed sub-topic syllabi will be linked here when official materials are uploaded.
+      </p>
     </div>
   </main>
 
   <footer><div class="wrap">Class of David · Dear Daughter Bible Study Group</div></footer>
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js"></script>
   <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-firebase.js"></script>
+  <script src="/js/cod-auth-bar.js?v=20261101b"></script>
   <script>
     (function () {
+      var D = window.COD_DATA;
+      document.getElementById("class-time-line").textContent = D.DEFAULT_CLASS_TIME;
       var root = document.getElementById("years-list");
-      (window.COD_DATA.YEARS || []).forEach(function (y) {
-        var owners = window.COD_DATA.ASSIGNMENT_OWNERS[y.year] || [];
-        var ownerText = owners.length
-          ? owners.map(function (o) {
-              return o.name + " (" + o.count + " assignment" + (o.count > 1 ? "s" : "") + ")";
-            }).join(" · ")
-          : "Assignments TBA";
-        var teach = y.teachers.map(function (t) { return t.name; }).join(" & ");
-        var row = document.createElement("div");
-        row.className = "year-row";
-        row.innerHTML =
-          '<div class="year-num">' + y.year + '</div>' +
-          '<div><strong style="font-family:var(--head);font-size:1.25rem;">' + y.title + '</strong>' +
-          '<p style="margin:6px 0 0;color:var(--muted);font-size:0.92rem;">' + y.monthLabel + ' · Instructor: ' + teach + '</p>' +
-          '<p style="margin:6px 0 0;font-size:0.88rem;color:var(--faint);">Assignments: ' + ownerText + '</p></div>' +
-          '<span class="badge">' + y.monthLabel + '</span>';
-        root.appendChild(row);
-      });
+      var settings = {};
+      function draw() {
+        root.innerHTML = "";
+        (D.YEARS || []).forEach(function (y) {
+          var brief = D.sessionBrief(y.year, settings);
+          var owners = D.ASSIGNMENT_OWNERS[y.year] || [];
+          var ownerText = owners.length
+            ? owners.map(function (o) {
+                return o.name + " (" + o.count + " assignment" + (o.count > 1 ? "s" : "") + ")";
+              }).join(" · ")
+            : "Assignments TBA";
+          var chips = (y.teachers || [])
+            .map(function (t) {
+              var p = D.PEOPLE[t.id];
+              var img = p && p.image ? '<img src="' + p.image + '" alt="" />' : "";
+              return (
+                '<div class="teacher-chip">' +
+                img +
+                '<span class="teacher-chip-meta"><strong>' +
+                t.name +
+                '</strong><span class="instructor-tag">Class Instructor</span></span></div>'
+              );
+            })
+            .join("");
+          var row = document.createElement("div");
+          row.className = "year-row outline-card";
+          row.id = "year-" + y.year;
+          row.innerHTML =
+            '<div class="year-num">' + y.year + "</div>" +
+            '<div><strong style="font-family:var(--head);font-size:1.25rem;">' +
+            y.title +
+            "</strong>" +
+            '<p style="margin:6px 0 0;color:var(--primary);font-weight:700;">' +
+            y.calendarMonth +
+            "</p>" +
+            '<div class="teacher-stack">' +
+            chips +
+            "</div>" +
+            '<p class="session-line"><strong>Class:</strong> ' +
+            (brief.classDateLabel || "TBA") +
+            " · " +
+            (brief.classTime || D.DEFAULT_CLASS_TIME) +
+            "</p>" +
+            '<p class="session-line"><strong>Prayer:</strong> ' +
+            D.TUESDAY_PRAYER_LABEL +
+            "</p>" +
+            '<p style="margin:8px 0 0;font-size:0.88rem;color:var(--faint);">Assignments: ' +
+            ownerText +
+            "</p></div>" +
+            '<span class="badge">' +
+            y.calendarMonth +
+            "</span>";
+          root.appendChild(row);
+        });
+      }
+      draw();
+      if (window.COD_FIREBASE.init()) {
+        window.COD_FIREBASE.getSettings().then(function (s) {
+          settings = s || {};
+          draw();
+        });
+      }
     })();
   </script>
 </body>

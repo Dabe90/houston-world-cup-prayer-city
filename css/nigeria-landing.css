@@ -1,4 +1,7 @@
 /* DDBS Nigeria — landing styles */
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
 :root {
   --ng-green: #008751;
   --brand: #0f3d5c;
@@ -1578,6 +1581,14 @@ body.ng-units-modal-open {
   flex-direction: column;
   gap: 0.5rem;
 }
+/* Keep Tailwind/page .hidden winning over .report-cta display rules */
+.report-cta.hidden,
+.report-text-btn.hidden,
+.report-secondary-row.hidden,
+.report-inline-note.hidden,
+.report-contrib.hidden {
+  display: none !important;
+}
 .report-cta {
   display: inline-flex;
   align-items: center;
@@ -1621,6 +1632,20 @@ body.ng-units-modal-open {
 .report-cta-submit:hover:not(:disabled) {
   background: #0b314a;
 }
+.report-cta-edit {
+  background: linear-gradient(180deg, #c2410c, #9a3412);
+  box-shadow: 0 8px 18px rgba(194, 65, 12, 0.2);
+}
+.report-cta-edit:hover:not(:disabled) {
+  background: #9a3412;
+}
+.report-cta-retract {
+  background: linear-gradient(180deg, #64748b, #475569);
+  box-shadow: 0 8px 18px rgba(71, 85, 105, 0.2);
+}
+.report-cta-retract:hover:not(:disabled) {
+  background: #475569;
+}
 .report-secondary-row {
   display: flex;
   justify-content: center;
@@ -1657,6 +1682,12 @@ body.ng-units-modal-open {
 .report-export-head {
   margin-bottom: 0.55rem;
 }
+.report-export-hint {
+  margin: 0.2rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: #64748b;
+}
 .report-export-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1665,11 +1696,20 @@ body.ng-units-modal-open {
 .report-export-row-5 {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
+.report-export-row-6 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (min-width: 640px) {
+  .report-export-row-6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
 @media (max-width: 520px) {
   .report-export-row-5 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+#btn-download-pptx-file.report-export-chip i { color: #c2410c; }
 .report-export-chip {
   display: inline-flex;
   flex-direction: column;

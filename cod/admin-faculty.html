@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Faculty — President's office</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="/cod/academy.css?v=20261103m" />
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap-wide nav-inner">
+      <a class="brand" href="/cod/"><img src="/cod/logo.png" alt="" width="40" height="40" /><span>Class of David</span></a>
+      <nav class="nav-links">
+        <a href="/cod/admin.html">Office home</a>
+        <span data-cod-auth-nav id="cod-auth-nav"></span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap-wide hero">
+    <div id="gate" class="card">Loading…</div>
+    <div id="portal" hidden>
+      <p class="kicker">President's office</p>
+      <h1>Coordinators &amp; faculty</h1>
+      <p class="section-lead">Teaching coordinators and login status.</p>
+      <div id="office-nav"></div>
+      <div class="card" id="faculty-roster"></div>
+    </div>
+  </main>
+
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-firebase.js"></script>
+  <script src="/js/cod-president-dashboard.js"></script>
+  <script src="/js/cod-president-office.js"></script>
+  <script src="/js/cod-auth-bar.js"></script>
+  <script>
+    window.COD_PRESIDENT_OFFICE.boot("faculty", function () {
+      window.COD_FIREBASE.getSettings().then(function (s) {
+        window.COD_PRESIDENT_DASH.refreshPresidentDashboard(s);
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+/**
+ * First-paint styles that do not depend on Google Fonts, Tailwind CDN, or Font Awesome.
+ * Keeps the site readable on networks that stall those third-party hosts.
+ */
+html {
+  -webkit-text-size-adjust: 100%;
+  font-size: 16px;
+}
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #1e293b;
+  background: #f1f5f9;
+  line-height: 1.5;
+}
+.hidden { display: none !important; }
+a { color: #0f3d5c; }
+button, input, select, textarea { font-family: inherit; font-size: 16px; }
+html.tw-fallback body { visibility: visible; }

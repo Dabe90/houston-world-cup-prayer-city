@@ -38,5 +38,39 @@ service firebase.storage {
           || request.resource.contentType == ''
         );
     }
+
+    // Class of David staff prep (class material + Sample HW). Coordinators and President only.
+    function isCodAdmin() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && (
+          request.auth.token.email == 'ddbs.htx@gmail.com'
+          || request.auth.token.email == 'abuxberkeley@gmail.com'
+        );
+    }
+    function isCodCoordinator() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && (
+          request.auth.token.codRole == 'coordinator'
+          || request.auth.token.codRole == 'admin'
+          || request.auth.token.email.lower() == 'cissydupsy@gmail.com'
+          || request.auth.token.email.lower() == 'ekojaveronica26@gmail.com'
+          || request.auth.token.email.lower() == 'nnodumamara28@gmail.com'
+          || request.auth.token.email.lower() == 'ojelizzy2@gmail.com'
+        );
+    }
+    match /cod/staff/{allPaths=**} {
+      allow read: if isCodAdmin() || isCodCoordinator();
+      allow write: if false;
+    }
+
+    // Approved homework PDFs sent to students.
+    match /cod/published/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if isCodAdmin()
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+    }
   }
 }

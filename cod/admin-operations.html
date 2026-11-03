@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Operations — President's office</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="/cod/academy.css?v=20261103m" />
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap-wide nav-inner">
+      <a class="brand" href="/cod/"><img src="/cod/logo.png" alt="" width="40" height="40" /><span>Class of David</span></a>
+      <nav class="nav-links">
+        <a href="/cod/admin.html">Office home</a>
+        <span data-cod-auth-nav id="cod-auth-nav"></span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap-wide hero">
+    <div id="gate" class="card">Loading…</div>
+    <div id="portal" hidden>
+      <p class="kicker">President's office</p>
+      <h1>Operations</h1>
+      <p class="section-lead">Coordinator approvals, homework approval (PDF to students), and graded work inbox.</p>
+      <div id="office-nav"></div>
+
+      <div class="card">
+        <h2 class="section-title">Class session time</h2>
+        <p class="section-lead">Shown on the upcoming class banner (WAT).</p>
+        <label for="class-time">Time label</label>
+        <input id="class-time" type="text" placeholder="10:00 AM WAT" />
+        <button class="btn btn-primary" type="button" id="btn-save-class-time">Save class time</button>
+        <div id="class-time-msg" class="msg info" hidden style="margin-top:10px;"></div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <h2 class="section-title">Pending coordinator registrations</h2>
+        <p class="section-lead">Approve coordinators who registered at <a href="/cod/coordinator-register.html">coordinator register</a>.</p>
+        <div id="pending-coords"></div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <h2 class="section-title">Coordinator emails (allowlist)</h2>
+        <p class="section-lead">One email per line. Approving a registration adds their email here automatically.</p>
+        <textarea id="coord-emails" style="min-height:100px;"></textarea>
+        <button class="btn btn-primary" type="button" id="btn-save-emails">Save allowlist</button>
+        <div id="email-msg" class="msg info" hidden style="margin-top:10px;"></div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <h2 class="section-title">Assignments awaiting approval</h2>
+        <p class="section-lead">Approve a sheet to turn it into a PDF and send it to students.</p>
+        <div id="draft-queue"></div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <h2 class="section-title">Inbox — marked work from coordinators</h2>
+        <div id="inbox"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-storage-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="/js/firebase-config.js"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-firebase.js"></script>
+  <script src="/js/cod-hw-sheet.js"></script>
+  <script src="/js/cod-president-office.js"></script>
+  <script src="/js/cod-auth-bar.js"></script>
+  <script>
+    (function () {
+      var cachedSettings = {};
+
+      function loadDrafts() {
+        return window.COD_FIREBASE.collections
+          .drafts()
+          .where("status", "==", "submitted_to_president")
+          .get()
+          .then(function (snap) {
+            var root = document.getElementById("draft-queue");
+            if (snap.empty) {
+              root.innerHTML = "<p style='color:var(--muted);'>No assignments waiting for approval.</p>";
+              return;
+            }
+            var html = "";
+            snap.forEach(function (doc) {
+              var d = doc.data();
+              var fields = window.COD_HW_SHEET.fieldsFromDraft(d);
+              html +=
+                "<div style='border:1px solid var(--hair);border-radius:12px;padding:14px;margin-bottom:16px;'>" +
+                "<p class='kicker'>" + (d.coordinatorName || "Coordinator") + "</p>" +
+                "<strong>" + (d.title || d.code) + "</strong>" +
+                "<div style='margin:12px 0;'>" + window.COD_HW_SHEET.renderHtml(fields) + "</div>" +
+                "<label>Edit questions before approval (optional)</label>" +
+                "<textarea class='pub-questions' data-id='" + doc.id + "' style='min-height:120px;'>" +
+                (d.questions || d.rawBody || "") +
+                "</textarea>" +
+                "<button type='button' class='btn btn-primary btn-approve-hw' data-id='" +
+                doc.id +
+                "'>Approve and send PDF to students</button>" +
+                "<div class='msg info' hidden data-msg='" + doc.id + "' style='margin-top:10px;'></div>" +
+                "</div>";
+            });
+            root.innerHTML = html;
+            root.querySelectorAll(".btn-approve-hw").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                var id = btn.getAttribute("data-id");
+                var ta = root.querySelector(".pub-questions[data-id='" + id + "']");
+                var msg = root.querySelector("[data-msg='" + id + "']");
+                btn.disabled = true;
+                msg.hidden = false;
+                msg.className = "msg info";
+                msg.textContent = "Creating PDF…";
+                window.COD_FIREBASE.collections.drafts().doc(id).get().then(function (snap) {
+                  var d = snap.data();
+                  var fields = window.COD_HW_SHEET.fieldsFromDraft(d);
+                  fields.questions = ta.value;
+                  var title = d.title || window.COD_HW_SHEET.workingTitle(fields.seq);
+                  var blob = window.COD_HW_SHEET.toPdfBlob(fields);
+                  var path = "cod/published/" + id + "/" + title + ".pdf";
+                  var ref = window.COD_FIREBASE.init().storage.ref(path);
+                  return ref.put(blob, { contentType: "application/pdf" }).then(function () {
+                    return ref.getDownloadURL();
+                  }).then(function (url) {
+                    var bodyHtml = window.COD_HW_SHEET.renderHtml(fields);
+                    var pub = {
+                      year: d.year,
+                      seq: fields.seq,
+                      code: title,
+                      title: title,
+                      issueDate: fields.issueDate,
+                      dueDate: fields.dueDate,
+                      timeLabel: fields.timeLabel,
+                      instructions: fields.instructions,
+                      questions: fields.questions,
+                      bodyHtml: bodyHtml,
+                      pdfPath: path,
+                      pdfUrl: url,
+                      status: "published",
+                      publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                      draftId: id,
+                      coordinatorId: d.coordinatorId,
+                      coordinatorName: d.coordinatorName || "",
+                    };
+                    return window.COD_FIREBASE.collections.assignments().add(pub).then(function () {
+                      return window.COD_FIREBASE.collections.drafts().doc(id).update({
+                        status: "published",
+                        questions: fields.questions,
+                        bodyHtml: bodyHtml,
+                        pdfPath: path,
+                        pdfUrl: url,
+                        publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                      });
+                    });
+                  });
+                }).then(function () {
+                  loadDrafts();
+                }).catch(function (err) {
+                  btn.disabled = false;
+                  msg.className = "msg err";
+                  msg.textContent = err.message || String(err);
+                });
+              });
+            });
+          });
+      }
+
+      function loadInbox() {
+        return window.COD_FIREBASE.collections
+          .adminInbox()
+          .orderBy("forwardedAt", "desc")
+          .limit(30)
+          .get()
+          .then(function (snap) {
+            var root = document.getElementById("inbox");
+            if (snap.empty) {
+              root.innerHTML = "<p style='color:var(--muted);'>Inbox empty.</p>";
+              return;
+            }
+            var html = "<table><thead><tr><th>Student</th><th>Coordinator</th><th>Mark</th><th>Status</th></tr></thead><tbody>";
+            snap.forEach(function (doc) {
+              var d = doc.data();
+              html +=
+                "<tr><td>" + (d.studentName || d.studentId) + "</td><td>" + (d.coordinatorName || "") +
+                "</td><td style='white-space:pre-wrap;font-size:0.85rem;'>" + (d.coordinatorMark || "") +
+                "</td><td>" + (d.status || "new") + "</td></tr>";
+            });
+            html += "</tbody></table>";
+            root.innerHTML = html;
+          })
+          .catch(function () {
+            document.getElementById("inbox").innerHTML =
+              "<p class='msg info'>Inbox query needs a Firestore index. Open the Firebase console if this persists.</p>";
+          });
+      }
+
+      function loadPendingCoordinators() {
+        return window.COD_FIREBASE.db()
+          .collection("cod_users")
+          .where("role", "==", "pending_coordinator")
+          .get()
+          .then(function (snap) {
+            var root = document.getElementById("pending-coords");
+            if (snap.empty) {
+              root.innerHTML = "<p style='color:var(--muted);'>No pending registrations.</p>";
+              return;
+            }
+            var html =
+              "<table><thead><tr><th>Name</th><th>Email</th><th>Coordinator</th><th></th></tr></thead><tbody>";
+            snap.forEach(function (doc) {
+              var d = doc.data();
+              html +=
+                "<tr><td>" + (d.name || (d.first || "") + " " + (d.last || "")) +
+                "</td><td>" + (d.email || "") +
+                "</td><td>" + (d.coordinatorId || "") +
+                "</td><td><button type='button' class='btn btn-primary btn-approve' data-uid='" +
+                doc.id + "' data-email='" + (d.email || "") + "'>Approve</button></td></tr>";
+            });
+            html += "</tbody></table>";
+            root.innerHTML = html;
+            root.querySelectorAll(".btn-approve").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                var uid = btn.getAttribute("data-uid");
+                var email = String(btn.getAttribute("data-email") || "").toLowerCase();
+                btn.disabled = true;
+                window.COD_FIREBASE.getSettings().then(function (s) {
+                  var list = (s.coordinatorEmails || []).slice();
+                  if (email && list.indexOf(email) < 0) list.push(email);
+                  return window.COD_FIREBASE.settingsRef()
+                    .set(
+                      {
+                        coordinatorEmails: list,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                      },
+                      { merge: true }
+                    )
+                    .then(function () {
+                      return window.COD_FIREBASE.usersRef(uid).update({
+                        role: "coordinator",
+                        approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                      });
+                    })
+                    .then(function () {
+                      document.getElementById("coord-emails").value = list.join("\n");
+                      loadPendingCoordinators();
+                    });
+                });
+              });
+            });
+          });
+      }
+
+      window.COD_PRESIDENT_OFFICE.boot("operations", function () {
+        window.COD_FIREBASE.getSettings().then(function (s) {
+          cachedSettings = s || {};
+          document.getElementById("coord-emails").value = (s.coordinatorEmails || []).join("\n");
+          document.getElementById("class-time").value =
+            s.classSessionTime || window.COD_DATA.DEFAULT_CLASS_TIME || "";
+        });
+        loadPendingCoordinators();
+        loadDrafts();
+        loadInbox();
+
+        document.getElementById("btn-save-emails").addEventListener("click", function () {
+          var lines = document.getElementById("coord-emails").value
+            .split(/\r?\n/)
+            .map(function (l) { return l.trim().toLowerCase(); })
+            .filter(Boolean);
+          var msg = document.getElementById("email-msg");
+          window.COD_FIREBASE.settingsRef()
+            .set({ coordinatorEmails: lines, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+            .then(function () {
+              msg.hidden = false;
+              msg.className = "msg ok";
+              msg.textContent = "Saved " + lines.length + " coordinator email(s).";
+            });
+        });
+
+        document.getElementById("btn-save-class-time").addEventListener("click", function () {
+          var t = document.getElementById("class-time").value.trim();
+          var msg = document.getElementById("class-time-msg");
+          window.COD_FIREBASE.settingsRef()
+            .set({ classSessionTime: t, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+            .then(function () {
+              msg.hidden = false;
+              msg.className = "msg ok";
+              msg.textContent = "Class time saved.";
+            });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

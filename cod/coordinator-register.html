@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#8b3a4a" />
   <title>Coordinator registration — Class of David</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/cod/academy.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="/cod/academy.css?v=20261103m" />
 </head>
 <body>
   <header class="nav">
@@ -54,10 +55,10 @@
     </div>
   </main>
 
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="/js/firebase-config.js"></script>
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js?v=20261101a"></script>
   <script src="/js/cod-data.js"></script>
   <script src="/js/cod-firebase.js"></script>
   <script>
@@ -87,7 +88,14 @@
           phone: document.getElementById("phone").value,
           password: document.getElementById("password").value,
         })
-          .then(function () {
+          .then(function (res) {
+            if (res && res.status === "coordinator") {
+              show("You are already approved. Opening your coordinator dashboard…", "ok");
+              setTimeout(function () {
+                window.location.href = "/cod/coordinator.html";
+              }, 800);
+              return;
+            }
             show(
               "Registration received. The President will approve your account. You can sign in after approval.",
               "ok"
@@ -98,7 +106,13 @@
           })
           .catch(function (err) {
             btn.disabled = false;
-            show(err.message || String(err), "err");
+            show(
+              (window.COD_FIREBASE.friendlyAuthError &&
+                window.COD_FIREBASE.friendlyAuthError(err)) ||
+                err.message ||
+                String(err),
+              "err"
+            );
           });
       });
     })();

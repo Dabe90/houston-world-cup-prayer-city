@@ -9,11 +9,45 @@
     <meta name="theme-color" content="#0f3d5c" />
     <link rel="icon" type="image/png" href="images/favicon.png" />
     <link rel="apple-touch-icon" href="images/favicon.png" />
-    <title>Volunteer Hub — Houston World Cup Prayer City</title>
+    <title>Prayer City HTX — Jesus March Houston is next</title>
+  <meta name="description" content="Prayer City HTX with Dear Daughter Bible Study Group. World Cup prayer tents are complete. Next is Jesus March Houston — Saturday, November 21, 2026 at Hermann Park." />
+  <link rel="canonical" href="https://prayercityhtx.com/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Prayer City HTX" />
+  <meta property="og:url" content="https://prayercityhtx.com/" />
+  <meta property="og:title" content="Prayer City HTX — Jesus March Houston is next" />
+  <meta property="og:description" content="World Cup prayer tents are complete. Join us for Jesus March Houston — Saturday, November 21, 2026 at Hermann Park." />
+  <meta property="og:image" content="https://prayercityhtx.com/images/prayer-city-tent-setup.png" />
+  <meta property="og:image:width" content="1024" />
+  <meta property="og:image:height" content="682" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Prayer City HTX — Jesus March Houston is next" />
+  <meta name="twitter:description" content="World Cup prayer tents are complete. Join us for Jesus March Houston — Saturday, November 21, 2026 at Hermann Park." />
+  <meta name="twitter:image" content="https://prayercityhtx.com/images/prayer-city-tent-setup.png" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "NGO",
+    "name": "Prayer City HTX",
+    "alternateName": "Dear Daughter Bible Study Group",
+    "url": "https://prayercityhtx.com/",
+    "logo": "https://prayercityhtx.com/images/favicon.png",
+    "email": "ddbs.htx@gmail.com",
+    "image": "https://prayercityhtx.com/images/prayer-city-tent-setup.png",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "1325 La Concha Lane",
+      "addressLocality": "Houston",
+      "addressRegion": "TX",
+      "addressCountry": "US"
+    }
+  }
+  </script>
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/site-readable.css?v=20261103n" />
+    <script src="js/load-tailwind.js?v=20261103n"></script>
     <script>
-      tailwind.config = {
+      if (typeof loadTailwind === "function") loadTailwind({
         theme: {
           extend: {
             colors: {
@@ -34,20 +68,23 @@
             },
           },
         },
-      };
+      });
+      else document.documentElement.classList.add("tw-fallback");
     </script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      media="print"
+      onload="this.media='all'"
     />
     <link rel="stylesheet" href="css/mobile.css?v=20260915b" />
 
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
-  <script src="js/firebase-config.js"></script>
+    <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+    <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+    <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+    <script src="/js/vendor/firebase/firebase-storage-compat.js"></script>
+    <script src="/js/vendor/firebase/firebase-functions-compat.js"></script>
+  <script src="js/firebase-config.js?v=20261021i"></script>
     <script src="js/site-assets.js"></script>
     <script src="js/stock-images.js"></script>
     <script src="js/volunteer-role-guides.js"></script>
@@ -57,7 +94,7 @@
     <script src="js/serve-day-flow.js"></script>
     <script src="js/volunteer-tshirt.js"></script>
     <script src="js/volunteer-shift-picker.js"></script>
-    <script src="js/upcoming-programs-board.js"></script>
+    <script src="js/upcoming-programs-board.js?v=20261021i"></script>
     <script src="js/prayer-city-super-user.js?v=20260713n"></script>
     <script src="js/prayer-city-routing.js?v=20260915c"></script>
     <script>
@@ -148,32 +185,26 @@
         overflow-wrap: anywhere;
         word-break: break-word;
       }
+      #setup-banner {
+        display: none !important;
+      }
+      html:not(.pc-authed) .main-signed-in-only {
+        display: none !important;
+      }
     </style>
   </head>
   <body class="min-h-screen bg-slate-100 text-slate-800 overflow-x-hidden">
     <div
       id="setup-banner"
-      class="hidden max-w-3xl mx-auto m-6 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900"
-    >
-      <h2 class="font-bold text-lg mb-2">Firebase is not configured yet</h2>
-      <p class="text-sm mb-2">
-        Edit
-        <code class="bg-white px-1 rounded">js/firebase-config.js</code> with
-        your Web app keys from the Firebase console, then deploy again.
-      </p>
-      <p class="text-sm">
-        Enable <strong>Storage</strong> in Firebase Console and run
-        <code class="bg-white px-1 rounded"
-          >firebase deploy --only storage</code
-        >
-        for profile photos.
-      </p>
-    </div>
+      hidden
+      style="display:none"
+      class="max-w-3xl mx-auto m-6 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-900"
+    ></div>
 
     <!-- Main dashboard (home; signed-out visitors see volunteer CTA + sign-in, signed-in see full hub) -->
     <div
       id="dashboard-main"
-      class="hidden pb-16 w-full min-w-0 max-w-[100vw] overflow-x-hidden"
+      class="pb-16 w-full min-w-0 max-w-[100vw] overflow-x-hidden"
     >
       <nav
         class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm"
@@ -234,6 +265,7 @@
               href="https://www.zeffy.com/en-US/donation-form/houston-world-cup-prayer-city-movement"
               target="_blank"
               rel="noopener noreferrer"
+              title="Give via Zeffy — 100% to Dear Daughter Bible Study Group. Or Zelle give@jesusmarchhtx.com"
               class="touch-manipulation inline-flex items-center gap-1 rounded-full bg-amber-400 px-2.5 sm:px-3 py-1.5 text-xs font-bold text-brand shadow-sm hover:bg-amber-300 transition"
             >
               <i class="fas fa-heart" aria-hidden="true"></i> Donate
@@ -288,14 +320,28 @@
                   rel="noopener noreferrer"
                   class="text-brand-accent underline-offset-2 hover:underline focus:outline-none focus:ring-2 focus:ring-brand-accent/80 focus:ring-offset-2 focus:ring-offset-transparent rounded-sm"
                   >Dear Daughter Bible Study Group</a
-                ><span class="text-brand-accent"> · Houston 2026</span>
+                ><span class="text-brand-accent"> · Prayer City HTX</span>
               </p>
               <h1
                 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-bold leading-[1.15] sm:leading-tight mb-4 sm:mb-6"
               >
-                Over 5,000 people lifting Jesus up during the World Cup in
-                Houston
+                Jesus March Houston is next
               </h1>
+              <p class="text-base sm:text-lg text-white/90 leading-relaxed mb-4 sm:mb-5">
+                Thank God — the World Cup prayer tents are complete. Next we lift the name of Jesus in Houston:
+                <strong class="text-white">Saturday, November 21, 2026 · 1:00 PM CST · Hermann Park</strong>.
+              </p>
+              <p class="mb-4 sm:mb-6">
+                <a
+                  href="https://www.jesusmarchhtx.com/houston"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center justify-center gap-2 rounded-full bg-amber-400 text-brand font-bold text-sm sm:text-base px-5 py-3 min-h-[48px] hover:bg-amber-300 transition"
+                >
+                  Jesus March Houston details
+                  <i class="fas fa-arrow-right text-xs" aria-hidden="true"></i>
+                </a>
+              </p>
               <p
                 id="welcome-line"
                 class="text-base sm:text-lg text-white/95 font-medium mb-4 sm:mb-6"
@@ -361,7 +407,7 @@
             </h2>
             <p class="mt-2 text-sm sm:text-base text-slate-600 max-w-2xl">
               Watch a quick overview of the vision, the mission, and how you can
-              be part of what God is doing in Houston during the World Cup.
+              be part of what God is doing in Houston.
             </p>
           </div>
           <div class="mt-4 sm:mt-5 px-4 sm:px-6 pb-5 sm:pb-6">
@@ -399,23 +445,24 @@
               <p
                 class="text-brand-accent font-semibold tracking-wide uppercase text-xs mb-2"
               >
-                Houston World Cup
+                Next in Houston
               </p>
               <h2
                 class="text-xl sm:text-2xl font-display font-bold leading-tight mb-2"
               >
-                Volunteer with us
+                Jesus March Houston
               </h2>
               <p class="text-white/90 text-sm leading-relaxed mb-6">
-                Choose your shifts and join the movement — new volunteers start
-                here.
+                Saturday, November 21 · 1:00 PM CST · Hermann Park. Families welcome.
               </p>
               <a
-                href="volunteer/"
+                href="https://www.jesusmarchhtx.com/houston"
+                target="_blank"
+                rel="noopener noreferrer"
                 class="inline-flex items-center justify-center gap-2 w-full py-4 px-5 rounded-2xl bg-amber-400 text-brand font-bold text-base sm:text-lg shadow-lg hover:bg-amber-300 transition focus:outline-none focus:ring-2 focus:ring-amber-200 focus:ring-offset-2 focus:ring-offset-brand min-h-[52px]"
               >
-                <i class="fas fa-hand-holding-heart" aria-hidden="true"></i>
-                Sign up here
+                <i class="fas fa-flag" aria-hidden="true"></i>
+                Join the march
               </a>
             </div>
             <div
@@ -446,7 +493,7 @@
                         <img
                           id="profile-avatar-img"
                           src=""
-                          alt=""
+                          alt="Your profile photo"
                           class="w-full h-full object-cover hidden"
                         />
                         <span
@@ -585,23 +632,24 @@
               <p
                 class="text-brand-accent font-semibold tracking-wide uppercase text-xs mb-2"
               >
-                Houston World Cup
+                Next in Houston
               </p>
               <h2
                 class="text-xl sm:text-2xl font-display font-bold leading-tight mb-2"
               >
-                Volunteer with us
+                Jesus March Houston
               </h2>
               <p class="text-white/90 text-sm leading-relaxed mb-6">
-                Choose your shifts and join the movement — new volunteers start
-                here.
+                Saturday, November 21 · 1:00 PM CST · Hermann Park. Families welcome.
               </p>
               <a
-                href="volunteer/"
+                href="https://www.jesusmarchhtx.com/houston"
+                target="_blank"
+                rel="noopener noreferrer"
                 class="inline-flex items-center justify-center gap-2 w-full py-4 px-5 rounded-2xl bg-amber-400 text-brand font-bold text-base sm:text-lg shadow-lg hover:bg-amber-300 transition focus:outline-none focus:ring-2 focus:ring-amber-200 focus:ring-offset-2 focus:ring-offset-brand min-h-[52px]"
               >
-                <i class="fas fa-hand-holding-heart" aria-hidden="true"></i>
-                Sign up here
+                <i class="fas fa-flag" aria-hidden="true"></i>
+                Join the march
               </a>
             </div>
 
@@ -661,7 +709,7 @@
                   >email sign-in link</strong
                 >.
               </p>
-              <div class="mt-6 space-y-4 max-w-md">
+              <form id="visitor-signin-form" class="mt-6 space-y-4 max-w-md" autocomplete="on">
                 <div>
                   <label
                     class="block text-sm font-medium text-slate-700 mb-1"
@@ -671,9 +719,11 @@
                   <input
                     type="email"
                     id="gate-email"
+                    name="email"
                     class="w-full rounded-xl border border-slate-200 px-4 py-3 focus:ring-2 focus:ring-brand-light focus:border-brand outline-none transition"
                     placeholder="you@example.com"
-                    autocomplete="email"
+                    autocomplete="username"
+                    required
                   />
                 </div>
                 <div>
@@ -682,19 +732,20 @@
                     for="gate-password"
                     >Password
                     <span class="text-slate-400 font-normal"
-                      >(optional)</span
+                      >(optional for email link)</span
                     ></label
                   >
                   <input
                     type="password"
                     id="gate-password"
+                    name="password"
                     class="w-full rounded-xl border border-slate-200 px-4 py-3 focus:ring-2 focus:ring-brand-light outline-none transition"
                     placeholder="If you set one"
                     autocomplete="current-password"
                   />
                 </div>
                 <button
-                  type="button"
+                  type="submit"
                   id="btn-password-signin"
                   class="w-full py-3.5 rounded-xl bg-brand hover:bg-brand-light text-white font-semibold transition shadow-card"
                 >
@@ -711,7 +762,7 @@
                   id="gate-status"
                   class="text-sm min-h-[1.25rem] text-slate-600"
                 ></p>
-              </div>
+              </form>
             </section>
 
             <section
@@ -1039,7 +1090,22 @@
               <div
                 id="dashboard-upcoming-programs-grid"
                 class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5 min-w-0"
-              ></div>
+              >
+                <a class="program-card group bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden block no-underline text-inherit" href="https://www.jesusmarchhtx.com/houston" target="_blank" rel="noopener noreferrer">
+                  <div class="p-4 min-w-0">
+                    <p class="text-xs font-bold uppercase tracking-wider text-brand">November 21, 2026</p>
+                    <h3 class="font-semibold text-slate-900 mt-1">Jesus March Houston</h3>
+                    <p class="text-sm text-slate-600 mt-1">Saturday · 1:00 PM CST · Parking Lot C, Hermann Park. Families welcome.</p>
+                  </div>
+                </a>
+              </div>
+              <script>
+                if (window.PrayerCityPrograms) {
+                  window.PrayerCityPrograms.renderPublicBoard(
+                    document.getElementById("dashboard-upcoming-programs-grid"),
+                  );
+                }
+              </script>
             </section>
 
             <section
@@ -1158,7 +1224,7 @@
                     Daily prayer guide
                   </h3>
                   <p class="text-sm text-slate-600 mt-2">
-                    Prayer points for the Houston World Cup outreach.
+                    Prayer points for Houston and the nations.
                   </p>
                 </div>
               </div>
@@ -1555,7 +1621,7 @@
             >
           </p>
           <p class="text-slate-500 text-xs mt-1">
-            Houston World Cup Prayer City · Dear Daughter Bible Study Group
+            Prayer City HTX · Dear Daughter Bible Study Group
           </p>
         </div>
         <a
@@ -1588,9 +1654,18 @@
         var invalid = !cfg.apiKey || cfg.apiKey === "REPLACE_ME";
 
         if (invalid) {
-          document.getElementById("setup-banner").classList.remove("hidden");
-          if (document.getElementById("dashboard-main")) {
-            document.getElementById("dashboard-main").classList.add("hidden");
+          var mainEl = document.getElementById("dashboard-main");
+          if (mainEl) mainEl.classList.remove("hidden");
+          var progGridEarly = document.getElementById(
+            "dashboard-upcoming-programs-grid",
+          );
+          if (progGridEarly && window.PrayerCityPrograms) {
+            window.PrayerCityPrograms.renderPublicBoard(progGridEarly);
+          }
+          var welcomeEarly = document.getElementById("welcome-line");
+          if (welcomeEarly) {
+            welcomeEarly.textContent =
+              "Welcome. Sign in below for your volunteer hub, or join us at Jesus March Houston.";
           }
           return;
         }
@@ -1664,6 +1739,7 @@
         var lastVolunteerData = {};
 
         function showVisitorHome() {
+          document.documentElement.classList.remove("pc-authed");
           els.dashboardMain.classList.remove("hidden");
           if (els.visitorSignin) els.visitorSignin.classList.remove("hidden");
           if (els.asideProfileVisitor)
@@ -1685,7 +1761,7 @@
             });
           if (els.welcomeLine) {
             els.welcomeLine.textContent =
-              "Welcome. Sign in here to see your personal volunteer schedule and training.";
+              "Welcome. Sign in for your volunteer hub — and join us November 21 at Jesus March Houston.";
           }
           var progGrid = document.getElementById(
             "dashboard-upcoming-programs-grid",
@@ -1696,6 +1772,7 @@
         }
 
         function showDash() {
+          document.documentElement.classList.add("pc-authed");
           els.dashboardMain.classList.remove("hidden");
           if (els.visitorSignin) els.visitorSignin.classList.add("hidden");
           if (els.asideProfileVisitor)
@@ -2088,7 +2165,7 @@
               card.innerHTML =
                 '<img src="' +
                 escapeHtml(imgSrc) +
-                '" alt="" class="w-full max-w-full h-40 object-cover" loading="lazy" onerror="this.onerror=null;this.src=\'' +
+                '" alt="' + escapeHtml(p.title || "Prayer City post") + '" class="w-full max-w-full h-40 object-cover" loading="lazy" onerror="this.onerror=null;this.src=\'' +
                 imgFallback.replace(/'/g, "\\'") +
                 '\'" />' +
                 '<div class="p-4 flex-1 flex flex-col min-w-0 max-w-full">' +
@@ -2187,7 +2264,7 @@
               div.innerHTML =
                 '<img src="' +
                 escapeHtml(imgSrc) +
-                '" alt="" class="w-full h-36 object-cover" loading="lazy" onerror="this.onerror=null;this.src=\'' +
+                '" alt="' + escapeHtml(t.title || "Prayer City tip") + '" class="w-full h-36 object-cover" loading="lazy" onerror="this.onerror=null;this.src=\'' +
                 imgFallback.replace(/'/g, "\\'") +
                 '\'" />' +
                 '<div class="p-4 flex-1 flex flex-col">' +
@@ -2654,7 +2731,7 @@
 
         completeEmailLinkIfNeeded().then(function () {});
 
-        els.btnPasswordSignin.addEventListener("click", function () {
+        function signInWithPassword() {
           var email = (els.gateEmail.value || "").trim();
           var pw = els.gatePassword.value || "";
           if (!email || !pw) {
@@ -2665,6 +2742,17 @@
           auth.signInWithEmailAndPassword(email, pw).catch(function (e) {
             setGateStatus(friendlyPasswordSignInError(e), true);
           });
+        }
+        var signinForm = document.getElementById("visitor-signin-form");
+        if (signinForm) {
+          signinForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            signInWithPassword();
+          });
+        }
+        els.btnPasswordSignin.addEventListener("click", function (e) {
+          if (e && e.preventDefault) e.preventDefault();
+          signInWithPassword();
         });
 
         function sendSignInLinkViaFirebaseClient(email) {
@@ -2702,7 +2790,10 @@
           fetch(SELF_SERVE_SIGNIN_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: email }),
+            body: JSON.stringify({
+              email: email,
+              continueUrl: EMAIL_LINK_CONTINUE_URL,
+            }),
           })
             .then(function (r) {
               return r.text().then(function (t) {
@@ -2728,7 +2819,7 @@
                 result.body.error === "not_registered"
               ) {
                 setGateStatus(
-                  result.body.message || "No record for this email.",
+                  "No volunteer record for this email yet. If you served with Prayer City, email ddbs.htx@gmail.com. Nigeria workers: join the Kingdom Workforce first, then use the same email.",
                   true,
                 );
                 return;

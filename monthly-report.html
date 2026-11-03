@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="robots" content="noindex, follow" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f3d5c" />
@@ -8,9 +9,10 @@
   <link rel="apple-touch-icon" href="images/favicon.png" />
   <title>Monthly unit report — Prayer City</title>
   <meta name="description" content="Submit your monthly ministry unit report — Prayer City serve teams, DDBS Groups 1–6, Bible study, comms, hospitality, workers training, and state & regional reports." />
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/site-readable.css?v=20261103n" />
+  <script src="js/load-tailwind.js?v=20261103n"></script>
   <script>
-    tailwind.config = {
+    if (typeof loadTailwind === 'function') loadTailwind({
       theme: {
         extend: {
           colors: {
@@ -19,11 +21,14 @@
           boxShadow: { card: '0 4px 24px rgba(15, 61, 92, 0.08)' },
         },
       },
-    };
+    });
+    else document.documentElement.classList.add('tw-fallback');
   </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'" />
   <link rel="stylesheet" href="css/mobile.css" />
+  <link rel="stylesheet" href="css/nigeria-landing.css?v=20261007c" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
   <style>
     body { font-family: system-ui, sans-serif; }
     .hero-pattern {
@@ -49,7 +54,7 @@
           <span class="text-slate-300 hidden sm:inline">|</span>
           <a href="volunteer-hub.html" class="text-sm font-medium text-slate-600 hover:text-brand transition">Volunteer hub</a>
           <span class="text-slate-300 hidden sm:inline">|</span>
-          <a href="ddbs-nig.html" class="text-sm font-medium text-emerald-700 hover:text-emerald-900 transition">DDBS Nig</a>
+          <a href="/ng" class="text-sm font-medium text-emerald-700 hover:text-emerald-900 transition">DDBS Nig</a>
           <span class="text-slate-300 hidden sm:inline">|</span>
           <span class="text-sm font-semibold text-brand px-2 py-1 rounded-lg bg-brand-soft">Monthly report</span>
         </div>
@@ -68,7 +73,11 @@
       <p class="mt-4 text-blue-100 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
         Share what God did through your team this month — Prayer City serve teams, DDBS Groups 1–6,
         Bible study, growth & retention, comms, welcome & hospitality, workers training, and state & regional reports.
-        Download a PDF or email a copy to yourself and leadership.
+      </p>
+      <p class="mt-4 mx-auto max-w-xl rounded-xl bg-emerald-500/20 border border-emerald-200/40 px-4 py-3 text-sm text-emerald-50">
+        <strong>Nigeria Group leaders:</strong> use
+        <a href="/ng#reports" class="underline font-semibold text-white">DDBS Nigeria → Reports</a>
+        for Share with teammates, Approve, Submit, Edit &amp; resubmit, and PPT download.
       </p>
       <div class="mt-6 flex flex-wrap justify-center gap-2 text-xs sm:text-sm">
         <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur"><i class="fas fa-hands-praying text-violet-200"></i> Serve teams</span>
@@ -182,19 +191,31 @@
 
         <section class="bg-white rounded-2xl shadow-card border border-slate-100 p-5 sm:p-6 space-y-3">
           <h2 class="font-semibold text-slate-900 flex items-center gap-2"><i class="fas fa-paper-plane text-brand"></i> Send or save your report</h2>
-          <p class="text-sm text-slate-600">Fill in the form, preview on the right, then download or email. Submitting also sends a copy to Prayer City leadership.</p>
-          <div class="grid sm:grid-cols-1 gap-3 pt-2">
+          <p class="text-sm text-slate-600">Fill in the form, preview on the right, then download, present, or email. Submitting also sends a copy to Prayer City leadership.</p>
+          <div class="grid sm:grid-cols-2 gap-3 pt-2">
             <button type="button" id="btn-download-pdf" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-brand hover:bg-brand-light text-white font-semibold py-3.5 px-6 transition focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2">
-              <i class="fas fa-file-pdf"></i> Download report as PDF
+              <i class="fas fa-file-pdf"></i> Download PDF
+            </button>
+            <button type="button" id="btn-download-pptx-file" class="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-900 font-semibold py-3.5 px-6 transition focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2">
+              <i class="fas fa-download"></i> Download PPT file
+            </button>
+            <button type="button" id="btn-download-pptx" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-semibold py-3.5 px-6 transition focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2">
+              <i class="fas fa-file-powerpoint"></i> Present (PPT view)
+            </button>
+            <button type="button" id="btn-present-bolt" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3.5 px-6 transition focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2">
+              <i class="fas fa-bolt"></i> Bolt presentation
+            </button>
+            <button type="button" id="btn-print-report" class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-semibold py-3.5 px-6 transition focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2">
+              <i class="fas fa-print"></i> Print
             </button>
             <button type="button" id="btn-email-report" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-semibold py-3.5 px-6 transition focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2">
               <i class="fas fa-envelope"></i> Send to my email
             </button>
-            <button type="button" id="btn-submit-coordinator" class="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-brand text-brand hover:bg-brand-soft font-semibold py-3.5 px-6 transition focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2">
+            <button type="button" id="btn-submit-coordinator" class="sm:col-span-2 w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-brand text-brand hover:bg-brand-soft font-semibold py-3.5 px-6 transition focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2">
               <i class="fas fa-church"></i> Submit to Prayer City leadership
             </button>
           </div>
-          <p class="text-xs text-slate-500 text-center pt-1">First-time email may require a one-time FormSubmit confirmation. Questions? <a href="mailto:ddbs.htx@gmail.com" class="text-brand font-medium hover:underline">ddbs.htx@gmail.com</a></p>
+          <p class="text-xs text-slate-500 text-center pt-1">Nigeria leaders: for the full share / approve / resubmit workflow, use <a href="/ng" class="text-emerald-700 font-medium hover:underline">DDBS Nigeria → Reports</a>. Questions? <a href="mailto:ddbs.htx@gmail.com" class="text-brand font-medium hover:underline">ddbs.htx@gmail.com</a></p>
         </section>
       </div>
 
@@ -220,25 +241,25 @@
   </main>
 
   <footer class="mt-8 py-8 px-4 border-t border-slate-200 bg-white text-center text-slate-500 text-sm no-print">
-    <p>Houston World Cup Prayer City Movement · Dear Daughter Bible Study Group</p>
+    <p>Prayer City HTX · Dear Daughter Bible Study Group</p>
     <p class="mt-2">
       <a href="volunteer-hub.html" class="text-brand hover:underline">Volunteer hub</a>
-      · <a href="ddbs-nig.html" class="text-emerald-700 hover:underline">DDBS Nigeria</a>
+      · <a href="/ng" class="text-emerald-700 hover:underline">DDBS Nigeria</a>
       · <a href="faq.html" class="text-brand hover:underline">FAQ</a>
       · <a href="/" class="text-brand hover:underline">Dashboard</a>
     </p>
   </footer>
 
-  <script src="js/monthly-unit-report.js"></script>
+  <script src="js/monthly-unit-report.js?v=20261007c"></script>
   <script>
     (function () {
       if (new URLSearchParams(location.search).get('region') !== 'nigeria') return;
       var s = [
-        'https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js',
-        'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js',
-        'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js',
+        '/js/vendor/firebase/firebase-app-compat.js',
+        '/js/vendor/firebase/firebase-auth-compat.js',
+        '/js/vendor/firebase/firebase-functions-compat.js',
         'js/firebase-config.js',
-        'js/nigeria-monthly-report-bridge.js',
+        'js/nigeria-monthly-report-bridge.js?v=20260715g',
       ];
       s.forEach(function (src) {
         var el = document.createElement('script');

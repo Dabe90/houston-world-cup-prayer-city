@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#8b3a4a" />
+  <title>Students — Class of David</title>
+  <link rel="canonical" href="https://prayercityhtx.com/cod/students" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/cod/academy.css?v=20261103m" />
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="/cod/"><img src="/cod/logo.png" alt="" width="40" height="40" /><span>Class of David</span></a>
+      <nav class="nav-links">
+        <a href="/cod/">Home</a>
+        <a href="/cod/course-outline.html">Course outline</a>
+        <a class="active" href="/cod/students">Students</a>
+        <span data-cod-auth-nav id="cod-auth-nav"></span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap hero">
+    <div class="card" data-cod-show-when-signed-in hidden>
+      <p class="kicker">Student portal</p>
+      <h1>You are already signed in</h1>
+      <p class="lead">Opening your dashboard…</p>
+    </div>
+    <div class="admit-grid" data-cod-hide-when-signed-in>
+      <div class="admit-copy">
+        <p class="kicker">Class of David · 2026/2027</p>
+        <h1>Congratulations on your admission</h1>
+        <p class="lead">
+          You have a place in this cohort. Create your portal login now so you can open your student dashboard — assignments, messages, and your Student ID.
+        </p>
+        <div class="admit-actions">
+          <a class="btn btn-primary" href="/cod/register">Register now</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="kicker">Already have a password?</p>
+        <h2 class="section-title">Sign in to the student portal</h2>
+        <div id="msg" class="msg info" hidden></div>
+        <form id="login-form">
+          <label for="email">Email</label>
+          <input id="email" type="email" required autocomplete="username" />
+          <label for="password">Password</label>
+          <input id="password" type="password" required autocomplete="current-password" />
+          <button class="btn btn-primary" type="submit" style="width:100%;">Sign in</button>
+        </form>
+        <p style="margin-top:14px;">
+          <button type="button" class="btn btn-outline" id="btn-forgot" style="width:100%;">Forgot password</button>
+        </p>
+        <p style="margin-top:16px;font-size:0.9rem;color:var(--muted);">
+          First time here? <a href="/cod/register">Register now</a> to access the student portal.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js?v=20261101a"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-firebase.js"></script>
+  <script src="/js/cod-auth-bar.js?v=20261101b"></script>
+  <script>
+    (function () {
+      var form = document.getElementById("login-form");
+      var msg = document.getElementById("msg");
+      function show(t, k) {
+        msg.hidden = false;
+        msg.className = "msg " + k;
+        msg.textContent = t;
+      }
+      if (!window.COD_FIREBASE.init()) {
+        show("Firebase not configured.", "err");
+        return;
+      }
+      window.COD_FIREBASE.auth().onAuthStateChanged(function (user) {
+        if (!user) return;
+        window.COD_AUTH_BAR.redirectSignedIn(user);
+      });
+      document.getElementById("btn-forgot").addEventListener("click", function () {
+        var email = document.getElementById("email").value.trim();
+        if (!email) {
+          show("Enter your email first.", "err");
+          return;
+        }
+        window.COD_FIREBASE.sendPasswordReset(email, {
+          continueUrl: window.location.origin + "/cod/students",
+        })
+          .then(function (e) {
+            show("Check " + e + " for a password reset link.", "ok");
+          })
+          .catch(function (err) {
+            show(window.COD_FIREBASE.friendlyAuthError(err), "err");
+          });
+      });
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var email = document.getElementById("email").value.trim();
+        var password = document.getElementById("password").value;
+        window.COD_FIREBASE.auth()
+          .signInWithEmailAndPassword(email, password)
+          .catch(function (err) {
+            show(window.COD_FIREBASE.friendlyAuthError(err), "err");
+          });
+      });
+    })();
+  </script>
+</body>
+</html>

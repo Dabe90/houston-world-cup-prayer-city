@@ -2,17 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#8b3a4a" />
   <title>Coordinator portal — Class of David</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/cod/academy.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="/cod/academy.css?v=20261103m" />
 </head>
 <body>
   <header class="nav">
     <div class="wrap nav-inner">
       <a class="brand" href="/cod/"><img src="/cod/logo.png" alt="" width="40" height="40" /><span>Class of David</span></a>
       <nav class="nav-links">
-        <button type="button" class="btn btn-outline" id="btn-out">Sign out</button>
+        <a href="/cod/">Home</a>
+        <a href="/cod/course-outline.html">Outline</a>
+        <span data-cod-auth-nav id="cod-auth-nav"></span>
       </nav>
     </div>
   </header>
@@ -23,58 +26,119 @@
       <p class="kicker">Coordinator portal</p>
       <h1 id="coord-name">Coordinator</h1>
       <p style="color:var(--muted);" id="quota-line"></p>
+      <nav class="coord-jump" aria-label="On this page">
+        <a href="#coord-prep">Class files</a>
+        <a href="#coord-hw">Sample HW</a>
+        <a href="#coord-att">Attendance</a>
+        <a href="#coord-write">Write assignment</a>
+        <a href="#coord-mark">Mark work</a>
+      </nav>
+      <div id="teaching-schedule"></div>
 
-      <div class="grid-2" style="margin-top:20px;align-items:start;">
-        <div class="card">
-          <h2 style="font-family:var(--head);margin:0 0 10px;">Draft new assignment</h2>
-          <p style="font-size:0.88rem;color:var(--muted);">Send raw content to the President. It will be formatted to the COD template before students see it.</p>
-          <label for="draft-year">Year (month)</label>
-          <select id="draft-year"></select>
-          <label for="draft-title">Working title</label>
-          <input id="draft-title" placeholder="e.g. Sanctified living journal week 1" />
-          <label for="draft-slug">Short slug (for code)</label>
-          <input id="draft-slug" placeholder="sanctified-journal" />
-          <label for="draft-seq">Assignment number in that year</label>
-          <input id="draft-seq" type="number" min="1" value="1" />
-          <label for="draft-due">Due date</label>
-          <input id="draft-due" type="date" />
-          <label for="draft-body">Assignment content (objectives, scripture, instructions…)</label>
-          <textarea id="draft-body" style="min-height:200px;"></textarea>
-          <button class="btn btn-primary" type="button" id="btn-save-draft">Save draft</button>
-          <button class="btn btn-outline" type="button" id="btn-send-president">Send to President for template</button>
-          <div id="draft-msg" class="msg info" hidden style="margin-top:10px;"></div>
-        </div>
+      <div class="card" id="coord-prep" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 8px;">Prepare your class</h2>
+        <p style="font-size:0.88rem;color:var(--muted);">Staff only — students cannot see these files. Year 1–9 class files are here, including the month you teach.</p>
+        <div id="prep-materials"></div>
+      </div>
 
-        <div class="card">
-          <h2 style="font-family:var(--head);margin:0 0 10px;">Mark student submissions</h2>
-          <div id="submissions"><p style="color:var(--muted);">Loading…</p></div>
-        </div>
+      <div class="card" id="coord-hw" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 8px;">Sample HW</h2>
+        <p style="font-size:0.88rem;color:var(--muted);">Prior-cohort homework for every year. Title these as Sample HW when you reuse them.</p>
+        <div id="sample-hw"></div>
+      </div>
+
+      <div class="card" id="coord-att" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 8px;">Class attendance</h2>
+        <p style="font-size:0.88rem;color:var(--muted);" id="att-help">Nnodum Amarachi marks who attended each third-Saturday class. Coordinators and students can see the roll. Missing class can get a student dropped.</p>
+        <label for="att-session">Class session</label>
+        <select id="att-session"></select>
+        <p id="att-meta" style="font-size:0.88rem;color:var(--muted);margin:8px 0 12px;"></p>
+        <div id="att-roster"></div>
+        <button type="button" class="btn btn-primary" id="btn-save-att" style="margin-top:12px;">Save attendance</button>
+        <div id="att-msg" class="msg info" hidden style="margin-top:10px;"></div>
+      </div>
+
+      <div class="card" id="coord-msg" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 8px;">Send a message</h2>
+        <p style="font-size:0.88rem;color:var(--muted);">Send to everyone, all students, all coordinators, the President, or one coordinator.</p>
+        <label for="msg-audience">Send to</label>
+        <select id="msg-audience"></select>
+        <label for="msg-subject">Subject</label>
+        <input id="msg-subject" type="text" placeholder="e.g. Assignment reminder" />
+        <label for="msg-body">Message</label>
+        <textarea id="msg-body" style="min-height:120px;" placeholder="Write your message…"></textarea>
+        <button type="button" class="btn btn-primary" id="btn-send-msg">Send message</button>
+        <div id="msg-status" class="msg info" hidden style="margin-top:10px;"></div>
       </div>
 
       <div class="card" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 12px;">Inbox</h2>
+        <div id="announcements"></div>
+      </div>
+
+      <div class="hw-editor-grid" id="coord-write" style="margin-top:20px;">
+        <div class="card">
+          <h2 style="font-family:var(--head);margin:0 0 10px;">Write assignment</h2>
+          <p style="font-size:0.88rem;color:var(--muted);">Use the Sample HW template. Type your questions, then send to the President for approval. After approval it becomes a PDF for students.</p>
+          <label for="draft-year">Academic year</label>
+          <select id="draft-year"></select>
+          <label for="draft-seq">Assignment number</label>
+          <input id="draft-seq" type="number" min="1" value="1" />
+          <label for="draft-title">Working title</label>
+          <input id="draft-title" readonly />
+          <label for="draft-issue">Issue date</label>
+          <input id="draft-issue" type="date" />
+          <label for="draft-due">Submission deadline</label>
+          <input id="draft-due" type="date" />
+          <label for="draft-time">Time</label>
+          <input id="draft-time" value="11:59pm" />
+          <label for="draft-instructions">Instructions</label>
+          <textarea id="draft-instructions" style="min-height:80px;"></textarea>
+          <label for="draft-questions">Questions (type the assignment here)</label>
+          <textarea id="draft-questions" style="min-height:180px;" placeholder="1. &#10;2. "></textarea>
+          <p style="margin:8px 0 12px;">
+            <button type="button" class="btn btn-outline" id="btn-view-sample">View Sample HW template</button>
+          </p>
+          <button class="btn btn-primary" type="button" id="btn-save-draft">Save draft</button>
+          <button class="btn btn-outline" type="button" id="btn-send-president">Send to President for approval</button>
+          <div id="draft-msg" class="msg info" hidden style="margin-top:10px;"></div>
+        </div>
+        <div class="card">
+          <h2 style="font-family:var(--head);margin:0 0 10px;">Live template</h2>
+          <p style="font-size:0.88rem;color:var(--muted);">This is the sheet students will receive as a PDF after the President approves it.</p>
+          <div id="hw-preview"></div>
+        </div>
+      </div>
+      <div class="card" id="coord-mark" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 10px;">Mark student submissions</h2>
+        <div id="submissions"><p style="color:var(--muted);">Loading…</p></div>
+      </div>
+
+      <div class="card" id="coord-drafts" style="margin-top:20px;">
         <h2 style="font-family:var(--head);margin:0 0 10px;">Your drafts</h2>
         <div id="my-drafts"></div>
       </div>
     </div>
   </main>
 
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-storage-compat.js"></script>
   <script src="/js/firebase-config.js"></script>
   <script src="/js/cod-data.js"></script>
-  <script src="/js/cod-firebase.js"></script>
+  <script src="/js/cod-firebase.js?v=20261103m"></script>
+  <script src="/js/cod-portal-ui.js"></script>
+  <script src="/js/cod-attendance-ui.js"></script>
+  <script src="/js/cod-staff-materials.js?v=20261103m"></script>
+  <script src="/js/cod-staff-materials-ui.js?v=20261103m"></script>
+  <script src="/js/cod-hw-sheet.js"></script>
+  <script src="/js/cod-auth-bar.js"></script>
   <script>
     (function () {
       var user = null;
       var profile = null;
       var lastDraftId = null;
-
-      document.getElementById("btn-out").addEventListener("click", function () {
-        window.COD_FIREBASE.auth().signOut().then(function () {
-          window.location.href = "/cod/coordinator-login.html";
-        });
-      });
 
       function showDraftMsg(t, k) {
         var el = document.getElementById("draft-msg");
@@ -88,9 +152,18 @@
         (window.COD_DATA.YEARS || []).forEach(function (y) {
           var opt = document.createElement("option");
           opt.value = y.year;
-          opt.textContent = "Year " + y.year + " — " + y.title;
+          opt.textContent = y.calendarMonth + " · Year " + y.year + " — " + y.title;
           sel.appendChild(opt);
         });
+      }
+
+      function syncTitleAndPreview() {
+        var seq = window.COD_HW_SHEET.seqNum(document.getElementById("draft-seq").value);
+        document.getElementById("draft-title").value = window.COD_HW_SHEET.workingTitle(seq);
+        window.COD_HW_SHEET.paintPreview(
+          document.getElementById("hw-preview"),
+          window.COD_HW_SHEET.fieldsFromForm()
+        );
       }
 
       function loadDrafts() {
@@ -108,49 +181,108 @@
             var html = "<table><thead><tr><th>Code</th><th>Status</th><th>Updated</th></tr></thead><tbody>";
             snap.forEach(function (doc) {
               var d = doc.data();
-              html += "<tr><td>" + (d.code || d.title) + "</td><td>" + (d.status || "draft") + "</td><td>" + (d.updatedAt ? "recent" : "") + "</td></tr>";
+              var st = d.status || "draft";
+              if (st === "submitted_to_president") st = "Awaiting approval";
+              else if (st === "published") st = "Sent to students";
+              else if (st === "coordinator_draft") st = "Draft";
+              html += "<tr><td>" + (d.code || d.title) + "</td><td>" + st + "</td><td>" + (d.updatedAt ? "recent" : "") + "</td></tr>";
             });
             html += "</tbody></table>";
             root.innerHTML = html;
           });
       }
 
+      function notifyStudent(sub, mark, status, deadline) {
+        if (!sub || !sub.studentUid) return Promise.resolve();
+        var title = sub.assignmentTitle || sub.assignmentId || "your assignment";
+        var subject =
+          status === "needs_correction"
+            ? "Correction requested — " + title
+            : "Your assignment was marked — " + title;
+        var body = mark || "Your work has been reviewed.";
+        if (status === "needs_correction") {
+          body +=
+            "\n\nPlease submit a correction" +
+            (deadline ? " by " + deadline : "") +
+            ".";
+        }
+        return window.COD_FIREBASE.postAnnouncement(subject, body, "student:" + sub.studentUid);
+      }
+
+      function applyMark(id, status) {
+        var ta = document.querySelector(".mark-ta[data-id='" + id + "']");
+        var due = document.querySelector(".corr-due[data-id='" + id + "']");
+        var mark = ta ? ta.value.trim() : "";
+        var deadline = due ? due.value : "";
+        if (status === "needs_correction" && !deadline) {
+          alert("Set a correction deadline first.");
+          return Promise.reject(new Error("Deadline required"));
+        }
+        return window.COD_FIREBASE.collections.submissions().doc(id).get().then(function (snap) {
+          var d = snap.data() || {};
+          return window.COD_FIREBASE.collections
+            .submissions()
+            .doc(id)
+            .update({
+              coordinatorMark: mark,
+              markedBy: profile.coordinatorId || user.uid,
+              markedByName: profile.name || "",
+              markedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              status: status,
+              correctionDeadline: status === "needs_correction" ? deadline : "",
+              studentNotifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            })
+            .then(function () {
+              return notifyStudent(d, mark, status, deadline);
+            });
+        });
+      }
+
       function loadSubmissions() {
         return window.COD_FIREBASE.collections
           .submissions()
-          .where("status", "==", "submitted")
-          .limit(40)
+          .limit(60)
           .get()
           .then(function (snap) {
             var root = document.getElementById("submissions");
-            if (snap.empty) {
+            var rows = [];
+            snap.forEach(function (doc) {
+              var d = doc.data();
+              d.id = doc.id;
+              if (["submitted", "needs_correction", "marked"].indexOf(d.status) >= 0) rows.push(d);
+            });
+            if (!rows.length) {
               root.innerHTML = "<p style='color:var(--muted);'>No pending submissions.</p>";
               return;
             }
             var html = "";
-            snap.forEach(function (doc) {
-              var d = doc.data();
+            rows.forEach(function (d) {
               html +=
                 "<div style='border-bottom:1px solid var(--hair);padding:12px 0;'>" +
-                "<strong>" + (d.studentName || d.studentId) + "</strong> · assignment " + (d.assignmentId || "") +
+                "<strong>" + (d.studentName || d.studentId) + "</strong> · " +
+                (d.assignmentTitle || d.assignmentId || "") +
+                " · " + (d.status || "") +
                 "<p style='font-size:0.88rem;color:var(--muted);white-space:pre-wrap;'>" + (d.body || "") + "</p>" +
                 (d.link ? "<p><a href='" + d.link + "' target='_blank' rel='noopener'>Open link</a></p>" : "") +
-                "<label>Mark / feedback</label><textarea class='mark-ta' data-id='" + doc.id + "'></textarea>" +
-                "<button type='button' class='btn btn-outline btn-mark' data-id='" + doc.id + "'>Save mark</button> " +
-                "<button type='button' class='btn btn-primary btn-forward' data-id='" + doc.id + "'>Send marked work to President</button>" +
-                "</div>";
+                "<label>Mark / feedback (sent to the student)</label>" +
+                "<textarea class='mark-ta' data-id='" + d.id + "'>" + (d.coordinatorMark || "") + "</textarea>" +
+                "<label>Correction deadline</label>" +
+                "<input type='date' class='corr-due' data-id='" + d.id + "' value='" + (d.correctionDeadline || "") + "' />" +
+                "<p style='margin-top:8px;'>" +
+                "<button type='button' class='btn btn-primary btn-mark' data-id='" + d.id + "'>Send mark to student</button> " +
+                "<button type='button' class='btn btn-outline btn-correct' data-id='" + d.id + "'>Request correction</button> " +
+                "<button type='button' class='btn btn-outline btn-forward' data-id='" + d.id + "'>Send marked work to President</button>" +
+                "</p></div>";
             });
             root.innerHTML = html;
             root.querySelectorAll(".btn-mark").forEach(function (btn) {
               btn.addEventListener("click", function () {
-                var id = btn.getAttribute("data-id");
-                var ta = root.querySelector(".mark-ta[data-id='" + id + "']");
-                window.COD_FIREBASE.collections.submissions().doc(id).update({
-                  coordinatorMark: ta.value,
-                  markedBy: profile.coordinatorId || user.uid,
-                  markedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                  status: "marked",
-                });
+                applyMark(btn.getAttribute("data-id"), "marked").then(loadSubmissions).catch(function () {});
+              });
+            });
+            root.querySelectorAll(".btn-correct").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                applyMark(btn.getAttribute("data-id"), "needs_correction").then(loadSubmissions).catch(function () {});
               });
             });
             root.querySelectorAll(".btn-forward").forEach(function (btn) {
@@ -186,17 +318,23 @@
 
       function draftPayload(status) {
         var year = Number(document.getElementById("draft-year").value);
-        var seq = Number(document.getElementById("draft-seq").value) || 1;
-        var slug = document.getElementById("draft-slug").value.trim();
-        var title = document.getElementById("draft-title").value.trim();
+        var seq = window.COD_HW_SHEET.seqNum(document.getElementById("draft-seq").value);
+        var title = window.COD_HW_SHEET.workingTitle(seq);
+        var questions = document.getElementById("draft-questions").value;
         return {
           year: year,
           seq: seq,
-          slug: slug,
           title: title,
-          code: window.COD_DATA.formatAssignmentCode(year, seq, slug || title),
+          code: title,
+          issueDate: document.getElementById("draft-issue").value || "",
           dueDate: document.getElementById("draft-due").value || "",
-          rawBody: document.getElementById("draft-body").value,
+          timeLabel: document.getElementById("draft-time").value.trim() || "11:59pm",
+          instructions:
+            document.getElementById("draft-instructions").value.trim() ||
+            window.COD_HW_SHEET.defaultInstructions(),
+          questions: questions,
+          rawBody: questions,
+          bodyHtml: window.COD_HW_SHEET.renderHtml(window.COD_HW_SHEET.fieldsFromForm()),
           status: status || "coordinator_draft",
           coordinatorUid: user.uid,
           coordinatorId: profile.coordinatorId || "",
@@ -229,7 +367,7 @@
               lastDraftId = ref.id;
             });
         p.then(function () {
-          showDraftMsg("Sent to President for template formatting.", "ok");
+          showDraftMsg("Sent to the President for approval.", "ok");
           loadDrafts();
         }).catch(function (e) {
           showDraftMsg(e.message, "err");
@@ -242,6 +380,39 @@
       }
 
       fillYearSelect();
+      document.getElementById("draft-instructions").value = window.COD_HW_SHEET.defaultInstructions();
+      var today = new Date();
+      document.getElementById("draft-issue").value =
+        today.getFullYear() +
+        "-" +
+        String(today.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(today.getDate()).padStart(2, "0");
+      ["draft-year", "draft-seq", "draft-issue", "draft-due", "draft-time", "draft-instructions", "draft-questions"].forEach(
+        function (id) {
+          document.getElementById(id).addEventListener("input", syncTitleAndPreview);
+          document.getElementById(id).addEventListener("change", syncTitleAndPreview);
+        }
+      );
+      document.getElementById("btn-view-sample").addEventListener("click", function () {
+        var year = Number(document.getElementById("draft-year").value) || 1;
+        var catalog = window.COD_STAFF_MATERIALS && window.COD_STAFF_MATERIALS.YEARS[String(year)];
+        var sample = catalog && catalog.sampleHw && catalog.sampleHw[0];
+        if (!sample || !window.COD_FIREBASE.staffFileUrl) {
+          showDraftMsg("No Sample HW on file for this year yet.", "err");
+          return;
+        }
+        if (!window.COD_STAFF_UI || !window.COD_STAFF_UI.openStaffFile) {
+          showDraftMsg("Staff files are not available on this page.", "err");
+          return;
+        }
+        window.COD_STAFF_UI
+          .openStaffFile(sample.path, sample.label || "Sample HW")
+          .catch(function (err) {
+            showDraftMsg(err.message || "Could not open Sample HW.", "err");
+          });
+      });
+      syncTitleAndPreview();
 
       window.COD_FIREBASE.auth().onAuthStateChanged(function (u) {
         if (!u) {
@@ -271,6 +442,35 @@
                   return "Year " + q.year + " (" + q.expectedCount + ")";
                 }).join(", ")
               : "Assignment slots will appear once your coordinator ID is set.";
+            window.COD_FIREBASE.getSettings().then(function (s) {
+              var el = document.getElementById("teaching-schedule");
+              if (el && window.COD_PORTAL_UI) {
+                el.innerHTML = window.COD_PORTAL_UI.renderTeachingCards(
+                  s,
+                  profile.coordinatorId
+                );
+              }
+            });
+            window.COD_PORTAL_UI.bindComposer({ includePresident: true });
+            window.COD_PORTAL_UI.wireAnnouncements(document.getElementById("announcements"), {
+              uid: u.uid,
+              role: "coordinator",
+              coordinatorId: profile.coordinatorId || "",
+            });
+            if (window.COD_STAFF_UI) {
+              window.COD_STAFF_UI.renderCoordinatorPrep(
+                document.getElementById("prep-materials"),
+                document.getElementById("sample-hw"),
+                profile.coordinatorId
+              );
+              window.COD_STAFF_UI.bindDownloads(document.getElementById("portal"));
+            }
+            var canMarkAtt = window.COD_DATA.isAttendanceOfficer(profile);
+            if (canMarkAtt) {
+              document.getElementById("att-help").textContent =
+                "You mark who attended each third-Saturday class. Coordinators and students can see this roll. Missing class can get a student dropped.";
+            }
+            window.COD_ATTENDANCE_UI.bind({ editable: canMarkAtt });
             loadDrafts();
             loadSubmissions();
           });

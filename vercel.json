@@ -26,6 +26,8 @@
     { "source": "/cod/register/", "destination": "/cod/register.html" },
     { "source": "/cod/login", "destination": "/cod/login.html" },
     { "source": "/cod/login/", "destination": "/cod/login.html" },
+    { "source": "/cod/students", "destination": "/cod/students.html" },
+    { "source": "/cod/students/", "destination": "/cod/students.html" },
     { "source": "/cod/student", "destination": "/cod/student.html" },
     { "source": "/cod/student/", "destination": "/cod/student.html" },
     { "source": "/cod/coordinator-login", "destination": "/cod/coordinator-login.html" },
@@ -38,6 +40,20 @@
     { "source": "/cod/coordinator/", "destination": "/cod/coordinator.html" },
     { "source": "/cod/admin", "destination": "/cod/admin.html" },
     { "source": "/cod/admin/", "destination": "/cod/admin.html" },
+    { "source": "/cod/admin-students", "destination": "/cod/admin-students.html" },
+    { "source": "/cod/admin-students/", "destination": "/cod/admin-students.html" },
+    { "source": "/cod/admin-faculty", "destination": "/cod/admin-faculty.html" },
+    { "source": "/cod/admin-faculty/", "destination": "/cod/admin-faculty.html" },
+    { "source": "/cod/admin-calendar", "destination": "/cod/admin-calendar.html" },
+    { "source": "/cod/admin-calendar/", "destination": "/cod/admin-calendar.html" },
+    { "source": "/cod/admin-curriculum", "destination": "/cod/admin-curriculum.html" },
+    { "source": "/cod/admin-curriculum/", "destination": "/cod/admin-curriculum.html" },
+    { "source": "/cod/admin-attendance", "destination": "/cod/admin-attendance.html" },
+    { "source": "/cod/admin-attendance/", "destination": "/cod/admin-attendance.html" },
+    { "source": "/cod/admin-messages", "destination": "/cod/admin-messages.html" },
+    { "source": "/cod/admin-messages/", "destination": "/cod/admin-messages.html" },
+    { "source": "/cod/admin-operations", "destination": "/cod/admin-operations.html" },
+    { "source": "/cod/admin-operations/", "destination": "/cod/admin-operations.html" },
     { "source": "/cod/president-login", "destination": "/cod/president-login.html" },
     { "source": "/cod/president-login/", "destination": "/cod/president-login.html" },
     { "source": "/alive", "destination": "/alive.html" },
@@ -63,7 +79,82 @@
       ]
     },
     {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/volunteer/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/volunteer/",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/volunteer-hub.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/faq.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/gallery.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/contact.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
       "source": "/cod/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/cod/(.*).html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/js/cod-(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/js/vendor/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]

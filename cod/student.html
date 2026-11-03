@@ -2,19 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#8b3a4a" />
   <title>Student portal — Class of David</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/cod/academy.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="/cod/academy.css?v=20261103m" />
 </head>
 <body>
   <header class="nav">
     <div class="wrap nav-inner">
       <a class="brand" href="/cod/"><img src="/cod/logo.png" alt="" width="40" height="40" /><span>Class of David</span></a>
       <nav class="nav-links">
+        <a href="/cod/">Home</a>
         <a href="/cod/course-outline.html">Outline</a>
         <span id="user-badge" class="badge"></span>
-        <button type="button" class="btn btn-outline" id="btn-out">Sign out</button>
+        <span data-cod-auth-nav id="cod-auth-nav"></span>
       </nav>
     </div>
   </header>
@@ -22,9 +24,28 @@
   <main class="wrap hero">
     <div id="gate" class="card"><p>Loading…</p></div>
     <div id="portal" hidden>
-      <p class="kicker">Student portal</p>
-      <h1 id="welcome">Welcome</h1>
-      <p style="color:var(--muted);" id="year-line"></p>
+      <div class="card welcome-banner">
+        <p class="kicker">Congratulations on your admission</p>
+        <h1 id="welcome">Welcome</h1>
+        <p id="year-line"></p>
+      </div>
+      <div id="schedule-slot"></div>
+
+      <div class="card" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 12px;">Your class attendance</h2>
+        <p style="font-size:0.88rem;color:var(--muted);">Nnodum Amarachi marks each third-Saturday class. Missing class can get you dropped from Class of David.</p>
+        <div id="student-attendance"><p style="color:var(--muted);">Loading attendance…</p></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 12px;">Messages</h2>
+        <div id="announcements"></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 12px;">Your marks</h2>
+        <div id="my-marks"><p style="color:var(--muted);">No marks yet.</p></div>
+      </div>
 
       <div class="card" style="margin-top:20px;">
         <h2 style="font-family:var(--head);margin:0 0 12px;">Published assignments</h2>
@@ -44,42 +65,97 @@
     </div>
   </main>
 
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="/js/firebase-config.js"></script>
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js?v=20261101a"></script>
   <script src="/js/cod-data.js"></script>
   <script src="/js/cod-firebase.js"></script>
+  <script src="/js/cod-portal-ui.js"></script>
+  <script src="/js/cod-attendance-ui.js"></script>
+  <script src="/js/cod-auth-bar.js?v=20261101b"></script>
   <script>
     (function () {
       var gate = document.getElementById("gate");
       var portal = document.getElementById("portal");
       var selectedAssignmentId = null;
       var profile = null;
+      var mySubs = [];
 
-      function redirectLogin() {
-        window.location.href = "/cod/login.html";
+      function renderMarks(list) {
+        var root = document.getElementById("my-marks");
+        var marked = (list || []).filter(function (s) {
+          return s.coordinatorMark || s.status === "marked" || s.status === "needs_correction";
+        });
+        if (!marked.length) {
+          root.innerHTML = "<p style='color:var(--muted);'>No marks yet.</p>";
+          return;
+        }
+        var html = "";
+        marked.forEach(function (s) {
+          html +=
+            "<div style='border-bottom:1px solid var(--hair);padding:12px 0;'>" +
+            "<strong>" + (s.assignmentTitle || s.assignmentId || "Assignment") + "</strong>" +
+            "<p style='font-size:0.88rem;color:var(--muted);white-space:pre-wrap;margin:6px 0 0;'>" +
+            (s.coordinatorMark || "Reviewed.") +
+            "</p>";
+          if (s.status === "needs_correction") {
+            html +=
+              "<p class='msg err' style='margin-top:8px;'>Correction requested" +
+              (s.correctionDeadline ? " by " + s.correctionDeadline : "") +
+              ". Open the assignment and submit again before the deadline.</p>";
+          } else if (s.status === "marked") {
+            html += "<p class='msg ok' style='margin-top:8px;'>Marked.</p>";
+          }
+          html += "</div>";
+        });
+        root.innerHTML = html;
       }
 
-      document.getElementById("btn-out").addEventListener("click", function () {
-        window.COD_FIREBASE.auth().signOut().then(redirectLogin);
-      });
+      function loadMySubmissions() {
+        if (!profile || !profile.uid) return Promise.resolve();
+        return window.COD_FIREBASE.collections
+          .submissions()
+          .where("studentUid", "==", profile.uid)
+          .get()
+          .then(function (snap) {
+            mySubs = [];
+            snap.forEach(function (doc) {
+              var d = doc.data();
+              d.id = doc.id;
+              mySubs.push(d);
+            });
+            renderMarks(mySubs);
+          });
+      }
+
+      function redirectLogin() {
+        window.location.href = "/cod/students";
+      }
 
       function renderAssignments(list) {
         var root = document.getElementById("assignments");
         if (!list.length) {
-          root.innerHTML = "<p style='color:var(--muted);'>No published assignments yet for your year. Check back after coordinators submit tasks to the President.</p>";
+          root.innerHTML = "<p style='color:var(--muted);'>No published assignments yet. Check back soon.</p>";
           return;
         }
-        var html = "<table><thead><tr><th>Code</th><th>Title</th><th>Due</th><th></th></tr></thead><tbody>";
+        var html = "";
         list.forEach(function (a) {
           html +=
-            "<tr><td><code>" + (a.code || "") + "</code></td><td>" + (a.title || "") +
-            "</td><td>" + (a.dueDate || "TBA") +
-            "</td><td><button type='button' class='btn btn-outline btn-pick' data-id='" + a.id + "'>Submit</button></td></tr>" +
-            "<tr><td colspan='4' style='font-size:0.88rem;color:var(--muted);'>" + (a.bodyHtml || a.body || "") + "</td></tr>";
+            "<div style='border-bottom:1px solid var(--hair);padding:16px 0;'>" +
+            "<p><code>" + (a.code || a.title || "") + "</code>" +
+            (a.dueDate ? " · Due " + a.dueDate : "") +
+            "</p>" +
+            (a.bodyHtml || a.body || "") +
+            (a.pdfUrl
+              ? "<p style='margin-top:12px;'><a class='btn btn-outline' href='" +
+                a.pdfUrl +
+                "' target='_blank' rel='noopener'>Download PDF</a></p>"
+              : "") +
+            "<p style='margin-top:12px;'><button type='button' class='btn btn-primary btn-pick' data-id='" +
+            a.id +
+            "'>Submit work</button></p></div>";
         });
-        html += "</tbody></table>";
         root.innerHTML = html;
         root.querySelectorAll(".btn-pick").forEach(function (btn) {
           btn.addEventListener("click", function () {
@@ -100,24 +176,36 @@
         msg.hidden = false;
         msg.className = "msg info";
         msg.textContent = "Uploading…";
-        window.COD_FIREBASE.collections
-          .submissions()
-          .add({
-            assignmentId: selectedAssignmentId,
-            studentUid: profile.uid,
-            studentId: profile.studentId,
-            studentName: (profile.first || "") + " " + (profile.last || ""),
-            body: body,
-            link: link,
-            year: profile.currentYear || 1,
-            status: "submitted",
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          })
+        var existing = mySubs.filter(function (s) {
+          return s.assignmentId === selectedAssignmentId && s.status === "needs_correction";
+        })[0];
+        var payload = {
+          assignmentId: selectedAssignmentId,
+          assignmentTitle: (document.getElementById("submit-for").textContent || "").replace("Submitting for: ", ""),
+          studentUid: profile.uid,
+          studentId: profile.studentId,
+          studentName: (profile.first || "") + " " + (profile.last || ""),
+          body: body,
+          link: link,
+          year: profile.currentYear || 1,
+          status: "submitted",
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        };
+        var save = existing
+          ? window.COD_FIREBASE.collections.submissions().doc(existing.id).update({
+              body: body,
+              link: link,
+              status: "submitted",
+              resubmittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            })
+          : window.COD_FIREBASE.collections.submissions().add(payload);
+        save
           .then(function () {
             msg.className = "msg ok";
-            msg.textContent = "Submitted. Your coordinator will mark it and may forward marked work to the President.";
+            msg.textContent = existing ? "Correction submitted. Thank you." : "Submitted. Thank you.";
             document.getElementById("submit-body").value = "";
             document.getElementById("submit-link").value = "";
+            return loadMySubmissions();
           })
           .catch(function (err) {
             msg.className = "msg err";
@@ -141,18 +229,37 @@
             window.location.href = "/cod/coordinator.html";
             return;
           }
+          if (role === "pending_coordinator") {
+            window.location.href = "/cod/coordinator-pending.html";
+            return;
+          }
           return window.COD_FIREBASE.getProfile(user.uid).then(function (p) {
             profile = p || {};
             profile.uid = user.uid;
             gate.hidden = true;
             portal.hidden = false;
+            var fullName = ((profile.first || "") + " " + (profile.last || "")).trim();
             document.getElementById("welcome").textContent =
-              "Welcome, " + (profile.first || "Beloved");
+              "Welcome, " + (fullName || "Beloved");
             document.getElementById("user-badge").textContent = profile.studentId || "Student";
             var y = profile.currentYear || 1;
             var yMeta = window.COD_DATA.yearByNumber(y);
             document.getElementById("year-line").textContent =
+              (yMeta ? yMeta.calendarMonth + " · " : "") +
               "Year " + y + ": " + (yMeta ? yMeta.title : "") + " · Cohort " + (profile.cohort || "");
+
+            window.COD_FIREBASE.getSettings().then(function (s) {
+              var slot = document.getElementById("schedule-slot");
+              if (slot && window.COD_PORTAL_UI) {
+                slot.innerHTML = window.COD_PORTAL_UI.renderScheduleBlock(s, y);
+              }
+            });
+            window.COD_PORTAL_UI.wireAnnouncements(document.getElementById("announcements"), {
+              uid: user.uid,
+              role: "student",
+            });
+            if (window.COD_ATTENDANCE_UI) window.COD_ATTENDANCE_UI.bindStudent(user.uid);
+            loadMySubmissions();
 
             return window.COD_FIREBASE.db()
               .collection("cod_assignments")

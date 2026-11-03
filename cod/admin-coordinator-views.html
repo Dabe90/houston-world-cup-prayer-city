@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coordinator dashboards — President's office</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="/cod/academy.css?v=20261103m" />
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap-wide nav-inner">
+      <a class="brand" href="/cod/"><img src="/cod/logo.png" alt="" width="40" height="40" /><span>Class of David</span></a>
+      <nav class="nav-links">
+        <a href="/cod/admin.html">Office home</a>
+        <span data-cod-auth-nav id="cod-auth-nav"></span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap hero">
+    <div id="gate" class="card">Loading…</div>
+    <div id="portal" hidden>
+      <p class="kicker">President's office</p>
+      <h1>Coordinator dashboards</h1>
+      <p class="section-lead">This is the HTML each coordinator sees after they sign in. Files are staff-only.</p>
+      <div id="office-nav"></div>
+
+      <div class="coord-view-tabs" id="coord-tabs" role="tablist"></div>
+      <div id="coord-view"></div>
+
+      <div class="card" style="margin-top:28px;">
+        <h2 style="font-family:var(--head);margin:0 0 8px;">All years — staff library</h2>
+        <p style="font-size:0.88rem;color:var(--muted);">Every class file and Sample HW. Students cannot open these.</p>
+        <div id="all-years"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-storage-compat.js"></script>
+  <script src="/js/firebase-config.js"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-firebase.js"></script>
+  <script src="/js/cod-portal-ui.js"></script>
+  <script src="/js/cod-staff-materials.js?v=20261103m"></script>
+  <script src="/js/cod-staff-materials-ui.js?v=20261103m"></script>
+  <script src="/js/cod-president-dashboard.js"></script>
+  <script src="/js/cod-president-office.js"></script>
+  <script src="/js/cod-auth-bar.js"></script>
+  <script>
+    (function () {
+      var COORDINATORS = [
+        { id: "cecilia", name: "Cecilia Alabede" },
+        { id: "veronica", name: "Veronica Ekoja" },
+        { id: "amarachi", name: "Nnodum Amarachi" },
+        { id: "elizabeth", name: "Ojenor Elizabeth" },
+      ];
+      var active = "cecilia";
+      var settings = {};
+
+      function quotaLine(id) {
+        var quota = window.COD_DATA.assignmentQuotaForCoordinator(id);
+        return quota.length
+          ? "Your assignment slots: " +
+              quota
+                .map(function (q) {
+                  return "Year " + q.year + " (" + q.expectedCount + ")";
+                })
+                .join(", ")
+          : "";
+      }
+
+      function dashboardHtml(person) {
+        var attendance =
+          person.id === "amarachi"
+            ? '<div class="card" style="margin-top:20px;"><h2 style="font-family:var(--head);margin:0 0 8px;">Class attendance</h2><p style="font-size:0.88rem;color:var(--muted);">Amarachi marks each third-Saturday class. Coordinators and students can see the roll. Missing class can get a student dropped.</p></div>'
+            : '<div class="card" style="margin-top:20px;"><h2 style="font-family:var(--head);margin:0 0 8px;">Class attendance</h2><p style="font-size:0.88rem;color:var(--muted);">View the roll Amarachi marks. Students also see if they were absent.</p></div>';
+        return (
+          '<p class="kicker">Coordinator portal</p>' +
+          "<h1>" +
+          person.name +
+          "</h1>" +
+          '<p style="color:var(--muted);">' +
+          quotaLine(person.id) +
+          "</p>" +
+          '<div id="teaching-schedule"></div>' +
+          '<div class="card" style="margin-top:20px;"><h2 style="font-family:var(--head);margin:0 0 8px;">Prepare your class</h2><p style="font-size:0.88rem;color:var(--muted);">Staff only — students cannot see these files.</p><div id="prep-materials"></div></div>' +
+          '<div class="card" style="margin-top:20px;"><h2 style="font-family:var(--head);margin:0 0 8px;">Sample HW</h2><p style="font-size:0.88rem;color:var(--muted);">Prior-cohort homework matched to the years this coordinator writes.</p><div id="sample-hw"></div></div>' +
+          attendance +
+          '<div class="card" style="margin-top:20px;"><h2 style="font-family:var(--head);margin:0 0 8px;">Send a message</h2><p style="font-size:0.88rem;color:var(--muted);">Send to everyone, all students, all coordinators, the President, or one coordinator.</p><label>Send to</label><select disabled><option>Everyone (students + coordinators)</option></select><label>Subject</label><input disabled placeholder="e.g. Assignment reminder" /><label>Message</label><textarea disabled style="min-height:90px;" placeholder="Write your message…"></textarea><button class="btn btn-primary" type="button" disabled>Send message</button></div>' +
+          '<div class="card" style="margin-top:20px;"><h2 style="font-family:var(--head);margin:0 0 12px;">Inbox</h2><p style="color:var(--muted);">No messages yet.</p></div>' +
+          '<div class="grid-2" style="margin-top:20px;align-items:start;"><div class="card"><h2 style="font-family:var(--head);margin:0 0 10px;">Write assignment</h2><p style="font-size:0.88rem;color:var(--muted);">Fill the Sample HW template online, then send to the President for approval. Approved work becomes a PDF for students.</p><label>Working title</label><input disabled value="DearDaughter_COD07_HW1" /><label>Questions</label><textarea disabled style="min-height:120px;"></textarea><button class="btn btn-primary" type="button" disabled>Save draft</button> <button class="btn btn-outline" type="button" disabled>Send to President for approval</button></div><div class="card"><h2 style="font-family:var(--head);margin:0 0 10px;">Mark student submissions</h2><p style="color:var(--muted);">No pending submissions.</p></div></div>' +
+          '<div class="card" style="margin-top:20px;"><h2 style="font-family:var(--head);margin:0 0 10px;">Your drafts</h2><p style="color:var(--muted);">No drafts yet.</p></div>'
+        );
+      }
+
+      function drawTabs() {
+        var host = document.getElementById("coord-tabs");
+        host.innerHTML = COORDINATORS.map(function (p) {
+          return (
+            '<button type="button" class="btn btn-outline" role="tab" data-coord="' +
+            p.id +
+            '" aria-selected="' +
+            (p.id === active ? "true" : "false") +
+            '">' +
+            p.name +
+            "</button>"
+          );
+        }).join("");
+      }
+
+      function show(id) {
+        active = id;
+        drawTabs();
+        var person = COORDINATORS.filter(function (p) {
+          return p.id === id;
+        })[0];
+        var root = document.getElementById("coord-view");
+        root.innerHTML = dashboardHtml(person);
+        var teach = document.getElementById("teaching-schedule");
+        if (teach && window.COD_PORTAL_UI) {
+          teach.innerHTML = window.COD_PORTAL_UI.renderTeachingCards(settings, person.id);
+        }
+        if (window.COD_STAFF_UI) {
+          window.COD_STAFF_UI.renderCoordinatorPrep(
+            document.getElementById("prep-materials"),
+            document.getElementById("sample-hw"),
+            person.id
+          );
+        }
+      }
+
+      document.getElementById("coord-tabs").addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-coord]");
+        if (!btn) return;
+        show(btn.getAttribute("data-coord"));
+      });
+
+      window.COD_PRESIDENT_OFFICE.boot("coordinator-views", function () {
+        window.COD_FIREBASE.getSettings().then(function (s) {
+          settings = s || {};
+          drawTabs();
+          show(active);
+          if (window.COD_STAFF_UI) {
+            window.COD_STAFF_UI.renderAllYears(document.getElementById("all-years"));
+            window.COD_STAFF_UI.bindDownloads(document.getElementById("portal"));
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

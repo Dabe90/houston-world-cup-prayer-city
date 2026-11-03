@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Messages — President's office</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="/cod/academy.css?v=20261103m" />
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap-wide nav-inner">
+      <a class="brand" href="/cod/"><img src="/cod/logo.png" alt="" width="40" height="40" /><span>Class of David</span></a>
+      <nav class="nav-links">
+        <a href="/cod/admin.html">Office home</a>
+        <span data-cod-auth-nav id="cod-auth-nav"></span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap-wide hero">
+    <div id="gate" class="card">Loading…</div>
+    <div id="portal" hidden>
+      <p class="kicker">President's office</p>
+      <h1>Messages</h1>
+      <p class="section-lead">Send to everyone, all students, all coordinators, or one coordinator. Coordinators can send the same way from their portal.</p>
+      <div id="office-nav"></div>
+
+      <div class="card" style="max-width:720px;">
+        <label for="msg-audience">Send to</label>
+        <select id="msg-audience"></select>
+        <label for="msg-subject">Subject</label>
+        <input id="msg-subject" type="text" placeholder="e.g. October class reminder" />
+        <label for="msg-body">Message</label>
+        <textarea id="msg-body" style="min-height:160px;" placeholder="Write your message…"></textarea>
+        <button type="button" class="btn btn-primary" id="btn-send-msg">Send message</button>
+        <div id="msg-status" class="msg info" hidden style="margin-top:10px;"></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;max-width:720px;">
+        <h2 class="section-title">Message history</h2>
+        <p class="section-lead">Everything sent by you and the coordinators.</p>
+        <div id="broadcast-history"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-firebase.js"></script>
+  <script src="/js/cod-portal-ui.js"></script>
+  <script src="/js/cod-president-office.js"></script>
+  <script src="/js/cod-auth-bar.js"></script>
+  <script>
+    window.COD_PRESIDENT_OFFICE.boot("messages", function () {
+      window.COD_PORTAL_UI.bindComposer({ includePresident: true });
+      window.COD_PORTAL_UI.wireAnnouncements(document.getElementById("broadcast-history"), {
+        role: "admin",
+      });
+    });
+  </script>
+</body>
+</html>

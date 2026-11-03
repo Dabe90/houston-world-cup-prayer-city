@@ -6,11 +6,25 @@
   <meta name="theme-color" content="#0f3d5c" />
   <link rel="icon" type="image/png" href="images/favicon.png" />
   <link rel="apple-touch-icon" href="images/favicon.png" />
-  <title>Gallery — Houston World Cup Prayer City</title>
-  <meta name="description" content="Photos and videos from Prayer City serve days — Houston World Cup 2026." />
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Gallery — Prayer City HTX</title>
+  <link rel="canonical" href="https://prayercityhtx.com/gallery.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Prayer City HTX" />
+  <meta property="og:url" content="https://prayercityhtx.com/gallery.html" />
+  <meta property="og:title" content="Gallery — Prayer City HTX" />
+  <meta property="og:description" content="Photos and videos from Prayer City HTX prayer tents, volunteers, and gospel outreach in Houston." />
+  <meta property="og:image" content="https://prayercityhtx.com/images/prayer-city-tent-setup.png" />
+  <meta property="og:image:width" content="1024" />
+  <meta property="og:image:height" content="682" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Gallery — Prayer City HTX" />
+  <meta name="twitter:description" content="Photos and videos from Prayer City HTX prayer tents, volunteers, and gospel outreach in Houston." />
+  <meta name="twitter:image" content="https://prayercityhtx.com/images/prayer-city-tent-setup.png" />
+  <meta name="description" content="Photos and videos from Prayer City HTX prayer tents, volunteers, and gospel outreach in Houston." />
+  <link rel="stylesheet" href="css/site-readable.css?v=20261103n" />
+  <script src="js/load-tailwind.js?v=20261103n"></script>
   <script>
-    tailwind.config = {
+    if (typeof loadTailwind === 'function') loadTailwind({
       theme: {
         extend: {
           colors: {
@@ -19,9 +33,10 @@
           boxShadow: { card: '0 4px 24px rgba(15, 61, 92, 0.08)' },
         },
       },
-    };
+    });
+    else document.documentElement.classList.add('tw-fallback');
   </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'" />
   <link rel="stylesheet" href="css/mobile.css" />
   <style>
     body { font-family: system-ui, sans-serif; }
@@ -49,10 +64,10 @@
 
   <header class="bg-gradient-to-br from-brand to-brand-light text-white">
     <div class="max-w-6xl mx-auto px-4 py-10 sm:py-14">
-      <p class="text-brand-soft/90 text-sm font-medium uppercase tracking-wide mb-2">Serve day memories</p>
+      <p class="text-brand-soft/90 text-sm font-medium uppercase tracking-wide mb-2">From the prayer tents</p>
       <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Prayer City gallery</h1>
       <p class="mt-3 text-white/90 max-w-2xl text-sm sm:text-base leading-relaxed">
-        Photos and videos from our serve days — prayer tents, volunteers, and guests across Houston.
+        Photos and videos from Prayer City HTX — prayer tents, volunteers, and guests across Houston.
         Tap any photo to enlarge. Press play on videos right here.
       </p>
     </div>
@@ -72,10 +87,13 @@
     </section>
 
     <section class="rounded-2xl border border-brand/20 bg-brand-soft/50 p-5 sm:p-6 text-sm text-slate-700">
-      <p class="font-semibold text-brand mb-1">Serving with us?</p>
+      <p class="font-semibold text-brand mb-1">What’s next</p>
       <p>
-        More serve days are ahead. Sign up on the
-        <a href="volunteer/" class="text-brand font-semibold underline">volunteer page</a>
+        Thank God for every serve day. Next is
+        <a href="https://www.jesusmarchhtx.com/houston" class="text-brand font-semibold underline" target="_blank" rel="noopener noreferrer">Jesus March Houston</a>
+        on Saturday, November 21, 2026 at Hermann Park.
+        Already on the team?
+        <a href="/" class="text-brand font-semibold underline">Sign in</a>
         or visit the
         <a href="volunteer-hub.html" class="text-brand font-semibold underline">volunteer hub</a>.
       </p>
@@ -83,7 +101,7 @@
   </main>
 
   <footer class="py-8 px-4 border-t border-slate-200 bg-white text-center text-sm text-slate-600">
-    <p>Houston World Cup Prayer City · <a href="contact.html" class="text-brand font-medium hover:underline">Contact</a></p>
+    <p>Prayer City HTX · <a href="contact.html" class="text-brand font-medium hover:underline">Contact</a></p>
   </footer>
 
   <script src="js/gallery.js"></script>
@@ -95,6 +113,11 @@
         'js/gallery-day3-manifest.js',
         'js/gallery-day4-manifest.js',
         'js/gallery-day5-manifest.js',
+        'js/gallery-day6-manifest.js',
+        'js/gallery-day7-manifest.js',
+        'js/gallery-day8-manifest.js',
+        'js/gallery-day9-manifest.js',
+        'js/gallery-day10-manifest.js',
       ];
 
       function loadScript(src) {

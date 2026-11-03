@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#8b3a4a" />
   <title>Class of David 2026/2027 — Register · Dear Daughter Bible Study</title>
   <meta name="description" content="Class of David is a 9-month journey of prayer, fasting, and Bible study. Register for the 2026/2027 session, which begins in October 2026." />
   <link rel="canonical" href="https://prayercityhtx.com/cod/" />
@@ -347,6 +348,17 @@
     .yearbook-cta h2 { font-family: var(--head); font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 0 0 12px; }
     .yearbook-cta p { color: var(--muted); max-width: 50ch; margin: 0 auto 22px; }
 
+    .cod-welcome-banner {
+      background: linear-gradient(90deg, #1a2744 0%, #6e2e3c 55%, #8b3a4a 100%);
+      color: #faf6ef;
+      text-align: center;
+      padding: 14px 16px;
+      font-family: var(--head);
+      font-size: clamp(1.15rem, 2.5vw, 1.55rem);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
     footer {
       padding: 32px 0 48px; text-align: center;
       font-size: 0.88rem; color: var(--faint); border-top: 1px solid var(--hair);
@@ -366,6 +378,9 @@
 
     @media (max-width: 480px) {
       .quote-grid { grid-template-columns: 1fr; }
+      .btn { min-height: 44px; }
+      .nav-links { width: 100%; gap: 8px 12px; }
+      .hero-copy h1 { font-size: 2rem; }
     }
   </style>
 </head>
@@ -380,13 +395,16 @@
       <nav class="nav-links">
         <a class="hide-sm" href="#story">The journey</a>
         <a href="/cod/course-outline.html">Course outline</a>
-        <a href="/cod/register.html">Student portal</a>
+        <a href="/cod/students" data-cod-hide-when-signed-in>Student portal</a>
         <a href="/cod/coordinator-register.html">Coordinators</a>
         <a href="/cod/yearbook/">Yearbooks</a>
-        <a class="btn btn-primary" href="/cod/register.html">Register</a>
+        <span data-cod-auth-nav id="cod-auth-nav"></span>
+        <a class="btn btn-primary" href="#register" data-cod-hide-when-signed-in id="cod-register-cta">Register</a>
       </nav>
     </div>
   </header>
+
+  <div class="cod-welcome-banner" role="status">Welcome, Class of David 2027</div>
 
   <section class="hero">
     <div class="wrap hero-grid">
@@ -401,7 +419,7 @@
           <a class="btn btn-primary" href="#register">Register for 2026/2027</a>
           <a class="btn btn-outline" href="/cod/yearbook/">Browse yearbooks →</a>
         </div>
-        <p class="hero-meta">Session begins <strong>October 2026</strong> · 9 months · not for the faint of heart — for the hungry of heart.</p>
+        <p class="hero-meta">Session begins <strong>October 2026</strong> · Third Saturday classes · Tuesday 10:00 PM WAT prayer · All times WAT.</p>
       </div>
       <div class="hero-video-wrap">
         <div class="hero-video">
@@ -577,10 +595,10 @@
   <section id="register">
     <div class="wrap register-grid">
       <div class="register-aside">
-        <p class="kicker">Registration open</p>
+        <p class="kicker">Class registration</p>
         <h2>Join Class of David 2026/2027</h2>
         <p style="color:var(--muted);margin:0 0 8px;">
-          Fill out the form — we begin in <strong>October 2026</strong>. We would love to see you in class.
+          Fill out this form to join the class — we begin in <strong>October 2026</strong>. We would love to see you in class.
         </p>
         <p style="color:var(--muted);font-size:0.95rem;margin:0;">
           When we get to class, we are there for real business — but you are going to enjoy it. God bless you.
@@ -591,7 +609,17 @@
           <li>Your expectations for the journey</li>
           <li>Emergency / next-of-kin contact</li>
         </ul>
-        <p style="margin-top:20px;font-size:0.88rem;color:var(--faint);">
+        <p style="margin-top:20px;color:var(--muted);font-size:0.95rem;" data-cod-hide-when-signed-in>
+          After you join, open the <strong>student portal</strong> to create your login and dashboard
+          (assignments and messages):
+          <a href="/cod/register.html">Create portal account</a>
+          ·
+          <a href="/cod/students">Sign in</a>
+        </p>
+        <p style="margin-top:20px;color:var(--muted);font-size:0.95rem;" data-cod-show-when-signed-in hidden>
+          You already have a portal account. Open your dashboard from the menu above.
+        </p>
+        <p style="margin-top:12px;font-size:0.88rem;color:var(--faint);">
           Form not loading?
           <a href="https://tinyurl.com/CLASSOFDAVID2027" target="_blank" rel="noopener noreferrer">Open registration in a new tab →</a>
         </p>
@@ -633,6 +661,13 @@
     </div>
   </footer>
 
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js?v=20261101a"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-firebase.js"></script>
+  <script src="/js/cod-auth-bar.js?v=20261101b"></script>
   <script>
     (function () {
       var mentors = {
