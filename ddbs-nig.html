@@ -23,39 +23,17 @@
   <link rel="stylesheet" href="css/site-readable.css?v=20261103n" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" /></noscript>
-  <script src="js/load-tailwind.js?v=20261103n"></script>
-  <script>
-    if (typeof loadTailwind === 'function') loadTailwind({
-      theme: {
-        extend: {
-          colors: {
-            brand: { DEFAULT: '#0f3d5c', light: '#1a5f8a', soft: '#e8f4fc', accent: '#c9a227' },
-            ng: { green: '#008751', white: '#ffffff' },
-          },
-          fontFamily: {
-            display: ['Fraunces', 'Georgia', 'serif'],
-            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-            verse: ['"Cormorant Garamond"', 'Georgia', 'serif'],
-          },
-          boxShadow: {
-            card: '0 4px 24px rgba(15, 61, 92, 0.08), 0 1px 3px rgba(0,0,0,0.06)',
-            lift: '0 12px 40px rgba(15, 61, 92, 0.12)',
-          },
-        },
-      },
-    });
-    else document.documentElement.classList.add('tw-fallback');
-  </script>
+  <link rel="stylesheet" href="css/tailwind-ng.css?v=20261103p" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'" />
   <link rel="stylesheet" href="css/mobile.css?v=20260915b" />
   <link rel="stylesheet" href="css/billion-countdown.css?v=20260713m" />
   <link rel="stylesheet" href="css/nigeria-landing.css?v=20261103n" />
-  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
-  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
-  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
-  <script src="/js/vendor/firebase/firebase-storage-compat.js"></script>
-  <script src="/js/vendor/firebase/firebase-functions-compat.js"></script>
-  <script src="js/firebase-config.js?v=20261101a"></script>
+  <script defer src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script defer src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script defer src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script defer src="/js/vendor/firebase/firebase-storage-compat.js"></script>
+  <script defer src="/js/vendor/firebase/firebase-functions-compat.js"></script>
+  <script defer src="js/firebase-config.js?v=20261101a"></script>
   <style>
     /* Critical layout + Tailwind utilities we rely on even if the CDN fails */
     body { font-family: system-ui, "Segoe UI", Roboto, "Plus Jakarta Sans", sans-serif; }
@@ -874,21 +852,20 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
-  <script src="js/billion-countdown.js?v=20260713m"></script>
-  <script src="js/nigeria-units.js?v=20260915d"></script>
-  <script src="js/ddbs-nigeria-programs.js?v=20260713m"></script>
-  <script src="js/ddbs-nigeria-meeting-notes.js?v=20260915a"></script>
-  <script src="js/monthly-unit-report.js?v=20261007d"></script>
-  <script src="js/nigeria-dashboard-report.js?v=20261007d"></script>
-  <script src="js/prayer-city-super-user.js?v=20260713n"></script>
-  <script src="js/prayer-city-routing.js?v=20260915c"></script>
-  <script src="js/nigeria-gallery-manifest.js?v=20260713m"></script>
-  <script src="js/ddbs-nigeria-hero-billboard.js?v=20260713m"></script>
-  <script src="js/nigeria-landing.js?v=20260713m"></script>
-  <script src="js/nigeria-dashboard.js?v=20261007d"></script>
+  <script defer src="js/billion-countdown.js?v=20260713m"></script>
+  <script defer src="js/nigeria-units.js?v=20260915d"></script>
+  <script defer src="js/ddbs-nigeria-programs.js?v=20260713m"></script>
+  <script defer src="js/ddbs-nigeria-meeting-notes.js?v=20260915a"></script>
+  <script defer src="js/monthly-unit-report.js?v=20261103p"></script>
+  <script defer src="js/nigeria-dashboard-report.js?v=20261007d"></script>
+  <script defer src="js/prayer-city-super-user.js?v=20260713n"></script>
+  <script defer src="js/prayer-city-routing.js?v=20260915c"></script>
+  <script defer src="js/nigeria-gallery-manifest.js?v=20260713m"></script>
+  <script defer src="js/ddbs-nigeria-hero-billboard.js?v=20260713m"></script>
+  <script defer src="js/nigeria-landing.js?v=20260713m"></script>
+  <script defer src="js/nigeria-dashboard.js?v=20261007d"></script>
   <script>
+    document.addEventListener("DOMContentLoaded", function () {
     if (window.BillionCountdown) {
       if (document.getElementById("landing-billion-countdown")) {
         BillionCountdown.mount("#landing-billion-countdown", { compact: true });
@@ -897,6 +874,7 @@
         BillionCountdown.mount("#dash-billion-countdown", { compact: true });
       }
     }
+    });
   </script>
 </body>
 </html>
