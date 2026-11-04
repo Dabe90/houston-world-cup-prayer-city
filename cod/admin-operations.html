@@ -23,7 +23,7 @@
     <div id="portal" hidden>
       <p class="kicker">President's office</p>
       <h1>Operations</h1>
-      <p class="section-lead">Coordinator approvals, homework approval (PDF to students), and graded work inbox.</p>
+      <p class="section-lead">Coordinator approvals, homework approval (returned to the coordinator to send), and graded work inbox.</p>
       <div id="office-nav"></div>
 
       <div class="card">
@@ -51,7 +51,7 @@
 
       <div class="card" style="margin-top:16px;">
         <h2 class="section-title">Assignments awaiting approval</h2>
-        <p class="section-lead">Approve a sheet to turn it into a PDF and send it to students.</p>
+        <p class="section-lead">Approve a sheet to return it to the coordinator. She then sends it to students.</p>
         <div id="draft-queue"></div>
       </div>
 
@@ -109,7 +109,7 @@
                 "</textarea>" +
                 "<button type='button' class='btn btn-primary btn-approve-hw' data-id='" +
                 doc.id +
-                "'>Approve and send PDF to students</button>" +
+                "'>Approve and return to coordinator</button>" +
                 "<div class='msg info' hidden data-msg='" + doc.id + "' style='margin-top:10px;'></div>" +
                 "</div>";
             });
@@ -122,7 +122,7 @@
                 btn.disabled = true;
                 msg.hidden = false;
                 msg.className = "msg info";
-                msg.textContent = "Creating PDF…";
+                msg.textContent = "Saving the approved sheet…";
                 window.COD_FIREBASE.collections.drafts().doc(id).get().then(function (snap) {
                   var d = snap.data();
                   var fields = window.COD_HW_SHEET.fieldsFromDraft(d);
@@ -148,20 +148,31 @@
                       bodyHtml: bodyHtml,
                       pdfPath: path,
                       pdfUrl: url,
-                      status: "published",
-                      publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                      status: "approved",
                       draftId: id,
-                      coordinatorId: d.coordinatorId,
+                      coordinatorId: d.coordinatorId || "",
+                      coordinatorUid: d.coordinatorUid || "",
                       coordinatorName: d.coordinatorName || "",
+                      approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     };
-                    return window.COD_FIREBASE.collections.assignments().add(pub).then(function () {
+                    return window.COD_FIREBASE.collections.assignments().add(pub).then(function (refDoc) {
                       return window.COD_FIREBASE.collections.drafts().doc(id).update({
-                        status: "published",
+                        status: "approved",
                         questions: fields.questions,
                         bodyHtml: bodyHtml,
                         pdfPath: path,
                         pdfUrl: url,
-                        publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        assignmentId: refDoc.id,
+                        approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                      }).then(function () {
+                        if (!d.coordinatorId || !window.COD_FIREBASE.postAnnouncement) return;
+                        return window.COD_FIREBASE.postAnnouncement(
+                          "Assignment approved — send it to students",
+                          "Your assignment " +
+                            title +
+                            " is approved. Open your coordinator portal and tap Send to students.",
+                          "coordinator:" + d.coordinatorId
+                        ).catch(function () {});
                       });
                     });
                   });

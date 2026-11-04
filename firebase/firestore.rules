@@ -304,7 +304,16 @@ service cloud.firestore {
     match /cod_assignments/{assignmentId} {
       allow read: if request.auth != null
         && (isCodStaff() || resource.data.status == 'published');
-      allow create, update: if isCodAdmin();
+      allow create: if isCodAdmin();
+      allow update: if isCodAdmin()
+        || (
+          isCodCoordinator()
+          && resource.data.coordinatorUid == request.auth.uid
+          && resource.data.status == 'approved'
+          && request.resource.data.status == 'published'
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['status', 'publishedAt', 'sentByUid', 'sentByName'])
+        );
       allow delete: if false;
     }
 

@@ -79,7 +79,7 @@
       <div class="hw-editor-grid" id="coord-write" style="margin-top:20px;">
         <div class="card">
           <h2 style="font-family:var(--head);margin:0 0 10px;">Write assignment</h2>
-          <p style="font-size:0.88rem;color:var(--muted);">Use the Sample HW template. Type your questions, then send to the President for approval. After approval it becomes a PDF for students.</p>
+          <p style="font-size:0.88rem;color:var(--muted);">Use the Sample HW template. Type your questions, then send to the President for approval. After he approves, you send it to the students.</p>
           <label for="draft-year">Academic year</label>
           <select id="draft-year"></select>
           <label for="draft-seq">Assignment number</label>
@@ -114,6 +114,11 @@
         <div id="submissions"><p style="color:var(--muted);">Loading…</p></div>
       </div>
 
+      <div class="card" id="coord-send-class" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 10px;">Send to students</h2>
+        <p style="font-size:0.88rem;color:var(--muted);">When the President approves a sheet, it comes back here. Send it to the class yourself.</p>
+        <div id="ready-to-send"><p style="color:var(--muted);">Nothing waiting to send.</p></div>
+      </div>
       <div class="card" id="coord-drafts" style="margin-top:20px;">
         <h2 style="font-family:var(--head);margin:0 0 10px;">Your drafts</h2>
         <div id="my-drafts"></div>
@@ -166,6 +171,38 @@
         );
       }
 
+      function sendApprovedToStudents(draftId) {
+        var draftRef = window.COD_FIREBASE.collections.drafts().doc(draftId);
+        return draftRef.get().then(function (snap) {
+          var d = snap.data() || {};
+          if (!d.assignmentId) throw new Error("This sheet is not ready to send yet.");
+          return window.COD_FIREBASE.collections
+            .assignments()
+            .doc(d.assignmentId)
+            .update({
+              status: "published",
+              publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              sentByUid: user.uid,
+              sentByName: profile.name || "",
+            })
+            .then(function () {
+              return draftRef.update({
+                status: "published",
+                publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              });
+            })
+            .then(function () {
+              var year = d.year ? "Year " + d.year + " — " : "";
+              return window.COD_FIREBASE.postAnnouncement(
+                "New assignment: " + (d.title || "Homework"),
+                year +
+                  "A new assignment is in your student portal. Open it, then upload your answer as a PDF, JPG, or PNG.",
+                "students"
+              ).catch(function () {});
+            });
+        });
+      }
+
       function loadDrafts() {
         if (!user) return;
         return window.COD_FIREBASE.collections
@@ -174,21 +211,48 @@
           .get()
           .then(function (snap) {
             var root = document.getElementById("my-drafts");
+            var ready = document.getElementById("ready-to-send");
             if (snap.empty) {
               root.innerHTML = "<p style='color:var(--muted);'>No drafts yet.</p>";
+              if (ready) ready.innerHTML = "<p style='color:var(--muted);'>Nothing waiting to send.</p>";
               return;
             }
             var html = "<table><thead><tr><th>Code</th><th>Status</th><th>Updated</th></tr></thead><tbody>";
+            var readyHtml = "";
             snap.forEach(function (doc) {
               var d = doc.data();
               var st = d.status || "draft";
               if (st === "submitted_to_president") st = "Awaiting approval";
+              else if (st === "approved") st = "Approved — send to students";
               else if (st === "published") st = "Sent to students";
               else if (st === "coordinator_draft") st = "Draft";
               html += "<tr><td>" + (d.code || d.title) + "</td><td>" + st + "</td><td>" + (d.updatedAt ? "recent" : "") + "</td></tr>";
+              if (d.status === "approved") {
+                readyHtml +=
+                  "<div style='border:1px solid var(--hair);border-radius:12px;padding:12px;margin-bottom:10px;'>" +
+                  "<strong>" + (d.title || d.code) + "</strong>" +
+                  (d.dueDate ? "<p>Due " + d.dueDate + "</p>" : "") +
+                  "<button type='button' class='btn btn-primary btn-send-class' data-id='" +
+                  doc.id +
+                  "'>Send to students</button></div>";
+              }
             });
             html += "</tbody></table>";
             root.innerHTML = html;
+            if (ready) {
+              ready.innerHTML = readyHtml || "<p style='color:var(--muted);'>Nothing waiting to send.</p>";
+              ready.querySelectorAll(".btn-send-class").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                  btn.disabled = true;
+                  sendApprovedToStudents(btn.getAttribute("data-id"))
+                    .then(loadDrafts)
+                    .catch(function (err) {
+                      btn.disabled = false;
+                      alert(err.message || String(err));
+                    });
+                });
+              });
+            }
           });
       }
 
@@ -198,8 +262,9 @@
         var subject =
           status === "needs_correction"
             ? "Correction requested — " + title
-            : "Your assignment was marked — " + title;
+            : "Your score is ready — " + title;
         var body = mark || "Your work has been reviewed.";
+        if (sub.score) body = "Score: " + sub.score + (mark ? "\n\n" + mark : "");
         if (status === "needs_correction") {
           body +=
             "\n\nPlease submit a correction" +
@@ -212,19 +277,28 @@
       function applyMark(id, status) {
         var ta = document.querySelector(".mark-ta[data-id='" + id + "']");
         var due = document.querySelector(".corr-due[data-id='" + id + "']");
+        var scoreEl = document.querySelector(".score-in[data-id='" + id + "']");
         var mark = ta ? ta.value.trim() : "";
         var deadline = due ? due.value : "";
+        var score = scoreEl ? scoreEl.value.trim() : "";
         if (status === "needs_correction" && !deadline) {
           alert("Set a correction deadline first.");
           return Promise.reject(new Error("Deadline required"));
         }
+        if (status === "marked" && !score) {
+          alert("Enter a score before you publish it.");
+          return Promise.reject(new Error("Score required"));
+        }
         return window.COD_FIREBASE.collections.submissions().doc(id).get().then(function (snap) {
           var d = snap.data() || {};
+          d.score = score || d.score || "";
           return window.COD_FIREBASE.collections
             .submissions()
             .doc(id)
             .update({
               coordinatorMark: mark,
+              score: score || d.score || "",
+              scorePublished: status === "marked",
               markedBy: profile.coordinatorId || user.uid,
               markedByName: profile.name || "",
               markedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -249,7 +323,11 @@
             snap.forEach(function (doc) {
               var d = doc.data();
               d.id = doc.id;
-              if (["submitted", "needs_correction", "marked"].indexOf(d.status) >= 0) rows.push(d);
+              var mine =
+                !d.coordinatorId ||
+                d.coordinatorId === profile.coordinatorId ||
+                d.coordinatorUid === user.uid;
+              if (mine && ["submitted", "needs_correction", "marked"].indexOf(d.status) >= 0) rows.push(d);
             });
             if (!rows.length) {
               root.innerHTML = "<p style='color:var(--muted);'>No pending submissions.</p>";
@@ -262,14 +340,21 @@
                 "<strong>" + (d.studentName || d.studentId) + "</strong> · " +
                 (d.assignmentTitle || d.assignmentId || "") +
                 " · " + (d.status || "") +
+                (d.fileUrl
+                  ? (String(d.fileType || d.fileName || "").indexOf("pdf") >= 0
+                    ? "<p><a class='btn btn-outline' href='" + d.fileUrl + "' target='_blank' rel='noopener'>Open PDF</a></p>"
+                    : "<p><a href='" + d.fileUrl + "' target='_blank' rel='noopener'><img src='" + d.fileUrl + "' alt='Student upload' style='max-width:100%;max-height:280px;border-radius:8px;border:1px solid var(--hair);' /></a></p>")
+                  : "") +
                 "<p style='font-size:0.88rem;color:var(--muted);white-space:pre-wrap;'>" + (d.body || "") + "</p>" +
                 (d.link ? "<p><a href='" + d.link + "' target='_blank' rel='noopener'>Open link</a></p>" : "") +
-                "<label>Mark / feedback (sent to the student)</label>" +
+                "<label>Score</label>" +
+                "<input type='text' class='score-in' data-id='" + d.id + "' value='" + (d.score || "") + "' placeholder='e.g. 18/20' />" +
+                "<label>Feedback (sent to the student with the score)</label>" +
                 "<textarea class='mark-ta' data-id='" + d.id + "'>" + (d.coordinatorMark || "") + "</textarea>" +
                 "<label>Correction deadline</label>" +
                 "<input type='date' class='corr-due' data-id='" + d.id + "' value='" + (d.correctionDeadline || "") + "' />" +
                 "<p style='margin-top:8px;'>" +
-                "<button type='button' class='btn btn-primary btn-mark' data-id='" + d.id + "'>Send mark to student</button> " +
+                "<button type='button' class='btn btn-primary btn-mark' data-id='" + d.id + "'>Publish score</button> " +
                 "<button type='button' class='btn btn-outline btn-correct' data-id='" + d.id + "'>Request correction</button> " +
                 "<button type='button' class='btn btn-outline btn-forward' data-id='" + d.id + "'>Send marked work to President</button>" +
                 "</p></div>";
@@ -502,7 +587,7 @@
               var best = null;
               snap.forEach(function (doc) {
                 var d = doc.data() || {};
-                if (d.status === "published") return;
+                if (d.status !== "coordinator_draft") return;
                 var t = d.updatedAt && d.updatedAt.toMillis ? d.updatedAt.toMillis() : 0;
                 if (!best || t > best.t) best = { id: doc.id, d: d, t: t };
               });

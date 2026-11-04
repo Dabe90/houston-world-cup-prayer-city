@@ -48,17 +48,17 @@
       </div>
 
       <div class="card" style="margin-top:20px;">
-        <h2 style="font-family:var(--head);margin:0 0 12px;">Published assignments</h2>
+        <h2 style="font-family:var(--head);margin:0 0 12px;">Assignments</h2>
         <div id="assignments"><p style="color:var(--muted);">Loading assignments…</p></div>
       </div>
 
       <div class="card" style="margin-top:20px;" id="submit-panel" hidden>
         <h2 style="font-family:var(--head);margin:0 0 12px;">Submit work</h2>
         <p id="submit-for" style="color:var(--muted);"></p>
-        <label for="submit-body">Your response (link or written answer)</label>
-        <textarea id="submit-body"></textarea>
-        <label for="submit-link">Optional file / video URL</label>
-        <input id="submit-link" type="url" placeholder="https://…" />
+        <label for="submit-file">Upload your answer (PDF, JPG, or PNG)</label>
+        <input id="submit-file" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" />
+        <label for="submit-body">Notes (optional)</label>
+        <textarea id="submit-body" placeholder="Anything you want Cecilia to see with the file"></textarea>
         <button class="btn btn-primary" type="button" id="btn-submit-work">Submit assignment</button>
         <div id="submit-msg" class="msg info" hidden style="margin-top:12px;"></div>
       </div>
@@ -68,6 +68,7 @@
   <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
   <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
   <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-storage-compat.js"></script>
   <script src="/js/firebase-config.js?v=20261101a"></script>
   <script src="/js/cod-data.js"></script>
   <script src="/js/cod-firebase.js"></script>
@@ -96,8 +97,9 @@
           html +=
             "<div style='border-bottom:1px solid var(--hair);padding:12px 0;'>" +
             "<strong>" + (s.assignmentTitle || s.assignmentId || "Assignment") + "</strong>" +
+            (s.score ? "<p style='margin:6px 0 0;'><strong>Score: " + s.score + "</strong></p>" : "") +
             "<p style='font-size:0.88rem;color:var(--muted);white-space:pre-wrap;margin:6px 0 0;'>" +
-            (s.coordinatorMark || "Reviewed.") +
+            (s.coordinatorMark || (s.score ? "" : "Reviewed.")) +
             "</p>";
           if (s.status === "needs_correction") {
             html +=
@@ -105,7 +107,7 @@
               (s.correctionDeadline ? " by " + s.correctionDeadline : "") +
               ". Open the assignment and submit again before the deadline.</p>";
           } else if (s.status === "marked") {
-            html += "<p class='msg ok' style='margin-top:8px;'>Marked.</p>";
+            html += "<p class='msg ok' style='margin-top:8px;'>Score published.</p>";
           }
           html += "</div>";
         });
@@ -136,7 +138,7 @@
       function renderAssignments(list) {
         var root = document.getElementById("assignments");
         if (!list.length) {
-          root.innerHTML = "<p style='color:var(--muted);'>No published assignments yet. Check back soon.</p>";
+          root.innerHTML = "<p style='color:var(--muted);'>No assignments yet. Your coordinator will send them here.</p>";
           return;
         }
         var html = "";
@@ -167,44 +169,109 @@
         });
       }
 
+      function fileKindError(file) {
+        if (!file) return "Choose a PDF, JPG, or PNG.";
+        if (file.size > 12 * 1024 * 1024) return "File must be 12 MB or smaller.";
+        var name = String(file.name || "").toLowerCase();
+        var type = String(file.type || "").toLowerCase();
+        var ok =
+          type === "application/pdf" ||
+          type === "image/jpeg" ||
+          type === "image/png" ||
+          /\.pdf$/.test(name) ||
+          /\.jpe?g$/.test(name) ||
+          /\.png$/.test(name);
+        return ok ? "" : "Upload a PDF, JPG, or PNG.";
+      }
+
+      function uploadAnswerFile(file, assignmentId) {
+        var fx = window.COD_FIREBASE.init();
+        if (!fx || !fx.storage) return Promise.reject(new Error("Upload is not available on this page."));
+        var safe = String(file.name || "answer")
+          .replace(/[^a-zA-Z0-9._-]/g, "_")
+          .slice(-80);
+        var path = "cod/submissions/" + profile.uid + "/" + assignmentId + "/" + Date.now() + "-" + safe;
+        var contentType = file.type || (/\.pdf$/i.test(file.name) ? "application/pdf" : "image/jpeg");
+        var ref = fx.storage.ref(path);
+        return ref.put(file, { contentType: contentType }).then(function () {
+          return ref.getDownloadURL().then(function (url) {
+            return { url: url, path: path, type: contentType, name: file.name || safe };
+          });
+        });
+      }
+
       document.getElementById("btn-submit-work").addEventListener("click", function () {
         if (!selectedAssignmentId || !profile) return;
         var body = document.getElementById("submit-body").value.trim();
-        var link = document.getElementById("submit-link").value.trim();
-        if (!body && !link) return;
-        var msg = document.getElementById("submit-msg");
-        msg.hidden = false;
-        msg.className = "msg info";
-        msg.textContent = "Uploading…";
+        var file = document.getElementById("submit-file").files[0];
         var existing = mySubs.filter(function (s) {
           return s.assignmentId === selectedAssignmentId && s.status === "needs_correction";
         })[0];
-        var payload = {
-          assignmentId: selectedAssignmentId,
-          assignmentTitle: (document.getElementById("submit-for").textContent || "").replace("Submitting for: ", ""),
-          studentUid: profile.uid,
-          studentId: profile.studentId,
-          studentName: (profile.first || "") + " " + (profile.last || ""),
-          body: body,
-          link: link,
-          year: profile.currentYear || 1,
-          status: "submitted",
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        };
-        var save = existing
-          ? window.COD_FIREBASE.collections.submissions().doc(existing.id).update({
+        var already = mySubs.filter(function (s) {
+          return s.assignmentId === selectedAssignmentId && s.status === "submitted";
+        })[0];
+        var msg = document.getElementById("submit-msg");
+        msg.hidden = false;
+        if (file) {
+          var kindErr = fileKindError(file);
+          if (kindErr) {
+            msg.className = "msg err";
+            msg.textContent = kindErr;
+            return;
+          }
+        } else if (!((existing || already) && (existing || already).fileUrl)) {
+          msg.className = "msg err";
+          msg.textContent = "Choose a PDF, JPG, or PNG.";
+          return;
+        }
+        msg.className = "msg info";
+        msg.textContent = "Uploading…";
+        var assignment = (window.__codAssignments || []).filter(function (x) {
+          return x.id === selectedAssignmentId;
+        })[0];
+        var start = file ? uploadAnswerFile(file, selectedAssignmentId) : Promise.resolve(null);
+        start
+          .then(function (uploaded) {
+            var payload = {
+              assignmentId: selectedAssignmentId,
+              assignmentTitle: (document.getElementById("submit-for").textContent || "").replace("Submitting for: ", ""),
+              studentUid: profile.uid,
+              studentId: profile.studentId,
+              studentName: (profile.first || "") + " " + (profile.last || ""),
               body: body,
-              link: link,
+              year: profile.currentYear || 1,
+              coordinatorId: (assignment && assignment.coordinatorId) || "",
+              coordinatorUid: (assignment && assignment.coordinatorUid) || "",
+              status: "submitted",
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            };
+            if (uploaded) {
+              payload.fileUrl = uploaded.url;
+              payload.filePath = uploaded.path;
+              payload.fileType = uploaded.type;
+              payload.fileName = uploaded.name;
+            }
+            var patch = {
+              body: body,
               status: "submitted",
               resubmittedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            })
-          : window.COD_FIREBASE.collections.submissions().add(payload);
-        save
+            };
+            if (uploaded) {
+              patch.fileUrl = uploaded.url;
+              patch.filePath = uploaded.path;
+              patch.fileType = uploaded.type;
+              patch.fileName = uploaded.name;
+            }
+            var reuse = existing || already;
+            return reuse
+              ? window.COD_FIREBASE.collections.submissions().doc(reuse.id).update(patch)
+              : window.COD_FIREBASE.collections.submissions().add(payload);
+          })
           .then(function () {
             msg.className = "msg ok";
-            msg.textContent = existing ? "Correction submitted. Thank you." : "Submitted. Thank you.";
+            msg.textContent = "Submitted. Cecilia will receive your file.";
             document.getElementById("submit-body").value = "";
-            document.getElementById("submit-link").value = "";
+            document.getElementById("submit-file").value = "";
             return loadMySubmissions();
           })
           .catch(function (err) {
@@ -276,6 +343,7 @@
                 list.sort(function (a, b) {
                   return (a.seq || 0) - (b.seq || 0);
                 });
+                window.__codAssignments = list;
                 renderAssignments(list);
               });
           });
