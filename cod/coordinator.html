@@ -132,7 +132,7 @@
   <script src="/js/cod-attendance-ui.js"></script>
   <script src="/js/cod-staff-materials.js?v=20261103m"></script>
   <script src="/js/cod-staff-materials-ui.js?v=20261103m"></script>
-  <script src="/js/cod-hw-sheet.js"></script>
+  <script src="/js/cod-hw-sheet.js?v=20261104a"></script>
   <script src="/js/cod-auth-bar.js"></script>
   <script>
     (function () {
@@ -358,7 +358,28 @@
         });
       });
 
+      function fillFormFromDraft(d, id) {
+        lastDraftId = id;
+        if (d.year) document.getElementById("draft-year").value = String(d.year);
+        if (d.seq) document.getElementById("draft-seq").value = String(d.seq);
+        if (d.issueDate) document.getElementById("draft-issue").value = d.issueDate;
+        if (d.dueDate) document.getElementById("draft-due").value = d.dueDate;
+        if (d.timeLabel) document.getElementById("draft-time").value = d.timeLabel;
+        if (d.instructions) document.getElementById("draft-instructions").value = d.instructions;
+        document.getElementById("draft-questions").value =
+          (window.COD_HW_SHEET.questionsFromDraft && window.COD_HW_SHEET.questionsFromDraft(d)) ||
+          d.questions ||
+          d.rawBody ||
+          "";
+        syncTitleAndPreview();
+      }
+
       document.getElementById("btn-send-president").addEventListener("click", function () {
+        var questions = (document.getElementById("draft-questions").value || "").trim();
+        if (!questions) {
+          showDraftMsg("Type the questions first. The President cannot approve a blank Question section.", "err");
+          return;
+        }
         var data = draftPayload("submitted_to_president");
         data.submittedAt = firebase.firestore.FieldValue.serverTimestamp();
         var p = lastDraftId
@@ -471,7 +492,22 @@
                 "You mark who attended each third-Saturday class. Coordinators and students can see this roll. Missing class can get a student dropped.";
             }
             window.COD_ATTENDANCE_UI.bind({ editable: canMarkAtt });
-            loadDrafts();
+            loadDrafts().then(function () {
+              return window.COD_FIREBASE.collections
+                .drafts()
+                .where("coordinatorUid", "==", user.uid)
+                .get();
+            }).then(function (snap) {
+              if (!snap || snap.empty) return;
+              var best = null;
+              snap.forEach(function (doc) {
+                var d = doc.data() || {};
+                if (d.status === "published") return;
+                var t = d.updatedAt && d.updatedAt.toMillis ? d.updatedAt.toMillis() : 0;
+                if (!best || t > best.t) best = { id: doc.id, d: d, t: t };
+              });
+              if (best) fillFormFromDraft(best.d, best.id);
+            });
             loadSubmissions();
           });
         });

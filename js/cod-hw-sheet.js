@@ -65,6 +65,35 @@
     };
   }
 
+  function htmlToPlain(html) {
+    return String(html || "")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .trim();
+  }
+
+  function questionsFromDraft(d) {
+    d = d || {};
+    var q = d.questions || d.rawBody || d.question || "";
+    if (typeof q !== "string") q = String(q || "");
+    if (q.trim()) return q;
+    var html = String(d.bodyHtml || "");
+    var marker = 'class="hw-questions">';
+    var idx = html.indexOf(marker);
+    if (idx >= 0) {
+      var rest = html.slice(idx + marker.length);
+      var end = rest.indexOf("</div>");
+      if (end >= 0) return htmlToPlain(rest.slice(0, end));
+    }
+    return q;
+  }
+
   function fieldsFromDraft(d) {
     d = d || {};
     return {
@@ -74,7 +103,7 @@
       dueDate: d.dueDate || "",
       timeLabel: d.timeLabel || "11:59pm",
       instructions: d.instructions || defaultInstructions(),
-      questions: d.questions || d.rawBody || "",
+      questions: questionsFromDraft(d),
     };
   }
 
@@ -193,6 +222,7 @@
     defaultInstructions: defaultInstructions,
     fieldsFromForm: fieldsFromForm,
     fieldsFromDraft: fieldsFromDraft,
+    questionsFromDraft: questionsFromDraft,
     renderHtml: renderHtml,
     paintPreview: paintPreview,
     toPdfBlob: toPdfBlob,

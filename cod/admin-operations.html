@@ -70,7 +70,7 @@
   <script src="/js/firebase-config.js"></script>
   <script src="/js/cod-data.js"></script>
   <script src="/js/cod-firebase.js"></script>
-  <script src="/js/cod-hw-sheet.js"></script>
+  <script src="/js/cod-hw-sheet.js?v=20261104a"></script>
   <script src="/js/cod-president-office.js"></script>
   <script src="/js/cod-auth-bar.js"></script>
   <script>
@@ -92,14 +92,20 @@
             snap.forEach(function (doc) {
               var d = doc.data();
               var fields = window.COD_HW_SHEET.fieldsFromDraft(d);
+              var questions = fields.questions || "";
               html +=
                 "<div style='border:1px solid var(--hair);border-radius:12px;padding:14px;margin-bottom:16px;'>" +
                 "<p class='kicker'>" + (d.coordinatorName || "Coordinator") + "</p>" +
                 "<strong>" + (d.title || d.code) + "</strong>" +
                 "<div style='margin:12px 0;'>" + window.COD_HW_SHEET.renderHtml(fields) + "</div>" +
-                "<label>Edit questions before approval (optional)</label>" +
-                "<textarea class='pub-questions' data-id='" + doc.id + "' style='min-height:120px;'>" +
-                (d.questions || d.rawBody || "") +
+                (questions.trim()
+                  ? ""
+                  : "<p class='msg err'>No questions were included in this send. Ask the coordinator to type the questions and send again, or paste them below before you approve.</p>") +
+                "<label>Questions (edit before approval if needed)</label>" +
+                "<textarea class='pub-questions' data-id='" + doc.id + "' style='min-height:160px;'>" +
+                String(questions)
+                  .replace(/&/g, "&amp;")
+                  .replace(/</g, "&lt;") +
                 "</textarea>" +
                 "<button type='button' class='btn btn-primary btn-approve-hw' data-id='" +
                 doc.id +
