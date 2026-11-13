@@ -4481,6 +4481,7 @@
       .then(function (ok) {
         if (!ok) {
           window.__ngDashFailed = true;
+          clearHubBootLoading();
           return;
         }
         bind();
@@ -4491,6 +4492,8 @@
       })
       .catch(function () {
         window.__ngDashFailed = true;
+        clearHubBootLoading();
+        show($('setup-banner'));
       });
   }
   if (window.__ngDomReady || document.readyState === 'complete') startDashboard();

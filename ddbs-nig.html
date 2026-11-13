@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#008751" />
-  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="icon" type="image/png" href="/images/favicon.png" />
   <title>DDBS Nigeria — Dear Daughter Bible Study Group</title>
   <link rel="canonical" href="https://prayercityhtx.com/ng" />
   <meta property="og:type" content="website" />
@@ -20,12 +20,12 @@
   <meta name="twitter:description" content="Dear Daughter Bible Study Group Nigeria: global light since 2017, Jesus March, and the undiluted Word for the nations." />
   <meta name="twitter:image" content="https://prayercityhtx.com/images/ddbs-nigeria/who-we-are-jesus-march.png" />
   <meta name="description" content="Dear Daughter Bible Study Group Nigeria: global light since 2017, Jesus March, and the undiluted Word for the nations." />
-  <link rel="stylesheet" href="css/site-readable.css?v=20261103q" />
+  <link rel="stylesheet" href="/css/site-readable.css?v=20261113a" />
   <script async src="/js/visit-beacon.js?v=20261103q"></script>
-  <link rel="stylesheet" href="css/tailwind-ng.css?v=20261103p" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260915b" />
-  <link rel="stylesheet" href="css/billion-countdown.css?v=20260713m" />
-  <link rel="stylesheet" href="css/nigeria-landing.css?v=20261103q" />
+  <link rel="stylesheet" href="/css/tailwind-ng.css?v=20261103p" />
+  <link rel="stylesheet" href="/css/mobile.css?v=20260915b" />
+  <link rel="stylesheet" href="/css/billion-countdown.css?v=20260713m" />
+  <link rel="stylesheet" href="/css/nigeria-landing.css?v=20261103q" />
   <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
@@ -70,13 +70,13 @@
             '/js/vendor/firebase/firebase-firestore-compat.js',
             '/js/vendor/firebase/firebase-storage-compat.js',
             '/js/vendor/firebase/firebase-functions-compat.js',
-            'js/firebase-config.js?v=20261101a',
-            'js/ddbs-nigeria-meeting-notes.js?v=20260915a',
-            'js/monthly-unit-report.js?v=20261103p',
-            'js/nigeria-dashboard-report.js?v=20261007d',
-            'js/prayer-city-super-user.js?v=20261103q',
-            'js/prayer-city-routing.js?v=20260915c',
-            'js/nigeria-dashboard.js?v=20261103q'
+            '/js/firebase-config.js?v=20261101a',
+            '/js/ddbs-nigeria-meeting-notes.js?v=20260915a',
+            '/js/monthly-unit-report.js?v=20261103p',
+            '/js/nigeria-dashboard-report.js?v=20261007d',
+            '/js/prayer-city-super-user.js?v=20261103q',
+            '/js/prayer-city-routing.js?v=20260915c',
+            '/js/nigeria-dashboard.js?v=20261113a'
           ];
           for (var n = 0; n < appSrc.length; n++) {
             var preload = document.createElement('link');
@@ -87,6 +87,20 @@
           }
         }
       } catch (e) {}
+      setTimeout(function () {
+        if (window.__ngDashReady) return;
+        if (!document.documentElement.classList.contains('ddbs-hub-boot-dash')) return;
+        document.documentElement.classList.remove('ddbs-hub-boot-dash');
+        var loading = document.getElementById('hub-boot-loading');
+        if (loading) {
+          loading.style.display = 'flex';
+          loading.innerHTML =
+            '<p style="max-width:22rem;text-align:center;line-height:1.5;">This network is taking too long to open the dashboard.</p>' +
+            '<p><a href="/ng" style="display:inline-block;margin-top:8px;padding:10px 16px;border-radius:9999px;background:#008751;color:#fff;font-weight:700;text-decoration:none;">Open prayercityhtx.com/ng</a></p>';
+        }
+        var banner = document.getElementById('setup-banner');
+        if (banner) banner.classList.remove('hidden');
+      }, 22000);
     })();
   </script>
   <style>
@@ -128,6 +142,15 @@
     html.ddbs-hub-boot-dash #hub-boot-loading {
       display: flex;
     }
+    .ng-boot-spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid #cbd5e1;
+      border-top-color: #008751;
+      border-radius: 50%;
+      animation: ng-boot-spin 0.8s linear infinite;
+    }
+    @keyframes ng-boot-spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800 overflow-x-hidden font-sans antialiased pb-[4.5rem] lg:pb-0">
@@ -171,7 +194,7 @@
     <!-- Sign-in & dashboard (near top so you don't scroll the whole page) -->
     <section id="auth-checking" class="hidden" aria-hidden="true"></section>
     <div id="hub-boot-loading" aria-live="polite">
-      <i class="fas fa-spinner fa-spin text-ng-green text-xl" aria-hidden="true"></i>
+      <div class="ng-boot-spinner" aria-hidden="true"></div>
       <p>Loading your dashboard…</p>
     </div>
 
@@ -518,7 +541,7 @@
                   <div class="rounded-2xl overflow-hidden shadow-lift border border-slate-200 bg-slate-200 aspect-[4/3] sm:aspect-auto sm:h-72">
                     <img
                       id="ng-about-photo"
-                      src="images/ddbs-nigeria/who-we-are-jesus-march.png"
+                      src="/images/ddbs-nigeria/who-we-are-jesus-march.png"
                       alt="Dear Daughter Jesus March Nigeria — volunteer with gospel tracts and an outreach sign"
                       class="w-full h-full object-cover object-center"
                       loading="lazy"
@@ -876,13 +899,13 @@
       window.__ngDomReady = true;
     });
   </script>
-  <script defer src="js/nigeria-boot.js?v=20261103q"></script>
-  <script defer src="js/billion-countdown.js?v=20260713m"></script>
-  <script defer src="js/nigeria-units.js?v=20260915d"></script>
-  <script defer src="js/ddbs-nigeria-programs.js?v=20260713m"></script>
-  <script defer src="js/nigeria-gallery-manifest.js?v=20260713m"></script>
-  <script defer src="js/ddbs-nigeria-hero-billboard.js?v=20261103q"></script>
-  <script defer src="js/nigeria-landing.js?v=20261103q"></script>
+  <script defer src="/js/nigeria-boot.js?v=20261113a"></script>
+  <script defer src="/js/billion-countdown.js?v=20260713m"></script>
+  <script defer src="/js/nigeria-units.js?v=20260915d"></script>
+  <script defer src="/js/ddbs-nigeria-programs.js?v=20260713m"></script>
+  <script defer src="/js/nigeria-gallery-manifest.js?v=20260713m"></script>
+  <script defer src="/js/ddbs-nigeria-hero-billboard.js?v=20261103q"></script>
+  <script defer src="/js/nigeria-landing.js?v=20261103q"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function () {
     if (window.BillionCountdown) {

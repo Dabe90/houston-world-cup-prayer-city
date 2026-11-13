@@ -9,13 +9,13 @@
     '/js/vendor/firebase/firebase-firestore-compat.js',
     '/js/vendor/firebase/firebase-storage-compat.js',
     '/js/vendor/firebase/firebase-functions-compat.js',
-    'js/firebase-config.js?v=20261101a',
-    'js/ddbs-nigeria-meeting-notes.js?v=20260915a',
-    'js/monthly-unit-report.js?v=20261103p',
-    'js/nigeria-dashboard-report.js?v=20261007d',
-    'js/prayer-city-super-user.js?v=20261103q',
-    'js/prayer-city-routing.js?v=20260915c',
-    'js/nigeria-dashboard.js?v=20261103q',
+    '/js/firebase-config.js?v=20261101a',
+    '/js/ddbs-nigeria-meeting-notes.js?v=20260915a',
+    '/js/monthly-unit-report.js?v=20261103p',
+    '/js/nigeria-dashboard-report.js?v=20261007d',
+    '/js/prayer-city-super-user.js?v=20261103q',
+    '/js/prayer-city-routing.js?v=20260915c',
+    '/js/nigeria-dashboard.js?v=20261113a',
   ];
 
   var DASH_HASHES = {
@@ -65,17 +65,26 @@
         return;
       }
       var failed = false;
+      var timer = setTimeout(function () {
+        if (failed) return;
+        failed = true;
+        reject(new Error('timeout'));
+      }, 18000);
       srcs.forEach(function (src) {
         var script = document.createElement('script');
         script.src = src;
         script.async = false;
         script.onload = function () {
           left -= 1;
-          if (!left && !failed) resolve();
+          if (!left && !failed) {
+            clearTimeout(timer);
+            resolve();
+          }
         };
         script.onerror = function () {
           if (failed) return;
           failed = true;
+          clearTimeout(timer);
           reject(new Error(src));
         };
         document.head.appendChild(script);
@@ -110,9 +119,32 @@
           })();
         });
       })
+      .then(function (ok) {
+        if (!ok) showBootFail();
+        return ok;
+      })
       .catch(function () {
+        showBootFail();
         return false;
       });
+  }
+
+  function showBootFail() {
+    try {
+      document.documentElement.classList.remove('ddbs-hub-boot-dash');
+    } catch (e) {}
+    var banner = document.getElementById('setup-banner');
+    if (banner) {
+      banner.classList.remove('hidden');
+      banner.style.display = 'block';
+    }
+    var loading = document.getElementById('hub-boot-loading');
+    if (loading) {
+      loading.style.display = 'flex';
+      loading.innerHTML =
+        '<p style="max-width:22rem;text-align:center;line-height:1.5;">This network is taking too long to open the dashboard.</p>' +
+        '<p><a href="/ng" style="display:inline-block;margin-top:8px;padding:10px 16px;border-radius:9999px;background:#008751;color:#fff;font-weight:700;text-decoration:none;">Try again</a></p>';
+    }
   }
 
   function preloadApp() {
@@ -201,7 +233,9 @@
 
   if (needsAppNow()) {
     preloadApp();
-    ensureApp();
+    ensureApp().catch(function () {
+      showBootFail();
+    });
   }
 
   global.addEventListener('load', loadLateStyles);

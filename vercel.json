@@ -5,7 +5,8 @@
     { "source": "/cod", "destination": "/cod/", "permanent": true },
     { "source": "/training", "destination": "/training/", "permanent": true },
     { "source": "/nigeria", "destination": "/ng", "permanent": true },
-    { "source": "/nigeria/", "destination": "/ng", "permanent": true }
+    { "source": "/nigeria/", "destination": "/ng", "permanent": true },
+    { "source": "/ng/", "destination": "/ng", "permanent": true }
   ],
   "rewrites": [
     { "source": "/cod", "destination": "/cod/index.html" },
@@ -61,7 +62,6 @@
     { "source": "/alive-hangout", "destination": "/alive.html" },
     { "source": "/alive-hangout/", "destination": "/alive.html" },
     { "source": "/ng", "destination": "/ddbs-nig.html" },
-    { "source": "/ng/", "destination": "/ddbs-nig.html" },
     { "source": "/training/", "destination": "/training/index.html" }
   ],
   "headers": [
