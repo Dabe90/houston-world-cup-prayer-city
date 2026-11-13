@@ -15,7 +15,7 @@
     '/js/nigeria-dashboard-report.js?v=20261007d',
     '/js/prayer-city-super-user.js?v=20261103q',
     '/js/prayer-city-routing.js?v=20260915c',
-    '/js/nigeria-dashboard.js?v=20261113a',
+    '/js/nigeria-dashboard.js?v=20261113b',
   ];
 
   var DASH_HASHES = {
@@ -143,7 +143,7 @@
       loading.style.display = 'flex';
       loading.innerHTML =
         '<p style="max-width:22rem;text-align:center;line-height:1.5;">This network is taking too long to open the dashboard.</p>' +
-        '<p><a href="/ng" style="display:inline-block;margin-top:8px;padding:10px 16px;border-radius:9999px;background:#008751;color:#fff;font-weight:700;text-decoration:none;">Try again</a></p>';
+        '<p><a href="/ng?landing=1" style="display:inline-block;margin-top:8px;padding:10px 16px;border-radius:9999px;background:#008751;color:#fff;font-weight:700;text-decoration:none;">Show homepage</a></p>';
     }
   }
 

@@ -3970,7 +3970,7 @@
   function loadDashboard(opts) {
     opts = opts || {};
     var keepStatus = opts.preserveStatus === true;
-    return hubCallable('getNigeriaDashboard', 60000)()
+    return hubCallable('getNigeriaDashboard', 15000)()
       .then(function (res) {
         processDashboardResponse(res.data);
       })
@@ -3978,34 +3978,55 @@
         console.error('getNigeriaDashboard', err);
         var msg = (err && err.message) || 'Could not load dashboard.';
         if (/deadline|timeout/i.test(msg)) {
-          msg = 'Dashboard is taking too long. Pull to refresh or try again in a moment.';
+          msg = 'Dashboard is taking too long on this network.';
         }
-        if (!keepStatus) setStatus(msg, 'error');
-        if (auth && auth.currentUser && !keepStatus) {
-          setAuthPanelStatus(msg + ' Sign out and sign in again if this keeps happening.', 'error');
-        }
-        if (isClientSuperUser()) {
-          var preview = loadPreviewProfile();
-          if (preview && isProfileComplete(preview)) {
-            if (!keepStatus) {
-              setStatus('Using offline preview — some features need a saved profile.', 'info');
-            }
-            showDashboardSafely(buildLocalDashboard(preview, true));
-            return;
+        function useSavedCopy(profile, asSuper) {
+          if (!keepStatus) {
+            setStatus('Loaded a saved copy. You can still submit your report.', 'info');
           }
-          return loadLocalNigeriaProfile().then(function (snap) {
+          showDashboardSafely(buildLocalDashboard(profile, !!asSuper));
+        }
+        var preview = loadPreviewProfile();
+        if (preview && isProfileComplete(preview)) {
+          useSavedCopy(preview, isClientSuperUser());
+          return;
+        }
+        function withTimeout(promise, ms) {
+          return Promise.race([
+            promise,
+            new Promise(function (_, reject) {
+              setTimeout(function () {
+                reject(new Error('timeout'));
+              }, ms);
+            }),
+          ]);
+        }
+        return withTimeout(loadLocalNigeriaProfile(), 8000)
+          .then(function (snap) {
             if (snap.exists && isProfileComplete(snap.data())) {
-              if (!keepStatus) {
-                setStatus('Using saved profile — reloading server data failed.', 'info');
-              }
-              showDashboardSafely(buildLocalDashboard(snap.data(), true));
-            } else if (!keepStatus) {
+              useSavedCopy(snap.data(), isClientSuperUser());
+              return;
+            }
+            if (isClientSuperUser()) {
               showOnboarding(coordinatorVolunteer(), true);
               setStatus(msg, 'error');
+              return;
+            }
+            if (!keepStatus) {
+              clearHubBootLoading();
+              setPublicLanding(true);
+              setStatus(msg, 'error');
+              setAuthPanelStatus(msg + ' Open the homepage, then tap My dashboard to try again.', 'error');
+            }
+          })
+          .catch(function () {
+            if (!keepStatus) {
+              clearHubBootLoading();
+              setPublicLanding(true);
+              setStatus(msg, 'error');
+              setAuthPanelStatus(msg, 'error');
             }
           });
-        }
-        if (!keepStatus) setStatus(msg, 'error');
       });
   }
 
@@ -4407,7 +4428,10 @@
     }
     completeEmailLinkIfNeeded().finally(function () {
       var ready = auth.authStateReady ? auth.authStateReady() : Promise.resolve();
-      ready.finally(function () {
+      var timed = new Promise(function (resolve) {
+        setTimeout(resolve, 8000);
+      });
+      Promise.race([ready, timed]).finally(function () {
         auth.onAuthStateChanged(handleAuthUser);
       });
     });

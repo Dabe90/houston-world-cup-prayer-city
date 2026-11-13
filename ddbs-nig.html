@@ -21,7 +21,7 @@
   <meta name="twitter:image" content="https://prayercityhtx.com/images/ddbs-nigeria/who-we-are-jesus-march.png" />
   <meta name="description" content="Dear Daughter Bible Study Group Nigeria: global light since 2017, Jesus March, and the undiluted Word for the nations." />
   <link rel="stylesheet" href="/css/site-readable.css?v=20261113a" />
-  <script async src="/js/visit-beacon.js?v=20261103q"></script>
+  <script async src="/js/visit-beacon.js?v=20261113b"></script>
   <link rel="stylesheet" href="/css/tailwind-ng.css?v=20261103p" />
   <link rel="stylesheet" href="/css/mobile.css?v=20260915b" />
   <link rel="stylesheet" href="/css/billion-countdown.css?v=20260713m" />
@@ -76,7 +76,7 @@
             '/js/nigeria-dashboard-report.js?v=20261007d',
             '/js/prayer-city-super-user.js?v=20261103q',
             '/js/prayer-city-routing.js?v=20260915c',
-            '/js/nigeria-dashboard.js?v=20261113a'
+            '/js/nigeria-dashboard.js?v=20261113b'
           ];
           for (var n = 0; n < appSrc.length; n++) {
             var preload = document.createElement('link');
@@ -88,33 +88,25 @@
         }
       } catch (e) {}
       setTimeout(function () {
-        if (window.__ngDashReady) return;
-        if (!document.documentElement.classList.contains('ddbs-hub-boot-dash')) return;
+        var dash = document.getElementById('dash-shell');
+        var onboard = document.getElementById('onboard-panel');
+        var dashOpen = dash && !dash.classList.contains('hidden');
+        var onboardOpen = onboard && !onboard.classList.contains('hidden');
+        if (dashOpen || onboardOpen) return;
         document.documentElement.classList.remove('ddbs-hub-boot-dash');
         var loading = document.getElementById('hub-boot-loading');
         if (loading) {
           loading.style.display = 'flex';
           loading.innerHTML =
-            '<p style="max-width:22rem;text-align:center;line-height:1.5;">This network is taking too long to open the dashboard.</p>' +
-            '<p><a href="/ng" style="display:inline-block;margin-top:8px;padding:10px 16px;border-radius:9999px;background:#008751;color:#fff;font-weight:700;text-decoration:none;">Open prayercityhtx.com/ng</a></p>';
+            '<p style="max-width:22rem;text-align:center;line-height:1.5;margin:0;font-weight:700;">Dashboard is taking too long on this network.</p>' +
+            '<p style="margin:0;text-align:center;"><a href="/ng?landing=1" style="display:inline-block;margin-top:8px;padding:10px 16px;border-radius:9999px;background:#008751;color:#fff;font-weight:700;text-decoration:none;">Show homepage</a></p>';
         }
         var banner = document.getElementById('setup-banner');
         if (banner) banner.classList.remove('hidden');
-      }, 22000);
+      }, 10000);
     })();
   </script>
   <style>
-    html.ddbs-hub-boot-dash #ng-public-landing,
-    html.ddbs-hub-boot-dash #hero-billboard,
-    html.ddbs-hub-boot-dash #landing-billion-countdown,
-    html.ddbs-hub-boot-dash #ng-mobile-nav {
-      display: none !important;
-    }
-    html.ddbs-hub-boot-dash #site-top-nav .md\:flex,
-    html.ddbs-hub-boot-dash #site-top-nav [data-ng-scroll-auth],
-    html.ddbs-hub-boot-dash #site-top-nav a[href="#serve"] {
-      display: none !important;
-    }
     #btn-view-public-homepage {
       display: none !important;
     }
@@ -130,17 +122,26 @@
     }
     #hub-boot-loading {
       display: none;
-      min-height: 50vh;
       align-items: center;
       justify-content: center;
       flex-direction: column;
       gap: 0.75rem;
-      padding: 3rem 1.25rem;
-      color: #64748b;
-      font-size: 0.875rem;
+      padding: 1.25rem;
+      color: #0f172a;
+      font-size: 0.95rem;
     }
     html.ddbs-hub-boot-dash #hub-boot-loading {
       display: flex;
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 90;
+      min-height: 0;
+      background: #fff;
+      border: 1px solid #dbe3ee;
+      border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(15, 61, 92, 0.18);
     }
     .ng-boot-spinner {
       width: 28px;
@@ -195,7 +196,9 @@
     <section id="auth-checking" class="hidden" aria-hidden="true"></section>
     <div id="hub-boot-loading" aria-live="polite">
       <div class="ng-boot-spinner" aria-hidden="true"></div>
-      <p>Loading your dashboard…</p>
+      <p style="margin:0;font-weight:700;text-align:center;">Loading your dashboard…</p>
+      <p style="margin:0;font-size:0.85rem;color:#475569;text-align:center;line-height:1.45;">If this stays stuck, the homepage is still behind this card.</p>
+      <a href="/ng?landing=1" style="display:inline-block;margin-top:4px;padding:10px 16px;border-radius:9999px;background:#008751;color:#fff;font-weight:700;text-decoration:none;">Show homepage</a>
     </div>
 
     <section id="auth-panel" class="hidden max-w-md mx-auto px-4 py-5 sm:py-6 w-full">
@@ -899,7 +902,7 @@
       window.__ngDomReady = true;
     });
   </script>
-  <script defer src="/js/nigeria-boot.js?v=20261113a"></script>
+  <script defer src="/js/nigeria-boot.js?v=20261113b"></script>
   <script defer src="/js/billion-countdown.js?v=20260713m"></script>
   <script defer src="/js/nigeria-units.js?v=20260915d"></script>
   <script defer src="/js/ddbs-nigeria-programs.js?v=20260713m"></script>
