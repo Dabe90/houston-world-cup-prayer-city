@@ -17,3 +17,4 @@ body {
 a { color: #0f3d5c; }
 button, input, select, textarea { font-family: inherit; font-size: 16px; }
 html.tw-fallback body { visibility: visible; }
+.ng-reveal { opacity: 1; transform: none; }

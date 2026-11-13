@@ -46,13 +46,12 @@
   }
 
   function needsAppNow() {
+    var q = global.location.search || '';
+    if (/[?&]landing=1(?:&|$)/.test(q)) return false;
+    if (/[?&]mode=signIn(?:&|$)/.test(q) || /[?&]oobCode=/.test(q)) return true;
     try {
-      if (hasSavedAuth()) return true;
-      if (sessionStorage.getItem('ddbsNgHubView') === 'dash') return true;
       if (sessionStorage.getItem('ngAuthPanelOpen') === '1') return true;
     } catch (e) {}
-    var q = global.location.search || '';
-    if (/[?&]mode=signIn(?:&|$)/.test(q) || /[?&]oobCode=/.test(q)) return true;
     var hash = (global.location.hash || '').replace('#', '').split('&')[0].split('?')[0];
     return !!DASH_HASHES[hash];
   }
@@ -161,6 +160,11 @@
   function loadLateStyles() {
     if (lateStylesStarted) return;
     lateStylesStarted = true;
+    var net = '';
+    try {
+      net = (navigator.connection && navigator.connection.effectiveType) || '';
+    } catch (e) {}
+    if (net === 'slow-2g' || net === '2g' || net === '3g') return;
     var hrefs = [
       'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap',
       'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
