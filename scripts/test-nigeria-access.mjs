@@ -28,7 +28,8 @@ function startServer() {
   return new Promise((resolve, reject) => {
     const server = http.createServer((req, res) => {
       let urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
-      if (urlPath === '/ng' || urlPath === '/ng/') urlPath = '/ddbs-nig.html';
+      if (urlPath === '/ng' || urlPath === '/ng/') urlPath = '/ng-open.html';
+      if (urlPath === '/ng-hub' || urlPath === '/ng-hub/') urlPath = '/ddbs-nig.html';
       if (urlPath === '/') urlPath = '/index.html';
       const file = path.normalize(path.join(root, urlPath.replace(/^\/+/, '')));
       if (!file.startsWith(root)) {
@@ -127,13 +128,9 @@ async function main() {
   const failures = [];
   try {
     const ng = await openPage(browser, base + '/ng');
-    assert(ng.info.textLen > 400, 'Nigeria /ng has almost no text (' + ng.info.textLen + '): ' + ng.info.sample, failures);
+    assert(ng.info.textLen > 200, 'Nigeria /ng has almost no text (' + ng.info.textLen + '): ' + ng.info.sample, failures);
     assert(ng.info.bar, 'Nigeria bar missing', failures);
-    assert(ng.info.headline, 'Welcome headline missing', failures);
-    assert(ng.info.started, 'Getting started copy missing', failures);
-    assert(!ng.info.landingHidden, 'Landing is hidden for an unsigned visitor', failures);
-    assert(ng.info.dashHidden, 'Dashboard should stay hidden until sign-in', failures);
-    assert(!ng.info.bootDash, 'boot-dash class should not hide first paint', failures);
+    assert(ng.info.sample.indexOf('You are on the Nigeria page') >= 0, 'Lite homepage copy missing', failures);
 
     const clickPage = await browser.newPage();
     await clickPage.setViewport({ width: 390, height: 844, isMobile: true });
@@ -145,20 +142,33 @@ async function main() {
       else req.continue();
     });
     await clickPage.goto(base + '/ng', { waitUntil: 'domcontentloaded', timeout: 20000 });
-    await clickPage.click('#ng-mobile-nav [data-ng-scroll-auth]');
-    await new Promise((r) => setTimeout(r, 800));
     const afterClick = await clickPage.evaluate(() => {
-      const landing = document.getElementById('ng-public-landing');
       const text = (document.body.innerText || '').replace(/\s+/g, ' ');
       return {
-        landingHidden: !!(landing && landing.classList.contains('hidden')),
         textLen: text.trim().length,
         stillNigeria: text.indexOf('Dear Daughter Nigeria') >= 0,
+        signIn: !!document.getElementById('btn-in'),
       };
     });
     await clickPage.close();
-    assert(!afterClick.landingHidden, 'Sign in click hid the homepage', failures);
-    assert(afterClick.stillNigeria && afterClick.textLen > 400, 'Sign in click blanked the page', failures);
+    assert(afterClick.stillNigeria && afterClick.textLen > 200 && afterClick.signIn, 'Lite page blanked', failures);
+
+    const htmlOnly = await browser.newPage();
+    await htmlOnly.setViewport({ width: 390, height: 844, isMobile: true });
+    await htmlOnly.setRequestInterception(true);
+    htmlOnly.on('request', (req) => {
+      const u = req.url();
+      if (u === base + '/ng' || u === base + '/ng/') req.continue();
+      else req.abort();
+    });
+    await htmlOnly.goto(base + '/ng', { waitUntil: 'domcontentloaded', timeout: 20000 });
+    const htmlOnlyInfo = await htmlOnly.evaluate(() => (document.body.innerText || '').replace(/\s+/g, ' ').trim());
+    await htmlOnly.close();
+    assert(
+      htmlOnlyInfo.indexOf('You are on the Nigeria page') >= 0,
+      'HTML-only /ng was blank: ' + htmlOnlyInfo.slice(0, 160),
+      failures
+    );
 
     const slash = await openPage(browser, base + '/ng/');
     assert(slash.info.headline || slash.info.bar, '/ng/ did not show the Nigeria page', failures);

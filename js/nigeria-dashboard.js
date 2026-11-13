@@ -11,7 +11,7 @@
   var AUTH_PANEL_OPEN_KEY = 'ngAuthPanelOpen';
   // Always land email links on the Nigeria hub (not the US root). A wrong
   // continue URL + geo-redirect used to strip ?oobCode= and break sign-in.
-  var EMAIL_LINK_CONTINUE_URL = 'https://prayercityhtx.com/ng';
+  var EMAIL_LINK_CONTINUE_URL = 'https://prayercityhtx.com/ng-hub';
   var SELF_SERVE_SIGNIN_URL =
     'https://us-central1-bible-study-dashboard-99f2d.cloudfunctions.net/volunteerSelfServeSignInMail';
   var SUPER_USER_EMAILS = {

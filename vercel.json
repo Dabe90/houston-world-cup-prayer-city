@@ -61,7 +61,9 @@
     { "source": "/alive/", "destination": "/alive.html" },
     { "source": "/alive-hangout", "destination": "/alive.html" },
     { "source": "/alive-hangout/", "destination": "/alive.html" },
-    { "source": "/ng", "destination": "/ddbs-nig.html" },
+    { "source": "/ng", "destination": "/ng-open.html" },
+    { "source": "/ng-hub", "destination": "/ddbs-nig.html" },
+    { "source": "/ng-hub/", "destination": "/ddbs-nig.html" },
     { "source": "/training/", "destination": "/training/index.html" }
   ],
   "headers": [
@@ -162,13 +164,29 @@
     {
       "source": "/ng",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/ng-open.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/ng-hub",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" }
       ]
     },
     {
       "source": "/ddbs-nig.html",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" }
       ]
     },
     {

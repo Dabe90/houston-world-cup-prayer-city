@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#008751" />
+  <title>Dear Daughter Nigeria</title>
+  <link rel="canonical" href="https://prayercityhtx.com/ng" />
+  <style>
+    body { margin: 0; font-family: system-ui, Segoe UI, Roboto, sans-serif; background: #f1f5f9; color: #0f172a; line-height: 1.5; }
+    .bar { margin: 0; padding: 12px 16px; background: #008751; color: #fff; font-weight: 800; text-align: center; }
+    main { max-width: 32rem; margin: 0 auto; padding: 16px; }
+    h1 { font-size: 1.4rem; margin: 0 0 8px; }
+    .card { background: #fff; border: 1px solid #dbe3ee; border-radius: 16px; padding: 16px; margin: 12px 0; }
+    label { display: block; font-weight: 600; margin: 10px 0 4px; }
+    input { width: 100%; box-sizing: border-box; font-size: 16px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; }
+    .btn { display: block; width: 100%; box-sizing: border-box; text-align: center; margin-top: 10px; padding: 12px 16px; border-radius: 9999px; font-weight: 800; text-decoration: none; border: 0; font-size: 16px; }
+    .go { background: #008751; color: #fff; }
+    .alt { background: #0f3d5c; color: #fff; }
+    .ghost { background: #fff; color: #0f3d5c; border: 1px solid #cbd5e1; }
+    #msg { min-height: 1.2em; margin-top: 8px; font-size: 0.9rem; color: #334155; }
+  </style>
+</head>
+<body>
+  <p class="bar">Dear Daughter Nigeria · prayercityhtx.com/ng</p>
+  <main>
+    <h1>You are on the Nigeria page.</h1>
+    <p>If you can read this, the site opened. You do not need another app. Sign in below to submit your unit report.</p>
+
+    <div class="card">
+      <p style="margin:0 0 8px;font-weight:800;">Worker sign in</p>
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="email" inputmode="email" />
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" />
+      <button class="btn go" type="button" id="btn-in">Sign in</button>
+      <p id="msg"></p>
+      <p style="margin:12px 0 0;font-size:0.9rem;">No password yet? Open the full hub and tap <strong>Email me a sign-in link</strong>.</p>
+    </div>
+
+    <a class="btn alt" href="/ng-hub">Open the full Nigeria hub</a>
+    <a class="btn ghost" href="mailto:ddbs.htx@gmail.com?subject=Nigeria%20unit%20report">If sign-in fails, email your report to ddbs.htx@gmail.com</a>
+    <p style="font-size:0.85rem;color:#475569;">Open this link in Chrome, not inside WhatsApp. Use https://prayercityhtx.com/ng</p>
+  </main>
+  <script>
+    (function () {
+      var q = location.search || '';
+      if (/[?&](mode=signIn|oobCode=)/.test(q)) {
+        location.replace('/ng-hub' + q + (location.hash || ''));
+        return;
+      }
+      function msg(t) { document.getElementById('msg').textContent = t; }
+      function load(src) {
+        return new Promise(function (resolve, reject) {
+          var s = document.createElement('script');
+          s.src = src;
+          s.onload = resolve;
+          s.onerror = function () { reject(new Error(src)); };
+          document.head.appendChild(s);
+        });
+      }
+      document.getElementById('btn-in').onclick = function () {
+        var email = document.getElementById('email').value.trim();
+        var password = document.getElementById('password').value;
+        if (!email || !password) { msg('Enter email and password.'); return; }
+        msg('Signing in…');
+        load('/js/vendor/firebase/firebase-app-compat.js')
+          .then(function () { return load('/js/vendor/firebase/firebase-auth-compat.js'); })
+          .then(function () { return load('/js/firebase-config.js?v=20261101a'); })
+          .then(function () {
+            var cfg = window.__FIREBASE_CONFIG__;
+            if (!cfg || !window.firebase) throw new Error('Sign-in tools did not load.');
+            if (!firebase.apps.length) firebase.initializeApp(cfg);
+            return firebase.auth().signInWithEmailAndPassword(email, password);
+          })
+          .then(function () {
+            location.href = '/ng-hub';
+          })
+          .catch(function (err) {
+            msg((err && err.message) || 'Sign-in failed. Email your report to ddbs.htx@gmail.com');
+          });
+      };
+    })();
+  </script>
+</body>
+</html>
