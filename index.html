@@ -80,31 +80,6 @@
     />
     <link rel="stylesheet" href="css/mobile.css?v=20260915b" />
 
-    <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
-    <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
-    <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
-    <script src="/js/vendor/firebase/firebase-storage-compat.js"></script>
-    <script src="/js/vendor/firebase/firebase-functions-compat.js"></script>
-  <script src="js/firebase-config.js?v=20261021i"></script>
-    <script src="js/site-assets.js"></script>
-    <script src="js/stock-images.js"></script>
-    <script src="js/volunteer-role-guides.js"></script>
-    <script src="js/volunteer-daily-content.js"></script>
-    <script src="js/volunteer-checklist.js"></script>
-    <script src="js/virtual-session.js"></script>
-    <script src="js/serve-day-flow.js"></script>
-    <script src="js/volunteer-tshirt.js"></script>
-    <script src="js/volunteer-shift-picker.js"></script>
-    <script src="js/upcoming-programs-board.js?v=20261021i"></script>
-    <script src="js/prayer-city-super-user.js?v=20261103q"></script>
-    <script src="js/prayer-city-routing.js?v=20260915c"></script>
-    <script>
-      // No geo auto-routing — visitors choose / (US) or /ng (Nigeria).
-      if (window.PrayerCityRouting) {
-        window.PrayerCityRouting.parseStayQuery();
-      }
-    </script>
-
     <style>
       body {
         font-family: system-ui, sans-serif;
@@ -1101,11 +1076,13 @@
                 </a>
               </div>
               <script>
-                if (window.PrayerCityPrograms) {
-                  window.PrayerCityPrograms.renderPublicBoard(
-                    document.getElementById("dashboard-upcoming-programs-grid"),
-                  );
-                }
+                document.addEventListener("DOMContentLoaded", function () {
+                  if (window.PrayerCityPrograms) {
+                    window.PrayerCityPrograms.renderPublicBoard(
+                      document.getElementById("dashboard-upcoming-programs-grid"),
+                    );
+                  }
+                });
               </script>
             </section>
 
@@ -1634,6 +1611,24 @@
       </div>
     </footer>
 
+    <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+    <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+    <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+    <script src="/js/vendor/firebase/firebase-storage-compat.js"></script>
+    <script src="/js/vendor/firebase/firebase-functions-compat.js"></script>
+    <script src="js/firebase-config.js?v=20261021i"></script>
+    <script src="js/site-assets.js"></script>
+    <script src="js/stock-images.js"></script>
+    <script src="js/volunteer-role-guides.js"></script>
+    <script src="js/volunteer-daily-content.js"></script>
+    <script src="js/volunteer-checklist.js"></script>
+    <script src="js/virtual-session.js"></script>
+    <script src="js/serve-day-flow.js"></script>
+    <script src="js/volunteer-tshirt.js"></script>
+    <script src="js/volunteer-shift-picker.js"></script>
+    <script src="js/upcoming-programs-board.js?v=20261021i"></script>
+    <script src="js/prayer-city-super-user.js?v=20261103q"></script>
+    <script src="js/prayer-city-routing.js?v=20260915c"></script>
     <script>
       (function () {
         var EMAIL_LINK_CONTINUE_URL = "https://prayercityhtx.com/";
