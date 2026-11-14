@@ -10,8 +10,6 @@ const {
   canViewAllNigeriaUnitReports,
   NIGERIA_REPORT_OVERVIEW_EMAILS,
 } = require('./lib/adminAuth');
-const { generateStructured } = require('./genkit/generateWithRetry');
-
 const { sendMailViaAppsScript } = require('./lib/mailTransport');
 const { loadOpenActionsForUser } = require('./nigeriaActionReminders');
 
@@ -1962,21 +1960,41 @@ const submitNigeriaUnitReport = onCall(
   if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Profile required.');
   const profile = profileSnap.data();
   const data = request.data || {};
-  const reqUnitId = String(data.unitId || profile.unitId || '').trim();
-  const profileUnits = normalizeProfileUnits(profile);
-  const leaderUnit = profileUnits.find((u) => u.unitId === reqUnitId) || profileUnits[0];
-  if (!leaderUnit) throw new HttpsError('failed-precondition', 'Profile units missing.');
-  if (leaderUnit.role !== 'leader' && !access.isSuperUser) {
-    throw new HttpsError('permission-denied', 'Only unit leaders can submit reports for that unit.');
+  const reqUnitId = String(data.unitId || '').trim();
+  if (!reqUnitId || !getUnit(reqUnitId)) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Select a valid unit before submitting (for example Media Team).'
+    );
   }
+  const profileUnits = normalizeProfileUnits(profile);
+  const leaderUnit = profileUnits.find((u) => u.unitId === reqUnitId);
+  const isSuperUser = access.isSuperUser === true || profile.isSuperUser === true;
+  if (!leaderUnit && !isSuperUser) {
+    throw new HttpsError('permission-denied', 'You are not on that unit.');
+  }
+  if (!isUnitLeader(profile, reqUnitId, isSuperUser)) {
+    throw new HttpsError(
+      'permission-denied',
+      'Only the leader of that unit can submit its report. If you lead Media Team, select Media Team — not Communications & Social Media.'
+    );
+  }
+  const resolvedUnit = leaderUnit || {
+    unitId: reqUnitId,
+    unitLabel: (getUnit(reqUnitId) && getUnit(reqUnitId).label) || reqUnitId,
+    role: 'leader',
+  };
 
   const year = parseInt(data.reportYear, 10);
   const month = parseInt(data.reportMonth, 10);
   if (!year || !month) throw new HttpsError('invalid-argument', 'Report year and month required.');
 
-  const draftId = reportDraftId(leaderUnit.unitId, year, month);
+  const draftId = reportDraftId(resolvedUnit.unitId, year, month);
   const draftSnap = await db.collection('nigeria_unit_report_drafts').doc(draftId).get();
-  if (!access.isSuperUser) {
+  const unitLeaders = await loadUnitLeaders(db, resolvedUnit.unitId);
+  const otherLeaders = unitLeaders.filter((l) => l.uid !== uid);
+  const soleLeader = otherLeaders.length === 0;
+  if (!isSuperUser && !soleLeader) {
     if (!draftSnap.exists || draftSnap.data().status !== 'approved') {
       throw new HttpsError(
         'failed-precondition',
@@ -1986,7 +2004,7 @@ const submitNigeriaUnitReport = onCall(
   }
 
   const attendanceAnalytics =
-    (await computeUnitAttendanceForReport(db, leaderUnit.unitId, year, month)) || {
+    (await computeUnitAttendanceForReport(db, resolvedUnit.unitId, year, month)) || {
       memberCount: 0,
       meetingsHeld: 0,
       totalCheckIns: 0,
@@ -2000,10 +2018,10 @@ const submitNigeriaUnitReport = onCall(
   const formMeetingsHeld = String(data.meetingsHeld || '').trim();
   const formAttendance = String(data.attendance || '').trim();
 
-  const reportId = leaderUnit.unitId + '_' + year + '_' + String(month).padStart(2, '0');
+  const reportId = resolvedUnit.unitId + '_' + year + '_' + String(month).padStart(2, '0');
   const report = {
-    unitId: leaderUnit.unitId,
-    unitLabel: leaderUnit.unitLabel,
+    unitId: resolvedUnit.unitId,
+    unitLabel: resolvedUnit.unitLabel,
     reportYear: year,
     reportMonth: month,
     leaderUid: uid,
@@ -2022,6 +2040,12 @@ const submitNigeriaUnitReport = onCall(
     attendanceSummary: attendanceAnalytics,
     attendanceNarrative: formAttendance || buildAttendanceNarrative(attendanceAnalytics),
     submittedAt: admin.firestore.FieldValue.serverTimestamp(),
+    // Clear any prior reopen/supersede markers on a fresh filing.
+    superseded: false,
+    supersededAt: null,
+    supersededByUid: null,
+    supersededByName: null,
+    supersededReason: null,
   };
 
   await db.collection('nigeria_unit_reports').doc(reportId).set(report, { merge: true });
@@ -2057,16 +2081,15 @@ const submitNigeriaUnitReport = onCall(
     nextMonth: report.nextMonth,
     meetingNotesSummary: report.meetingNotesSummary,
   });
-  const leaders = await loadUnitLeaders(db, leaderUnit.unitId);
   const recipients = [];
-  leaders.forEach((leader) => recipients.push(leader));
+  unitLeaders.forEach((leader) => recipients.push(leader));
   NIGERIA_REPORT_OVERVIEW_EMAILS.forEach((email) => {
     recipients.push({ email, name: email.split('@')[0] });
   });
   const mailStats = await sendUnitReportNoticeMails({
     recipients,
     kind: 'submitted',
-    unitLabel: leaderUnit.unitLabel,
+    unitLabel: resolvedUnit.unitLabel,
     period: reportPeriodLabel(year, month),
     actorName: profile.name || 'A unit leader',
     form: submittedForm,
@@ -2420,6 +2443,109 @@ const approveNigeriaUnitReportDraft = onCall(async (request) => {
   return { ok: true, draftId, status: 'approved' };
 });
 
+/**
+ * Unlock a submitted monthly report so the unit leader can edit and submit again.
+ * Keeps the existing filed report until the next submit overwrites it.
+ * mode:
+ *  - "edit" (default) → status back to approved (leader can edit + resubmit)
+ *  - "retract" → status back to shared (team can edit again, then approve + submit)
+ */
+const reopenNigeriaUnitReportDraft = onCall(async (request) => {
+  const uid = requireAuth(request);
+  const db = admin.firestore();
+  const access = await assertNigeriaVolunteerAccess(db, uid, request.auth);
+  const profileSnap = await db.collection('nigeria_volunteers').doc(uid).get();
+  if (!profileSnap.exists) throw new HttpsError('failed-precondition', 'Profile required.');
+  const profile = profileSnap.data();
+  const data = request.data || {};
+  const unitId = String(data.unitId || '').trim();
+  const year = parseInt(data.reportYear, 10);
+  const month = parseInt(data.reportMonth, 10);
+  const mode = String(data.mode || 'edit').trim().toLowerCase() === 'retract' ? 'retract' : 'edit';
+  if (!unitId || !year || !month) {
+    throw new HttpsError('invalid-argument', 'unitId, year, and month required.');
+  }
+  if (!isUnitLeader(profile, unitId, access.isSuperUser)) {
+    throw new HttpsError('permission-denied', 'Only the unit leader can reopen this report.');
+  }
+
+  const draftId = reportDraftId(unitId, year, month);
+  const draftRef = db.collection('nigeria_unit_report_drafts').doc(draftId);
+  const draftSnap = await draftRef.get();
+  if (!draftSnap.exists) {
+    throw new HttpsError('failed-precondition', 'No report draft found for that unit and month.');
+  }
+  const draft = draftSnap.data() || {};
+  if (draft.status !== 'submitted') {
+    throw new HttpsError(
+      'failed-precondition',
+      'Only a submitted report can be reopened. Current status: ' + (draft.status || 'draft') + '.'
+    );
+  }
+
+  const nextStatus = mode === 'retract' ? 'shared' : 'approved';
+  const contribution = {
+    uid,
+    name: profile.name || 'Leader',
+    message:
+      mode === 'retract'
+        ? 'Retracted the submission so the team can edit again.'
+        : 'Unlocked the submitted report for edits and resubmission.',
+    at: new Date().toISOString(),
+  };
+
+  await draftRef.set(
+    {
+      status: nextStatus,
+      reopenedAt: admin.firestore.FieldValue.serverTimestamp(),
+      reopenedByUid: uid,
+      reopenedByName: profile.name || '',
+      reopenMode: mode,
+      submittedAt: null,
+      submittedByUid: null,
+      submittedByName: null,
+      contributions: admin.firestore.FieldValue.arrayUnion(contribution),
+      formHistory: admin.firestore.FieldValue.arrayUnion({
+        at: new Date().toISOString(),
+        byUid: uid,
+        byName: profile.name || '',
+        action: mode === 'retract' ? 'retract' : 'reopen_edit',
+      }),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastUpdatedByUid: uid,
+      lastUpdatedByName: profile.name || '',
+    },
+    { merge: true }
+  );
+
+  // Keep the filed report, but mark it as superseded until the next submit.
+  const reportRef = db.collection('nigeria_unit_reports').doc(draftId);
+  const reportSnap = await reportRef.get();
+  if (reportSnap.exists) {
+    await reportRef.set(
+      {
+        superseded: true,
+        supersededAt: admin.firestore.FieldValue.serverTimestamp(),
+        supersededByUid: uid,
+        supersededByName: profile.name || '',
+        supersededReason: mode,
+      },
+      { merge: true }
+    );
+  }
+
+  return {
+    ok: true,
+    draftId,
+    status: nextStatus,
+    mode,
+    message:
+      mode === 'retract'
+        ? 'Submission retracted. Teammates can edit, then approve and submit again.'
+        : 'Report unlocked. Edit the fields, then submit again.',
+  };
+});
+
 function buildAttendanceNarrative(a) {
   if (!a || !a.meetingsHeld) return 'No completed meetings this month yet.';
   const lines = [
@@ -2573,6 +2699,7 @@ const summarizeNigeriaMeetingNotesForReport = onCall(
 
     try {
       process.env.GOOGLE_GENAI_API_KEY = googleGenaiApiKey.value();
+      const { generateStructured } = require('./genkit/generateWithRetry');
       const { output } = await generateStructured({
         prompt: `You are summarizing DDBS Nigeria unit meeting notes into a concise monthly report section for church leadership.
 Unit: ${unitLabel}
@@ -2787,6 +2914,7 @@ const generateNigeriaUnitVision = onCall(
     // reliable plan even when Gemini is slow.
     const aiPromise = (async () => {
       process.env.GOOGLE_GENAI_API_KEY = googleGenaiApiKey.value();
+      const { generateStructured } = require('./genkit/generateWithRetry');
       const { output } = await generateStructured({
         prompt: `You are helping a church volunteer team leader plan the next three months for the "${unitLabel}" team. The planning period is ${periodLabel}.
 
@@ -3965,6 +4093,7 @@ module.exports = {
   shareNigeriaUnitReportDraft,
   contributeNigeriaUnitReportDraft,
   approveNigeriaUnitReportDraft,
+  reopenNigeriaUnitReportDraft,
   getNigeriaAttendanceForReport,
   summarizeNigeriaMeetingNotesForReport,
   generateNigeriaUnitVision,
