@@ -2176,6 +2176,7 @@
   function renderUnitCards() {
     var wrap = $('unit-cards');
     if (!wrap) return;
+    if (document.getElementById('ng-report-root')) return;
     wrap.innerHTML = UNIT_CATEGORIES.map(function (cat) {
       var units = UNITS.filter(function (u) {
         return u.category === cat.id;

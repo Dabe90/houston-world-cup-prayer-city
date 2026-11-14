@@ -539,6 +539,9 @@
             return u.unitId;
           });
     var unitContexts = buildUnitContextsFromProfile(profile, isSuperUser);
+    if (window.NigeriaUnits && NigeriaUnits.mergeUnitContexts) {
+      unitContexts = NigeriaUnits.mergeUnitContexts(unitContexts, profile, isSuperUser);
+    }
     var primary = unitContexts[0] || null;
     return {
       hasProfile: true,
@@ -3959,6 +3962,13 @@
     }
     if ((!data.unitContexts || !data.unitContexts.length) && data.profile) {
       data = buildLocalDashboard(data.profile, data.isSuperUser || isClientSuperUser());
+    }
+    if (window.NigeriaUnits && NigeriaUnits.mergeUnitContexts) {
+      data.unitContexts = NigeriaUnits.mergeUnitContexts(
+        data.unitContexts,
+        data.profile,
+        data.isSuperUser || isClientSuperUser()
+      );
     }
     showDashboardSafely(data);
   }

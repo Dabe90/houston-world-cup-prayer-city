@@ -1781,6 +1781,14 @@
 
     var wrap = $('unit-cards');
     if (!wrap) return;
+    if (data && window.NigeriaUnits && NigeriaUnits.mergeUnitContexts) {
+      data.unitContexts = NigeriaUnits.mergeUnitContexts(
+        data.unitContexts,
+        data.profile,
+        data.isSuperUser
+      );
+      dashboardCtx = data;
+    }
     var ctx = (data && data.unitContexts) || [];
     var allowed = {};
     var leadUnits = {};
@@ -2104,7 +2112,9 @@
     if (!mounted) return;
     dashboardCtx = data;
     runtimeOpts = opts || runtimeOpts;
+    syncNigeriaUnitsIntoReport(data);
     prefillReporter(data);
+    if (runtimeOpts) bindDashboardHooks(runtimeOpts);
     if (!selectedUnitId()) preselectUnit(data);
     updateCollabUi({ status: lastDraftStatus });
     watchDraft(runtimeOpts || opts);

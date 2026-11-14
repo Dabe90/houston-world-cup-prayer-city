@@ -1629,7 +1629,39 @@ const getNigeriaDashboard = onCall(
   const unitContexts = [];
   for (const membership of profileUnits) {
     const unit = getUnit(membership.unitId);
-    if (!unit) continue;
+    if (!unit) {
+      const isUnitLeader = membership.role === 'leader' || isSuperUser;
+      unitContexts.push({
+        unitId: membership.unitId,
+        unitLabel: membership.unitLabel || membership.unitId,
+        role: membership.role,
+        unit: {
+          id: membership.unitId,
+          label: membership.unitLabel || membership.unitId,
+          day: '',
+          start: '',
+          end: '',
+        },
+        nextMeeting: null,
+        checkInOpen: false,
+        alreadyCheckedIn: false,
+        attendanceStats: null,
+        latestReport: null,
+        unitVision: null,
+        lastMeetingDigest: null,
+        absenceQuotas: null,
+        absenceRequest: null,
+        absenceTargetMeeting: null,
+        canRequestPlanned: false,
+        canRequestEmergency: false,
+        canSubmitReport: isUnitLeader,
+        canEditVision: isUnitLeader,
+        isLeaderView: isUnitLeader,
+        teamRoster: isUnitLeader ? [] : null,
+        rosterDeferred: false,
+      });
+      continue;
+    }
 
     const nextMeeting = getNextMeeting(unit, now);
     const stats = await computeUserAttendanceStats(db, uid, membership.unitId, year, month);

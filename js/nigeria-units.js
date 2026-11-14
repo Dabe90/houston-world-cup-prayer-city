@@ -196,6 +196,72 @@
     });
   }
 
+  function membershipsFromProfile(profile) {
+    if (!profile) return [];
+    if (Array.isArray(profile.units) && profile.units.length) {
+      return profile.units.filter(function (u) {
+        return u && u.unitId && (u.role === 'leader' || u.role === 'member');
+      });
+    }
+    if (profile.unitId) {
+      return [
+        {
+          unitId: profile.unitId,
+          unitLabel: profile.unitLabel || profile.unitId,
+          role: profile.role === 'leader' ? 'leader' : 'member',
+        },
+      ];
+    }
+    return [];
+  }
+
+  /**
+   * Hub unitContexts can drop a team (e.g. Media Team) when the Cloud Function
+   * does not know that unit id. Re-attach every profile membership so Reports
+   * always lists the teams the volunteer actually belongs to.
+   */
+  function mergeUnitContexts(contexts, profile, isSuperUser) {
+    var ctx = Array.isArray(contexts) ? contexts.slice() : [];
+    var have = {};
+    ctx.forEach(function (c) {
+      if (c && c.unitId) have[c.unitId] = true;
+    });
+    membershipsFromProfile(profile).forEach(function (u) {
+      if (!u.unitId || have[u.unitId]) return;
+      var unit = getUnit(u.unitId);
+      var lead = u.role === 'leader' || !!isSuperUser;
+      ctx.push({
+        unitId: u.unitId,
+        unitLabel: u.unitLabel || (unit && unit.label) || u.unitId,
+        role: u.role,
+        unit: unit
+          ? {
+              id: unit.id,
+              label: unit.label,
+              day: DAY_NAMES[unit.day],
+              start: unit.start,
+              end: unit.end,
+            }
+          : { id: u.unitId, label: u.unitLabel || u.unitId },
+        browseOnly: false,
+        canSubmitReport: lead,
+        canEditVision: lead,
+        isLeaderView: lead,
+        teamRoster: lead ? [] : null,
+      });
+      have[u.unitId] = true;
+    });
+    ctx.sort(function (a, b) {
+      var aLead = a && (a.role === 'leader' || a.canSubmitReport || a.isLeaderView) ? 0 : 1;
+      var bLead = b && (b.role === 'leader' || b.canSubmitReport || b.isLeaderView) ? 0 : 1;
+      if (aLead !== bLead) return aLead - bLead;
+      if (a && a.unitId === 'media') return -1;
+      if (b && b.unitId === 'media') return 1;
+      return String((a && a.unitLabel) || '').localeCompare(String((b && b.unitLabel) || ''));
+    });
+    return ctx;
+  }
+
   function parseHm(hm) {
     var p = String(hm).split(':');
     return { h: parseInt(p[0], 10), m: parseInt(p[1], 10) };
@@ -426,6 +492,8 @@
     HUB_POLICY_START_YMD: HUB_POLICY_START_YMD,
     ATTENDANCE_MISS_START_YMD: ATTENDANCE_MISS_START_YMD,
     getUnit: getUnit,
+    membershipsFromProfile: membershipsFromProfile,
+    mergeUnitContexts: mergeUnitContexts,
     meetingScheduleLabel: meetingScheduleLabel,
     meetingKey: meetingKey,
     getNextMeeting: getNextMeeting,
