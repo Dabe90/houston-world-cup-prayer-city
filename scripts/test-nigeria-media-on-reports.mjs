@@ -49,7 +49,25 @@ const ids = merged.map((c) => c.unitId);
 const media = merged.find((c) => c.unitId === 'media');
 
 if (!ids.includes('media')) fail('Reports picker still missing media after merge: ' + ids.join(','));
-if (ids[0] !== 'media') fail('Media Team should be first (leader) on Reports, got ' + ids[0]);
+if (ids[0] !== 'media') fail('For Mary, Media Team should be first (she leads it), got ' + ids[0]);
+const abe = {
+  name: 'damilola abe',
+  units: [
+    { unitId: 'group6', unitLabel: 'Group 6', role: 'leader' },
+    { unitId: 'internal-leaders', unitLabel: 'Internal Leaders Meeting', role: 'leader' },
+  ],
+};
+const abeMerged = NU.mergeUnitContexts(
+  [
+    { unitId: 'group6', unitLabel: 'Group 6', role: 'leader' },
+    { unitId: 'internal-leaders', unitLabel: 'Internal Leaders Meeting', role: 'leader' },
+  ],
+  abe,
+  true
+);
+if (abeMerged.some((c) => c.unitId === 'media')) {
+  fail('Abe must not be attached to Media Team');
+}
 if (!media || media.role !== 'leader' || !media.canSubmitReport || !media.isLeaderView) {
   fail('Media Team is not marked as a unit she can submit for');
 }

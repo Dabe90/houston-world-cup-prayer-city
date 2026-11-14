@@ -1795,7 +1795,7 @@
     ctx.forEach(function (c) {
       if (c && c.unitId && !c.browseOnly) {
         allowed[c.unitId] = true;
-        if (c.role === 'leader' || c.canSubmitReport || c.isLeaderView) leadUnits[c.unitId] = true;
+        if (c.role === 'leader') leadUnits[c.unitId] = true;
       }
     });
     var showAll = !!(data && data.isSuperUser);

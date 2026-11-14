@@ -12,10 +12,10 @@
     '/js/firebase-config.js?v=20261101a',
     '/js/ddbs-nigeria-meeting-notes.js?v=20260915a',
     '/js/monthly-unit-report.js?v=20261114a',
-    '/js/nigeria-dashboard-report.js?v=20261114a',
+    '/js/nigeria-dashboard-report.js?v=20261114b',
     '/js/prayer-city-super-user.js?v=20261103q',
     '/js/prayer-city-routing.js?v=20260915c',
-    '/js/nigeria-dashboard.js?v=20261114a',
+    '/js/nigeria-dashboard.js?v=20261114b',
   ];
 
   var DASH_HASHES = {

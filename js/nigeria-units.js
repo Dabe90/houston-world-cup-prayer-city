@@ -252,11 +252,11 @@
       have[u.unitId] = true;
     });
     ctx.sort(function (a, b) {
-      var aLead = a && (a.role === 'leader' || a.canSubmitReport || a.isLeaderView) ? 0 : 1;
-      var bLead = b && (b.role === 'leader' || b.canSubmitReport || b.isLeaderView) ? 0 : 1;
+      var aLead = a && a.role === 'leader' ? 0 : 1;
+      var bLead = b && b.role === 'leader' ? 0 : 1;
       if (aLead !== bLead) return aLead - bLead;
-      if (a && a.unitId === 'media') return -1;
-      if (b && b.unitId === 'media') return 1;
+      if (a && a.role === 'leader' && a.unitId === 'media') return -1;
+      if (b && b.role === 'leader' && b.unitId === 'media') return 1;
       return String((a && a.unitLabel) || '').localeCompare(String((b && b.unitLabel) || ''));
     });
     return ctx;
