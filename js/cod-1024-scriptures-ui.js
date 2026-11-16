@@ -1,17 +1,4 @@
 (function (global) {
-  var TERMS = [
-    { id: "s1", label: "Semester 1" },
-    { id: "s2", label: "Semester 2" },
-    { id: "s3", label: "Semester 3" },
-    { id: "s4", label: "Semester 4" },
-  ];
-
-  function termGroup(id) {
-    if (id === "s2a" || id === "s2b") return "s2";
-    if (id === "s4a" || id === "s4b") return "s4";
-    return id;
-  }
-
   function todayYMD() {
     var n = new Date();
     var y = n.getFullYear();
@@ -46,29 +33,10 @@
     if (!root || !data) return;
     var today = todayYMD();
     var todayRow = dayFor(today);
-
-    var termSel = document.createElement("select");
-    termSel.id = "scripture-term";
-    var all = document.createElement("option");
-    all.value = "all";
-    all.textContent = "All terms";
-    termSel.appendChild(all);
-    TERMS.forEach(function (t) {
-      var opt = document.createElement("option");
-      opt.value = t.id;
-      opt.textContent = t.label;
-      termSel.appendChild(opt);
+    var months = [];
+    data.days.forEach(function (row) {
+      if (months.indexOf(row.month) === -1) months.push(row.month);
     });
-    if (todayRow) termSel.value = termGroup(todayRow.term);
-    else termSel.value = "s1";
-
-    var toolbar = document.createElement("div");
-    toolbar.className = "scripture-toolbar";
-    var lab = document.createElement("label");
-    lab.setAttribute("for", "scripture-term");
-    lab.textContent = "Show";
-    toolbar.appendChild(lab);
-    toolbar.appendChild(termSel);
 
     var todayBox = document.createElement("div");
     todayBox.className = "scripture-today";
@@ -81,8 +49,30 @@
         "</p>";
     } else {
       todayBox.innerHTML =
-        "<p class='kicker'>Today</p><p>No assigned reading today (weekend, holiday, or outside term). Tuesday night prayer is still 10:00 PM WAT.</p>";
+        "<p class='kicker'>Today</p><p>No assigned reading today. Tuesday night prayer is still 10:00 PM WAT.</p>";
     }
+
+    var sel = document.createElement("select");
+    sel.id = "scripture-month";
+    var all = document.createElement("option");
+    all.value = "all";
+    all.textContent = "October – December";
+    sel.appendChild(all);
+    months.forEach(function (m) {
+      var opt = document.createElement("option");
+      opt.value = m;
+      opt.textContent = m;
+      sel.appendChild(opt);
+    });
+    if (todayRow) sel.value = todayRow.month;
+
+    var toolbar = document.createElement("div");
+    toolbar.className = "scripture-toolbar";
+    var lab = document.createElement("label");
+    lab.setAttribute("for", "scripture-month");
+    lab.textContent = "Show";
+    toolbar.appendChild(lab);
+    toolbar.appendChild(sel);
 
     var tableWrap = document.createElement("div");
     tableWrap.className = "table-scroll";
@@ -93,10 +83,10 @@
     tableWrap.appendChild(table);
 
     function paint() {
-      var filter = termSel.value;
+      var filter = sel.value;
       tbody.innerHTML = "";
       data.days.forEach(function (row) {
-        if (filter !== "all" && termGroup(row.term) !== filter) return;
+        if (filter !== "all" && row.month !== filter) return;
         var tr = document.createElement("tr");
         if (row.date === today) tr.className = "is-today";
         tr.innerHTML =
@@ -108,7 +98,7 @@
         tbody.appendChild(tr);
       });
     }
-    termSel.addEventListener("change", paint);
+    sel.addEventListener("change", paint);
     paint();
 
     root.innerHTML = "";

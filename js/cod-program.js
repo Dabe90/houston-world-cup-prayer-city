@@ -27,7 +27,7 @@
         studentsLogin: "/cod1024/students",
         student: "/cod1024/student",
         coordinator: "/cod1024/coordinator",
-        coordLogin: "/cod1024/coordinator-login",
+        coordLogin: "/cod1024/students",
         coordRegister: "/cod1024/coordinator-register",
         pending: "/cod1024/coordinator-pending",
         otherHome: "/cod/",

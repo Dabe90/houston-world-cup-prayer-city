@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student login — Class of David 1024</title>
-  <link rel="stylesheet" href="/css/cod1024.css?v=20261116g" />
+  <title>Sign in — Class of David 1024</title>
+  <link rel="stylesheet" href="/css/cod1024.css?v=20261116h" />
 </head>
 <body>
   <header class="site-header">
@@ -12,23 +12,23 @@
       <a class="brand" href="/cod1024">Class of David 1024</a>
       <nav class="nav-links">
         <a href="/cod1024">Home</a>
-        <a href="/cod1024/register">Register</a>
-        <a href="/cod1024/students" aria-current="page">Sign in</a>
-        <a href="/cod1024/coordinator-login">Coordinator</a>
+        <a href="/cod1024/register" data-cod-hide-when-signed-in>Register</a>
+        <a href="/cod1024/students" aria-current="page" data-cod-hide-when-signed-in>Sign in</a>
       </nav>
     </div>
   </header>
   <main class="wrap">
     <div class="panel" data-cod-show-when-signed-in hidden>
-      <p class="kicker">Student portal</p>
+      <p class="kicker">Portal</p>
       <h1>You are signed in</h1>
       <p class="lede">Opening your dashboard…</p>
     </div>
     <div class="two" data-cod-hide-when-signed-in>
       <div>
-        <h1>Sign in to 1024</h1>
-        <p class="lede">Use the email you registered for Class of David 1024.</p>
+        <h1>Sign in</h1>
+        <p class="lede">Use your email. The account already knows if you are a student or a coordinator.</p>
         <p><a class="btn btn-ghost" href="/cod1024/register">Create a student account</a></p>
+        <p class="lede" style="margin-top:12px;">New coordinator? <a href="/cod1024/coordinator-register">Submit for President approval</a>.</p>
       </div>
       <div class="panel">
         <div id="msg" class="msg info" hidden></div>
@@ -51,9 +51,9 @@
   <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
   <script src="/js/firebase-config.js?v=20261101a"></script>
   <script src="/js/cod-data.js"></script>
-  <script src="/js/cod-program.js?v=20261116c"></script>
+  <script src="/js/cod-program.js?v=20261116h"></script>
   <script src="/js/cod-firebase.js?v=20261116c"></script>
-  <script src="/js/cod-auth-bar.js?v=20261116g"></script>
+  <script src="/js/cod-auth-bar.js?v=20261116h"></script>
   <script>
     (function () {
       var form = document.getElementById("login-form");
@@ -69,7 +69,11 @@
       }
       function go(user) {
         return window.COD_FIREBASE.resolveRole(user).then(function (role) {
-          if (role === "coordinator" || role === "admin") {
+          if (role === "admin") {
+            window.location.href = "/cod/admin.html";
+            return;
+          }
+          if (role === "coordinator") {
             window.location.href = "/cod1024/coordinator";
             return;
           }
