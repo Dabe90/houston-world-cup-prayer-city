@@ -63,8 +63,8 @@
               <input id="email" type="email" required autocomplete="email" />
               <label for="phone">Phone</label>
               <input id="phone" type="tel" autocomplete="tel" />
-              <label for="password">Password (8+ characters)</label>
-              <input id="password" type="password" required minlength="8" autocomplete="new-password" />
+              <label for="password">Password (8+ characters, or your existing Prayer City password)</label>
+              <input id="password" type="password" required minlength="6" autocomplete="new-password" />
               <label for="expectations">What are you trusting God for in these two years? (optional)</label>
               <textarea id="expectations" style="min-height:90px;"></textarea>
               <label class="confirm-row" for="confirm-program">
@@ -92,7 +92,7 @@
   <script src="/js/firebase-config.js?v=20261101a"></script>
   <script src="/js/cod-data.js"></script>
   <script src="/js/cod-program.js?v=20261116i"></script>
-  <script src="/js/cod-firebase.js?v=20261116c"></script>
+  <script src="/js/cod-firebase.js?v=20261116r"></script>
   <script src="/js/cod-auth-bar.js?v=20261116j"></script>
   <script>
     (function () {
@@ -100,6 +100,8 @@
       var msg = document.getElementById("msg");
       var btn = document.getElementById("btn-submit");
       var registering = false;
+      var EXISTING_LOGIN_MSG =
+        "Already have a Prayer City login? Use the same email and password here to join Class of David 1024.";
       function show(text, kind) {
         msg.hidden = false;
         msg.className = "msg " + (kind || "info");
@@ -122,10 +124,17 @@
             return;
           }
           return window.COD_FIREBASE.getProfile(user.uid).then(function (p) {
+            if (!p) {
+              document.getElementById("email").value = user.email || "";
+              return window.COD_FIREBASE.auth().signOut().then(function () {
+                show(EXISTING_LOGIN_MSG, "info");
+              });
+            }
             window.location.href = window.COD_PROGRAM_CTX.studentPortalForProfile(p);
           });
         });
       });
+      if (/[?&]existing=1/.test(location.search)) show(EXISTING_LOGIN_MSG, "info");
       form.addEventListener("submit", function (e) {
         e.preventDefault();
         registering = true;
@@ -148,10 +157,7 @@
           .catch(function (err) {
             registering = false;
             btn.disabled = false;
-            var text =
-              err && err.code === "auth/email-already-in-use"
-                ? "That email already has an account. Use Sign in instead."
-                : (err && err.message) || "Could not register.";
+            var text = (err && err.message) || "Could not register.";
             show(text, "err");
             if (window.COD_FIREBASE.auth().currentUser) {
               document.getElementById("signed-title").textContent = "We could not finish your registration";

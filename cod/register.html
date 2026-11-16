@@ -51,8 +51,8 @@
           <input id="last" name="last" required autocomplete="family-name" />
           <label for="email">Email</label>
           <input id="email" name="email" type="email" required autocomplete="email" />
-          <label for="password">Password (8+ characters)</label>
-          <input id="password" name="password" type="password" required minlength="8" autocomplete="new-password" />
+          <label for="password">Password (8+ characters, or your existing Prayer City password)</label>
+          <input id="password" name="password" type="password" required minlength="6" autocomplete="new-password" />
           <label for="phone">Phone</label>
           <input id="phone" name="phone" type="tel" autocomplete="tel" />
           <label class="confirm-row" for="confirm-program">
@@ -76,7 +76,7 @@
   <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
   <script src="/js/firebase-config.js?v=20261101a"></script>
   <script src="/js/cod-data.js"></script>
-  <script src="/js/cod-firebase.js"></script>
+  <script src="/js/cod-firebase.js?v=20261116r"></script>
   <script src="/js/cod-auth-bar.js?v=20261101b"></script>
   <script>
     (function () {
@@ -96,13 +96,27 @@
         return;
       }
 
+      var EXISTING_LOGIN_MSG =
+        "Already have a Prayer City login? Use the same email and password here to join the 9-month class.";
+      var registering = false;
       window.COD_FIREBASE.auth().onAuthStateChanged(function (user) {
-        if (!user) return;
-        window.COD_AUTH_BAR.redirectSignedIn(user);
+        if (!user || registering) return;
+        window.COD_FIREBASE.resolveRole(user).then(function (role) {
+          if (role !== "student") return window.COD_AUTH_BAR.redirectSignedIn(user);
+          return window.COD_FIREBASE.getProfile(user.uid).then(function (p) {
+            if (p) return window.COD_AUTH_BAR.redirectSignedIn(user);
+            document.getElementById("email").value = user.email || "";
+            return window.COD_FIREBASE.auth().signOut().then(function () {
+              show(EXISTING_LOGIN_MSG, "info");
+            });
+          });
+        });
       });
+      if (/[?&]existing=1/.test(location.search)) show(EXISTING_LOGIN_MSG, "info");
 
       form.addEventListener("submit", function (e) {
         e.preventDefault();
+        registering = true;
         btn.disabled = true;
         show("Creating your portal login…", "info");
         var payload = {
@@ -123,10 +137,11 @@
             window.location.href = "/cod/student.html";
           })
           .catch(function (err) {
+            registering = false;
             btn.disabled = false;
             var code = err && err.code;
             if (code === "auth/email-already-in-use") {
-              show("That email already has a portal login. Use student login.", "err");
+              show(err.message || "That email already has a portal login. Use student login.", "err");
             } else {
               show(err.message || String(err), "err");
             }

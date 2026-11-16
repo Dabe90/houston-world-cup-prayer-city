@@ -195,10 +195,39 @@
     if (!fx) throw new Error("Firebase is not configured.");
     var email = String(payload.email || "").trim().toLowerCase();
     var password = String(payload.password || "");
-    if (!email || password.length < 8) {
+    if (!email || password.length < 6) {
       throw new Error("Use a valid email and password (8+ characters).");
     }
-    var cred = await fx.auth.createUserWithEmailAndPassword(email, password);
+    var cred;
+    try {
+      if (password.length < 8) {
+        var shortPw = new Error("Use a valid email and password (8+ characters).");
+        shortPw.code = "auth/password-too-short-for-new-account";
+        throw shortPw;
+      }
+      cred = await fx.auth.createUserWithEmailAndPassword(email, password);
+    } catch (createErr) {
+      // Prayer City (Nigeria) volunteers share this login system and may have 6-7 character passwords.
+      var code = createErr && createErr.code;
+      if (code !== "auth/email-already-in-use" && code !== "auth/password-too-short-for-new-account") throw createErr;
+      try {
+        cred = await fx.auth.signInWithEmailAndPassword(email, password);
+      } catch (signInErr) {
+        if (code === "auth/password-too-short-for-new-account") throw createErr;
+        var wrongPw = new Error(
+          "This email already has a Prayer City or Class of David login. Enter the same password you use there, or use Forgot password on the sign-in page."
+        );
+        wrongPw.code = "auth/existing-login-wrong-password";
+        throw wrongPw;
+      }
+      var existing = await usersRef(cred.user.uid).get();
+      if (existing.exists) {
+        await fx.auth.signOut();
+        var already = new Error("You are already registered for Class of David. Use Sign in.");
+        already.code = "auth/email-already-in-use";
+        throw already;
+      }
+    }
     var uid = cred.user.uid;
     var authEmail = String(cred.user.email || email).toLowerCase();
     var studentId = "";

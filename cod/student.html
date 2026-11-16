@@ -302,7 +302,18 @@
             return;
           }
           return window.COD_FIREBASE.getProfile(user.uid).then(function (p) {
-            profile = p || {};
+            if (!p) {
+              gate.innerHTML =
+                "<p class='kicker'>Class of David</p>" +
+                "<h1 style='margin-top:0;'>You are not registered for a Class of David class yet</h1>" +
+                "<p style='color:var(--muted);'>You are signed in as <strong>" + String(user.email || "").replace(/</g, "&lt;") +
+                "</strong>, but this login has no Class of David registration. Choose the class you want to join — use the same email and password.</p>" +
+                "<p style='display:flex;flex-wrap:wrap;gap:10px;'>" +
+                "<a class='btn btn-primary' href='/cod1024/register?existing=1'>Register for Class of David 1024</a>" +
+                "<a class='btn btn-outline' href='/cod/register.html?existing=1'>Register for the 9-month class</a></p>";
+              return;
+            }
+            profile = p;
             profile.uid = user.uid;
             if (profile.program === "cod1024") {
               window.location.href = "/cod1024/student";
