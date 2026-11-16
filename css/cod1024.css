@@ -453,7 +453,6 @@ h3 { font-size: 1.25rem; line-height: 1.2; margin: 0 0 8px; }
 .faq-item[open] summary::after { transform: translateY(-50%) rotate(45deg); }
 .faq-item p { margin: 0; padding: 0 24px 22px; color: var(--muted); }
 .faq-contact { margin-top: 28px; color: var(--muted); }
-.late-note { margin: 0 0 20px; padding: 12px 14px; border-radius: 12px; background: #f1eefa; color: var(--royal-2); font-size: 0.9rem; }
 .privacy-note { margin: 12px 0 0; color: var(--faint); font-size: 0.82rem; line-height: 1.5; }
 .footer-contact { margin: 10px 0 0; }
 .footer-contact a { color: rgba(255, 255, 255, 0.78); }
