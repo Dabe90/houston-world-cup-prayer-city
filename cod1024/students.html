@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student login — Class of David 1024</title>
+  <link rel="stylesheet" href="/css/cod1024.css?v=20261116f" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="/cod1024">Class of David 1024</a>
+      <nav class="nav-links">
+        <a href="/cod1024">Home</a>
+        <a href="/cod1024/register">Register</a>
+        <a href="/cod1024/students" aria-current="page">Sign in</a>
+        <a href="/cod1024/coordinator-login">Coordinator</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <div class="panel" data-cod-show-when-signed-in hidden>
+      <p class="kicker">Student portal</p>
+      <h1>You are signed in</h1>
+      <p class="lede">Opening your dashboard…</p>
+    </div>
+    <div class="two" data-cod-hide-when-signed-in>
+      <div>
+        <h1>Sign in to 1024</h1>
+        <p class="lede">Use the email you registered for Class of David 1024.</p>
+        <p><a class="btn btn-ghost" href="/cod1024/register">Create a student account</a></p>
+      </div>
+      <div class="panel">
+        <div id="msg" class="msg info" hidden></div>
+        <form id="login-form">
+          <label for="email">Email</label>
+          <input id="email" type="email" required autocomplete="username" />
+          <label for="password">Password</label>
+          <input id="password" type="password" required autocomplete="current-password" />
+          <button class="btn btn-primary" type="submit" style="width:100%;">Sign in</button>
+        </form>
+        <p style="margin-top:12px;">
+          <button type="button" class="btn btn-ghost" id="btn-forgot" style="width:100%;">Forgot password</button>
+        </p>
+      </div>
+    </div>
+  </main>
+  <script>window.COD_PROGRAM = "cod1024";</script>
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js?v=20261101a"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-program.js?v=20261116c"></script>
+  <script src="/js/cod-firebase.js?v=20261116c"></script>
+  <script src="/js/cod-auth-bar.js?v=20261116d"></script>
+  <script>
+    (function () {
+      var form = document.getElementById("login-form");
+      var msg = document.getElementById("msg");
+      function show(t, k) {
+        msg.hidden = false;
+        msg.className = "msg " + k;
+        msg.textContent = t;
+      }
+      if (!window.COD_FIREBASE.init()) {
+        show("Sign-in is not available.", "err");
+        return;
+      }
+      function go(user) {
+        return window.COD_FIREBASE.resolveRole(user).then(function (role) {
+          if (role === "coordinator" || role === "admin") {
+            window.location.href = "/cod1024/coordinator";
+            return;
+          }
+          if (role === "pending_coordinator") {
+            window.location.href = "/cod1024/coordinator-pending";
+            return;
+          }
+          return window.COD_FIREBASE.getProfile(user.uid).then(function (p) {
+            window.location.href = window.COD_PROGRAM_CTX.studentPortalForProfile(p);
+          });
+        });
+      }
+      window.COD_FIREBASE.auth().onAuthStateChanged(function (user) {
+        if (user) go(user);
+      });
+      document.getElementById("btn-forgot").addEventListener("click", function () {
+        var email = document.getElementById("email").value.trim();
+        if (!email) {
+          show("Enter your email first.", "err");
+          return;
+        }
+        show("Sending reset email…", "info");
+        window.COD_FIREBASE.sendPasswordReset(email, {
+          continueUrl: location.origin + "/cod1024/students",
+        })
+          .then(function (e) {
+            show("Check " + e + " (and spam) for the reset link.", "ok");
+          })
+          .catch(function (err) {
+            show(window.COD_FIREBASE.friendlyAuthError(err), "err");
+          });
+      });
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        window.COD_FIREBASE.auth()
+          .signInWithEmailAndPassword(
+            document.getElementById("email").value.trim(),
+            document.getElementById("password").value
+          )
+          .then(function (cred) {
+            return go(cred.user);
+          })
+          .catch(function (err) {
+            show(window.COD_FIREBASE.friendlyAuthError(err), "err");
+          });
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Coordinator registration — Class of David 1024</title>
+  <link rel="stylesheet" href="/css/cod1024.css?v=20261116f" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="/cod1024">Class of David 1024</a>
+      <nav class="nav-links">
+        <a href="/cod1024/coordinator-login">Coordinator login</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <h1>Register as a coordinator</h1>
+    <p class="lede">The President approves your account. Then you can work in 1024 and switch to the 9-month Class of David from the coordinator bar.</p>
+    <div class="panel" style="max-width:440px;">
+      <div id="msg" class="msg info" hidden></div>
+      <form id="reg-form">
+        <label for="who">I am</label>
+        <select id="who" required>
+          <option value="">Select coordinator</option>
+          <option value="cecilia">Cecilia Alabede</option>
+          <option value="veronica">Veronica Ekoja</option>
+          <option value="amarachi">Nnodum Amarachi</option>
+          <option value="elizabeth">Ojenor Elizabeth</option>
+        </select>
+        <label for="first">First name</label>
+        <input id="first" required autocomplete="given-name" />
+        <label for="last">Last name</label>
+        <input id="last" required autocomplete="family-name" />
+        <label for="email">Email</label>
+        <input id="email" type="email" required autocomplete="email" />
+        <label for="phone">Phone</label>
+        <input id="phone" type="tel" autocomplete="tel" />
+        <label for="password">Password (8+ characters)</label>
+        <input id="password" type="password" required minlength="8" autocomplete="new-password" />
+        <button class="btn btn-primary" type="submit" id="btn-submit">Submit for approval</button>
+      </form>
+    </div>
+  </main>
+  <script>window.COD_PROGRAM = "cod1024";</script>
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js?v=20261101a"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-program.js?v=20261116c"></script>
+  <script src="/js/cod-firebase.js?v=20261116c"></script>
+  <script>
+    (function () {
+      var form = document.getElementById("reg-form");
+      var msg = document.getElementById("msg");
+      var btn = document.getElementById("btn-submit");
+      function show(t, k) {
+        msg.hidden = false;
+        msg.className = "msg " + k;
+        msg.textContent = t;
+      }
+      if (!window.COD_FIREBASE.init()) {
+        show("Registration is not available.", "err");
+        btn.disabled = true;
+        return;
+      }
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        btn.disabled = true;
+        window.COD_FIREBASE.registerCoordinator({
+          coordinatorId: document.getElementById("who").value,
+          first: document.getElementById("first").value,
+          last: document.getElementById("last").value,
+          email: document.getElementById("email").value,
+          phone: document.getElementById("phone").value,
+          password: document.getElementById("password").value,
+        })
+          .then(function (res) {
+            if (res && res.status === "coordinator") {
+              window.location.href = "/cod1024/coordinator";
+              return;
+            }
+            window.location.href = "/cod1024/coordinator-pending";
+          })
+          .catch(function (err) {
+            btn.disabled = false;
+            show(window.COD_FIREBASE.friendlyAuthError(err), "err");
+          });
+      });
+    })();
+  </script>
+</body>
+</html>

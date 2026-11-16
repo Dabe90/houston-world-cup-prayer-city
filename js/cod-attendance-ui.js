@@ -6,7 +6,38 @@
     return ((s.first || "") + " " + (s.last || "")).trim() || s.name || s.email || "—";
   }
 
+  function firstMonday(year, monthIndex) {
+    var d = new Date(year, monthIndex, 1);
+    var day = d.getDay();
+    var add = day === 1 ? 0 : (8 - day) % 7;
+    d.setDate(1 + add);
+    return d;
+  }
+
+  function sessionOptions1024() {
+    var months = [
+      [2026, 9], [2026, 10], [2026, 11],
+      [2027, 0], [2027, 1], [2027, 2], [2027, 3], [2027, 4], [2027, 5], [2027, 6],
+      [2027, 9], [2027, 10], [2027, 11],
+      [2028, 0], [2028, 1], [2028, 2], [2028, 3], [2028, 4], [2028, 5], [2028, 6],
+    ];
+    return months.map(function (pair, i) {
+      var d = firstMonday(pair[0], pair[1]);
+      var ymd =
+        d.getFullYear() +
+        "-" +
+        String(d.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(d.getDate()).padStart(2, "0");
+      var year = pair[0] === 2026 || (pair[0] === 2027 && pair[1] <= 6) ? 1 : 2;
+      return { id: "1024-" + ymd, date: d, year: year };
+    });
+  }
+
   function sessionOptions() {
+    if (global.COD_PROGRAM_CTX && global.COD_PROGRAM_CTX.is1024()) {
+      return sessionOptions1024();
+    }
     var D = global.COD_DATA;
     var sessions = [];
     (D.YEARS || []).forEach(function (y) {

@@ -244,11 +244,11 @@ service cloud.firestore {
     match /cod_meta/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
-        && docId == 'cohort_2027'
+        && (docId == 'cohort_2027' || docId == 'cohort_1024')
         && request.resource.data.keys().hasOnly(['studentCounter', 'cohort'])
         && request.resource.data.studentCounter == 1;
       allow update: if request.auth != null
-        && docId == 'cohort_2027'
+        && (docId == 'cohort_2027' || docId == 'cohort_1024')
         && request.resource.data.studentCounter == resource.data.studentCounter + 1
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentCounter']);
       allow delete: if false;

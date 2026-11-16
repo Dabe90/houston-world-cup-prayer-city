@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#151a17" />
+  <title>Student portal — Class of David 1024</title>
+  <link rel="stylesheet" href="/css/cod1024.css?v=20261116f" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="/cod1024">Class of David 1024</a>
+      <nav class="nav-links">
+        <a href="/cod1024">Home</a>
+        <span id="user-badge" class="badge"></span>
+        <span data-cod-auth-nav id="cod-auth-nav"></span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap hero">
+    <div id="gate" class="card"><p>Loading…</p></div>
+    <div id="portal" hidden>
+      <div class="card welcome-banner">
+        <p class="kicker">Congratulations on your admission</p>
+        <h1 id="welcome">Welcome</h1>
+        <p id="year-line"></p>
+      </div>
+      <div id="schedule-slot"></div>
+
+      <div class="card" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 12px;">Your class attendance</h2>
+        <p style="font-size:0.88rem;color:var(--muted);">Nnodum Amarachi marks weekday class attendance in term.</p>
+        <div id="student-attendance"><p style="color:var(--muted);">Loading attendance…</p></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 12px;">Messages</h2>
+        <div id="announcements"></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 12px;">Your marks</h2>
+        <div id="my-marks"><p style="color:var(--muted);">No marks yet.</p></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 12px;">Assignments</h2>
+        <div id="assignments"><p style="color:var(--muted);">Loading assignments…</p></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;" id="submit-panel" hidden>
+        <h2 style="font-family:var(--head);margin:0 0 12px;">Submit work</h2>
+        <p id="submit-for" style="color:var(--muted);"></p>
+        <label for="submit-file">Upload your answer (PDF, JPG, or PNG)</label>
+        <input id="submit-file" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" />
+        <label for="submit-body">Notes (optional)</label>
+        <textarea id="submit-body" placeholder="Anything you want Cecilia to see with the file"></textarea>
+        <button class="btn btn-primary" type="button" id="btn-submit-work">Submit assignment</button>
+        <div id="submit-msg" class="msg info" hidden style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>window.COD_PROGRAM = "cod1024";</script>
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-storage-compat.js"></script>
+  <script src="/js/firebase-config.js?v=20261101a"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-program.js?v=20261116c"></script>
+  <script src="/js/cod-firebase.js?v=20261116c"></script>
+  <script src="/js/cod-portal-ui.js"></script>
+  <script src="/js/cod-attendance-ui.js"></script>
+  <script src="/js/cod-auth-bar.js?v=20261116d"></script>
+  <script>
+    (function () {
+      var gate = document.getElementById("gate");
+      var portal = document.getElementById("portal");
+      var selectedAssignmentId = null;
+      var profile = null;
+      var mySubs = [];
+
+      function renderMarks(list) {
+        var root = document.getElementById("my-marks");
+        var marked = (list || []).filter(function (s) {
+          return s.coordinatorMark || s.status === "marked" || s.status === "needs_correction";
+        });
+        if (!marked.length) {
+          root.innerHTML = "<p style='color:var(--muted);'>No marks yet.</p>";
+          return;
+        }
+        var html = "";
+        marked.forEach(function (s) {
+          html +=
+            "<div style='border-bottom:1px solid var(--hair);padding:12px 0;'>" +
+            "<strong>" + (s.assignmentTitle || s.assignmentId || "Assignment") + "</strong>" +
+            (s.score ? "<p style='margin:6px 0 0;'><strong>Score: " + s.score + "</strong></p>" : "") +
+            "<p style='font-size:0.88rem;color:var(--muted);white-space:pre-wrap;margin:6px 0 0;'>" +
+            (s.coordinatorMark || (s.score ? "" : "Reviewed.")) +
+            "</p>";
+          if (s.status === "needs_correction") {
+            html +=
+              "<p class='msg err' style='margin-top:8px;'>Correction requested" +
+              (s.correctionDeadline ? " by " + s.correctionDeadline : "") +
+              ". Open the assignment and submit again before the deadline.</p>";
+          } else if (s.status === "marked") {
+            html += "<p class='msg ok' style='margin-top:8px;'>Score published.</p>";
+          }
+          html += "</div>";
+        });
+        root.innerHTML = html;
+      }
+
+      function loadMySubmissions() {
+        if (!profile || !profile.uid) return Promise.resolve();
+        return window.COD_FIREBASE.collections
+          .submissions()
+          .where("studentUid", "==", profile.uid)
+          .get()
+          .then(function (snap) {
+            mySubs = [];
+            snap.forEach(function (doc) {
+              var d = doc.data();
+              d.id = doc.id;
+              mySubs.push(d);
+            });
+            renderMarks(mySubs);
+          });
+      }
+
+      function redirectLogin() {
+        window.location.href = "/cod1024/students";
+      }
+
+      function renderAssignments(list) {
+        var root = document.getElementById("assignments");
+        if (!list.length) {
+          root.innerHTML = "<p style='color:var(--muted);'>No assignments yet. Your coordinator will send them here.</p>";
+          return;
+        }
+        var html = "";
+        list.forEach(function (a) {
+          html +=
+            "<div style='border-bottom:1px solid var(--hair);padding:16px 0;'>" +
+            "<p><code>" + (a.code || a.title || "") + "</code>" +
+            (a.dueDate ? " · Due " + a.dueDate : "") +
+            "</p>" +
+            (a.bodyHtml || a.body || "") +
+            (a.pdfUrl
+              ? "<p style='margin-top:12px;'><a class='btn btn-outline' href='" +
+                a.pdfUrl +
+                "' target='_blank' rel='noopener'>Download PDF</a></p>"
+              : "") +
+            "<p style='margin-top:12px;'><button type='button' class='btn btn-primary btn-pick' data-id='" +
+            a.id +
+            "'>Submit work</button></p></div>";
+        });
+        root.innerHTML = html;
+        root.querySelectorAll(".btn-pick").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            selectedAssignmentId = btn.getAttribute("data-id");
+            var a = list.filter(function (x) { return x.id === selectedAssignmentId; })[0];
+            document.getElementById("submit-panel").hidden = false;
+            document.getElementById("submit-for").textContent = "Submitting for: " + (a && a.title);
+          });
+        });
+      }
+
+      function fileKindError(file) {
+        if (!file) return "Choose a PDF, JPG, or PNG.";
+        if (file.size > 12 * 1024 * 1024) return "File must be 12 MB or smaller.";
+        var name = String(file.name || "").toLowerCase();
+        var type = String(file.type || "").toLowerCase();
+        var ok =
+          type === "application/pdf" ||
+          type === "image/jpeg" ||
+          type === "image/png" ||
+          /\.pdf$/.test(name) ||
+          /\.jpe?g$/.test(name) ||
+          /\.png$/.test(name);
+        return ok ? "" : "Upload a PDF, JPG, or PNG.";
+      }
+
+      function uploadAnswerFile(file, assignmentId) {
+        var fx = window.COD_FIREBASE.init();
+        if (!fx || !fx.storage) return Promise.reject(new Error("Upload is not available on this page."));
+        var safe = String(file.name || "answer")
+          .replace(/[^a-zA-Z0-9._-]/g, "_")
+          .slice(-80);
+        var path = "cod/submissions/" + profile.uid + "/" + assignmentId + "/" + Date.now() + "-" + safe;
+        var contentType = file.type || (/\.pdf$/i.test(file.name) ? "application/pdf" : "image/jpeg");
+        var ref = fx.storage.ref(path);
+        return ref.put(file, { contentType: contentType }).then(function () {
+          return ref.getDownloadURL().then(function (url) {
+            return { url: url, path: path, type: contentType, name: file.name || safe };
+          });
+        });
+      }
+
+      document.getElementById("btn-submit-work").addEventListener("click", function () {
+        if (!selectedAssignmentId || !profile) return;
+        var body = document.getElementById("submit-body").value.trim();
+        var file = document.getElementById("submit-file").files[0];
+        var existing = mySubs.filter(function (s) {
+          return s.assignmentId === selectedAssignmentId && s.status === "needs_correction";
+        })[0];
+        var already = mySubs.filter(function (s) {
+          return s.assignmentId === selectedAssignmentId && s.status === "submitted";
+        })[0];
+        var msg = document.getElementById("submit-msg");
+        msg.hidden = false;
+        if (file) {
+          var kindErr = fileKindError(file);
+          if (kindErr) {
+            msg.className = "msg err";
+            msg.textContent = kindErr;
+            return;
+          }
+        } else if (!((existing || already) && (existing || already).fileUrl)) {
+          msg.className = "msg err";
+          msg.textContent = "Choose a PDF, JPG, or PNG.";
+          return;
+        }
+        msg.className = "msg info";
+        msg.textContent = "Uploading…";
+        var assignment = (window.__codAssignments || []).filter(function (x) {
+          return x.id === selectedAssignmentId;
+        })[0];
+        var start = file ? uploadAnswerFile(file, selectedAssignmentId) : Promise.resolve(null);
+        start
+          .then(function (uploaded) {
+            var payload = {
+              assignmentId: selectedAssignmentId,
+              assignmentTitle: (document.getElementById("submit-for").textContent || "").replace("Submitting for: ", ""),
+              studentUid: profile.uid,
+              studentId: profile.studentId,
+              studentName: (profile.first || "") + " " + (profile.last || ""),
+              body: body,
+              year: profile.currentYear || 1,
+              coordinatorId: (assignment && assignment.coordinatorId) || "",
+              coordinatorUid: (assignment && assignment.coordinatorUid) || "",
+              status: "submitted",
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            };
+            if (uploaded) {
+              payload.fileUrl = uploaded.url;
+              payload.filePath = uploaded.path;
+              payload.fileType = uploaded.type;
+              payload.fileName = uploaded.name;
+            }
+            var patch = {
+              body: body,
+              status: "submitted",
+              resubmittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            };
+            if (uploaded) {
+              patch.fileUrl = uploaded.url;
+              patch.filePath = uploaded.path;
+              patch.fileType = uploaded.type;
+              patch.fileName = uploaded.name;
+            }
+            var reuse = existing || already;
+            return reuse
+              ? window.COD_FIREBASE.collections.submissions().doc(reuse.id).update(patch)
+              : window.COD_FIREBASE.collections.submissions().add(payload);
+          })
+          .then(function () {
+            msg.className = "msg ok";
+            msg.textContent = "Submitted. Cecilia will receive your file.";
+            document.getElementById("submit-body").value = "";
+            document.getElementById("submit-file").value = "";
+            return loadMySubmissions();
+          })
+          .catch(function (err) {
+            msg.className = "msg err";
+            msg.textContent = err.message || String(err);
+          });
+      });
+
+      if (!window.COD_FIREBASE.init()) {
+        gate.innerHTML = "<p class='msg err'>Firebase not configured.</p>";
+        return;
+      }
+
+      window.COD_FIREBASE.auth().onAuthStateChanged(function (user) {
+        if (!user) return redirectLogin();
+        window.COD_FIREBASE.resolveRole(user).then(function (role) {
+          if (role === "admin") {
+            window.location.href = "/cod/admin.html";
+            return;
+          }
+          if (role === "coordinator") {
+            window.location.href = "/cod1024/coordinator";
+            return;
+          }
+          if (role === "pending_coordinator") {
+            window.location.href = "/cod1024/coordinator-pending";
+            return;
+          }
+          return window.COD_FIREBASE.getProfile(user.uid).then(function (p) {
+            profile = p || {};
+            profile.uid = user.uid;
+            if (profile.program !== "cod1024") {
+              window.location.href = "/cod/student.html";
+              return;
+            }
+            gate.hidden = true;
+            portal.hidden = false;
+            var fullName = ((profile.first || "") + " " + (profile.last || "")).trim();
+            document.getElementById("welcome").textContent =
+              "Welcome, " + (fullName || "Beloved");
+            document.getElementById("user-badge").textContent = profile.studentId || "Student";
+            var y = profile.currentYear || 1;
+            var yMeta = window.COD_DATA.yearByNumber(y);
+            document.getElementById("year-line").textContent =
+              (yMeta ? yMeta.calendarMonth + " · " : "") +
+              "Year " + y + ": " + (yMeta ? yMeta.title : "") + " · Cohort " + (profile.cohort || "");
+
+            var slot = document.getElementById("schedule-slot");
+            if (slot) slot.hidden = true;
+            window.COD_PORTAL_UI.wireAnnouncements(document.getElementById("announcements"), {
+              uid: user.uid,
+              role: "student",
+            });
+            if (window.COD_ATTENDANCE_UI) window.COD_ATTENDANCE_UI.bindStudent(user.uid);
+            loadMySubmissions();
+
+            return window.COD_FIREBASE.db()
+              .collection("cod_assignments")
+              .where("year", "==", Number(y))
+              .where("status", "==", "published")
+              .get()
+              .then(function (snap) {
+                var list = [];
+                snap.forEach(function (doc) {
+                  var d = doc.data();
+                  d.id = doc.id;
+                  if (window.COD_PROGRAM_CTX && !window.COD_PROGRAM_CTX.belongs(d)) return;
+                  list.push(d);
+                });
+                list.sort(function (a, b) {
+                  return (a.seq || 0) - (b.seq || 0);
+                });
+                window.__codAssignments = list;
+                renderAssignments(list);
+              });
+          });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

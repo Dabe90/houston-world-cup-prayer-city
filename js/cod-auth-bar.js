@@ -3,14 +3,20 @@
  * Hides create-account / login CTAs once a portal login already exists.
  */
 (function (global) {
-  function portalForRole(role) {
+  function portalForRole(role, profile) {
+    var p = global.COD_PROGRAM_CTX && global.COD_PROGRAM_CTX.paths ? global.COD_PROGRAM_CTX.paths() : null;
     if (role === "admin") return { href: "/cod/admin.html", label: "President dashboard" };
-    if (role === "coordinator") return { href: "/cod/coordinator.html", label: "Coordinator portal" };
-    if (role === "pending_coordinator") {
-      return { href: "/cod/coordinator-pending.html", label: "Coordinator (pending)" };
+    if (role === "coordinator") {
+      return { href: p ? p.coordinator : "/cod/coordinator.html", label: "Coordinator portal" };
     }
-    if (role === "student") return { href: "/cod/student.html", label: "Student portal" };
-    return { href: "/cod/student.html", label: "Student portal" };
+    if (role === "pending_coordinator") {
+      return { href: p ? p.pending : "/cod/coordinator-pending.html", label: "Coordinator (pending)" };
+    }
+    var studentHref =
+      global.COD_PROGRAM_CTX && global.COD_PROGRAM_CTX.studentPortalForProfile
+        ? global.COD_PROGRAM_CTX.studentPortalForProfile(profile)
+        : "/cod/student.html";
+    return { href: studentHref, label: "Student portal" };
   }
 
   function pathOf(href) {
@@ -57,11 +63,11 @@
     });
   }
 
-  function mountNav(host, user, role) {
+  function mountNav(host, user, role, profile) {
     applySignedInVisibility(user);
     if (!host) return;
     host.innerHTML = "";
-    var portal = user ? portalForRole(role) : null;
+    var portal = user ? portalForRole(role, profile) : null;
     if (!user || !portal) {
       host.style.display = "none";
       return;
@@ -77,6 +83,17 @@
     dash.textContent = portal.label;
     host.appendChild(dash);
 
+    var ctx = global.COD_PROGRAM_CTX;
+    var staff = role === "coordinator" || role === "admin";
+    if (staff && ctx && ctx.paths && role !== "student") {
+      var p = ctx.paths();
+      var sw = document.createElement("a");
+      sw.className = "btn btn-outline";
+      sw.href = p.otherCoordinator;
+      sw.textContent = "Switch to " + p.otherLabel;
+      host.appendChild(sw);
+    }
+
     var out = document.createElement("button");
     out.type = "button";
     out.className = "btn btn-outline";
@@ -85,7 +102,11 @@
       global.COD_FIREBASE.auth()
         .signOut()
         .then(function () {
-          window.location.href = "/cod/";
+          var home =
+            global.COD_PROGRAM_CTX && global.COD_PROGRAM_CTX.paths
+              ? global.COD_PROGRAM_CTX.paths().home
+              : "/cod/";
+          window.location.href = home;
         });
     });
     host.appendChild(out);
@@ -94,6 +115,11 @@
   function redirectSignedIn(user) {
     if (!user || !global.COD_FIREBASE) return;
     global.COD_FIREBASE.resolveRole(user).then(function (role) {
+      if (role === "student") {
+        return global.COD_FIREBASE.getProfile(user.uid).then(function (p) {
+          window.location.replace(portalForRole(role, p).href);
+        });
+      }
       window.location.replace(portalForRole(role).href);
     });
   }
@@ -111,6 +137,11 @@
         return;
       }
       global.COD_FIREBASE.resolveRole(user).then(function (role) {
+        if (role === "student") {
+          return global.COD_FIREBASE.getProfile(user.uid).then(function (p) {
+            mountNav(host, user, role, p);
+          });
+        }
         mountNav(host, user, role);
       });
     });

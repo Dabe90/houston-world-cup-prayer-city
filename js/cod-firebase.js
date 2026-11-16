@@ -33,8 +33,23 @@
     return init().db.collection("cod_users").doc(uid);
   }
 
+  function currentProgram() {
+    if (global.COD_PROGRAM_CTX && global.COD_PROGRAM_CTX.current) {
+      return global.COD_PROGRAM_CTX.current();
+    }
+    return "cod";
+  }
+
+  function belongsToCurrentProgram(data) {
+    if (global.COD_PROGRAM_CTX && global.COD_PROGRAM_CTX.belongs) {
+      return global.COD_PROGRAM_CTX.belongs(data);
+    }
+    return true;
+  }
+
   function metaRef() {
-    return init().db.collection("cod_meta").doc("cohort_2027");
+    var docId = currentProgram() === "cod1024" ? "cohort_1024" : "cohort_2027";
+    return init().db.collection("cod_meta").doc(docId);
   }
 
   function settingsRef() {
@@ -192,18 +207,21 @@
         var mSnap = await transaction.get(metaRef());
         var counter = (mSnap.exists && mSnap.data().studentCounter) || 0;
         var next = counter + 1;
+        var program = currentProgram();
+        var cohortTag = program === "cod1024" ? "1024" : global.COD_DATA ? global.COD_DATA.COHORT : "2027";
         studentId =
           "COD" +
-          (global.COD_DATA ? global.COD_DATA.COHORT : "2027") +
+          cohortTag +
           "-" +
           String(next).padStart(4, "0");
         if (!mSnap.exists) {
-          transaction.set(metaRef(), { studentCounter: next, cohort: "2027" });
+          transaction.set(metaRef(), { studentCounter: next, cohort: cohortTag });
         } else {
           transaction.update(metaRef(), { studentCounter: next });
         }
         transaction.set(usersRef(uid), {
           role: "student",
+          program: program,
           studentId: studentId,
           email: authEmail,
           first: String(payload.first || "").trim(),
@@ -215,7 +233,7 @@
           emergencyName: String(payload.emergencyName || "").trim(),
           emergencyPhone: String(payload.emergencyPhone || "").trim(),
           currentYear: 1,
-          cohort: global.COD_DATA ? global.COD_DATA.COHORT_LABEL : "2026/2027",
+          cohort: program === "cod1024" ? "1024" : global.COD_DATA ? global.COD_DATA.COHORT_LABEL : "2026/2027",
           createdAt: global.firebase.firestore.FieldValue.serverTimestamp(),
         });
       });
@@ -460,6 +478,7 @@
     await announcementsRef().add({
       subject: subj,
       body: body,
+      program: currentProgram(),
       audience: dest.audience,
       targetCoordinatorId: dest.targetCoordinatorId || "",
       targetCoordinatorName: targetPerson ? targetPerson.name : "",
@@ -491,6 +510,7 @@
           snap.forEach(function (doc) {
             var d = doc.data();
             d.id = doc.id;
+            if (!belongsToCurrentProgram(d)) return;
             if (isAnnouncementVisible(d, viewer)) list.push(d);
           });
           onData(list);
@@ -505,6 +525,7 @@
     snap.forEach(function (doc) {
       var d = doc.data();
       d.uid = doc.id;
+      if (!belongsToCurrentProgram(d)) return;
       users.push(d);
     });
     users.sort(function (a, b) {
@@ -532,6 +553,7 @@
     await attendanceRef(sid).set(
       {
         sessionId: sid,
+        program: currentProgram(),
         academicYear: Number(academicYear) || 0,
         present: present,
         presentCount: Object.keys(present).filter(function (k) {
@@ -557,6 +579,9 @@
     snap.forEach(function (doc) {
       var d = doc.data() || {};
       d.id = doc.id;
+      var sid = String(d.sessionId || d.id || "");
+      var is1024Row = d.program === "cod1024" || sid.indexOf("1024-") === 0;
+      if (currentProgram() === "cod1024" ? !is1024Row : is1024Row) return;
       rows.push(d);
     });
     rows.sort(function (a, b) {
@@ -613,6 +638,7 @@
     getClassAttendance: getClassAttendance,
     listClassAttendance: listClassAttendance,
     staffFileUrl: staffFileUrl,
+    currentProgram: currentProgram,
     announcementsRef: announcementsRef,
     attendanceRef: attendanceRef,
     collections: {

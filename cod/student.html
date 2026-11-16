@@ -71,10 +71,11 @@
   <script src="/js/vendor/firebase/firebase-storage-compat.js"></script>
   <script src="/js/firebase-config.js?v=20261101a"></script>
   <script src="/js/cod-data.js"></script>
-  <script src="/js/cod-firebase.js"></script>
+  <script src="/js/cod-program.js?v=20261116c"></script>
+  <script src="/js/cod-firebase.js?v=20261116c"></script>
   <script src="/js/cod-portal-ui.js"></script>
   <script src="/js/cod-attendance-ui.js"></script>
-  <script src="/js/cod-auth-bar.js?v=20261101b"></script>
+  <script src="/js/cod-auth-bar.js?v=20261116d"></script>
   <script>
     (function () {
       var gate = document.getElementById("gate");
@@ -303,6 +304,10 @@
           return window.COD_FIREBASE.getProfile(user.uid).then(function (p) {
             profile = p || {};
             profile.uid = user.uid;
+            if (profile.program === "cod1024") {
+              window.location.href = "/cod1024/student";
+              return;
+            }
             gate.hidden = true;
             portal.hidden = false;
             var fullName = ((profile.first || "") + " " + (profile.last || "")).trim();
@@ -338,6 +343,7 @@
                 snap.forEach(function (doc) {
                   var d = doc.data();
                   d.id = doc.id;
+                  if (window.COD_PROGRAM_CTX && !window.COD_PROGRAM_CTX.belongs(d)) return;
                   list.push(d);
                 });
                 list.sort(function (a, b) {

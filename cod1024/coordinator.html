@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#151a17" />
+  <title>Coordinator portal — Class of David 1024</title>
+  <link rel="stylesheet" href="/css/cod1024.css?v=20261116f" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="/cod1024">Class of David 1024</a>
+      <nav class="nav-links">
+        <a href="/cod1024">Home</a>
+        <span data-cod-auth-nav id="cod-auth-nav"></span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap hero">
+    <div id="gate" class="card">Loading…</div>
+    <div id="portal" hidden>
+      <p class="kicker">Coordinator portal</p>
+      <h1 id="coord-name">Coordinator</h1>
+      <p style="color:var(--muted);" id="quota-line"></p>
+      <nav class="coord-jump" aria-label="On this page">
+        <a href="#coord-prep">Class files</a>
+        <a href="#coord-hw">Sample HW</a>
+        <a href="#coord-att">Attendance</a>
+        <a href="#coord-write">Write assignment</a>
+        <a href="#coord-mark">Mark work</a>
+      </nav>
+      <div id="teaching-schedule"></div>
+
+      <div class="card" id="coord-prep" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 8px;">Prepare your class</h2>
+        <p style="font-size:0.88rem;color:var(--muted);">Staff only — students cannot see these files. Years 1–4 of the library are available here for 1024.</p>
+        <div id="prep-materials"></div>
+      </div>
+
+      <div class="card" id="coord-hw" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 8px;">Sample HW</h2>
+        <p style="font-size:0.88rem;color:var(--muted);">Prior-cohort homework for every year. Title these as Sample HW when you reuse them.</p>
+        <div id="sample-hw"></div>
+      </div>
+
+      <div class="card" id="coord-att" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 8px;">Class attendance</h2>
+        <p style="font-size:0.88rem;color:var(--muted);" id="att-help">Nnodum Amarachi marks weekday class attendance in term. Coordinators and students can see the roll.</p>
+        <label for="att-session">Class session</label>
+        <select id="att-session"></select>
+        <p id="att-meta" style="font-size:0.88rem;color:var(--muted);margin:8px 0 12px;"></p>
+        <div id="att-roster"></div>
+        <button type="button" class="btn btn-primary" id="btn-save-att" style="margin-top:12px;">Save attendance</button>
+        <div id="att-msg" class="msg info" hidden style="margin-top:10px;"></div>
+      </div>
+
+      <div class="card" id="coord-msg" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 8px;">Send a message</h2>
+        <p style="font-size:0.88rem;color:var(--muted);">Send to everyone, all students, all coordinators, the President, or one coordinator.</p>
+        <label for="msg-audience">Send to</label>
+        <select id="msg-audience"></select>
+        <label for="msg-subject">Subject</label>
+        <input id="msg-subject" type="text" placeholder="e.g. Assignment reminder" />
+        <label for="msg-body">Message</label>
+        <textarea id="msg-body" style="min-height:120px;" placeholder="Write your message…"></textarea>
+        <button type="button" class="btn btn-primary" id="btn-send-msg">Send message</button>
+        <div id="msg-status" class="msg info" hidden style="margin-top:10px;"></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 12px;">Inbox</h2>
+        <div id="announcements"></div>
+      </div>
+
+      <div class="hw-editor-grid" id="coord-write" style="margin-top:20px;">
+        <div class="card">
+          <h2 style="font-family:var(--head);margin:0 0 10px;">Write assignment</h2>
+          <p style="font-size:0.88rem;color:var(--muted);">Use the Sample HW template. Type your questions, then send to the President for approval. After he approves, you send it to the students.</p>
+          <label for="draft-year">Academic year</label>
+          <select id="draft-year"></select>
+          <label for="draft-seq">Assignment number</label>
+          <input id="draft-seq" type="number" min="1" value="1" />
+          <label for="draft-title">Working title</label>
+          <input id="draft-title" readonly />
+          <label for="draft-issue">Issue date</label>
+          <input id="draft-issue" type="date" />
+          <label for="draft-due">Submission deadline</label>
+          <input id="draft-due" type="date" />
+          <label for="draft-time">Time</label>
+          <input id="draft-time" value="11:59pm" />
+          <label for="draft-instructions">Instructions</label>
+          <textarea id="draft-instructions" style="min-height:80px;"></textarea>
+          <label for="draft-questions">Questions (type the assignment here)</label>
+          <textarea id="draft-questions" style="min-height:180px;" placeholder="1. &#10;2. "></textarea>
+          <p style="margin:8px 0 12px;">
+            <button type="button" class="btn btn-outline" id="btn-view-sample">View Sample HW template</button>
+          </p>
+          <button class="btn btn-primary" type="button" id="btn-save-draft">Save draft</button>
+          <button class="btn btn-outline" type="button" id="btn-send-president">Send to President for approval</button>
+          <div id="draft-msg" class="msg info" hidden style="margin-top:10px;"></div>
+        </div>
+        <div class="card">
+          <h2 style="font-family:var(--head);margin:0 0 10px;">Live template</h2>
+          <p style="font-size:0.88rem;color:var(--muted);">This is the sheet students will receive as a PDF after the President approves it.</p>
+          <div id="hw-preview"></div>
+        </div>
+      </div>
+      <div class="card" id="coord-mark" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 10px;">Mark student submissions</h2>
+        <div id="submissions"><p style="color:var(--muted);">Loading…</p></div>
+      </div>
+
+      <div class="card" id="coord-send-class" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 10px;">Send to students</h2>
+        <p style="font-size:0.88rem;color:var(--muted);">When the President approves a sheet, it comes back here. Send it to the class yourself.</p>
+        <div id="ready-to-send"><p style="color:var(--muted);">Nothing waiting to send.</p></div>
+      </div>
+      <div class="card" id="coord-drafts" style="margin-top:20px;">
+        <h2 style="font-family:var(--head);margin:0 0 10px;">Your drafts</h2>
+        <div id="my-drafts"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>window.COD_PROGRAM = "cod1024";</script>
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-storage-compat.js"></script>
+  <script src="/js/firebase-config.js"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-program.js?v=20261116c"></script>
+  <script src="/js/cod-firebase.js?v=20261116c"></script>
+  <script src="/js/cod-portal-ui.js"></script>
+  <script src="/js/cod-attendance-ui.js"></script>
+  <script src="/js/cod-staff-materials.js?v=20261103m"></script>
+  <script src="/js/cod-staff-materials-ui.js?v=20261103m"></script>
+  <script src="/js/cod-hw-sheet.js?v=20261104a"></script>
+  <script src="/js/cod-auth-bar.js?v=20261116d"></script>
+  <script>
+    (function () {
+      var user = null;
+      var profile = null;
+      var lastDraftId = null;
+
+      function showDraftMsg(t, k) {
+        var el = document.getElementById("draft-msg");
+        el.hidden = false;
+        el.className = "msg " + k;
+        el.textContent = t;
+      }
+
+      function fillYearSelect() {
+        var sel = document.getElementById("draft-year");
+        var years = (window.COD_DATA.YEARS || []).filter(function (y) {
+          return y.year <= 4;
+        });
+        years.forEach(function (y) {
+          var opt = document.createElement("option");
+          opt.value = y.year;
+          opt.textContent = "Year " + y.year + " — " + y.title;
+          sel.appendChild(opt);
+        });
+      }
+
+      function syncTitleAndPreview() {
+        var seq = window.COD_HW_SHEET.seqNum(document.getElementById("draft-seq").value);
+        document.getElementById("draft-title").value = window.COD_HW_SHEET.workingTitle(seq);
+        window.COD_HW_SHEET.paintPreview(
+          document.getElementById("hw-preview"),
+          window.COD_HW_SHEET.fieldsFromForm()
+        );
+      }
+
+      function sendApprovedToStudents(draftId) {
+        var draftRef = window.COD_FIREBASE.collections.drafts().doc(draftId);
+        return draftRef.get().then(function (snap) {
+          var d = snap.data() || {};
+          if (!d.assignmentId) throw new Error("This sheet is not ready to send yet.");
+          return window.COD_FIREBASE.collections
+            .assignments()
+            .doc(d.assignmentId)
+            .update({
+              status: "published",
+              publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              sentByUid: user.uid,
+              sentByName: profile.name || "",
+            })
+            .then(function () {
+              return draftRef.update({
+                status: "published",
+                publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              });
+            })
+            .then(function () {
+              var year = d.year ? "Year " + d.year + " — " : "";
+              return window.COD_FIREBASE.postAnnouncement(
+                "New assignment: " + (d.title || "Homework"),
+                year +
+                  "A new assignment is in your student portal. Open it, then upload your answer as a PDF, JPG, or PNG.",
+                "students"
+              ).catch(function () {});
+            });
+        });
+      }
+
+      function loadDrafts() {
+        if (!user) return;
+        return window.COD_FIREBASE.collections
+          .drafts()
+          .where("coordinatorUid", "==", user.uid)
+          .get()
+          .then(function (snap) {
+            var root = document.getElementById("my-drafts");
+            var ready = document.getElementById("ready-to-send");
+            if (snap.empty) {
+              root.innerHTML = "<p style='color:var(--muted);'>No drafts yet.</p>";
+              if (ready) ready.innerHTML = "<p style='color:var(--muted);'>Nothing waiting to send.</p>";
+              return;
+            }
+            var html = "<table><thead><tr><th>Code</th><th>Status</th><th>Updated</th></tr></thead><tbody>";
+            var readyHtml = "";
+            snap.forEach(function (doc) {
+              var d = doc.data();
+              if (window.COD_PROGRAM_CTX && !window.COD_PROGRAM_CTX.belongs(d)) return;
+              var st = d.status || "draft";
+              if (st === "submitted_to_president") st = "Awaiting approval";
+              else if (st === "approved") st = "Approved — send to students";
+              else if (st === "published") st = "Sent to students";
+              else if (st === "coordinator_draft") st = "Draft";
+              html += "<tr><td>" + (d.code || d.title) + "</td><td>" + st + "</td><td>" + (d.updatedAt ? "recent" : "") + "</td></tr>";
+              if (d.status === "approved") {
+                readyHtml +=
+                  "<div style='border:1px solid var(--hair);border-radius:12px;padding:12px;margin-bottom:10px;'>" +
+                  "<strong>" + (d.title || d.code) + "</strong>" +
+                  (d.dueDate ? "<p>Due " + d.dueDate + "</p>" : "") +
+                  "<button type='button' class='btn btn-primary btn-send-class' data-id='" +
+                  doc.id +
+                  "'>Send to students</button></div>";
+              }
+            });
+            html += "</tbody></table>";
+            root.innerHTML = html;
+            if (ready) {
+              ready.innerHTML = readyHtml || "<p style='color:var(--muted);'>Nothing waiting to send.</p>";
+              ready.querySelectorAll(".btn-send-class").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                  btn.disabled = true;
+                  sendApprovedToStudents(btn.getAttribute("data-id"))
+                    .then(loadDrafts)
+                    .catch(function (err) {
+                      btn.disabled = false;
+                      alert(err.message || String(err));
+                    });
+                });
+              });
+            }
+          });
+      }
+
+      function notifyStudent(sub, mark, status, deadline) {
+        if (!sub || !sub.studentUid) return Promise.resolve();
+        var title = sub.assignmentTitle || sub.assignmentId || "your assignment";
+        var subject =
+          status === "needs_correction"
+            ? "Correction requested — " + title
+            : "Your score is ready — " + title;
+        var body = mark || "Your work has been reviewed.";
+        if (sub.score) body = "Score: " + sub.score + (mark ? "\n\n" + mark : "");
+        if (status === "needs_correction") {
+          body +=
+            "\n\nPlease submit a correction" +
+            (deadline ? " by " + deadline : "") +
+            ".";
+        }
+        return window.COD_FIREBASE.postAnnouncement(subject, body, "student:" + sub.studentUid);
+      }
+
+      function applyMark(id, status) {
+        var ta = document.querySelector(".mark-ta[data-id='" + id + "']");
+        var due = document.querySelector(".corr-due[data-id='" + id + "']");
+        var scoreEl = document.querySelector(".score-in[data-id='" + id + "']");
+        var mark = ta ? ta.value.trim() : "";
+        var deadline = due ? due.value : "";
+        var score = scoreEl ? scoreEl.value.trim() : "";
+        if (status === "needs_correction" && !deadline) {
+          alert("Set a correction deadline first.");
+          return Promise.reject(new Error("Deadline required"));
+        }
+        if (status === "marked" && !score) {
+          alert("Enter a score before you publish it.");
+          return Promise.reject(new Error("Score required"));
+        }
+        return window.COD_FIREBASE.collections.submissions().doc(id).get().then(function (snap) {
+          var d = snap.data() || {};
+          d.score = score || d.score || "";
+          return window.COD_FIREBASE.collections
+            .submissions()
+            .doc(id)
+            .update({
+              coordinatorMark: mark,
+              score: score || d.score || "",
+              scorePublished: status === "marked",
+              markedBy: profile.coordinatorId || user.uid,
+              markedByName: profile.name || "",
+              markedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              status: status,
+              correctionDeadline: status === "needs_correction" ? deadline : "",
+              studentNotifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            })
+            .then(function () {
+              return notifyStudent(d, mark, status, deadline);
+            });
+        });
+      }
+
+      function loadSubmissions() {
+        return window.COD_FIREBASE.collections
+          .submissions()
+          .limit(60)
+          .get()
+          .then(function (snap) {
+            var root = document.getElementById("submissions");
+            var rows = [];
+            snap.forEach(function (doc) {
+              var d = doc.data();
+              d.id = doc.id;
+              var mine =
+                !d.coordinatorId ||
+                d.coordinatorId === profile.coordinatorId ||
+                d.coordinatorUid === user.uid;
+              if (mine && ["submitted", "needs_correction", "marked"].indexOf(d.status) >= 0) rows.push(d);
+            });
+            if (!rows.length) {
+              root.innerHTML = "<p style='color:var(--muted);'>No pending submissions.</p>";
+              return;
+            }
+            var html = "";
+            rows.forEach(function (d) {
+              html +=
+                "<div style='border-bottom:1px solid var(--hair);padding:12px 0;'>" +
+                "<strong>" + (d.studentName || d.studentId) + "</strong> · " +
+                (d.assignmentTitle || d.assignmentId || "") +
+                " · " + (d.status || "") +
+                (d.fileUrl
+                  ? (String(d.fileType || d.fileName || "").indexOf("pdf") >= 0
+                    ? "<p><a class='btn btn-outline' href='" + d.fileUrl + "' target='_blank' rel='noopener'>Open PDF</a></p>"
+                    : "<p><a href='" + d.fileUrl + "' target='_blank' rel='noopener'><img src='" + d.fileUrl + "' alt='Student upload' style='max-width:100%;max-height:280px;border-radius:8px;border:1px solid var(--hair);' /></a></p>")
+                  : "") +
+                "<p style='font-size:0.88rem;color:var(--muted);white-space:pre-wrap;'>" + (d.body || "") + "</p>" +
+                (d.link ? "<p><a href='" + d.link + "' target='_blank' rel='noopener'>Open link</a></p>" : "") +
+                "<label>Score</label>" +
+                "<input type='text' class='score-in' data-id='" + d.id + "' value='" + (d.score || "") + "' placeholder='e.g. 18/20' />" +
+                "<label>Feedback (sent to the student with the score)</label>" +
+                "<textarea class='mark-ta' data-id='" + d.id + "'>" + (d.coordinatorMark || "") + "</textarea>" +
+                "<label>Correction deadline</label>" +
+                "<input type='date' class='corr-due' data-id='" + d.id + "' value='" + (d.correctionDeadline || "") + "' />" +
+                "<p style='margin-top:8px;'>" +
+                "<button type='button' class='btn btn-primary btn-mark' data-id='" + d.id + "'>Publish score</button> " +
+                "<button type='button' class='btn btn-outline btn-correct' data-id='" + d.id + "'>Request correction</button> " +
+                "<button type='button' class='btn btn-outline btn-forward' data-id='" + d.id + "'>Send marked work to President</button>" +
+                "</p></div>";
+            });
+            root.innerHTML = html;
+            root.querySelectorAll(".btn-mark").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                applyMark(btn.getAttribute("data-id"), "marked").then(loadSubmissions).catch(function () {});
+              });
+            });
+            root.querySelectorAll(".btn-correct").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                applyMark(btn.getAttribute("data-id"), "needs_correction").then(loadSubmissions).catch(function () {});
+              });
+            });
+            root.querySelectorAll(".btn-forward").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                var id = btn.getAttribute("data-id");
+                var ta = root.querySelector(".mark-ta[data-id='" + id + "']");
+                window.COD_FIREBASE.collections.submissions().doc(id).get().then(function (snap) {
+                  var d = snap.data();
+                  return window.COD_FIREBASE.collections.adminInbox().add({
+                    type: "marked_submission",
+                    submissionId: id,
+                    studentId: d.studentId,
+                    studentName: d.studentName,
+                    assignmentId: d.assignmentId,
+                    coordinatorMark: ta.value || d.coordinatorMark || "",
+                    coordinatorId: profile.coordinatorId,
+                    coordinatorName: profile.name,
+                    forwardedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: "new",
+                  }).then(function () {
+                    return window.COD_FIREBASE.collections.submissions().doc(id).update({
+                      status: "forwarded_to_president",
+                      forwardedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    });
+                  });
+                }).then(function () {
+                  loadSubmissions();
+                });
+              });
+            });
+          });
+      }
+
+      function draftPayload(status) {
+        var year = Number(document.getElementById("draft-year").value);
+        var seq = window.COD_HW_SHEET.seqNum(document.getElementById("draft-seq").value);
+        var title = window.COD_HW_SHEET.workingTitle(seq);
+        var questions = document.getElementById("draft-questions").value;
+        return {
+          year: year,
+          seq: seq,
+          title: title,
+          code: title,
+          issueDate: document.getElementById("draft-issue").value || "",
+          dueDate: document.getElementById("draft-due").value || "",
+          timeLabel: document.getElementById("draft-time").value.trim() || "11:59pm",
+          instructions:
+            document.getElementById("draft-instructions").value.trim() ||
+            window.COD_HW_SHEET.defaultInstructions(),
+          questions: questions,
+          rawBody: questions,
+          bodyHtml: window.COD_HW_SHEET.renderHtml(window.COD_HW_SHEET.fieldsFromForm()),
+          status: status || "coordinator_draft",
+          coordinatorUid: user.uid,
+          coordinatorId: profile.coordinatorId || "",
+          coordinatorName: profile.name || "",
+          program: window.COD_FIREBASE.currentProgram ? window.COD_FIREBASE.currentProgram() : "cod",
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        };
+      }
+
+      document.getElementById("btn-save-draft").addEventListener("click", function () {
+        var data = draftPayload("coordinator_draft");
+        var p = lastDraftId
+          ? window.COD_FIREBASE.collections.drafts().doc(lastDraftId).set(data, { merge: true })
+          : window.COD_FIREBASE.collections.drafts().add(data).then(function (ref) {
+              lastDraftId = ref.id;
+            });
+        p.then(function () {
+          showDraftMsg("Draft saved.", "ok");
+          loadDrafts();
+        }).catch(function (e) {
+          showDraftMsg(e.message, "err");
+        });
+      });
+
+      function fillFormFromDraft(d, id) {
+        lastDraftId = id;
+        if (d.year) document.getElementById("draft-year").value = String(d.year);
+        if (d.seq) document.getElementById("draft-seq").value = String(d.seq);
+        if (d.issueDate) document.getElementById("draft-issue").value = d.issueDate;
+        if (d.dueDate) document.getElementById("draft-due").value = d.dueDate;
+        if (d.timeLabel) document.getElementById("draft-time").value = d.timeLabel;
+        if (d.instructions) document.getElementById("draft-instructions").value = d.instructions;
+        document.getElementById("draft-questions").value =
+          (window.COD_HW_SHEET.questionsFromDraft && window.COD_HW_SHEET.questionsFromDraft(d)) ||
+          d.questions ||
+          d.rawBody ||
+          "";
+        syncTitleAndPreview();
+      }
+
+      document.getElementById("btn-send-president").addEventListener("click", function () {
+        var questions = (document.getElementById("draft-questions").value || "").trim();
+        if (!questions) {
+          showDraftMsg("Type the questions first. The President cannot approve a blank Question section.", "err");
+          return;
+        }
+        var data = draftPayload("submitted_to_president");
+        data.submittedAt = firebase.firestore.FieldValue.serverTimestamp();
+        var p = lastDraftId
+          ? window.COD_FIREBASE.collections.drafts().doc(lastDraftId).set(data, { merge: true })
+          : window.COD_FIREBASE.collections.drafts().add(data).then(function (ref) {
+              lastDraftId = ref.id;
+            });
+        p.then(function () {
+          showDraftMsg("Sent to the President for approval.", "ok");
+          loadDrafts();
+        }).catch(function (e) {
+          showDraftMsg(e.message, "err");
+        });
+      });
+
+      if (!window.COD_FIREBASE.init()) {
+        document.getElementById("gate").innerHTML = "<p class='msg err'>Firebase not configured.</p>";
+        return;
+      }
+
+      fillYearSelect();
+      document.getElementById("draft-instructions").value = window.COD_HW_SHEET.defaultInstructions();
+      var today = new Date();
+      document.getElementById("draft-issue").value =
+        today.getFullYear() +
+        "-" +
+        String(today.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(today.getDate()).padStart(2, "0");
+      ["draft-year", "draft-seq", "draft-issue", "draft-due", "draft-time", "draft-instructions", "draft-questions"].forEach(
+        function (id) {
+          document.getElementById(id).addEventListener("input", syncTitleAndPreview);
+          document.getElementById(id).addEventListener("change", syncTitleAndPreview);
+        }
+      );
+      document.getElementById("btn-view-sample").addEventListener("click", function () {
+        var year = Number(document.getElementById("draft-year").value) || 1;
+        var catalog = window.COD_STAFF_MATERIALS && window.COD_STAFF_MATERIALS.YEARS[String(year)];
+        var sample = catalog && catalog.sampleHw && catalog.sampleHw[0];
+        if (!sample || !window.COD_FIREBASE.staffFileUrl) {
+          showDraftMsg("No Sample HW on file for this year yet.", "err");
+          return;
+        }
+        if (!window.COD_STAFF_UI || !window.COD_STAFF_UI.openStaffFile) {
+          showDraftMsg("Staff files are not available on this page.", "err");
+          return;
+        }
+        window.COD_STAFF_UI
+          .openStaffFile(sample.path, sample.label || "Sample HW")
+          .catch(function (err) {
+            showDraftMsg(err.message || "Could not open Sample HW.", "err");
+          });
+      });
+      syncTitleAndPreview();
+
+      window.COD_FIREBASE.auth().onAuthStateChanged(function (u) {
+        if (!u) {
+          window.location.href = "/cod/coordinator-login.html";
+          return;
+        }
+        user = u;
+        window.COD_FIREBASE.resolveRole(u).then(function (role) {
+          if (role === "admin") {
+            window.location.href = "/cod/admin.html";
+            return;
+          }
+          if (role !== "coordinator") {
+            document.getElementById("gate").innerHTML =
+              "<p class='msg err'>Not authorized. Use coordinator login.</p>";
+            return;
+          }
+          return window.COD_FIREBASE.getProfile(u.uid).then(function (p) {
+            profile = p || {};
+            document.getElementById("gate").hidden = true;
+            document.getElementById("portal").hidden = false;
+            document.getElementById("coord-name").textContent = profile.name || "Coordinator";
+            var quota = window.COD_DATA.assignmentQuotaForCoordinator(profile.coordinatorId);
+            document.getElementById("quota-line").textContent = quota.length
+              ? "Your assignment slots: " +
+                quota.map(function (q) {
+                  return "Year " + q.year + " (" + q.expectedCount + ")";
+                }).join(", ")
+              : "Assignment slots will appear once your coordinator ID is set.";
+            var teaching = document.getElementById("teaching-schedule");
+            if (teaching) teaching.hidden = true;
+            window.COD_PORTAL_UI.bindComposer({ includePresident: true });
+            window.COD_PORTAL_UI.wireAnnouncements(document.getElementById("announcements"), {
+              uid: u.uid,
+              role: "coordinator",
+              coordinatorId: profile.coordinatorId || "",
+            });
+            if (window.COD_STAFF_UI) {
+              window.COD_STAFF_UI.renderCoordinatorPrep(
+                document.getElementById("prep-materials"),
+                document.getElementById("sample-hw"),
+                profile.coordinatorId
+              );
+              window.COD_STAFF_UI.bindDownloads(document.getElementById("portal"));
+            }
+            var canMarkAtt = window.COD_DATA.isAttendanceOfficer(profile);
+            if (canMarkAtt) {
+              document.getElementById("att-help").textContent =
+                "You mark weekday class attendance in term. Coordinators and students can see this roll.";
+            }
+            window.COD_ATTENDANCE_UI.bind({ editable: canMarkAtt });
+            loadDrafts().then(function () {
+              return window.COD_FIREBASE.collections
+                .drafts()
+                .where("coordinatorUid", "==", user.uid)
+                .get();
+            }).then(function (snap) {
+              if (!snap || snap.empty) return;
+              var best = null;
+              snap.forEach(function (doc) {
+                var d = doc.data() || {};
+                if (d.status !== "coordinator_draft") return;
+                var t = d.updatedAt && d.updatedAt.toMillis ? d.updatedAt.toMillis() : 0;
+                if (!best || t > best.t) best = { id: doc.id, d: d, t: t };
+              });
+              if (best) fillFormFromDraft(best.d, best.id);
+            });
+            loadSubmissions();
+          });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

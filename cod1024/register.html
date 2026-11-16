@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student registration — Class of David 1024</title>
+  <link rel="stylesheet" href="/css/cod1024.css?v=20261116f" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="/cod1024">Class of David 1024</a>
+      <nav class="nav-links">
+        <a href="/cod1024">Home</a>
+        <a href="/cod1024/register" aria-current="page">Register</a>
+        <a href="/cod1024/students">Sign in</a>
+        <a href="/cod1024/coordinator-login">Coordinator</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <div class="panel" data-cod-show-when-signed-in hidden>
+        <p class="kicker">Student portal</p>
+        <h1>You already have an account</h1>
+      <p class="lede">Opening your dashboard…</p>
+    </div>
+    <div data-cod-hide-when-signed-in>
+      <h1>Create your 1024 portal login</h1>
+      <p class="lede">This registers you for Class of David 1024 only — not the 9-month Class of David.</p>
+      <div class="two">
+        <div class="panel">
+          <div id="msg" class="msg info" hidden></div>
+          <form id="reg-form">
+            <label for="first">First name</label>
+            <input id="first" required autocomplete="given-name" />
+            <label for="last">Last name</label>
+            <input id="last" required autocomplete="family-name" />
+            <label for="email">Email</label>
+            <input id="email" type="email" required autocomplete="email" />
+            <label for="password">Password (8+ characters)</label>
+            <input id="password" type="password" required minlength="8" autocomplete="new-password" />
+            <label for="phone">Phone</label>
+            <input id="phone" type="tel" autocomplete="tel" />
+            <button class="btn btn-primary" type="submit" id="btn-submit">Create account</button>
+          </form>
+        </div>
+        <div class="panel">
+          <h2>Already registered?</h2>
+          <p class="lede">Open assignments, attendance, and messages.</p>
+          <a class="btn btn-ghost" href="/cod1024/students">Student login</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script>window.COD_PROGRAM = "cod1024";</script>
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js?v=20261101a"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-program.js?v=20261116c"></script>
+  <script src="/js/cod-firebase.js?v=20261116c"></script>
+  <script src="/js/cod-auth-bar.js?v=20261116d"></script>
+  <script>
+    (function () {
+      var form = document.getElementById("reg-form");
+      var msg = document.getElementById("msg");
+      var btn = document.getElementById("btn-submit");
+      function show(text, kind) {
+        msg.hidden = false;
+        msg.className = "msg " + (kind || "info");
+        msg.textContent = text;
+      }
+      if (!window.COD_FIREBASE.init()) {
+        show("Registration is not available. Email ddbs.htx@gmail.com.", "err");
+        btn.disabled = true;
+        return;
+      }
+      window.COD_FIREBASE.auth().onAuthStateChanged(function (user) {
+        if (!user) return;
+        window.COD_FIREBASE.getProfile(user.uid).then(function (p) {
+          window.location.href = window.COD_PROGRAM_CTX.studentPortalForProfile(p);
+        });
+      });
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        btn.disabled = true;
+        show("Creating your login…", "info");
+        window.COD_FIREBASE.registerStudent({
+          first: document.getElementById("first").value,
+          last: document.getElementById("last").value,
+          email: document.getElementById("email").value,
+          password: document.getElementById("password").value,
+          phone: document.getElementById("phone").value,
+        })
+          .then(function (res) {
+            show("Signed in. Student ID " + res.studentId + ".", "ok");
+            window.location.href = "/cod1024/student";
+          })
+          .catch(function (err) {
+            btn.disabled = false;
+            if (err && err.code === "auth/email-already-in-use") {
+              show("That email already has a login. Use student login.", "err");
+            } else {
+              show((err && err.message) || "Could not register.", "err");
+            }
+          });
+      });
+    })();
+  </script>
+</body>
+</html>
