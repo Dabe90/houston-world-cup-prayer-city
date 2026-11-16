@@ -411,21 +411,40 @@ h3 { font-size: 1.25rem; line-height: 1.2; margin: 0 0 8px; }
 .cta-band p { color: rgba(255, 255, 255, 0.78); max-width: 34rem; margin: 0 auto; }
 .cta-band .actions { justify-content: center; }
 
-.logo-badge {
-  display: block;
-  width: 96px;
-  height: 96px;
-  padding: 4px;
-  border-radius: 50%;
-  background: #fbf6ef;
-  object-fit: contain;
-  box-shadow: 0 10px 30px -14px rgba(0, 0, 0, 0.6);
-}
-.hero-logo { width: 120px; height: 120px; margin-bottom: 26px; }
-.auth-logo { width: 84px; height: 84px; margin-bottom: 18px; box-shadow: var(--shadow); }
+.logo { display: block; width: 96px; height: auto; object-fit: contain; }
+.logo-on-dark { filter: drop-shadow(0 0 14px rgba(255, 122, 186, 0.35)); }
+.hero-logo { width: 132px; margin-bottom: 22px; }
+.auth-logo { width: 96px; margin-bottom: 14px; }
 .footer-brand { display: inline-flex; align-items: center; gap: 16px; text-decoration: none; }
 .footer-brand:hover { text-decoration: none; }
-.pnav-logo { width: 88px; height: 88px; margin: 22px 0 0 14px; box-shadow: var(--shadow); }
+.footer-brand .logo { width: 84px; }
+.pnav-logo { width: 104px; margin: 26px 0 0 12px; opacity: 0.9; }
+.enroll-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px 8px 12px;
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  color: #a7f3d0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  margin: 0 0 22px;
+}
+.enroll-pill:hover { text-decoration: none; background: rgba(52, 211, 153, 0.2); }
+.enroll-dot { position: relative; width: 9px; height: 9px; border-radius: 50%; background: #34d399; }
+.enroll-dot::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid #34d399;
+  animation: enroll-pulse 1.8s ease-out infinite;
+}
+@keyframes enroll-pulse { from { transform: scale(0.6); opacity: 0.9; } to { transform: scale(1.8); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .enroll-dot::after { animation: none; } }
 .site-footer { background: var(--night); color: rgba(255, 255, 255, 0.6); padding: 48px 0 40px; font-size: 0.9rem; text-align: left; }
 .footer-grid { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; align-items: flex-start; }
 .footer-links { display: flex; flex-wrap: wrap; gap: 10px 22px; }
@@ -734,7 +753,7 @@ tr.month-row.theme-fire td { background: #fbe7de; color: #8f2f12; }
     background: linear-gradient(0deg, rgba(18, 14, 36, 0.98) 0%, rgba(18, 14, 36, 0.9) 48%, rgba(18, 14, 36, 0.35) 100%);
   }
   .hero-copy { padding: 180px 0 56px; }
-  .hero-logo { width: 84px; height: 84px; margin-bottom: 18px; }
+  .hero-logo { width: 104px; margin-bottom: 16px; }
   .hero-facts { gap: 14px 22px; }
   .scroll-cue { display: none; }
   .benefit-grid, .tiles, .plan-meta { grid-template-columns: 1fr; }
