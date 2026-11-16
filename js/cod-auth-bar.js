@@ -100,8 +100,16 @@
       var p = ctx.paths();
       var sw = document.createElement("a");
       sw.className = "btn btn-outline";
-      sw.href = p.otherCoordinator;
-      sw.textContent = "Switch to " + p.otherLabel;
+      if (role === "admin" && ctx.is1024 && ctx.is1024()) {
+        sw.href = "/cod/admin.html";
+        sw.textContent = "Switch to 9-month Class of David";
+      } else if (role === "admin") {
+        sw.href = "/cod1024/coordinator";
+        sw.textContent = "Switch to Class of David 1024";
+      } else {
+        sw.href = p.otherCoordinator;
+        sw.textContent = "Switch to " + p.otherLabel;
+      }
       host.appendChild(sw);
     }
 
