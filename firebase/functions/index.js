@@ -1849,3 +1849,9 @@ exports.runNigeriaMeetingRemindersNow = onCall(
     return { reminders: stats, postMeetingDigest: digestStats };
   }
 );
+
+/** Welcome email for new Class of David 1024 students. */
+exports.onCod1024StudentCreated = require('./cod1024Welcome').createOnCod1024StudentCreated({
+  appsScriptSelfServeMailUrl,
+  selfServeMailSecret,
+});
