@@ -21,6 +21,8 @@
     { "source": "/cod/yearbook/2025/", "destination": "/cod/yearbook/2025/index.html" },
     { "source": "/cod/yearbook/2026", "destination": "/cod/yearbook/2026/index.html" },
     { "source": "/cod/yearbook/2026/", "destination": "/cod/yearbook/2026/index.html" },
+    { "source": "/cod/1024", "destination": "/cod/1024.html" },
+    { "source": "/cod/1024/", "destination": "/cod/1024.html" },
     { "source": "/cod/course-outline", "destination": "/cod/course-outline.html" },
     { "source": "/cod/course-outline/", "destination": "/cod/course-outline.html" },
     { "source": "/cod/register", "destination": "/cod/register.html" },
