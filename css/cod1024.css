@@ -170,7 +170,24 @@ tr.done td { background: #ecfdf5; }
   background: #fff8;
   border: 1px dashed var(--hair);
 }
-.pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; }
+.scripture-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 8px;
+}
+.scripture-toolbar label { margin: 0; }
+.scripture-toolbar select { width: auto; margin: 0; }
+.scripture-today {
+  background: #f5ebe0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 12px 0 8px;
+}
+.scripture-today p { margin: 0; }
+tr.is-today td { background: #ecfdf5; font-weight: 650; }
+.table-scroll { overflow-x: auto; }
 .badge {
   display: inline-block;
   font-size: 0.72rem;

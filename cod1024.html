@@ -7,17 +7,18 @@
   <title>Class of David 1024 — Four semesters over two years</title>
   <meta name="description" content="Class of David 1024 is its own two-year, four-semester program. Register as a student or sign in. Semester 1 begins October 2026." />
   <link rel="canonical" href="https://prayercityhtx.com/cod1024" />
-  <link rel="stylesheet" href="/css/cod1024.css?v=20261116f" />
+  <link rel="stylesheet" href="/css/cod1024.css?v=20261116g" />
 </head>
 <body>
   <header class="nav">
     <div class="wrap nav-inner">
       <a class="brand" href="/cod1024">Class of David 1024</a>
       <nav class="nav-links">
-        <a href="/cod1024/register">Register</a>
-        <a href="/cod1024/students">Sign in</a>
-        <a href="/cod1024/coordinator-login">Coordinator</a>
+        <a href="/cod1024/register" data-cod-hide-when-signed-in>Register</a>
+        <a href="/cod1024/students" data-cod-hide-when-signed-in>Sign in</a>
+        <a href="/cod1024/coordinator-login" data-cod-hide-when-signed-in>Coordinator</a>
         <a href="/">Prayer City</a>
+        <span data-cod-auth-nav id="cod-auth-nav"></span>
       </nav>
     </div>
   </header>
@@ -27,10 +28,11 @@
     <h1>Class of David <em>1024</em></h1>
     <p class="lead">
       Four semesters over two years. First semester starts in October.
-      Scriptures are Monday to Friday. Christmas is a full 14 days, beginning two days before Christmas.
+      Scriptures are Monday to Friday. Tuesday night prayer is 10:00 PM WAT.
+      Christmas is a full 14 days, beginning two days before Christmas.
       The only long holiday is August and September.
     </p>
-    <div class="actions">
+    <div class="actions" data-cod-hide-when-signed-in>
       <a class="btn btn-primary" href="/cod1024/register">Register as a student</a>
       <a class="btn btn-outline" href="/cod1024/students">Student sign in</a>
       <a class="btn btn-outline" href="/cod1024/coordinator-login">Coordinator login</a>
@@ -39,7 +41,7 @@
       <span class="badge">Oct 2026 – Jul 2028</span>
       <span class="badge">4 semesters</span>
       <span class="badge">400 scripture days</span>
-      <span class="badge">Mon–Fri only</span>
+      <span class="badge">Tuesday prayer 10:00 PM WAT</span>
     </div>
 
     <div class="card year-block" id="year-1">
@@ -130,16 +132,19 @@
       <p class="kicker">Daily scriptures</p>
       <h2>Monday to Friday, in term only</h2>
       <p style="color:var(--muted);margin:0 0 8px;">
-        Most days one passage. Some days two or three. Saturday and Sunday are rest. Passages are not listed yet — this is the weekday pattern only.
+        Whole chapters, in order from Genesis. Monday 1, Tuesday 2, Wednesday 1, Thursday 2 or 3, Friday 1.
+        Saturday and Sunday are rest. Nothing is assigned on Christmas, mid-term, or the long holiday.
+        Tuesday night prayer is 10:00 PM WAT.
       </p>
       <div class="rhythm">
-        <span><b>Monday</b>1 passage</span>
-        <span><b>Tuesday</b>2 passages</span>
-        <span><b>Wednesday</b>1 passage</span>
-        <span><b>Thursday</b>2 or 3 passages</span>
-        <span><b>Friday</b>1 passage</span>
-        <span><b>Sat–Sun</b>None</span>
+        <span><b>Monday</b>1 chapter</span>
+        <span><b>Tuesday</b>2 chapters</span>
+        <span><b>Wednesday</b>1 chapter</span>
+        <span><b>Thursday</b>2 or 3 chapters</span>
+        <span><b>Friday</b>1 chapter</span>
+        <span><b>Tue 10:00 PM WAT</b>Prayer</span>
       </div>
+      <div id="scripture-list"></div>
       <table style="margin-top:18px;">
         <thead>
           <tr><th>Term</th><th>Scripture days</th></tr>
@@ -152,14 +157,27 @@
           <tr><td><strong>Program</strong></td><td><strong>400</strong></td></tr>
         </tbody>
       </table>
-      <p class="note">
-        Verse lists will be added here after they are chosen. Nothing is assigned on Christmas, mid-term, or the August–September holiday.
-      </p>
     </div>
   </main>
 
   <footer>
     <div class="wrap">Class of David 1024 · Dear Daughter Bible Study Group</div>
   </footer>
+  <script>window.COD_PROGRAM = "cod1024";</script>
+  <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js?v=20261101a"></script>
+  <script src="/js/cod-data.js"></script>
+  <script src="/js/cod-program.js?v=20261116c"></script>
+  <script src="/js/cod-firebase.js?v=20261116c"></script>
+  <script src="/js/cod-auth-bar.js?v=20261116g"></script>
+  <script src="/js/cod-1024-scriptures.js?v=20261116g"></script>
+  <script src="/js/cod-1024-scriptures-ui.js?v=20261116g"></script>
+  <script>
+    if (window.COD1024_SCRIPTURES_UI) {
+      window.COD1024_SCRIPTURES_UI.renderInto(document.getElementById("scripture-list"));
+    }
+  </script>
 </body>
 </html>

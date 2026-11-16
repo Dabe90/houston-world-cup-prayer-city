@@ -28,14 +28,25 @@
   }
 
   function isCreateAccountPath(pathname) {
-    return pathname === "/cod/register" || pathname === "/cod/register.html";
+    return (
+      pathname === "/cod/register" ||
+      pathname === "/cod/register.html" ||
+      pathname === "/cod1024/register" ||
+      pathname === "/cod1024/register.html"
+    );
   }
 
   function isLoginPath(pathname) {
     return (
       pathname === "/cod/students" ||
       pathname === "/cod/login" ||
-      pathname === "/cod/login.html"
+      pathname === "/cod/login.html" ||
+      pathname === "/cod1024/students" ||
+      pathname === "/cod1024/students.html" ||
+      pathname === "/cod1024/coordinator-login" ||
+      pathname === "/cod1024/coordinator-login.html" ||
+      pathname === "/cod/coordinator-login" ||
+      pathname === "/cod/coordinator-login.html"
     );
   }
 
