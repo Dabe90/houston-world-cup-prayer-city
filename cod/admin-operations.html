@@ -71,7 +71,8 @@
   <script src="/js/cod-data.js"></script>
   <script src="/js/cod-program.js?v=20261116i"></script>
   <script src="/js/cod-firebase.js"></script>
-  <script src="/js/cod-hw-sheet.js?v=20261104a"></script>
+  <script src="/js/cod-1024-themes.js?v=20261116j"></script>
+  <script src="/js/cod-hw-sheet.js?v=20261116j"></script>
   <script src="/js/cod-president-office.js"></script>
   <script src="/js/cod-auth-bar.js?v=20261116i"></script>
   <script>
@@ -96,7 +97,8 @@
               var questions = fields.questions || "";
               html +=
                 "<div style='border:1px solid var(--hair);border-radius:12px;padding:14px;margin-bottom:16px;'>" +
-                "<p class='kicker'>" + (d.coordinatorName || "Coordinator") + "</p>" +
+                "<p class='kicker'>" + (d.coordinatorName || "Coordinator") +
+                (d.program === "cod1024" ? " · Class of David 1024" : "") + "</p>" +
                 "<strong>" + (d.title || d.code) + "</strong>" +
                 "<div style='margin:12px 0;'>" + window.COD_HW_SHEET.renderHtml(fields) + "</div>" +
                 (questions.trim()
@@ -128,7 +130,7 @@
                   var d = snap.data();
                   var fields = window.COD_HW_SHEET.fieldsFromDraft(d);
                   fields.questions = ta.value;
-                  var title = d.title || window.COD_HW_SHEET.workingTitle(fields.seq);
+                  var title = d.title || window.COD_HW_SHEET.workingTitle(fields.seq, fields);
                   var blob = window.COD_HW_SHEET.toPdfBlob(fields);
                   var path = "cod/published/" + id + "/" + title + ".pdf";
                   var ref = window.COD_FIREBASE.init().storage.ref(path);
@@ -137,6 +139,7 @@
                   }).then(function (url) {
                     var bodyHtml = window.COD_HW_SHEET.renderHtml(fields);
                     var pub = {
+                      program: d.program || "cod",
                       year: d.year,
                       seq: fields.seq,
                       code: title,

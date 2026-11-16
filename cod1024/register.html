@@ -2,69 +2,96 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student registration — Class of David 1024</title>
-  <link rel="stylesheet" href="/css/cod1024.css?v=20261116h" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#120e24" />
+  <link rel="icon" type="image/png" href="/images/favicon.png" />
+  <title>Register — Class of David 1024</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" />
+  <link rel="stylesheet" href="/css/cod1024.css?v=20261116j" />
 </head>
 <body>
   <header class="site-header">
-    <div class="wrap">
-      <a class="brand" href="/cod1024">Class of David 1024</a>
-      <nav class="nav-links">
+    <div class="wrap header-inner">
+      <a class="brand" href="/cod1024"><span class="brand-mark">1024</span><span>Class of David<small>Dear Daughter Bible Study</small></span></a>
+      <button class="menu-btn" type="button" aria-label="Open menu" aria-expanded="false"><span></span></button>
+      <nav class="nav-links" aria-label="Main">
         <a href="/cod1024">Home</a>
-        <a href="/cod1024/register" aria-current="page" data-cod-hide-when-signed-in>Register</a>
         <a href="/cod1024/students" data-cod-hide-when-signed-in>Sign in</a>
+        <span data-cod-auth-nav id="cod-auth-nav"></span>
       </nav>
     </div>
   </header>
-  <main class="wrap">
-    <div class="panel" data-cod-show-when-signed-in hidden>
-        <p class="kicker">Student portal</p>
-        <h1>You already have an account</h1>
-      <p class="lede">Opening your dashboard…</p>
-    </div>
-    <div data-cod-hide-when-signed-in>
-      <h1>Create your 1024 portal login</h1>
-      <p class="lede">This registers you for Class of David 1024 only — not the 9-month Class of David.</p>
-      <div class="two">
-        <div class="panel">
-          <div id="msg" class="msg info" hidden></div>
-          <form id="reg-form">
-            <label for="first">First name</label>
-            <input id="first" required autocomplete="given-name" />
-            <label for="last">Last name</label>
-            <input id="last" required autocomplete="family-name" />
-            <label for="email">Email</label>
-            <input id="email" type="email" required autocomplete="email" />
-            <label for="password">Password (8+ characters)</label>
-            <input id="password" type="password" required minlength="8" autocomplete="new-password" />
-            <label for="phone">Phone</label>
-            <input id="phone" type="tel" autocomplete="tel" />
-            <button class="btn btn-primary" type="submit" id="btn-submit">Create account</button>
-          </form>
+
+  <main class="auth-shell">
+    <aside class="auth-art">
+      <img src="/images/cod1024-hero.jpg" alt="" width="1024" height="576" />
+      <div>
+        <p class="kicker">Two years · Four semesters</p>
+        <h2>The first step of a complete disciple.</h2>
+        <p>Daily scripture, Tuesday night prayer at 10:00 PM WAT, and a coordinator who walks with you.</p>
+      </div>
+    </aside>
+    <div class="auth-main">
+      <div class="auth-card">
+        <div data-cod-show-when-signed-in hidden>
+          <p class="kicker">Student portal</p>
+          <h1 id="signed-title">Opening your portal…</h1>
+          <p class="lede" id="signed-line">One moment.</p>
         </div>
-        <div class="panel">
-          <h2>Already registered?</h2>
-          <p class="lede">Open assignments, attendance, and messages.</p>
-          <a class="btn btn-ghost" href="/cod1024/students">Student login</a>
+        <div data-cod-hide-when-signed-in>
+          <p class="kicker">Class of David 1024</p>
+          <h1>Take your seat</h1>
+          <p class="lede">Create your student account. This registers you for Class of David 1024 only.</p>
+          <div class="panel">
+            <div id="msg" class="msg info" hidden></div>
+            <form id="reg-form">
+              <div class="form-row">
+                <div>
+                  <label for="first">First name</label>
+                  <input id="first" required autocomplete="given-name" />
+                </div>
+                <div>
+                  <label for="last">Last name</label>
+                  <input id="last" required autocomplete="family-name" />
+                </div>
+              </div>
+              <label for="email">Email</label>
+              <input id="email" type="email" required autocomplete="email" />
+              <label for="phone">Phone (WhatsApp if you have it)</label>
+              <input id="phone" type="tel" autocomplete="tel" />
+              <label for="password">Password (8+ characters)</label>
+              <input id="password" type="password" required minlength="8" autocomplete="new-password" />
+              <label for="expectations">What are you trusting God for in these two years? (optional)</label>
+              <textarea id="expectations" style="min-height:90px;"></textarea>
+              <button class="btn btn-gold btn-block" type="submit" id="btn-submit">Create my account</button>
+            </form>
+          </div>
+          <div class="auth-alt">
+            <p>Already registered? <a href="/cod1024/students">Sign in</a></p>
+          </div>
         </div>
       </div>
     </div>
   </main>
+
   <script>window.COD_PROGRAM = "cod1024";</script>
+  <script src="/js/cod-1024-site.js?v=20261116j"></script>
   <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
   <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
   <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
   <script src="/js/firebase-config.js?v=20261101a"></script>
   <script src="/js/cod-data.js"></script>
-  <script src="/js/cod-program.js?v=20261116h"></script>
+  <script src="/js/cod-program.js?v=20261116i"></script>
   <script src="/js/cod-firebase.js?v=20261116c"></script>
-  <script src="/js/cod-auth-bar.js?v=20261116h"></script>
+  <script src="/js/cod-auth-bar.js?v=20261116j"></script>
   <script>
     (function () {
       var form = document.getElementById("reg-form");
       var msg = document.getElementById("msg");
       var btn = document.getElementById("btn-submit");
+      var registering = false;
       function show(text, kind) {
         msg.hidden = false;
         msg.className = "msg " + (kind || "info");
@@ -76,32 +103,52 @@
         return;
       }
       window.COD_FIREBASE.auth().onAuthStateChanged(function (user) {
-        if (!user) return;
-        window.COD_FIREBASE.getProfile(user.uid).then(function (p) {
-          window.location.href = window.COD_PROGRAM_CTX.studentPortalForProfile(p);
+        if (!user || registering) return;
+        window.COD_FIREBASE.resolveRole(user).then(function (role) {
+          if (role === "admin" || role === "coordinator") {
+            window.location.href = "/cod1024/coordinator";
+            return;
+          }
+          if (role === "pending_coordinator") {
+            window.location.href = "/cod1024/coordinator-pending";
+            return;
+          }
+          return window.COD_FIREBASE.getProfile(user.uid).then(function (p) {
+            window.location.href = window.COD_PROGRAM_CTX.studentPortalForProfile(p);
+          });
         });
       });
       form.addEventListener("submit", function (e) {
         e.preventDefault();
+        registering = true;
         btn.disabled = true;
-        show("Creating your login…", "info");
+        show("Creating your account…", "info");
         window.COD_FIREBASE.registerStudent({
           first: document.getElementById("first").value,
           last: document.getElementById("last").value,
           email: document.getElementById("email").value,
           password: document.getElementById("password").value,
           phone: document.getElementById("phone").value,
+          expectations: document.getElementById("expectations").value,
         })
           .then(function (res) {
-            show("Signed in. Student ID " + res.studentId + ".", "ok");
+            document.getElementById("signed-title").textContent = "Welcome to the class";
+            document.getElementById("signed-line").textContent =
+              "Your student ID is " + res.studentId + ". Opening your portal…";
             window.location.href = "/cod1024/student";
           })
           .catch(function (err) {
+            registering = false;
             btn.disabled = false;
-            if (err && err.code === "auth/email-already-in-use") {
-              show("That email already has a login. Use student login.", "err");
-            } else {
-              show((err && err.message) || "Could not register.", "err");
+            var text =
+              err && err.code === "auth/email-already-in-use"
+                ? "That email already has an account. Use Sign in instead."
+                : (err && err.message) || "Could not register.";
+            show(text, "err");
+            if (window.COD_FIREBASE.auth().currentUser) {
+              document.getElementById("signed-title").textContent = "We could not finish your registration";
+              document.getElementById("signed-line").textContent =
+                text + " Email ddbs.htx@gmail.com and we will fix it for you.";
             }
           });
       });

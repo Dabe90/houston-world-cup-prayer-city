@@ -44,23 +44,65 @@
     return WORDS[n] || String(n);
   }
 
-  function workingTitle(seq) {
+  function pageProgram() {
+    return global.COD_PROGRAM_CTX && global.COD_PROGRAM_CTX.current
+      ? global.COD_PROGRAM_CTX.current()
+      : "cod";
+  }
+
+  function is1024(fields) {
+    var p = fields && fields.program;
+    return (p || pageProgram()) === "cod1024";
+  }
+
+  function workingTitle(seq, opts) {
+    if (opts && is1024(opts)) {
+      return "COD1024_S" + seqNum(opts.year) + "_HW" + seqNum(seq);
+    }
     return "DearDaughter_COD07_HW" + seqNum(seq);
   }
 
-  function defaultInstructions() {
+  function defaultInstructions(opts) {
+    if (opts && is1024(opts)) {
+      return "Upload your answer in your Class of David 1024 student portal as a PDF, JPG, or PNG before the deadline.";
+    }
     return "Assignment must be submitted in word document or pdf format. Email assignment to the Class coordinator at ddbs.comms@gmail.com";
+  }
+
+  function themeLine(fields) {
+    var T = global.COD1024_THEMES;
+    var t = T && fields.issueDate ? T.forDate(fields.issueDate) : null;
+    return t ? t.month + " theme: " + t.name : "";
+  }
+
+  function headerFor(fields) {
+    if (is1024(fields)) {
+      var sem = "Semester " + seqNum(fields.year);
+      var theme = themeLine(fields);
+      return {
+        cohort: "Class of David 1024",
+        yearLine: sem + (theme ? " · " + theme : ""),
+      };
+    }
+    var cohort = (global.COD_DATA && global.COD_DATA.COHORT_LABEL) || "2026/2027";
+    var yTitle = yearTitle(fields.year);
+    return {
+      cohort: "Class of David " + cohort,
+      yearLine: yTitle ? "Year " + seqNum(fields.year) + " — " + yTitle : "",
+    };
   }
 
   function fieldsFromForm() {
     return {
+      program: pageProgram(),
       year: Number((document.getElementById("draft-year") || {}).value) || 1,
       seq: seqNum((document.getElementById("draft-seq") || {}).value),
       issueDate: (document.getElementById("draft-issue") || {}).value || "",
       dueDate: (document.getElementById("draft-due") || {}).value || "",
       timeLabel: (document.getElementById("draft-time") || {}).value || "11:59pm",
       instructions:
-        (document.getElementById("draft-instructions") || {}).value || defaultInstructions(),
+        (document.getElementById("draft-instructions") || {}).value ||
+        defaultInstructions({ program: pageProgram() }),
       questions: (document.getElementById("draft-questions") || {}).value || "",
     };
   }
@@ -97,12 +139,13 @@
   function fieldsFromDraft(d) {
     d = d || {};
     return {
+      program: d.program || "cod",
       year: Number(d.year) || 1,
       seq: seqNum(d.seq),
       issueDate: d.issueDate || "",
       dueDate: d.dueDate || "",
       timeLabel: d.timeLabel || "11:59pm",
-      instructions: d.instructions || defaultInstructions(),
+      instructions: d.instructions || defaultInstructions({ program: d.program || "cod" }),
       questions: questionsFromDraft(d),
     };
   }
@@ -124,20 +167,17 @@
   function renderHtml(fields) {
     fields = fields || {};
     var seq = seqNum(fields.seq);
-    var cohort = (global.COD_DATA && global.COD_DATA.COHORT_LABEL) || "2026/2027";
-    var yTitle = yearTitle(fields.year);
+    var head = headerFor(fields);
     return (
       '<article class="hw-sheet">' +
       '<p class="hw-org">Dear Daughter Bible Study Group</p>' +
-      '<p class="hw-cohort">Class of David ' +
-      esc(cohort) +
+      '<p class="hw-cohort">' +
+      esc(head.cohort) +
       "</p>" +
       '<p class="hw-asg">Assignment ' +
       esc(assignmentWord(seq)) +
       "</p>" +
-      (yTitle
-        ? '<p class="hw-year">Year ' + seqNum(fields.year) + " — " + esc(yTitle) + "</p>"
-        : "") +
+      (head.yearLine ? '<p class="hw-year">' + esc(head.yearLine) + "</p>" : "") +
       '<p class="hw-meta"><strong>Issue Date:</strong> ' +
       esc(formatLong(fields.issueDate) || "TBA") +
       "</p>" +
@@ -148,7 +188,7 @@
       esc(fields.timeLabel || "11:59pm") +
       "</p>" +
       '<p class="hw-meta"><strong>Instructions:</strong> ' +
-      nl(fields.instructions || defaultInstructions()) +
+      nl(fields.instructions || defaultInstructions(fields)) +
       "</p>" +
       '<p class="hw-q-label">Question:</p>' +
       '<div class="hw-questions">' +
@@ -172,7 +212,7 @@
     }
     fields = fields || {};
     var seq = seqNum(fields.seq);
-    var cohort = (global.COD_DATA && global.COD_DATA.COHORT_LABEL) || "2026/2027";
+    var head = headerFor(fields);
     var doc = new global.jspdf.jsPDF({ unit: "pt", format: "letter" });
     var x = 72;
     var y = 72;
@@ -201,15 +241,14 @@
     }
 
     center("Dear Daughter Bible Study Group", 13, 20);
-    center("Class of David " + cohort, 16, 22);
+    center(head.cohort, 16, 22);
     center("Assignment " + assignmentWord(seq), 14, 20);
-    var yTitle = yearTitle(fields.year);
-    if (yTitle) center("Year " + seqNum(fields.year) + " — " + yTitle, 12, 24);
+    if (head.yearLine) center(head.yearLine, 12, 24);
     y += 8;
     para("Issue Date:", formatLong(fields.issueDate) || "TBA");
     para("Submission Deadline:", formatLong(fields.dueDate) || "TBA");
     para("Time:", fields.timeLabel || "11:59pm");
-    para("Instructions:", fields.instructions || defaultInstructions());
+    para("Instructions:", fields.instructions || defaultInstructions(fields));
     y += 8;
     para("Question:", "", false);
     para("", fields.questions || "");

@@ -5,7 +5,12 @@
 (function (global) {
   function portalForRole(role, profile) {
     var p = global.COD_PROGRAM_CTX && global.COD_PROGRAM_CTX.paths ? global.COD_PROGRAM_CTX.paths() : null;
-    if (role === "admin") return { href: "/cod/admin.html", label: "President dashboard" };
+    if (role === "admin") {
+      if (global.COD_PROGRAM_CTX && global.COD_PROGRAM_CTX.is1024 && global.COD_PROGRAM_CTX.is1024()) {
+        return { href: "/cod1024/coordinator", label: "1024 dashboard" };
+      }
+      return { href: "/cod/admin.html", label: "President dashboard" };
+    }
     if (role === "coordinator") {
       return { href: p ? p.coordinator : "/cod/coordinator.html", label: "Coordinator portal" };
     }

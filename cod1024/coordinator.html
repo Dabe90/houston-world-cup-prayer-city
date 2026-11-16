@@ -3,128 +3,239 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#151a17" />
+  <meta name="theme-color" content="#120e24" />
+  <link rel="icon" type="image/png" href="/images/favicon.png" />
   <title>Coordinator portal — Class of David 1024</title>
-  <link rel="stylesheet" href="/css/cod1024.css?v=20261116h" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" />
+  <link rel="stylesheet" href="/css/cod1024.css?v=20261116j" />
 </head>
 <body>
   <header class="site-header">
-    <div class="wrap">
-      <a class="brand" href="/cod1024">Class of David 1024</a>
-      <nav class="nav-links">
+    <div class="wrap header-inner">
+      <a class="brand" href="/cod1024"><span class="brand-mark">1024</span><span>Class of David<small>Coordinator portal</small></span></a>
+      <button class="menu-btn" type="button" aria-label="Open menu" aria-expanded="false"><span></span></button>
+      <nav class="nav-links" aria-label="Main">
         <a href="/cod1024">Home</a>
         <span data-cod-auth-nav id="cod-auth-nav"></span>
       </nav>
     </div>
   </header>
 
-  <main class="wrap hero">
-    <div id="gate" class="card">Loading…</div>
-    <div id="portal" hidden>
-      <p class="kicker">Coordinator portal</p>
-      <h1 id="coord-name">Coordinator</h1>
-      <p style="color:var(--muted);" id="quota-line"></p>
-      <nav class="coord-jump" aria-label="On this page">
-        <a href="#coord-prep">Class files</a>
-        <a href="#coord-hw">Sample HW</a>
-        <a href="#coord-att">Attendance</a>
-        <a href="#coord-write">Write assignment</a>
-        <a href="#coord-mark">Mark work</a>
+  <div id="gate" class="wrap"><div class="card center-card"><p class="muted" style="margin:0;">Loading your portal…</p></div></div>
+
+  <div id="portal" hidden>
+    <section class="portal-hero">
+      <div class="wrap">
+        <div>
+          <p class="kicker">Coordinator portal · Class of David 1024</p>
+          <h1 id="coord-name">Coordinator</h1>
+          <p id="term-line"></p>
+        </div>
+        <div class="hero-theme" id="hero-theme"></div>
+      </div>
+    </section>
+
+    <div class="wrap shell" data-shell-top>
+      <nav class="pnav" aria-label="Portal">
+        <button type="button" data-tab="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</button>
+        <button type="button" data-tab="plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 5.5A2.5 2.5 0 0 1 4.5 3H11v17H4.5A2.5 2.5 0 0 1 2 17.5z"/><path d="M22 5.5A2.5 2.5 0 0 0 19.5 3H13v17h6.5a2.5 2.5 0 0 0 2.5-2.5z"/></svg>Class plan</button>
+        <button type="button" data-tab="write"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Write assignment</button>
+        <button type="button" data-tab="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>Mark work<span class="tab-count" hidden></span></button>
+        <button type="button" data-tab="send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>Send &amp; drafts<span class="tab-count" hidden></span></button>
+        <button type="button" data-tab="attendance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="4"/><path d="M1 21a8 8 0 0 1 16 0"/><path d="M17 11l2 2 4-4"/></svg>Attendance</button>
+        <button type="button" data-tab="messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Messages</button>
+        <button type="button" data-tab="calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Calendar &amp; readings</button>
       </nav>
-      <div id="teaching-schedule"></div>
 
-      <div class="card" id="coord-prep" style="margin-top:20px;">
-        <h2 style="font-family:var(--head);margin:0 0 8px;">Prepare your class</h2>
-        <p style="font-size:0.88rem;color:var(--muted);">Staff only — students cannot see these files. Years 1–4 of the library are available here for 1024.</p>
-        <div id="prep-materials"></div>
-      </div>
+      <div>
+        <section class="pane" data-pane="overview">
+          <div class="grid-2">
+            <div class="card feature-card" id="today-card">
+              <p class="kicker">Today's reading</p>
+              <div id="today-scripture"></div>
+            </div>
+            <div class="card prayer-card">
+              <p class="kicker">Every Tuesday</p>
+              <p class="big">10:00 PM WAT</p>
+              <p style="margin:0;">Tuesday night prayer with the class.</p>
+            </div>
+          </div>
+          <div class="tiles">
+            <button type="button" class="tile" data-go="plan"><strong>Plan a class</strong><span>1024 template with this month's theme</span></button>
+            <button type="button" class="tile" data-go="write"><strong>Write an assignment</strong><span>Draft, then send to the President</span></button>
+            <button type="button" class="tile" data-go="mark"><strong>Mark work</strong><span id="tile-mark">Student submissions</span></button>
+            <button type="button" class="tile" data-go="send"><strong>Send to students</strong><span id="tile-send">Approved sheets and drafts</span></button>
+            <button type="button" class="tile" data-go="attendance"><strong>Attendance</strong><span>Class roll</span></button>
+            <button type="button" class="tile" data-go="messages"><strong>Messages</strong><span>Send and read</span></button>
+          </div>
+          <div class="card" style="margin-top:18px;">
+            <h2>This week's readings</h2>
+            <div id="week-list"></div>
+          </div>
+        </section>
 
-      <div class="card" id="coord-hw" style="margin-top:20px;">
-        <h2 style="font-family:var(--head);margin:0 0 8px;">Sample HW</h2>
-        <p style="font-size:0.88rem;color:var(--muted);">Prior-cohort homework for every year. Title these as Sample HW when you reuse them.</p>
-        <div id="sample-hw"></div>
-      </div>
+        <section class="pane" data-pane="plan" hidden>
+          <div class="pane-head">
+            <h2>Class plan</h2>
+            <p>The Class of David 1024 class template. Pick a class date and the theme and reading fill in for you.</p>
+          </div>
+          <div class="card">
+            <p class="template-note"><strong>Template only.</strong> This is a guide for shaping your class, not fixed class material. More 1024 materials will be added here over time.</p>
+            <label for="plan-date">Class date</label>
+            <input id="plan-date" type="date" style="max-width:240px;" />
+            <div class="plan-meta">
+              <div><b>Semester</b><span id="plan-sem">—</span></div>
+              <div><b>Month theme</b><span id="plan-theme">—</span></div>
+              <div><b>Reading</b><span id="plan-reading">—</span></div>
+            </div>
+            <ol class="plan-steps" id="plan-steps">
+              <li><strong>Welcome and opening prayer</strong><span>Settle the class and invite the Holy Spirit to teach.</span></li>
+              <li><strong>Read the scripture together</strong><span>Read the day's reading aloud: <em class="plan-reading-inline">—</em>.</span></li>
+              <li><strong>Connect it to the month's theme</strong><span>How does this reading speak to <em class="plan-theme-inline">—</em>? Share your main point.</span></li>
+              <li><strong>Teach</strong><span>Two or three clear points from the passage. Keep it simple and practical.</span></li>
+              <li><strong>Discuss</strong><span>Ask two or three open questions. Let students answer from the text and their lives.</span></li>
+              <li><strong>Respond</strong><span>One thing each student will do or pray about before the next class.</span></li>
+              <li><strong>Assignment and reminders</strong><span>Point to any open assignment and remind the class: Tuesday night prayer is 10:00 PM WAT.</span></li>
+              <li><strong>Closing prayer</strong><span>Pray over the class and send them out.</span></li>
+            </ol>
+            <p style="margin:18px 0 0;display:flex;flex-wrap:wrap;gap:8px;">
+              <button type="button" class="btn btn-primary btn-sm" id="btn-copy-plan">Copy plan as text</button>
+              <button type="button" class="btn btn-outline btn-sm" data-go="write">Write an assignment</button>
+            </p>
+            <div id="plan-msg" class="msg ok" hidden style="margin-top:12px;"></div>
+          </div>
+        </section>
 
-      <div class="card" id="coord-att" style="margin-top:20px;">
-        <h2 style="font-family:var(--head);margin:0 0 8px;">Class attendance</h2>
-        <p style="font-size:0.88rem;color:var(--muted);" id="att-help">Nnodum Amarachi marks weekday class attendance in term. Coordinators and students can see the roll.</p>
-        <label for="att-session">Class session</label>
-        <select id="att-session"></select>
-        <p id="att-meta" style="font-size:0.88rem;color:var(--muted);margin:8px 0 12px;"></p>
-        <div id="att-roster"></div>
-        <button type="button" class="btn btn-primary" id="btn-save-att" style="margin-top:12px;">Save attendance</button>
-        <div id="att-msg" class="msg info" hidden style="margin-top:10px;"></div>
-      </div>
+        <section class="pane" data-pane="write" hidden>
+          <div class="pane-head">
+            <h2>Write assignment</h2>
+            <p>Type your questions, then send to the President for approval. After he approves, you send it to the students.</p>
+          </div>
+          <div class="hw-editor-grid" id="coord-write">
+            <div class="card">
+              <label for="draft-year">Semester</label>
+              <select id="draft-year"></select>
+              <label for="draft-seq">Assignment number</label>
+              <input id="draft-seq" type="number" min="1" value="1" />
+              <label for="draft-title">Working title</label>
+              <input id="draft-title" readonly />
+              <div class="form-row">
+                <div>
+                  <label for="draft-issue">Issue date</label>
+                  <input id="draft-issue" type="date" />
+                </div>
+                <div>
+                  <label for="draft-due">Submission deadline</label>
+                  <input id="draft-due" type="date" />
+                </div>
+              </div>
+              <label for="draft-time">Time</label>
+              <input id="draft-time" value="11:59pm" />
+              <label for="draft-instructions">Instructions</label>
+              <textarea id="draft-instructions" style="min-height:80px;"></textarea>
+              <label for="draft-questions">Questions (type the assignment here)</label>
+              <textarea id="draft-questions" style="min-height:180px;" placeholder="1. &#10;2. &#10;3. "></textarea>
+              <p style="margin:0 0 14px;">
+                <button type="button" class="btn btn-outline btn-sm" id="btn-start-template">Start from the 1024 template</button>
+              </p>
+              <button class="btn btn-primary" type="button" id="btn-save-draft">Save draft</button>
+              <button class="btn btn-outline" type="button" id="btn-send-president">Send to President for approval</button>
+              <div id="draft-msg" class="msg info" hidden style="margin-top:10px;"></div>
+            </div>
+            <div class="card">
+              <p class="kicker">Live preview</p>
+              <p class="muted" style="margin-top:0;font-size:0.9rem;">This is the sheet students receive as a PDF after the President approves it.</p>
+              <div id="hw-preview"></div>
+            </div>
+          </div>
+        </section>
 
-      <div class="card" id="coord-msg" style="margin-top:20px;">
-        <h2 style="font-family:var(--head);margin:0 0 8px;">Send a message</h2>
-        <p style="font-size:0.88rem;color:var(--muted);">Send to everyone, all students, all coordinators, the President, or one coordinator.</p>
-        <label for="msg-audience">Send to</label>
-        <select id="msg-audience"></select>
-        <label for="msg-subject">Subject</label>
-        <input id="msg-subject" type="text" placeholder="e.g. Assignment reminder" />
-        <label for="msg-body">Message</label>
-        <textarea id="msg-body" style="min-height:120px;" placeholder="Write your message…"></textarea>
-        <button type="button" class="btn btn-primary" id="btn-send-msg">Send message</button>
-        <div id="msg-status" class="msg info" hidden style="margin-top:10px;"></div>
-      </div>
+        <section class="pane" data-pane="mark" hidden>
+          <div class="pane-head">
+            <h2>Mark student work</h2>
+            <p>Score each submission, write feedback, or ask for a correction with a deadline.</p>
+          </div>
+          <div class="card" id="coord-mark">
+            <div id="submissions"><p class="muted">Loading…</p></div>
+          </div>
+        </section>
 
-      <div class="card" style="margin-top:20px;">
-        <h2 style="font-family:var(--head);margin:0 0 12px;">Inbox</h2>
-        <div id="announcements"></div>
-      </div>
+        <section class="pane" data-pane="send" hidden>
+          <div class="pane-head">
+            <h2>Send &amp; drafts</h2>
+            <p>When the President approves a sheet, it comes back here. Send it to the class yourself.</p>
+          </div>
+          <div class="card" id="coord-send-class">
+            <h2>Ready to send</h2>
+            <div id="ready-to-send"><p class="muted">Nothing waiting to send.</p></div>
+          </div>
+          <div class="card" id="coord-drafts">
+            <h2>Your drafts</h2>
+            <div id="my-drafts"></div>
+          </div>
+        </section>
 
-      <div class="hw-editor-grid" id="coord-write" style="margin-top:20px;">
-        <div class="card">
-          <h2 style="font-family:var(--head);margin:0 0 10px;">Write assignment</h2>
-          <p style="font-size:0.88rem;color:var(--muted);">Use the Sample HW template. Type your questions, then send to the President for approval. After he approves, you send it to the students.</p>
-          <label for="draft-year">Academic year</label>
-          <select id="draft-year"></select>
-          <label for="draft-seq">Assignment number</label>
-          <input id="draft-seq" type="number" min="1" value="1" />
-          <label for="draft-title">Working title</label>
-          <input id="draft-title" readonly />
-          <label for="draft-issue">Issue date</label>
-          <input id="draft-issue" type="date" />
-          <label for="draft-due">Submission deadline</label>
-          <input id="draft-due" type="date" />
-          <label for="draft-time">Time</label>
-          <input id="draft-time" value="11:59pm" />
-          <label for="draft-instructions">Instructions</label>
-          <textarea id="draft-instructions" style="min-height:80px;"></textarea>
-          <label for="draft-questions">Questions (type the assignment here)</label>
-          <textarea id="draft-questions" style="min-height:180px;" placeholder="1. &#10;2. "></textarea>
-          <p style="margin:8px 0 12px;">
-            <button type="button" class="btn btn-outline" id="btn-view-sample">View Sample HW template</button>
-          </p>
-          <button class="btn btn-primary" type="button" id="btn-save-draft">Save draft</button>
-          <button class="btn btn-outline" type="button" id="btn-send-president">Send to President for approval</button>
-          <div id="draft-msg" class="msg info" hidden style="margin-top:10px;"></div>
-        </div>
-        <div class="card">
-          <h2 style="font-family:var(--head);margin:0 0 10px;">Live template</h2>
-          <p style="font-size:0.88rem;color:var(--muted);">This is the sheet students will receive as a PDF after the President approves it.</p>
-          <div id="hw-preview"></div>
-        </div>
-      </div>
-      <div class="card" id="coord-mark" style="margin-top:20px;">
-        <h2 style="font-family:var(--head);margin:0 0 10px;">Mark student submissions</h2>
-        <div id="submissions"><p style="color:var(--muted);">Loading…</p></div>
-      </div>
+        <section class="pane" data-pane="attendance" hidden>
+          <div class="pane-head">
+            <h2>Class attendance</h2>
+            <p id="att-help">The attendance officer marks weekday class attendance in term. Coordinators and students can see the roll.</p>
+          </div>
+          <div class="card" id="coord-att">
+            <label for="att-session">Class session</label>
+            <select id="att-session"></select>
+            <p id="att-meta" class="muted" style="font-size:0.88rem;margin:0 0 12px;"></p>
+            <div id="att-roster"></div>
+            <button type="button" class="btn btn-primary" id="btn-save-att" style="margin-top:12px;">Save attendance</button>
+            <div id="att-msg" class="msg info" hidden style="margin-top:10px;"></div>
+          </div>
+        </section>
 
-      <div class="card" id="coord-send-class" style="margin-top:20px;">
-        <h2 style="font-family:var(--head);margin:0 0 10px;">Send to students</h2>
-        <p style="font-size:0.88rem;color:var(--muted);">When the President approves a sheet, it comes back here. Send it to the class yourself.</p>
-        <div id="ready-to-send"><p style="color:var(--muted);">Nothing waiting to send.</p></div>
-      </div>
-      <div class="card" id="coord-drafts" style="margin-top:20px;">
-        <h2 style="font-family:var(--head);margin:0 0 10px;">Your drafts</h2>
-        <div id="my-drafts"></div>
+        <section class="pane" data-pane="messages" hidden>
+          <div class="pane-head">
+            <h2>Messages</h2>
+            <p>Send to everyone, all students, all coordinators, the President, or one coordinator.</p>
+          </div>
+          <div class="grid-2">
+            <div class="card" id="coord-msg">
+              <h2>Send a message</h2>
+              <label for="msg-audience">Send to</label>
+              <select id="msg-audience"></select>
+              <label for="msg-subject">Subject</label>
+              <input id="msg-subject" type="text" placeholder="e.g. Assignment reminder" />
+              <label for="msg-body">Message</label>
+              <textarea id="msg-body" style="min-height:120px;" placeholder="Write your message…"></textarea>
+              <button type="button" class="btn btn-primary" id="btn-send-msg">Send message</button>
+              <div id="msg-status" class="msg info" hidden style="margin-top:10px;"></div>
+            </div>
+            <div class="card">
+              <h2>Inbox</h2>
+              <div id="announcements"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="pane" data-pane="calendar" hidden>
+          <div class="pane-head">
+            <h2>Calendar &amp; readings</h2>
+            <p>Daily readings with each month's theme, and the full two-year calendar.</p>
+          </div>
+          <div class="card">
+            <h2>Daily readings · Semester 1</h2>
+            <div id="scripture-list"></div>
+          </div>
+          <div class="card">
+            <h2>Two-year calendar</h2>
+            <div id="calendar"></div>
+          </div>
+        </section>
       </div>
     </div>
-  </main>
+  </div>
 
   <script>window.COD_PROGRAM = "cod1024";</script>
+  <script src="/js/cod-1024-site.js?v=20261116j"></script>
   <script src="/js/vendor/firebase/firebase-app-compat.js"></script>
   <script src="/js/vendor/firebase/firebase-auth-compat.js"></script>
   <script src="/js/vendor/firebase/firebase-firestore-compat.js"></script>
@@ -135,15 +246,38 @@
   <script src="/js/cod-firebase.js?v=20261116c"></script>
   <script src="/js/cod-portal-ui.js"></script>
   <script src="/js/cod-attendance-ui.js"></script>
-  <script src="/js/cod-staff-materials.js?v=20261103m"></script>
-  <script src="/js/cod-staff-materials-ui.js?v=20261103m"></script>
-  <script src="/js/cod-hw-sheet.js?v=20261104a"></script>
-  <script src="/js/cod-auth-bar.js?v=20261116i"></script>
+  <script src="/js/cod-1024-themes.js?v=20261116j"></script>
+  <script src="/js/cod-1024-calendar.js?v=20261116j"></script>
+  <script src="/js/cod-1024-scriptures.js?v=20261116i"></script>
+  <script src="/js/cod-1024-scriptures-ui.js?v=20261116j"></script>
+  <script src="/js/cod-hw-sheet.js?v=20261116j"></script>
+  <script src="/js/cod-1024-shell.js?v=20261116j"></script>
+  <script src="/js/cod-auth-bar.js?v=20261116j"></script>
   <script>
     (function () {
       var user = null;
       var profile = null;
       var lastDraftId = null;
+      var PROGRAM = { program: "cod1024" };
+
+      function esc(s) {
+        return String(s == null ? "" : s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function ymdToday() {
+        var t = new Date();
+        return (
+          t.getFullYear() +
+          "-" +
+          String(t.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(t.getDate()).padStart(2, "0")
+        );
+      }
 
       function showDraftMsg(t, k) {
         var el = document.getElementById("draft-msg");
@@ -152,27 +286,139 @@
         el.textContent = t;
       }
 
-      function fillYearSelect() {
-        var sel = document.getElementById("draft-year");
-        var years = (window.COD_DATA.YEARS || []).filter(function (y) {
-          return y.year <= 4;
+      function paintThemeAndReadings() {
+        var T = window.COD1024_THEMES;
+        var t = T ? T.nowOrNext() : null;
+        var host = document.getElementById("hero-theme");
+        if (t && host) {
+          host.innerHTML =
+            "<small>" + (T.current() ? "This month's theme" : "Theme for " + t.month) + "</small>" +
+            "<div class='theme-word'>" + esc(t.name) + "</div>";
+        }
+        var card = document.getElementById("today-card");
+        if (card && t) card.classList.add("theme-" + t.key);
+        var UI = window.COD1024_SCRIPTURES_UI;
+        if (UI) {
+          UI.renderToday(document.getElementById("today-scripture"));
+          UI.renderWeek(document.getElementById("week-list"));
+          UI.renderInto(document.getElementById("scripture-list"));
+        }
+        if (window.COD1024_CALENDAR) {
+          window.COD1024_CALENDAR.renderInto(document.getElementById("calendar"));
+          var now = window.COD1024_CALENDAR.currentBlock();
+          document.getElementById("term-line").textContent = now
+            ? now.block.name + " · " + now.block.dates
+            : "Semester 1 begins Monday 5 October 2026";
+        }
+      }
+
+      function planFor(ymd) {
+        var T = window.COD1024_THEMES;
+        var UI = window.COD1024_SCRIPTURES_UI;
+        var C = window.COD1024_CALENDAR;
+        var theme = T ? T.forDate(ymd) : null;
+        var row = UI ? UI.dayFor(ymd) : null;
+        var block = C ? C.blockFor(ymd) : null;
+        return {
+          sem: block ? block.block.name : "—",
+          theme: theme ? theme.month + " · " + theme.name : "No theme set for this month yet",
+          themeShort: theme ? theme.name : "the month's theme",
+          reading: row ? row.refs.join(", ") : "No set reading on this date",
+        };
+      }
+
+      function paintPlan() {
+        var ymd = document.getElementById("plan-date").value || ymdToday();
+        var p = planFor(ymd);
+        document.getElementById("plan-sem").textContent = p.sem;
+        document.getElementById("plan-theme").textContent = p.theme;
+        document.getElementById("plan-reading").textContent = p.reading;
+        document.querySelectorAll(".plan-reading-inline").forEach(function (el) {
+          el.textContent = p.reading;
         });
-        years.forEach(function (y) {
+        document.querySelectorAll(".plan-theme-inline").forEach(function (el) {
+          el.textContent = p.themeShort;
+        });
+      }
+
+      function planAsText() {
+        var ymd = document.getElementById("plan-date").value || ymdToday();
+        var p = planFor(ymd);
+        var lines = [
+          "Class of David 1024 — Class plan",
+          "Date: " + ymd,
+          "Semester: " + p.sem,
+          "Theme: " + p.theme,
+          "Reading: " + p.reading,
+          "",
+        ];
+        document.querySelectorAll("#plan-steps li").forEach(function (li, i) {
+          var title = li.querySelector("strong").textContent;
+          var note = li.querySelector("span").textContent;
+          lines.push(i + 1 + ". " + title + " — " + note);
+          lines.push("   Notes: ");
+        });
+        return lines.join("\n");
+      }
+
+      document.getElementById("plan-date").value = ymdToday();
+      document.getElementById("plan-date").addEventListener("change", paintPlan);
+      document.getElementById("btn-copy-plan").addEventListener("click", function () {
+        var text = planAsText();
+        var done = function () {
+          var m = document.getElementById("plan-msg");
+          m.hidden = false;
+          m.textContent = "Plan copied. Paste it into your notes or WhatsApp.";
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done).catch(function () {
+            window.prompt("Copy your plan:", text);
+          });
+        } else {
+          window.prompt("Copy your plan:", text);
+        }
+      });
+
+      function fillSemesterSelect() {
+        var sel = document.getElementById("draft-year");
+        var sems = (window.COD1024_CALENDAR && window.COD1024_CALENDAR.SEMESTERS) || [];
+        sems.forEach(function (s) {
           var opt = document.createElement("option");
-          opt.value = y.year;
-          opt.textContent = "Year " + y.year + " — " + y.title;
+          opt.value = s.n;
+          opt.textContent = s.label + " — " + s.range;
           sel.appendChild(opt);
         });
       }
 
-      function syncTitleAndPreview() {
-        var seq = window.COD_HW_SHEET.seqNum(document.getElementById("draft-seq").value);
-        document.getElementById("draft-title").value = window.COD_HW_SHEET.workingTitle(seq);
-        window.COD_HW_SHEET.paintPreview(
-          document.getElementById("hw-preview"),
-          window.COD_HW_SHEET.fieldsFromForm()
-        );
+      function currentFields() {
+        var f = window.COD_HW_SHEET.fieldsFromForm();
+        f.program = "cod1024";
+        return f;
       }
+
+      function workingTitle() {
+        return window.COD_HW_SHEET.workingTitle(document.getElementById("draft-seq").value, {
+          program: "cod1024",
+          year: Number(document.getElementById("draft-year").value) || 1,
+        });
+      }
+
+      function syncTitleAndPreview() {
+        document.getElementById("draft-title").value = workingTitle();
+        window.COD_HW_SHEET.paintPreview(document.getElementById("hw-preview"), currentFields());
+      }
+
+      document.getElementById("btn-start-template").addEventListener("click", function () {
+        var ta = document.getElementById("draft-questions");
+        if (ta.value.trim() && !window.confirm("Replace what you have typed with the template?")) return;
+        var p = planFor(document.getElementById("draft-issue").value || ymdToday());
+        ta.value =
+          "Theme: " + p.theme + "\n" +
+          "Reading: " + p.reading + "\n\n" +
+          "1. \n\n2. \n\n3. ";
+        syncTitleAndPreview();
+        ta.focus();
+      });
 
       function sendApprovedToStudents(draftId) {
         var draftRef = window.COD_FIREBASE.collections.drafts().doc(draftId);
@@ -195,10 +441,10 @@
               });
             })
             .then(function () {
-              var year = d.year ? "Year " + d.year + " — " : "";
+              var sem = d.year ? "Semester " + d.year + " — " : "";
               return window.COD_FIREBASE.postAnnouncement(
                 "New assignment: " + (d.title || "Homework"),
-                year +
+                sem +
                   "A new assignment is in your student portal. Open it, then upload your answer as a PDF, JPG, or PNG.",
                 "students"
               ).catch(function () {});
@@ -207,7 +453,7 @@
       }
 
       function loadDrafts() {
-        if (!user) return;
+        if (!user) return Promise.resolve();
         return window.COD_FIREBASE.collections
           .drafts()
           .where("coordinatorUid", "==", user.uid)
@@ -215,13 +461,9 @@
           .then(function (snap) {
             var root = document.getElementById("my-drafts");
             var ready = document.getElementById("ready-to-send");
-            if (snap.empty) {
-              root.innerHTML = "<p style='color:var(--muted);'>No drafts yet.</p>";
-              if (ready) ready.innerHTML = "<p style='color:var(--muted);'>Nothing waiting to send.</p>";
-              return;
-            }
-            var html = "<table><thead><tr><th>Code</th><th>Status</th><th>Updated</th></tr></thead><tbody>";
+            var rows = "";
             var readyHtml = "";
+            var readyCount = 0;
             snap.forEach(function (doc) {
               var d = doc.data();
               if (window.COD_PROGRAM_CTX && !window.COD_PROGRAM_CTX.belongs(d)) return;
@@ -230,33 +472,41 @@
               else if (st === "approved") st = "Approved — send to students";
               else if (st === "published") st = "Sent to students";
               else if (st === "coordinator_draft") st = "Draft";
-              html += "<tr><td>" + (d.code || d.title) + "</td><td>" + st + "</td><td>" + (d.updatedAt ? "recent" : "") + "</td></tr>";
+              rows +=
+                "<tr><td>" + esc(d.code || d.title) + "</td><td>" + esc(st) + "</td><td>" +
+                (d.dueDate ? "Due " + esc(d.dueDate) : "") + "</td></tr>";
               if (d.status === "approved") {
+                readyCount++;
                 readyHtml +=
-                  "<div style='border:1px solid var(--hair);border-radius:12px;padding:12px;margin-bottom:10px;'>" +
-                  "<strong>" + (d.title || d.code) + "</strong>" +
-                  (d.dueDate ? "<p>Due " + d.dueDate + "</p>" : "") +
-                  "<button type='button' class='btn btn-primary btn-send-class' data-id='" +
-                  doc.id +
+                  "<div class='item'>" +
+                  "<strong>" + esc(d.title || d.code) + "</strong>" +
+                  (d.dueDate ? "<p class='muted' style='margin:4px 0 10px;'>Due " + esc(d.dueDate) + "</p>" : "") +
+                  "<button type='button' class='btn btn-primary btn-sm btn-send-class' data-id='" +
+                  esc(doc.id) +
                   "'>Send to students</button></div>";
               }
             });
-            html += "</tbody></table>";
-            root.innerHTML = html;
-            if (ready) {
-              ready.innerHTML = readyHtml || "<p style='color:var(--muted);'>Nothing waiting to send.</p>";
-              ready.querySelectorAll(".btn-send-class").forEach(function (btn) {
-                btn.addEventListener("click", function () {
-                  btn.disabled = true;
-                  sendApprovedToStudents(btn.getAttribute("data-id"))
-                    .then(loadDrafts)
-                    .catch(function (err) {
-                      btn.disabled = false;
-                      alert(err.message || String(err));
-                    });
-                });
+            root.innerHTML = rows
+              ? "<div class='table-scroll'><table><thead><tr><th>Code</th><th>Status</th><th>Deadline</th></tr></thead><tbody>" +
+                rows +
+                "</tbody></table></div>"
+              : "<p class='empty'>No drafts yet. Start one in Write assignment.</p>";
+            window.COD1024_SHELL.badge("send", readyCount);
+            document.getElementById("tile-send").textContent = readyCount
+              ? readyCount + " approved — ready to send"
+              : "Approved sheets and drafts";
+            ready.innerHTML = readyHtml || "<p class='empty'>Nothing waiting to send.</p>";
+            ready.querySelectorAll(".btn-send-class").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                btn.disabled = true;
+                sendApprovedToStudents(btn.getAttribute("data-id"))
+                  .then(loadDrafts)
+                  .catch(function (err) {
+                    btn.disabled = false;
+                    alert(err.message || String(err));
+                  });
               });
-            }
+            });
           });
       }
 
@@ -270,10 +520,7 @@
         var body = mark || "Your work has been reviewed.";
         if (sub.score) body = "Score: " + sub.score + (mark ? "\n\n" + mark : "");
         if (status === "needs_correction") {
-          body +=
-            "\n\nPlease submit a correction" +
-            (deadline ? " by " + deadline : "") +
-            ".";
+          body += "\n\nPlease submit a correction" + (deadline ? " by " + deadline : "") + ".";
         }
         return window.COD_FIREBASE.postAnnouncement(subject, body, "student:" + sub.studentUid);
       }
@@ -316,10 +563,14 @@
         });
       }
 
+      function is1024Submission(d) {
+        return d.program === "cod1024" || String(d.studentId || "").indexOf("COD1024") === 0;
+      }
+
       function loadSubmissions() {
         return window.COD_FIREBASE.collections
           .submissions()
-          .limit(60)
+          .limit(200)
           .get()
           .then(function (snap) {
             var root = document.getElementById("submissions");
@@ -327,40 +578,47 @@
             snap.forEach(function (doc) {
               var d = doc.data();
               d.id = doc.id;
+              if (!is1024Submission(d)) return;
               var mine =
                 !d.coordinatorId ||
                 d.coordinatorId === profile.coordinatorId ||
                 d.coordinatorUid === user.uid;
               if (mine && ["submitted", "needs_correction", "marked"].indexOf(d.status) >= 0) rows.push(d);
             });
+            var waiting = rows.filter(function (d) { return d.status === "submitted"; }).length;
+            window.COD1024_SHELL.badge("mark", waiting);
+            document.getElementById("tile-mark").textContent = waiting
+              ? waiting + " waiting for a score"
+              : "Student submissions";
             if (!rows.length) {
-              root.innerHTML = "<p style='color:var(--muted);'>No pending submissions.</p>";
+              root.innerHTML = "<p class='empty'>No submissions yet. When students upload work, it appears here.</p>";
               return;
             }
             var html = "";
             rows.forEach(function (d) {
+              var isPdf = String(d.fileType || d.fileName || "").indexOf("pdf") >= 0;
               html +=
-                "<div style='border-bottom:1px solid var(--hair);padding:12px 0;'>" +
-                "<strong>" + (d.studentName || d.studentId) + "</strong> · " +
-                (d.assignmentTitle || d.assignmentId || "") +
-                " · " + (d.status || "") +
+                "<div class='item'>" +
+                "<p style='margin:0 0 8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;'><strong>" +
+                esc(d.studentName || d.studentId) + "</strong><span class='muted'>" +
+                esc(d.assignmentTitle || d.assignmentId || "") + "</span><span class='badge'>" + esc(d.status || "") + "</span></p>" +
                 (d.fileUrl
-                  ? (String(d.fileType || d.fileName || "").indexOf("pdf") >= 0
-                    ? "<p><a class='btn btn-outline' href='" + d.fileUrl + "' target='_blank' rel='noopener'>Open PDF</a></p>"
-                    : "<p><a href='" + d.fileUrl + "' target='_blank' rel='noopener'><img src='" + d.fileUrl + "' alt='Student upload' style='max-width:100%;max-height:280px;border-radius:8px;border:1px solid var(--hair);' /></a></p>")
+                  ? isPdf
+                    ? "<p><a class='btn btn-outline btn-sm' href='" + esc(d.fileUrl) + "' target='_blank' rel='noopener'>Open PDF</a></p>"
+                    : "<p><a href='" + esc(d.fileUrl) + "' target='_blank' rel='noopener'><img src='" + esc(d.fileUrl) + "' alt='Student upload' style='max-width:100%;max-height:280px;border-radius:10px;border:1px solid var(--hair);' /></a></p>"
                   : "") +
-                "<p style='font-size:0.88rem;color:var(--muted);white-space:pre-wrap;'>" + (d.body || "") + "</p>" +
-                (d.link ? "<p><a href='" + d.link + "' target='_blank' rel='noopener'>Open link</a></p>" : "") +
-                "<label>Score</label>" +
-                "<input type='text' class='score-in' data-id='" + d.id + "' value='" + (d.score || "") + "' placeholder='e.g. 18/20' />" +
+                (d.body ? "<p class='muted' style='font-size:0.9rem;white-space:pre-wrap;'>" + esc(d.body) + "</p>" : "") +
+                (d.link ? "<p><a href='" + esc(d.link) + "' target='_blank' rel='noopener'>Open link</a></p>" : "") +
+                "<div class='form-row'><div><label>Score</label>" +
+                "<input type='text' class='score-in' data-id='" + esc(d.id) + "' value='" + esc(d.score || "") + "' placeholder='e.g. 18/20' /></div>" +
+                "<div><label>Correction deadline</label>" +
+                "<input type='date' class='corr-due' data-id='" + esc(d.id) + "' value='" + esc(d.correctionDeadline || "") + "' /></div></div>" +
                 "<label>Feedback (sent to the student with the score)</label>" +
-                "<textarea class='mark-ta' data-id='" + d.id + "'>" + (d.coordinatorMark || "") + "</textarea>" +
-                "<label>Correction deadline</label>" +
-                "<input type='date' class='corr-due' data-id='" + d.id + "' value='" + (d.correctionDeadline || "") + "' />" +
-                "<p style='margin-top:8px;'>" +
-                "<button type='button' class='btn btn-primary btn-mark' data-id='" + d.id + "'>Publish score</button> " +
-                "<button type='button' class='btn btn-outline btn-correct' data-id='" + d.id + "'>Request correction</button> " +
-                "<button type='button' class='btn btn-outline btn-forward' data-id='" + d.id + "'>Send marked work to President</button>" +
+                "<textarea class='mark-ta' data-id='" + esc(d.id) + "'>" + esc(d.coordinatorMark || "") + "</textarea>" +
+                "<p style='margin:0;display:flex;flex-wrap:wrap;gap:8px;'>" +
+                "<button type='button' class='btn btn-primary btn-sm btn-mark' data-id='" + esc(d.id) + "'>Publish score</button>" +
+                "<button type='button' class='btn btn-outline btn-sm btn-correct' data-id='" + esc(d.id) + "'>Request correction</button>" +
+                "<button type='button' class='btn btn-outline btn-sm btn-forward' data-id='" + esc(d.id) + "'>Send marked work to President</button>" +
                 "</p></div>";
             });
             root.innerHTML = html;
@@ -378,17 +636,19 @@
               btn.addEventListener("click", function () {
                 var id = btn.getAttribute("data-id");
                 var ta = root.querySelector(".mark-ta[data-id='" + id + "']");
+                btn.disabled = true;
                 window.COD_FIREBASE.collections.submissions().doc(id).get().then(function (snap) {
                   var d = snap.data();
                   return window.COD_FIREBASE.collections.adminInbox().add({
                     type: "marked_submission",
+                    program: "cod1024",
                     submissionId: id,
                     studentId: d.studentId,
                     studentName: d.studentName,
                     assignmentId: d.assignmentId,
                     coordinatorMark: ta.value || d.coordinatorMark || "",
-                    coordinatorId: profile.coordinatorId,
-                    coordinatorName: profile.name,
+                    coordinatorId: profile.coordinatorId || "",
+                    coordinatorName: profile.name || "",
                     forwardedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     status: "new",
                   }).then(function () {
@@ -399,6 +659,9 @@
                   });
                 }).then(function () {
                   loadSubmissions();
+                }).catch(function (err) {
+                  btn.disabled = false;
+                  alert(err.message || String(err));
                 });
               });
             });
@@ -406,9 +669,9 @@
       }
 
       function draftPayload(status) {
-        var year = Number(document.getElementById("draft-year").value);
+        var year = Number(document.getElementById("draft-year").value) || 1;
         var seq = window.COD_HW_SHEET.seqNum(document.getElementById("draft-seq").value);
-        var title = window.COD_HW_SHEET.workingTitle(seq);
+        var title = workingTitle();
         var questions = document.getElementById("draft-questions").value;
         return {
           year: year,
@@ -420,32 +683,36 @@
           timeLabel: document.getElementById("draft-time").value.trim() || "11:59pm",
           instructions:
             document.getElementById("draft-instructions").value.trim() ||
-            window.COD_HW_SHEET.defaultInstructions(),
+            window.COD_HW_SHEET.defaultInstructions(PROGRAM),
           questions: questions,
           rawBody: questions,
-          bodyHtml: window.COD_HW_SHEET.renderHtml(window.COD_HW_SHEET.fieldsFromForm()),
+          bodyHtml: window.COD_HW_SHEET.renderHtml(currentFields()),
           status: status || "coordinator_draft",
           coordinatorUid: user.uid,
           coordinatorId: profile.coordinatorId || "",
           coordinatorName: profile.name || "",
-          program: window.COD_FIREBASE.currentProgram ? window.COD_FIREBASE.currentProgram() : "cod",
+          program: "cod1024",
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         };
       }
 
-      document.getElementById("btn-save-draft").addEventListener("click", function () {
-        var data = draftPayload("coordinator_draft");
-        var p = lastDraftId
+      function saveDraft(data) {
+        return lastDraftId
           ? window.COD_FIREBASE.collections.drafts().doc(lastDraftId).set(data, { merge: true })
           : window.COD_FIREBASE.collections.drafts().add(data).then(function (ref) {
               lastDraftId = ref.id;
             });
-        p.then(function () {
-          showDraftMsg("Draft saved.", "ok");
-          loadDrafts();
-        }).catch(function (e) {
-          showDraftMsg(e.message, "err");
-        });
+      }
+
+      document.getElementById("btn-save-draft").addEventListener("click", function () {
+        saveDraft(draftPayload("coordinator_draft"))
+          .then(function () {
+            showDraftMsg("Draft saved.", "ok");
+            loadDrafts();
+          })
+          .catch(function (e) {
+            showDraftMsg(e.message, "err");
+          });
       });
 
       function fillFormFromDraft(d, id) {
@@ -472,58 +739,34 @@
         }
         var data = draftPayload("submitted_to_president");
         data.submittedAt = firebase.firestore.FieldValue.serverTimestamp();
-        var p = lastDraftId
-          ? window.COD_FIREBASE.collections.drafts().doc(lastDraftId).set(data, { merge: true })
-          : window.COD_FIREBASE.collections.drafts().add(data).then(function (ref) {
-              lastDraftId = ref.id;
-            });
-        p.then(function () {
-          showDraftMsg("Sent to the President for approval.", "ok");
-          loadDrafts();
-        }).catch(function (e) {
-          showDraftMsg(e.message, "err");
-        });
+        saveDraft(data)
+          .then(function () {
+            showDraftMsg("Sent to the President for approval.", "ok");
+            lastDraftId = null;
+            loadDrafts();
+          })
+          .catch(function (e) {
+            showDraftMsg(e.message, "err");
+          });
       });
 
-      if (!window.COD_FIREBASE.init()) {
-        document.getElementById("gate").innerHTML = "<p class='msg err'>Firebase not configured.</p>";
-        return;
-      }
-
-      fillYearSelect();
-      document.getElementById("draft-instructions").value = window.COD_HW_SHEET.defaultInstructions();
-      var today = new Date();
-      document.getElementById("draft-issue").value =
-        today.getFullYear() +
-        "-" +
-        String(today.getMonth() + 1).padStart(2, "0") +
-        "-" +
-        String(today.getDate()).padStart(2, "0");
+      paintThemeAndReadings();
+      paintPlan();
+      fillSemesterSelect();
+      document.getElementById("draft-instructions").value = window.COD_HW_SHEET.defaultInstructions(PROGRAM);
+      document.getElementById("draft-issue").value = ymdToday();
       ["draft-year", "draft-seq", "draft-issue", "draft-due", "draft-time", "draft-instructions", "draft-questions"].forEach(
         function (id) {
           document.getElementById(id).addEventListener("input", syncTitleAndPreview);
           document.getElementById(id).addEventListener("change", syncTitleAndPreview);
         }
       );
-      document.getElementById("btn-view-sample").addEventListener("click", function () {
-        var year = Number(document.getElementById("draft-year").value) || 1;
-        var catalog = window.COD_STAFF_MATERIALS && window.COD_STAFF_MATERIALS.YEARS[String(year)];
-        var sample = catalog && catalog.sampleHw && catalog.sampleHw[0];
-        if (!sample || !window.COD_FIREBASE.staffFileUrl) {
-          showDraftMsg("No Sample HW on file for this year yet.", "err");
-          return;
-        }
-        if (!window.COD_STAFF_UI || !window.COD_STAFF_UI.openStaffFile) {
-          showDraftMsg("Staff files are not available on this page.", "err");
-          return;
-        }
-        window.COD_STAFF_UI
-          .openStaffFile(sample.path, sample.label || "Sample HW")
-          .catch(function (err) {
-            showDraftMsg(err.message || "Could not open Sample HW.", "err");
-          });
-      });
       syncTitleAndPreview();
+
+      if (!window.COD_FIREBASE.init()) {
+        document.getElementById("gate").innerHTML = "<div class='card center-card'><p class='msg err'>Firebase not configured.</p></div>";
+        return;
+      }
 
       window.COD_FIREBASE.auth().onAuthStateChanged(function (u) {
         if (!u) {
@@ -532,9 +775,12 @@
         }
         user = u;
         window.COD_FIREBASE.resolveRole(u).then(function (role) {
+          if (role === "pending_coordinator") {
+            window.location.href = "/cod1024/coordinator-pending";
+            return;
+          }
           if (role !== "coordinator" && role !== "admin") {
-            document.getElementById("gate").innerHTML =
-              "<p class='msg err'>Not authorized. Use coordinator login.</p>";
+            window.location.href = "/cod1024/student";
             return;
           }
           return window.COD_FIREBASE.getProfile(u.uid).then(function (p) {
@@ -542,30 +788,13 @@
             document.getElementById("gate").hidden = true;
             document.getElementById("portal").hidden = false;
             document.getElementById("coord-name").textContent =
-              profile.name || (role === "admin" ? "President" : "Coordinator");
-            var quota = window.COD_DATA.assignmentQuotaForCoordinator(profile.coordinatorId);
-            document.getElementById("quota-line").textContent = quota.length
-              ? "Your assignment slots: " +
-                quota.map(function (q) {
-                  return "Year " + q.year + " (" + q.expectedCount + ")";
-                }).join(", ")
-              : "Assignment slots will appear once your coordinator ID is set.";
-            var teaching = document.getElementById("teaching-schedule");
-            if (teaching) teaching.hidden = true;
+              "Welcome, " + (profile.first || profile.name || (role === "admin" ? "President" : "Coordinator"));
             window.COD_PORTAL_UI.bindComposer({ includePresident: true });
             window.COD_PORTAL_UI.wireAnnouncements(document.getElementById("announcements"), {
               uid: u.uid,
               role: "coordinator",
               coordinatorId: profile.coordinatorId || "",
             });
-            if (window.COD_STAFF_UI) {
-              window.COD_STAFF_UI.renderCoordinatorPrep(
-                document.getElementById("prep-materials"),
-                document.getElementById("sample-hw"),
-                profile.coordinatorId
-              );
-              window.COD_STAFF_UI.bindDownloads(document.getElementById("portal"));
-            }
             var canMarkAtt = window.COD_DATA.isAttendanceOfficer(profile);
             if (canMarkAtt) {
               document.getElementById("att-help").textContent =
@@ -583,6 +812,7 @@
               snap.forEach(function (doc) {
                 var d = doc.data() || {};
                 if (d.status !== "coordinator_draft") return;
+                if (d.program !== "cod1024") return;
                 var t = d.updatedAt && d.updatedAt.toMillis ? d.updatedAt.toMillis() : 0;
                 if (!best || t > best.t) best = { id: doc.id, d: d, t: t };
               });
