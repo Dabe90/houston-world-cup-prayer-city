@@ -411,6 +411,21 @@ h3 { font-size: 1.25rem; line-height: 1.2; margin: 0 0 8px; }
 .cta-band p { color: rgba(255, 255, 255, 0.78); max-width: 34rem; margin: 0 auto; }
 .cta-band .actions { justify-content: center; }
 
+.logo-badge {
+  display: block;
+  width: 96px;
+  height: 96px;
+  padding: 4px;
+  border-radius: 50%;
+  background: #fbf6ef;
+  object-fit: contain;
+  box-shadow: 0 10px 30px -14px rgba(0, 0, 0, 0.6);
+}
+.hero-logo { width: 120px; height: 120px; margin-bottom: 26px; }
+.auth-logo { width: 84px; height: 84px; margin-bottom: 18px; box-shadow: var(--shadow); }
+.footer-brand { display: inline-flex; align-items: center; gap: 16px; text-decoration: none; }
+.footer-brand:hover { text-decoration: none; }
+.pnav-logo { width: 88px; height: 88px; margin: 22px 0 0 14px; box-shadow: var(--shadow); }
 .site-footer { background: var(--night); color: rgba(255, 255, 255, 0.6); padding: 48px 0 40px; font-size: 0.9rem; text-align: left; }
 .footer-grid { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; align-items: flex-start; }
 .footer-links { display: flex; flex-wrap: wrap; gap: 10px 22px; }
@@ -706,6 +721,7 @@ tr.month-row.theme-fire td { background: #fbe7de; color: #8f2f12; }
   .pnav::-webkit-scrollbar { display: none; }
   .pnav button { width: auto; flex: 0 0 auto; padding: 9px 14px; white-space: nowrap; background: #fff; border: 1px solid var(--hair); }
   .pnav button svg { display: none; }
+  .pnav-logo { display: none; }
   .hw-editor-grid, .two, .grid-2 { grid-template-columns: 1fr; }
   .hero-theme { text-align: left; }
 }
@@ -717,7 +733,8 @@ tr.month-row.theme-fire td { background: #fbe7de; color: #8f2f12; }
   .hero-home::before {
     background: linear-gradient(0deg, rgba(18, 14, 36, 0.98) 0%, rgba(18, 14, 36, 0.9) 48%, rgba(18, 14, 36, 0.35) 100%);
   }
-  .hero-copy { padding: 220px 0 56px; }
+  .hero-copy { padding: 180px 0 56px; }
+  .hero-logo { width: 84px; height: 84px; margin-bottom: 18px; }
   .hero-facts { gap: 14px 22px; }
   .scroll-cue { display: none; }
   .benefit-grid, .tiles, .plan-meta { grid-template-columns: 1fr; }

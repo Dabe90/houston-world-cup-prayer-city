@@ -29,7 +29,6 @@
     <section class="portal-hero">
       <div class="wrap">
         <div>
-          <p class="kicker">Coordinator portal · Class of David 1024</p>
           <h1 id="coord-name">Coordinator</h1>
           <p id="term-line"></p>
         </div>
@@ -47,6 +46,7 @@
         <button type="button" data-tab="attendance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="4"/><path d="M1 21a8 8 0 0 1 16 0"/><path d="M17 11l2 2 4-4"/></svg>Attendance</button>
         <button type="button" data-tab="messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Messages</button>
         <button type="button" data-tab="calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Calendar &amp; readings</button>
+        <img class="logo-badge pnav-logo" src="/images/dear-daughter-logo.png" alt="Dear Daughter Bible Study" width="225" height="210" />
       </nav>
 
       <div>
@@ -59,16 +59,16 @@
             <div class="card prayer-card">
               <p class="kicker">Every Tuesday</p>
               <p class="big">10:00 PM WAT</p>
-              <p style="margin:0;">Tuesday night prayer with the class.</p>
+              <p style="margin:0;">Tuesday night prayer</p>
             </div>
           </div>
           <div class="tiles">
-            <button type="button" class="tile" data-go="plan"><strong>Plan a class</strong><span>1024 template with this month's theme</span></button>
-            <button type="button" class="tile" data-go="write"><strong>Write an assignment</strong><span>Draft, then send to the President</span></button>
-            <button type="button" class="tile" data-go="mark"><strong>Mark work</strong><span id="tile-mark">Student submissions</span></button>
-            <button type="button" class="tile" data-go="send"><strong>Send to students</strong><span id="tile-send">Approved sheets and drafts</span></button>
-            <button type="button" class="tile" data-go="attendance"><strong>Attendance</strong><span>Class roll</span></button>
-            <button type="button" class="tile" data-go="messages"><strong>Messages</strong><span>Send and read</span></button>
+            <button type="button" class="tile" data-go="plan"><strong>Plan a class</strong></button>
+            <button type="button" class="tile" data-go="write"><strong>Write an assignment</strong></button>
+            <button type="button" class="tile" data-go="mark"><strong>Mark work</strong><span id="tile-mark"></span></button>
+            <button type="button" class="tile" data-go="send"><strong>Send to students</strong><span id="tile-send"></span></button>
+            <button type="button" class="tile" data-go="attendance"><strong>Attendance</strong></button>
+            <button type="button" class="tile" data-go="messages"><strong>Messages</strong></button>
           </div>
           <div class="card" style="margin-top:18px;">
             <h2>This week's readings</h2>
@@ -78,11 +78,9 @@
 
         <section class="pane" data-pane="plan" hidden>
           <div class="pane-head">
-            <h2>Class plan</h2>
-            <p>The Class of David 1024 class template. Pick a class date and the theme and reading fill in for you.</p>
+            <h2>Class plan template</h2>
           </div>
           <div class="card">
-            <p class="template-note"><strong>Template only.</strong> This is a guide for shaping your class, not fixed class material. More 1024 materials will be added here over time.</p>
             <label for="plan-date">Class date</label>
             <input id="plan-date" type="date" style="max-width:240px;" />
             <div class="plan-meta">
@@ -111,7 +109,6 @@
         <section class="pane" data-pane="write" hidden>
           <div class="pane-head">
             <h2>Write assignment</h2>
-            <p>Type your questions, then send to the President for approval. After he approves, you send it to the students.</p>
           </div>
           <div class="hw-editor-grid" id="coord-write">
             <div class="card">
@@ -145,8 +142,7 @@
               <div id="draft-msg" class="msg info" hidden style="margin-top:10px;"></div>
             </div>
             <div class="card">
-              <p class="kicker">Live preview</p>
-              <p class="muted" style="margin-top:0;font-size:0.9rem;">This is the sheet students receive as a PDF after the President approves it.</p>
+              <h2>Preview</h2>
               <div id="hw-preview"></div>
             </div>
           </div>
@@ -155,7 +151,6 @@
         <section class="pane" data-pane="mark" hidden>
           <div class="pane-head">
             <h2>Mark student work</h2>
-            <p>Score each submission, write feedback, or ask for a correction with a deadline.</p>
           </div>
           <div class="card" id="coord-mark">
             <div id="submissions"><p class="muted">Loading…</p></div>
@@ -165,7 +160,6 @@
         <section class="pane" data-pane="send" hidden>
           <div class="pane-head">
             <h2>Send &amp; drafts</h2>
-            <p>When the President approves a sheet, it comes back here. Send it to the class yourself.</p>
           </div>
           <div class="card" id="coord-send-class">
             <h2>Ready to send</h2>
@@ -180,7 +174,6 @@
         <section class="pane" data-pane="attendance" hidden>
           <div class="pane-head">
             <h2>Class attendance</h2>
-            <p id="att-help">The attendance officer marks weekday class attendance in term. Coordinators and students can see the roll.</p>
           </div>
           <div class="card" id="coord-att">
             <label for="att-session">Class session</label>
@@ -195,7 +188,6 @@
         <section class="pane" data-pane="messages" hidden>
           <div class="pane-head">
             <h2>Messages</h2>
-            <p>Send to everyone, all students, all coordinators, the President, or one coordinator.</p>
           </div>
           <div class="grid-2">
             <div class="card" id="coord-msg">
@@ -219,7 +211,6 @@
         <section class="pane" data-pane="calendar" hidden>
           <div class="pane-head">
             <h2>Calendar &amp; readings</h2>
-            <p>Daily readings with each month's theme, and the full two-year calendar.</p>
           </div>
           <div class="card">
             <h2>Daily readings · Semester 1</h2>
@@ -490,11 +481,9 @@
               ? "<div class='table-scroll'><table><thead><tr><th>Code</th><th>Status</th><th>Deadline</th></tr></thead><tbody>" +
                 rows +
                 "</tbody></table></div>"
-              : "<p class='empty'>No drafts yet. Start one in Write assignment.</p>";
+              : "<p class='empty'>No drafts yet.</p>";
             window.COD1024_SHELL.badge("send", readyCount);
-            document.getElementById("tile-send").textContent = readyCount
-              ? readyCount + " approved — ready to send"
-              : "Approved sheets and drafts";
+            document.getElementById("tile-send").textContent = readyCount ? readyCount + " ready to send" : "";
             ready.innerHTML = readyHtml || "<p class='empty'>Nothing waiting to send.</p>";
             ready.querySelectorAll(".btn-send-class").forEach(function (btn) {
               btn.addEventListener("click", function () {
@@ -587,11 +576,9 @@
             });
             var waiting = rows.filter(function (d) { return d.status === "submitted"; }).length;
             window.COD1024_SHELL.badge("mark", waiting);
-            document.getElementById("tile-mark").textContent = waiting
-              ? waiting + " waiting for a score"
-              : "Student submissions";
+            document.getElementById("tile-mark").textContent = waiting ? waiting + " to mark" : "";
             if (!rows.length) {
-              root.innerHTML = "<p class='empty'>No submissions yet. When students upload work, it appears here.</p>";
+              root.innerHTML = "<p class='empty'>No submissions yet.</p>";
               return;
             }
             var html = "";
@@ -796,10 +783,6 @@
               coordinatorId: profile.coordinatorId || "",
             });
             var canMarkAtt = window.COD_DATA.isAttendanceOfficer(profile);
-            if (canMarkAtt) {
-              document.getElementById("att-help").textContent =
-                "You mark weekday class attendance in term. Coordinators and students can see this roll.";
-            }
             window.COD_ATTENDANCE_UI.bind({ editable: canMarkAtt });
             loadDrafts().then(function () {
               return window.COD_FIREBASE.collections

@@ -30,7 +30,6 @@
     <section class="portal-hero">
       <div class="wrap">
         <div>
-          <p class="kicker">Class of David 1024</p>
           <h1 id="welcome">Welcome</h1>
           <p id="year-line"></p>
         </div>
@@ -46,6 +45,7 @@
         <button type="button" data-tab="messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Messages</button>
         <button type="button" data-tab="attendance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Attendance</button>
         <button type="button" data-tab="calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Calendar &amp; readings</button>
+        <img class="logo-badge pnav-logo" src="/images/dear-daughter-logo.png" alt="Dear Daughter Bible Study" width="225" height="210" />
       </nav>
 
       <div>
@@ -58,7 +58,7 @@
             <div class="card prayer-card">
               <p class="kicker">Every Tuesday</p>
               <p class="big">10:00 PM WAT</p>
-              <p style="margin:0;">Tuesday night prayer with your class. Come expectant.</p>
+              <p style="margin:0;">Tuesday night prayer</p>
             </div>
           </div>
           <div class="card">
@@ -66,16 +66,15 @@
             <div id="week-list"></div>
           </div>
           <div class="tiles">
-            <button type="button" class="tile" data-go="assignments"><strong>Assignments</strong><span id="tile-asg">Open and submit your work</span></button>
-            <button type="button" class="tile" data-go="marks"><strong>Marks</strong><span id="tile-marks">Scores and feedback</span></button>
-            <button type="button" class="tile" data-go="calendar"><strong>Calendar</strong><span>Your two-year plan</span></button>
+            <button type="button" class="tile" data-go="assignments"><strong>Assignments</strong><span id="tile-asg"></span></button>
+            <button type="button" class="tile" data-go="marks"><strong>Marks</strong><span id="tile-marks"></span></button>
+            <button type="button" class="tile" data-go="calendar"><strong>Calendar</strong></button>
           </div>
         </section>
 
         <section class="pane" data-pane="assignments" hidden>
           <div class="pane-head">
             <h2>Assignments</h2>
-            <p>Open an assignment, then upload your answer as a PDF, JPG, or PNG.</p>
           </div>
           <div class="card">
             <div id="assignments"><p class="muted">Loading assignments…</p></div>
@@ -86,7 +85,7 @@
             <label for="submit-file">Upload your answer (PDF, JPG, or PNG)</label>
             <input id="submit-file" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" />
             <label for="submit-body">Notes for your coordinator (optional)</label>
-            <textarea id="submit-body" placeholder="Anything you want your coordinator to see with the file"></textarea>
+            <textarea id="submit-body"></textarea>
             <button class="btn btn-primary" type="button" id="btn-submit-work">Submit assignment</button>
             <div id="submit-msg" class="msg info" hidden style="margin-top:12px;"></div>
           </div>
@@ -95,7 +94,6 @@
         <section class="pane" data-pane="marks" hidden>
           <div class="pane-head">
             <h2>Your marks</h2>
-            <p>Scores and feedback from your coordinator.</p>
           </div>
           <div class="card">
             <div id="my-marks"><p class="empty">No marks yet.</p></div>
@@ -105,7 +103,6 @@
         <section class="pane" data-pane="messages" hidden>
           <div class="pane-head">
             <h2>Messages</h2>
-            <p>Announcements from your coordinators and the President.</p>
           </div>
           <div class="card">
             <div id="announcements"></div>
@@ -115,7 +112,6 @@
         <section class="pane" data-pane="attendance" hidden>
           <div class="pane-head">
             <h2>Your attendance</h2>
-            <p>Weekday class attendance in term. Missing class can get you dropped, so keep showing up.</p>
           </div>
           <div class="card">
             <div id="student-attendance"><p class="muted">Loading attendance…</p></div>
@@ -125,11 +121,9 @@
         <section class="pane" data-pane="calendar" hidden>
           <div class="pane-head">
             <h2>Calendar &amp; readings</h2>
-            <p>Your daily readings, each month's theme, and the full two-year calendar.</p>
           </div>
           <div class="card">
             <h2>Daily readings · Semester 1</h2>
-            <p class="muted" style="margin-top:0;">Monday to Friday in term. Saturday and Sunday are rest. Tuesday night prayer is 10:00 PM WAT.</p>
             <div id="scripture-list"></div>
           </div>
           <div class="card">
@@ -205,11 +199,9 @@
           "marks",
           marked.filter(function (s) { return s.status === "needs_correction"; }).length
         );
-        document.getElementById("tile-marks").textContent = marked.length
-          ? marked.length + " marked so far"
-          : "Scores and feedback";
+        document.getElementById("tile-marks").textContent = marked.length ? marked.length + " marked" : "";
         if (!marked.length) {
-          root.innerHTML = "<p class='empty'>No marks yet. When your coordinator marks your work, it appears here.</p>";
+          root.innerHTML = "<p class='empty'>No marks yet.</p>";
           return;
         }
         var html = "";
@@ -270,11 +262,9 @@
           return !mySubs.some(function (s) { return s.assignmentId === a.id && s.status !== "needs_correction"; });
         }).length;
         window.COD1024_SHELL.badge("assignments", open);
-        document.getElementById("tile-asg").textContent = list.length
-          ? open + " waiting for your answer"
-          : "Open and submit your work";
+        document.getElementById("tile-asg").textContent = open ? open + " to submit" : "";
         if (!list.length) {
-          root.innerHTML = "<p class='empty'>No assignments yet. Your coordinator will send them here.</p>";
+          root.innerHTML = "<p class='empty'>No assignments yet.</p>";
           return;
         }
         var html = "";
@@ -407,7 +397,7 @@
           })
           .then(function () {
             msg.className = "msg ok";
-            msg.textContent = "Submitted. Your coordinator will receive your file.";
+            msg.textContent = "Submitted.";
             document.getElementById("submit-body").value = "";
             document.getElementById("submit-file").value = "";
             return loadMySubmissions();
