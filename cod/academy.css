@@ -62,6 +62,14 @@ a:hover { text-decoration: underline; }
   padding: 20px;
   box-shadow: 0 24px 60px -48px rgba(26, 39, 68, 0.35);
 }
+.program-sign { margin: 0 0 22px; padding: 22px 22px 20px; border-radius: var(--radius); background: #8b3a4a; color: #fff; border: 2px solid #c4a35a; max-width: 44rem; }
+.program-sign .ps-label { margin: 0 0 6px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #f1d999; }
+.program-sign .ps-name { margin: 0; font-family: var(--head); font-size: clamp(1.9rem, 4.5vw, 2.5rem); line-height: 1.05; color: #fff; }
+.program-sign .ps-facts { margin: 10px 0 0; font-size: 1rem; font-weight: 700; color: rgba(255, 255, 255, 0.9); }
+.program-sign .ps-other { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.92rem; color: rgba(255, 255, 255, 0.82); }
+.program-sign .ps-other a { color: #f1d999; font-weight: 700; }
+.confirm-row { display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 14px; padding: 12px 14px; border-radius: 12px; background: #fbf4df; border: 1px solid #f0dfae; font-size: 0.92rem; font-weight: 700; color: #4a3a10; cursor: pointer; }
+.confirm-row input { width: 18px; height: 18px; margin: 2px 0 0; flex: none; }
 .grid-2 { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--muted); }
 input, select, textarea {

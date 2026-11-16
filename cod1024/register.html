@@ -39,6 +39,12 @@
         </div>
         <div data-cod-hide-when-signed-in>
           <img class="logo auth-logo" src="/images/dear-daughter-logo.png" alt="Dear Daughter Bible Study" width="225" height="210" />
+          <div class="program-sign" role="note" aria-label="Program you are registering for">
+            <p class="ps-label">You are registering for</p>
+            <p class="ps-name">Class of David 1024</p>
+            <p class="ps-facts">2 years · 4 semesters · October 2026 – July 2028</p>
+            <p class="ps-other">Looking for the 9-month Class of David (2026/2027)? <a href="/cod/register.html">Register for the 9-month class</a></p>
+          </div>
           <h1>Register</h1>
           <div class="panel">
             <div id="msg" class="msg info" hidden></div>
@@ -61,7 +67,11 @@
               <input id="password" type="password" required minlength="8" autocomplete="new-password" />
               <label for="expectations">What are you trusting God for in these two years? (optional)</label>
               <textarea id="expectations" style="min-height:90px;"></textarea>
-              <button class="btn btn-gold btn-block" type="submit" id="btn-submit">Create my account</button>
+              <label class="confirm-row" for="confirm-program">
+                <input id="confirm-program" type="checkbox" required />
+                <span>I am registering for Class of David 1024 — the two-year, four-semester class.</span>
+              </label>
+              <button class="btn btn-gold btn-block" type="submit" id="btn-submit">Register for Class of David 1024</button>
               <p class="privacy-note">We use your details only to run Class of David 1024 and to contact you about the class. We do not sell or share them.</p>
             </form>
           </div>

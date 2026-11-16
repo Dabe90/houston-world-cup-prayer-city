@@ -453,6 +453,14 @@ h3 { font-size: 1.25rem; line-height: 1.2; margin: 0 0 8px; }
 .faq-item[open] summary::after { transform: translateY(-50%) rotate(45deg); }
 .faq-item p { margin: 0; padding: 0 24px 22px; color: var(--muted); }
 .faq-contact { margin-top: 28px; color: var(--muted); }
+.program-sign { margin: 0 0 22px; padding: 22px 22px 20px; border-radius: 18px; background: var(--royal); color: #fff; border: 2px solid var(--gold); box-shadow: var(--shadow); }
+.program-sign .ps-label { margin: 0 0 6px; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
+.program-sign .ps-name { margin: 0; font-family: var(--head); font-size: clamp(1.8rem, 4vw, 2.3rem); line-height: 1.05; color: #fff; }
+.program-sign .ps-facts { margin: 10px 0 0; font-size: 0.98rem; font-weight: 700; color: rgba(255, 255, 255, 0.88); }
+.program-sign .ps-other { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.16); font-size: 0.88rem; color: rgba(255, 255, 255, 0.75); }
+.program-sign .ps-other a { color: var(--gold); font-weight: 700; }
+.confirm-row { display: flex; gap: 10px; align-items: flex-start; margin: 16px 0 4px; padding: 12px 14px; border-radius: 12px; background: #fbf4df; border: 1px solid #f0dfae; font-size: 0.92rem; font-weight: 700; color: #4a3a10; cursor: pointer; }
+.confirm-row input { width: 18px; height: 18px; margin: 2px 0 0; flex: none; accent-color: var(--royal-2); }
 .privacy-note { margin: 12px 0 0; color: var(--faint); font-size: 0.82rem; line-height: 1.5; }
 .footer-contact { margin: 10px 0 0; }
 .footer-contact a { color: rgba(255, 255, 255, 0.78); }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Student registration — Class of David</title>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
-  <link rel="stylesheet" href="/cod/academy.css?v=20261103m" />
+  <link rel="stylesheet" href="/cod/academy.css?v=20261116a" />
 </head>
 <body>
   <header class="nav">
@@ -27,6 +27,12 @@
       <p class="lead">You are signed in. Opening your dashboard…</p>
     </div>
     <div data-cod-hide-when-signed-in>
+    <div class="program-sign" role="note" aria-label="Program you are registering for">
+      <p class="ps-label">You are registering for</p>
+      <p class="ps-name">Class of David — 9-month class</p>
+      <p class="ps-facts">Cohort 2026/2027 · 9 months</p>
+      <p class="ps-other">Looking for the new two-year Class of David 1024? <a href="/cod1024/register">Register for Class of David 1024</a></p>
+    </div>
     <p class="kicker">Student portal · Cohort 2026/2027</p>
     <h1>Create your portal login</h1>
     <p style="color:var(--muted);max-width:36rem;">
@@ -49,7 +55,11 @@
           <input id="password" name="password" type="password" required minlength="8" autocomplete="new-password" />
           <label for="phone">Phone</label>
           <input id="phone" name="phone" type="tel" autocomplete="tel" />
-          <button class="btn btn-primary" type="submit" id="btn-submit">Create account and open dashboard</button>
+          <label class="confirm-row" for="confirm-program">
+            <input id="confirm-program" type="checkbox" required />
+            <span>I am registering for the 9-month Class of David (2026/2027), not Class of David 1024.</span>
+          </label>
+          <button class="btn btn-primary" type="submit" id="btn-submit">Create my 9-month class account</button>
         </form>
       </div>
       <div class="card">
